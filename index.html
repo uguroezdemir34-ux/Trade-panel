@@ -891,7 +891,15 @@ body::after {
   <div class="card">
     <div class="card-head">
       <div class="card-label">Yatırım Girişleri</div>
-      <div style="font-size:10px;color:var(--muted)">Trading P&amp;L'den bağımsız · bakiyeye eklenir</div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+        <div style="font-size:10px;color:var(--muted)">Trading P&amp;L'den bağımsız · bakiyeye eklenir</div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span style="font-size:10px;color:var(--muted)">Başlangıç bakiyesi:</span>
+          <input id="baseBalInp" type="number" step="0.01" min="0"
+            style="width:80px;background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:4px 8px;font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--gold-mid);outline:none;"
+            placeholder="$0.00" oninput="updateBaseBal()">
+        </div>
+      </div>
     </div>
     <div class="card-body">
       <div class="dep-summary">
@@ -914,6 +922,36 @@ body::after {
         <button class="dep-add-btn" onclick="addDeposit()">+ Ekle</button>
       </div>
       <div class="dep-list" id="depList"></div>
+    </div>
+  </div>
+
+  <!-- PARA ÇIKIŞI -->
+  <div class="card">
+    <div class="card-head">
+      <div class="card-label">Para Çıkışı</div>
+      <div style="font-size:10px;color:var(--muted)">Acil / kişisel çekim · bakiyeden düşülür</div>
+    </div>
+    <div class="card-body">
+      <div class="dep-summary">
+        <div class="dep-sum-box">
+          <div class="dep-sum-lbl">Toplam Çekim</div>
+          <div class="dep-sum-val" style="color:var(--red-mid)" id="wdTotal">$0</div>
+        </div>
+        <div class="dep-sum-box">
+          <div class="dep-sum-lbl">Çekim Sayısı</div>
+          <div class="dep-sum-val gold" id="wdCount">0</div>
+        </div>
+        <div class="dep-sum-box">
+          <div class="dep-sum-lbl">Net Bakiye Etkisi</div>
+          <div class="dep-sum-val" style="color:var(--red-mid)" id="wdNetBal">-$0</div>
+        </div>
+      </div>
+      <div class="dep-add-row">
+        <input class="dep-inp" id="wdAmt" type="number" placeholder="Miktar ($)" step="0.01" min="0">
+        <input class="dep-inp note-inp" id="wdNote" type="text" placeholder="Neden? (isteğe bağlı)">
+        <button class="dep-add-btn" style="background:var(--red-mid)" onclick="addWithdrawal()">− Ekle</button>
+      </div>
+      <div class="dep-list" id="wdList"></div>
     </div>
   </div>
 
@@ -1296,9 +1334,7 @@ async function fetchRate() {
         const now = new Date().toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
         const timeEl = document.getElementById('kurTime');
         if (timeEl) timeEl.textContent = src.name + ' · ' + now;
-        const deps = ld('ug6_dep') || [];
-        const total = deps.reduce((s,d) => s + d.amt, 0);
-        updateTryDisplay(322.11 + total);
+        updateTryDisplay(getNetBalance());
         if (btn) btn.textContent = '↻';
         return;
       }
@@ -1308,8 +1344,7 @@ async function fetchRate() {
   if (usdTryRate) {
     const timeEl = document.getElementById('kurTime');
     if (timeEl) timeEl.textContent = '⚠ önbellek';
-    const deps = ld('ug6_dep') || [];
-    updateTryDisplay(322.11 + deps.reduce((s,d)=>s+d.amt,0));
+    updateTryDisplay(getNetBalance());
   }
   if (btn) btn.textContent = '↻';
 }
@@ -1322,23 +1357,46 @@ if (_kurInp) {
   if (savedManual) _kurInp.value = savedManual;
   _kurInp.addEventListener('input', () => {
     sv('ug6_kur_manual', _kurInp.value);
-    const deps = ld('ug6_dep') || [];
-    updateTryDisplay(322.11 + deps.reduce((s,d)=>s+d.amt,0));
+    updateTryDisplay(getNetBalance());
   });
 }
 
 fetchRate();
 setInterval(fetchRate, 5 * 60 * 1000);
 
-const BASE_BALANCE = 322.11;
+let BASE_BALANCE = parseFloat(ld('ug6_base') || 322.11);
 let deposits = ld('ug6_dep') || [];
+let withdrawals = ld('ug6_wd') || [];
+
+// Base balance input
+const _baseInp = document.getElementById('baseBalInp');
+if (_baseInp) {
+  _baseInp.value = BASE_BALANCE;
+  _baseInp.addEventListener('input', updateBaseBal);
+}
+function updateBaseBal() {
+  const v = parseFloat(document.getElementById('baseBalInp').value);
+  if (!isNaN(v) && v >= 0) {
+    BASE_BALANCE = v;
+    sv('ug6_base', v);
+    renderDeposits();
+    renderWithdrawals();
+    renderCountdown();
+  }
+}
+
+function getNetBalance() {
+  const dep = deposits.reduce((s, d) => s + d.amt, 0);
+  const wd  = withdrawals.reduce((s, w) => s + w.amt, 0);
+  return BASE_BALANCE + dep - wd;
+}
 
 function renderDeposits() {
   const total = deposits.reduce((s, d) => s + d.amt, 0);
   document.getElementById('depTotal').textContent = '$' + total.toFixed(2);
   document.getElementById('depCount').textContent = deposits.length;
-  document.getElementById('depTotalBal').textContent = '$' + (BASE_BALANCE + total).toFixed(2);
-  updateTryDisplay(BASE_BALANCE + total);
+  document.getElementById('depTotalBal').textContent = '$' + getNetBalance().toFixed(2);
+  updateTryDisplay(getNetBalance());
 
   const list = document.getElementById('depList');
   if (deposits.length === 0) {
@@ -1378,6 +1436,54 @@ function deleteDeposit(i) {
 }
 
 renderDeposits();
+
+// ── PARA ÇIKIŞI ──
+function renderWithdrawals() {
+  const total = withdrawals.reduce((s, w) => s + w.amt, 0);
+  document.getElementById('wdTotal').textContent = '$' + total.toFixed(2);
+  document.getElementById('wdCount').textContent = withdrawals.length;
+  document.getElementById('wdNetBal').textContent = '-$' + total.toFixed(2);
+
+  const list = document.getElementById('wdList');
+  if (withdrawals.length === 0) {
+    list.innerHTML = '<div class="dep-empty">Henüz para çıkışı yok</div>';
+    return;
+  }
+  list.innerHTML = withdrawals.slice().reverse().map((w, ri) => {
+    const i = withdrawals.length - 1 - ri;
+    return `<div class="dep-item">
+      <div class="dep-item-left">
+        <div class="dep-item-date">${w.date}</div>
+        ${w.note ? `<div class="dep-item-note">${w.note}</div>` : ''}
+      </div>
+      <div class="dep-item-amt" style="color:var(--red-mid)">-$${w.amt.toFixed(2)}</div>
+      <button class="dep-del-btn" onclick="deleteWithdrawal(${i})">✕</button>
+    </div>`;
+  }).join('');
+}
+
+function addWithdrawal() {
+  const amt = parseFloat(document.getElementById('wdAmt').value);
+  if (isNaN(amt) || amt <= 0) { alert('Geçerli bir miktar gir'); return; }
+  const note = document.getElementById('wdNote').value.trim();
+  const date = new Date().toLocaleDateString('tr-TR', {day:'2-digit', month:'2-digit', year:'numeric'});
+  withdrawals.push({ amt, note, date });
+  sv('ug6_wd', withdrawals);
+  document.getElementById('wdAmt').value = '';
+  document.getElementById('wdNote').value = '';
+  renderWithdrawals();
+  renderDeposits(); // net bakiyeyi güncelle
+}
+
+function deleteWithdrawal(i) {
+  if (!confirm('Bu çekimi sil?')) return;
+  withdrawals.splice(i, 1);
+  sv('ug6_wd', withdrawals);
+  renderWithdrawals();
+  renderDeposits();
+}
+
+renderWithdrawals();
 
 // ── AÇIK POZİSYONLAR ──
 let posDir = 'LONG';
@@ -1536,9 +1642,7 @@ function monthsToGoal(balance, rate) {
   return months >= 600 ? '∞' : months;
 }
 function renderCountdown() {
-  const deps2 = ld('ug6_dep') || [];
-  const depTotal2 = deps2.reduce((s,d) => s+d.amt, 0);
-  const bal = BASE_BALANCE + depTotal2;
+  const bal = getNetBalance();
   const TARGET = 51200;
   const remain = TARGET - bal;
   const mult = (TARGET / bal).toFixed(1);
