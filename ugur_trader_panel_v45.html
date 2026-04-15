@@ -1116,6 +1116,7 @@ select.tf-inp{cursor:pointer}
     <button onclick="requestPushPermission()" id="pushNotifBtn" style="background:none;border:1px solid var(--bd);border-radius:20px;cursor:pointer;font-size:10px;padding:2px 8px;color:var(--t4);font-family:var(--font)" title="Push Bildirim">📳 Bildirim</button>
     <button onclick="showCustomizeModal()" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px" title="Özelleştir">⚙️</button>
     <button onclick="document.getElementById('okxModal').classList.add('open')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px" title="OKX API Key">🔑</button>
+    <button onclick="syncOKXBalance()" style="background:#FF6600;border:none;border-radius:4px;cursor:pointer;font-size:9px;font-weight:700;padding:3px 8px;color:#000;font-family:monospace" title="OKX Bakiye Çek">↻$</button>
     <button class="dm-btn" id="dmBtn" onclick="toggleDark()" title="Karanlık Mod">🌙</button>
   </div>
 </div>
@@ -3809,6 +3810,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(255,255,255,0.97) !im
       <div class="blm-topbar-live"><span class="blm-live-dot"></span>LIVE</div>
       <div class="blm-topbar-time" id="blmTime">--:--:--</div>
       <button class="blm-refresh" onclick="refreshCockpit()">F5 REFRESH</button>
+      <button class="blm-refresh" onclick="syncOKXBalance()" style="background:#FF6600;color:#000">↻ BAKİYE</button>
     </div>
   </div>
 
