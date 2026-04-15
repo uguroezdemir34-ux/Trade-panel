@@ -1065,11 +1065,11 @@ body[data-active-mode="trade"] [data-mode="trade"],
 body[data-active-mode="manage"] [data-mode="manage"],
 body[data-active-mode="stats"] [data-mode="stats"],
 body[data-active-mode="cockpit"] [data-mode="cockpit"]{display:block}
-body[data-active-mode="cockpit"]{background:#0d1117 !important;overflow-x:hidden}
+body[data-active-mode="cockpit"]{background:#f0f2f5 !important;overflow-x:hidden}
 body[data-active-mode="cockpit"] .app{max-width:100% !important;padding:0 !important}
-body[data-active-mode="cockpit"] .topbar{background:rgba(3,4,10,0.95) !important;border-bottom:1px solid rgba(0,240,255,0.15) !important}
-body[data-active-mode="cockpit"] .topbar *{color:rgba(255,255,255,0.8) !important}
-body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !important;border-top:1px solid rgba(0,240,255,0.15) !important}
+body[data-active-mode="cockpit"] .topbar{background:#ffffff !important;border-bottom:1px solid #e2e8f0 !important}
+body[data-active-mode="cockpit"] .topbar *{color:#1e293b !important}
+body[data-active-mode="cockpit"] #quickNav{background:rgba(255,255,255,0.97) !important;border-top:1px solid #e2e8f0 !important}
 </style>
 
 
@@ -3384,10 +3384,10 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
 
 <!-- Cockpit CSS -->
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
 #cockpitWrap {
-  background: #0d1117;
+  background: #f0f2f5;
   min-height: 100vh;
   padding: 10px 10px 80px;
   position: relative;
@@ -3396,87 +3396,42 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   box-sizing: border-box;
 }
 
-/* Animated scanlines */
-#cockpitWrap::before {
-  content: '';
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: repeating-linear-gradient(
-    0deg,
-    transparent,
-    transparent 2px,
-    rgba(0,240,255,0.015) 2px,
-    rgba(0,240,255,0.015) 4px
-  );
-  pointer-events: none;
-  z-index: 0;
-  animation: scanMove 8s linear infinite;
-}
-@keyframes scanMove {
-  0%{background-position:0 0} 100%{background-position:0 100px}
-}
-
-/* Ambient glow corners */
-#cockpitWrap::after {
-  content: '';
-  position: fixed;
-  top: -200px; left: -200px;
-  width: 400px; height: 400px;
-  background: radial-gradient(circle, rgba(0,240,255,0.06) 0%, transparent 70%);
-  pointer-events: none;
-  z-index: 0;
-  animation: cornerGlow 6s ease-in-out infinite alternate;
-}
-@keyframes cornerGlow {
-  0%{opacity:.5;transform:scale(1)} 100%{opacity:1;transform:scale(1.3)}
-}
-
-/* Cockpit card base */
 .ck-card {
-  background: rgba(255,255,255,0.07);
-  border: 1px solid rgba(0,240,255,0.25);
-  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   padding: 12px;
   position: relative;
   cursor: pointer;
-  transition: all 0.25s ease;
-  overflow: hidden;
-  z-index: 1;
-}
-.ck-card::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: linear-gradient(135deg, rgba(0,240,255,0.04) 0%, transparent 60%);
-  pointer-events: none;
-  border-radius: 10px;
-}
-/* Corner brackets */
-.ck-card::after {
-  content: '';
-  position: absolute;
-  top: 4px; right: 4px;
-  width: 10px; height: 10px;
-  border-top: 1px solid rgba(0,240,255,0.8);
-  border-right: 1px solid rgba(0,240,255,0.8);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 .ck-card:active {
   transform: scale(0.97);
-  border-color: rgba(0,240,255,0.8);
-  box-shadow: 0 0 20px rgba(0,240,255,0.2), inset 0 0 20px rgba(0,240,255,0.05);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
 }
 .ck-card:hover {
-  border-color: rgba(0,240,255,0.3);
-  box-shadow: 0 0 15px rgba(0,240,255,0.2);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  border-color: #cbd5e0;
+}
+
+/* Corner bracket */
+.ck-card::after {
+  content: '';
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 8px; height: 8px;
+  border-top: 2px solid #e2e8f0;
+  border-right: 2px solid #e2e8f0;
 }
 
 .ck-label {
   font-family: 'Orbitron', monospace;
   font-size: 7px;
   font-weight: 700;
-  letter-spacing: .15em;
+  letter-spacing: .12em;
   text-transform: uppercase;
-  color: rgba(0,240,255,0.8);
+  color: #94a3b8;
   margin-bottom: 6px;
 }
 .ck-val {
@@ -3484,33 +3439,33 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   font-size: 22px;
   font-weight: 700;
   line-height: 1;
+  color: #1e293b;
 }
 .ck-sub {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
-  color: rgba(255,255,255,0.6);
+  color: #64748b;
   margin-top: 4px;
 }
-.ck-green { color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.5); }
-.ck-red   { color: #ff3366; text-shadow: 0 0 10px rgba(255,51,102,0.5); }
-.ck-cyan  { color: #00f0ff; text-shadow: 0 0 10px rgba(0,240,255,0.8); }
-.ck-amber { color: #ffaa00; text-shadow: 0 0 10px rgba(255,170,0,0.5); }
-.ck-white { color: #ffffff; }
+.ck-green { color: #16a34a; }
+.ck-red   { color: #dc2626; }
+.ck-cyan  { color: #0284c7; }
+.ck-amber { color: #d97706; }
+.ck-white { color: #1e293b; }
 
 /* Pulse dot */
 .ck-pulse {
-  width: 6px; height: 6px;
+  width: 7px; height: 7px;
   border-radius: 50%;
-  background: #00ff88;
-  box-shadow: 0 0 8px #00ff88;
-  animation: pulse 2s ease-in-out infinite;
+  background: #16a34a;
   display: inline-block;
+  animation: pulse 2s ease-in-out infinite;
 }
 @keyframes pulse {
-  0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)}
+  0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)}
 }
 
-/* Score gauge */
+/* Gauge */
 .ck-gauge-wrap {
   position: relative;
   width: 70px; height: 70px;
@@ -3521,38 +3476,88 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   position: absolute;
   top: 50%; left: 50%;
   transform: translate(-50%, -50%);
-  font-family: 'Orbitron', monospace;
+  font-family: 'JetBrains Mono', monospace;
   font-size: 18px;
-  font-weight: 900;
+  font-weight: 700;
   text-align: center;
+  color: #1e293b;
 }
 
-/* Modal overlay */
+/* Fiyat kartları */
+.ck-pricebar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ck-price-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: all .2s;
+}
+.ck-price-card:active { transform: scale(0.97); }
+
+/* Grid */
+.ck-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.ck-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.ck-grid2x1 { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px; }
+
+/* Animasyon */
+.ck-card { animation: ckFadeIn .3s ease both; }
+@keyframes ckFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.ck-card:nth-child(1){animation-delay:.03s}
+.ck-card:nth-child(2){animation-delay:.06s}
+.ck-card:nth-child(3){animation-delay:.09s}
+.ck-card:nth-child(4){animation-delay:.12s}
+.ck-card:nth-child(5){animation-delay:.15s}
+.ck-card:nth-child(6){animation-delay:.18s}
+
+/* Scan bar */
+.ck-scanbar {
+  height: 3px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.ck-scanbar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #0284c7, #16a34a);
+  border-radius: 2px;
+  transition: width .5s ease;
+}
+
+/* Modal */
 #ckModal {
   display: none;
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.92);
-  backdrop-filter: blur(20px);
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(8px);
   z-index: 9999;
   padding: 20px;
   overflow-y: auto;
 }
 #ckModal.open { display: flex; flex-direction: column; }
 #ckModalContent {
-  background: rgba(10,12,20,0.98);
-  border: 1px solid rgba(0,240,255,0.25);
-  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
   padding: 20px;
   flex: 1;
   position: relative;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
 }
 #ckModalClose {
   position: absolute;
   top: 14px; right: 14px;
-  background: rgba(0,240,255,0.2);
-  border: 1px solid rgba(0,240,255,0.3);
-  color: #00f0ff;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
   border-radius: 50%;
   width: 32px; height: 32px;
   font-size: 16px;
@@ -3562,71 +3567,13 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
 }
 #ckModalTitle {
   font-family: 'Orbitron', monospace;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: #00f0ff;
-  letter-spacing: .15em;
+  color: #475569;
+  letter-spacing: .12em;
   text-transform: uppercase;
   margin-bottom: 16px;
   padding-right: 40px;
-}
-
-/* Top bar fiyatlar */
-.ck-pricebar {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-.ck-price-card {
-  background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(0,240,255,0.12);
-  border-radius: 10px;
-  padding: 10px 12px;
-  position: relative;
-  overflow: hidden;
-}
-.ck-price-card::before {
-  content: '';
-  position: absolute;
-  bottom: 0; left: 0; right: 0;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(0,240,255,0.3), transparent);
-  animation: shimmer 3s ease-in-out infinite;
-}
-@keyframes shimmer { 0%,100%{opacity:0} 50%{opacity:1} }
-
-/* Grid layouts */
-.ck-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-.ck-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-.ck-grid2x1 { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px; }
-
-/* Animasyonlu giriş */
-.ck-card { animation: ckFadeIn .4s ease both; }
-@keyframes ckFadeIn {
-  from { opacity:0; transform:translateY(8px); }
-  to   { opacity:1; transform:translateY(0); }
-}
-.ck-card:nth-child(1){animation-delay:.05s}
-.ck-card:nth-child(2){animation-delay:.1s}
-.ck-card:nth-child(3){animation-delay:.15s}
-.ck-card:nth-child(4){animation-delay:.2s}
-.ck-card:nth-child(5){animation-delay:.25s}
-.ck-card:nth-child(6){animation-delay:.3s}
-
-/* Scan progress bar */
-.ck-scanbar {
-  height: 2px;
-  background: rgba(0,240,255,0.2);
-  border-radius: 1px;
-  overflow: hidden;
-  margin-top: 6px;
-}
-.ck-scanbar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #00f0ff, #00ff88);
-  border-radius: 1px;
-  transition: width .5s ease;
 }
 </style>
 
@@ -3635,13 +3582,13 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   <!-- Başlık -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;z-index:1;position:relative">
     <div>
-      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:#00f0ff;letter-spacing:.2em;text-shadow:0 0 20px rgba(0,240,255,0.8)">COMMAND CENTER</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(0,240,255,0.7);margin-top:2px" id="ckTime">—</div>
+      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:#0284c7;letter-spacing:.2em;text-shadow:0 0 20px rgba(0,240,255,0.8)">COMMAND CENTER</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#0284c7;margin-top:2px" id="ckTime">—</div>
     </div>
     <div style="display:flex;align-items:center;gap:6px">
       <span class="ck-pulse"></span>
-      <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(0,255,136,0.7)">CANLI</span>
-      <button onclick="refreshCockpit()" style="background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.2);color:#00f0ff;border-radius:6px;padding:4px 10px;font-size:8px;font-family:'Orbitron',monospace;cursor:pointer;letter-spacing:.1em">↻ YENİLE</button>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#16a34a">CANLI</span>
+      <button onclick="refreshCockpit()" style="background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.2);color:#0284c7;border-radius:6px;padding:4px 10px;font-size:8px;font-family:'Orbitron',monospace;cursor:pointer;letter-spacing:.1em">↻ YENİLE</button>
     </div>
   </div>
 
@@ -3650,12 +3597,12 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
     <div class="ck-price-card" onclick="openCockpitModal('chart','ETH')">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
         <span style="font-size:16px">🔷</span>
-        <span style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#00f0ff;letter-spacing:.1em">ETH/USDT</span>
+        <span style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#0284c7;letter-spacing:.1em">ETH/USDT</span>
       </div>
-      <div class="ck-val" id="ckEthPx" style="color:#00f0ff;font-size:20px">—</div>
+      <div class="ck-val" id="ckEthPx" style="color:#0284c7;font-size:20px">—</div>
       <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
         <span class="ck-sub" id="ckEthChg">—</span>
-        <span class="ck-sub" id="ckEthFund" style="color:rgba(255,255,255,0.2)">—</span>
+        <span class="ck-sub" id="ckEthFund" style="color:#cbd5e0">—</span>
       </div>
     </div>
     <div class="ck-price-card" onclick="openCockpitModal('chart','BTC')">
@@ -3666,7 +3613,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
       <div class="ck-val" id="ckBtcPx" style="color:#ffaa00;font-size:20px">—</div>
       <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
         <span class="ck-sub" id="ckBtcChg">—</span>
-        <span class="ck-sub" id="ckBtcFund" style="color:rgba(255,255,255,0.2)">—</span>
+        <span class="ck-sub" id="ckBtcFund" style="color:#cbd5e0">—</span>
       </div>
     </div>
   </div>
@@ -3748,7 +3695,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
       <div class="ck-label">BAKİYE</div>
       <div class="ck-val ck-cyan" id="ckBal" style="font-size:14px">—</div>
       <div style="margin-top:6px">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.3)">BUGÜN P&L</div>
+        <div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#94a3b8">BUGÜN P&L</div>
         <div class="ck-val" id="ckDayPnl" style="font-size:14px">—</div>
       </div>
     </div>
@@ -3815,11 +3762,11 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   <!-- Row 5: Hızlı Trade Butonları -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
     <button onclick="setMode('trade');setTimeout(()=>document.getElementById('longBtn')?.click(),600)"
-      style="padding:14px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);border-radius:10px;color:#00ff88;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.1em;text-shadow:0 0 10px rgba(0,255,136,0.5)">
+      style="padding:14px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;color:#15803d;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.1em;text-shadow:0 0 10px rgba(0,255,136,0.5)">
       ▲ LONG
     </button>
     <button onclick="setMode('trade');setTimeout(()=>document.getElementById('shortBtn')?.click(),600)"
-      style="padding:14px;background:rgba(255,51,102,0.08);border:1px solid rgba(255,51,102,0.3);border-radius:10px;color:#ff3366;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.1em;text-shadow:0 0 10px rgba(255,51,102,0.5)">
+      style="padding:14px;background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;color:#be123c;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.1em;text-shadow:0 0 10px rgba(255,51,102,0.5)">
       ▼ SHORT
     </button>
   </div>
@@ -3828,10 +3775,10 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(0,240,255,0.2);border-radius:10px;padding:10px;position:relative;z-index:1">
     <div class="ck-label" style="margin-bottom:8px">GRAFİK KISA ERİŞİM</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
-      <button onclick="openTV('OKX:ETHUSDT.P')" style="padding:8px 4px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.2);border-radius:6px;color:#00f0ff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">ETH</button>
-      <button onclick="openTV('OKX:BTCUSDT.P')" style="padding:8px 4px;background:rgba(255,170,0,0.06);border:1px solid rgba(255,170,0,0.2);border-radius:6px;color:#ffaa00;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">BTC</button>
-      <button onclick="openTV('OKX:SOLUSDT.P')" style="padding:8px 4px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:6px;color:#a78bfa;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">SOL</button>
-      <button onclick="openTV('OKX:BNBUSDT.P')" style="padding:8px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">BNB</button>
+      <button onclick="openTV('OKX:ETHUSDT.P')" style="padding:8px 4px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.2);border-radius:6px;color:#0284c7;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">ETH</button>
+      <button onclick="openTV('OKX:BTCUSDT.P')" style="padding:8px 4px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;color:#b45309;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">BTC</button>
+      <button onclick="openTV('OKX:SOLUSDT.P')" style="padding:8px 4px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;color:#7c3aed;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">SOL</button>
+      <button onclick="openTV('OKX:BNBUSDT.P')" style="padding:8px 4px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;color:#475569;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">BNB</button>
     </div>
   </div>
 
@@ -3842,7 +3789,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   <div id="ckModalContent">
     <button id="ckModalClose" onclick="closeCockpitModal()">✕</button>
     <div id="ckModalTitle">DETAY</div>
-    <div id="ckModalBody" style="color:rgba(255,255,255,0.8);font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6"></div>
+    <div id="ckModalBody" style="color:#1e293b;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6"></div>
   </div>
 </div>
 
