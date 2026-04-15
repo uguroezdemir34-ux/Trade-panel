@@ -3840,6 +3840,69 @@ body.ck-mental-warn  { --ck-accent: #D97706; }
     <button class="cq-chart-btn" onclick="openTV('OKX:BNBUSDT.P')" style="color:#16A34A;border-color:#BBF7D0">🟢 BNB</button>
   </div>
 
+  <!-- ─── İŞLEM KAYDI ─── -->
+  <div class="cq-section-title">📝 İşlem Kaydı</div>
+  <div class="cq-card" style="cursor:default">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div style="font-size:9px;font-weight:700;color:var(--ck-faint);letter-spacing:.08em;text-transform:uppercase">Hızlı İşlem Kaydet</div>
+      <div style="font-size:9px;color:var(--ck-muted)" id="cqJrnCount">0 kayıt</div>
+    </div>
+
+    <!-- Coin seçici -->
+    <div style="display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px" id="cqJrnPairs">
+      <button onclick="cqJrnSetPair('ETH')" id="cqJrnETH" style="padding:5px 10px;border-radius:20px;border:none;background:#1E293B;color:#F8FAFC;font-size:10px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace">ETH</button>
+      <button onclick="cqJrnSetPair('BTC')" id="cqJrnBTC" style="padding:5px 10px;border-radius:20px;border:1px solid var(--ck-border);background:var(--ck-bg);color:var(--ck-muted);font-size:10px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace">BTC</button>
+      <button onclick="cqJrnSetPair('SOL')" id="cqJrnSOL" style="padding:5px 10px;border-radius:20px;border:1px solid var(--ck-border);background:var(--ck-bg);color:var(--ck-muted);font-size:10px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace">SOL</button>
+      <button onclick="cqJrnSetPair('BNB')" id="cqJrnBNB" style="padding:5px 10px;border-radius:20px;border:1px solid var(--ck-border);background:var(--ck-bg);color:var(--ck-muted);font-size:10px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace">BNB</button>
+      <button onclick="cqJrnSetPair('XRP')" id="cqJrnXRP" style="padding:5px 10px;border-radius:20px;border:1px solid var(--ck-border);background:var(--ck-bg);color:var(--ck-muted);font-size:10px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace">XRP</button>
+    </div>
+
+    <!-- Long / Short -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+      <button onclick="cqJrnSetDir('LONG')" id="cqJrnLong"
+        style="padding:10px;border-radius:10px;border:2px solid #16A34A;background:#F0FDF4;color:#16A34A;font-weight:700;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif">
+        ▲ LONG
+      </button>
+      <button onclick="cqJrnSetDir('SHORT')" id="cqJrnShort"
+        style="padding:10px;border-radius:10px;border:1px solid var(--ck-border);background:var(--ck-bg);color:var(--ck-muted);font-weight:700;font-size:11px;cursor:pointer;font-family:'Inter',sans-serif">
+        ▼ SHORT
+      </button>
+    </div>
+
+    <!-- Giriş / Çıkış / Boyut -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+      <div>
+        <div style="font-size:8px;font-weight:700;color:var(--ck-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Giriş Fiyatı</div>
+        <input id="cqJrnEntry" type="number" placeholder="örn. 2450"
+          style="width:100%;padding:9px 10px;border:1px solid var(--ck-border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ck-text);background:var(--ck-bg);box-sizing:border-box;outline:none">
+      </div>
+      <div>
+        <div style="font-size:8px;font-weight:700;color:var(--ck-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Çıkış Fiyatı</div>
+        <input id="cqJrnExit" type="number" placeholder="örn. 2510"
+          style="width:100%;padding:9px 10px;border:1px solid var(--ck-border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ck-text);background:var(--ck-bg);box-sizing:border-box;outline:none">
+      </div>
+    </div>
+    <div style="margin-bottom:10px">
+      <div style="font-size:8px;font-weight:700;color:var(--ck-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px">Pozisyon Büyüklüğü ($)</div>
+      <input id="cqJrnSize" type="number" placeholder="örn. 5000"
+        style="width:100%;padding:9px 10px;border:1px solid var(--ck-border);border-radius:8px;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--ck-text);background:var(--ck-bg);box-sizing:border-box;outline:none">
+    </div>
+
+    <!-- PnL Preview -->
+    <div id="cqJrnPreview" style="display:none;background:var(--ck-bg);border:1px solid var(--ck-border);border-radius:8px;padding:8px 12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:9px;color:var(--ck-faint)">Tahmini P&L</span>
+      <span id="cqJrnPnlPrev" style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700">—</span>
+    </div>
+
+    <!-- Kaydet -->
+    <button onclick="cqJrnSave()" style="width:100%;padding:13px;background:#1E293B;border:none;border-radius:10px;color:#F8FAFC;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">
+      + İşlem Kaydet
+    </button>
+
+    <!-- Son kayıtlar -->
+    <div id="cqJrnList" style="margin-top:12px"></div>
+  </div>
+
 </div><!-- /ckv2 -->
 
 <!-- Modal -->
@@ -11727,6 +11790,9 @@ async function refreshCockpit() {
     const at = document.getElementById('cqAnoTxt');
     if(at){at.textContent=norm?'NORMAL':'UYARI';at.style.color=norm?'#16A34A':'#DC2626';}
   }
+
+  // ── İşlem Kaydı ──
+  cqJrnRender();
 }
 
 // Kokpit Modal
@@ -11778,6 +11844,91 @@ function openCockpitModal(type, extra) {
 function closeCockpitModal() {
   const m = document.getElementById('ckModal');
   if (m) m.classList.remove('open');
+}
+
+// ── Kokpit İşlem Kaydı ──
+let _cqJrnPair = 'ETH';
+let _cqJrnDir  = 'LONG';
+
+function cqJrnSetPair(p) {
+  _cqJrnPair = p;
+  ['ETH','BTC','SOL','BNB','XRP'].forEach(x => {
+    const b = document.getElementById('cqJrn'+x);
+    if (!b) return;
+    if (x === p) { b.style.background='#1E293B'; b.style.color='#F8FAFC'; b.style.border='none'; }
+    else          { b.style.background='var(--ck-bg)'; b.style.color='var(--ck-muted)'; b.style.border='1px solid var(--ck-border)'; }
+  });
+  cqJrnCalc();
+}
+
+function cqJrnSetDir(d) {
+  _cqJrnDir = d;
+  const lb = document.getElementById('cqJrnLong');
+  const sb = document.getElementById('cqJrnShort');
+  if (lb) { lb.style.background=d==='LONG'?'#F0FDF4':'var(--ck-bg)'; lb.style.borderColor=d==='LONG'?'#16A34A':'var(--ck-border)'; lb.style.color=d==='LONG'?'#16A34A':'var(--ck-muted)'; lb.style.borderWidth=d==='LONG'?'2px':'1px'; }
+  if (sb) { sb.style.background=d==='SHORT'?'#FFF1F2':'var(--ck-bg)'; sb.style.borderColor=d==='SHORT'?'#DC2626':'var(--ck-border)'; sb.style.color=d==='SHORT'?'#DC2626':'var(--ck-muted)'; sb.style.borderWidth=d==='SHORT'?'2px':'1px'; }
+  cqJrnCalc();
+}
+
+function cqJrnCalc() {
+  const entry = parseFloat(document.getElementById('cqJrnEntry')?.value);
+  const exit  = parseFloat(document.getElementById('cqJrnExit')?.value);
+  const size  = parseFloat(document.getElementById('cqJrnSize')?.value);
+  const prev  = document.getElementById('cqJrnPreview');
+  const pnlEl = document.getElementById('cqJrnPnlPrev');
+  if (!entry || !exit || !size || !prev || !pnlEl) return;
+  const pct = _cqJrnDir === 'LONG' ? (exit-entry)/entry : (entry-exit)/entry;
+  const pnl = pct * size;
+  prev.style.display = 'flex';
+  pnlEl.textContent = (pnl>=0?'+':'')+'$'+pnl.toFixed(2);
+  pnlEl.style.color = pnl>=0?'#16A34A':'#DC2626';
+}
+
+function cqJrnSave() {
+  const entry = parseFloat(document.getElementById('cqJrnEntry')?.value);
+  const exit  = parseFloat(document.getElementById('cqJrnExit')?.value);
+  const size  = parseFloat(document.getElementById('cqJrnSize')?.value);
+  if (!entry || !exit || !size) { showToast('⚠️ Giriş, çıkış ve boyut gir'); return; }
+  const pct = _cqJrnDir === 'LONG' ? (exit-entry)/entry : (entry-exit)/entry;
+  const pnl = pct * size;
+  const rec = {
+    id: Date.now(), pair: _cqJrnPair+'USDT', direction: _cqJrnDir,
+    entry, exit, size, pnl, date: new Date().toISOString(),
+  };
+  // localStorage'a kaydet (journal)
+  const journal = ld('ug_journal_v45') || [];
+  journal.unshift(rec);
+  if (journal.length > 200) journal.pop();
+  sv('ug_journal_v45', journal);
+  // P&L takvimine de ekle
+  const cal = ld('ug6_cal') || {};
+  const today = new Date().toISOString().slice(0,10);
+  if (!cal[today]) cal[today] = {pnl:0};
+  cal[today].pnl = (cal[today].pnl||0) + pnl;
+  sv('ug6_cal', cal);
+  // Formu sıfırla
+  ['cqJrnEntry','cqJrnExit','cqJrnSize'].forEach(id => { const e=document.getElementById(id); if(e) e.value=''; });
+  const prev = document.getElementById('cqJrnPreview');
+  if (prev) prev.style.display = 'none';
+  showToast((pnl>=0?'✅ Kâr: +':'❌ Zarar: ')+'$'+Math.abs(pnl).toFixed(2)+' kaydedildi');
+  cqJrnRender();
+  refreshCockpit();
+}
+
+function cqJrnRender() {
+  const list = document.getElementById('cqJrnList');
+  if (!list) return;
+  const journal = (ld('ug_journal_v45')||[]).slice(0,5);
+  const cnt = document.getElementById('cqJrnCount');
+  if (cnt) cnt.textContent = (ld('ug_journal_v45')||[]).length + ' kayıt';
+  if (!journal.length) { list.innerHTML='<div style="text-align:center;padding:12px;font-size:11px;color:var(--ck-faint)">Henüz kayıt yok</div>'; return; }
+  list.innerHTML = '<div style="font-size:8px;font-weight:700;color:var(--ck-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:6px">Son 5 İşlem</div>' +
+    journal.map(r => `
+    <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:${r.pnl>=0?'#F0FDF4':'#FFF1F2'};border:1px solid ${r.pnl>=0?'#BBF7D0':'#FECDD3'};border-radius:8px;margin-bottom:5px">
+      <span style="font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:${r.direction==='LONG'?'#16A34A':'#DC2626'};min-width:50px">${r.direction}</span>
+      <span style="font-size:10px;color:var(--ck-muted);flex:1">${r.pair.replace('USDT','/USDT')}</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:700;color:${r.pnl>=0?'#16A34A':'#DC2626'}">${r.pnl>=0?'+':''}$${r.pnl.toFixed(2)}</span>
+    </div>`).join('');
 }
 
 // ── v45: Mini Backtest Motoru ──
