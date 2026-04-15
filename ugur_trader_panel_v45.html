@@ -1705,6 +1705,42 @@ body[data-active-mode="stats"] [data-mode="stats"]{display:block}
 <!-- ═══════════════════════════════════════════════════════ -->
 <!-- v39: KARAR TETİKLEYİCİ — Decision Trigger             -->
 <!-- ═══════════════════════════════════════════════════════ -->
+<div class="sec fade" data-mode="trade">
+  <div class="sec-lbl">Grafik</div>
+
+  <!-- Parite & TF seçici -->
+  <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px;box-shadow:var(--sh)">
+    <div style="display:flex;gap:4px">
+      <button onclick="tvSetPair('OKX:ETHUSDT.P')" id="tvBtnETH"
+        style="padding:4px 12px;border-radius:20px;border:none;background:var(--t1);color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font)">ETH</button>
+      <button onclick="tvSetPair('OKX:BTCUSDT.P')" id="tvBtnBTC"
+        style="padding:4px 12px;border-radius:20px;border:none;background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid var(--bd)">BTC</button>
+      <button onclick="tvSetPair('OKX:SOLUSDT.P')" id="tvBtnSOL"
+        style="padding:4px 12px;border-radius:20px;border:none;background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid var(--bd)">SOL</button>
+    </div>
+    <div style="width:1px;height:16px;background:var(--bd)"></div>
+    <div style="display:flex;gap:3px">
+      <button onclick="tvSetTF('15')"  id="tvTF15"
+        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">15m</button>
+      <button onclick="tvSetTF('60')"  id="tvTF60"
+        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">1H</button>
+      <button onclick="tvSetTF('240')" id="tvTF240"
+        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--t1);color:#fff;font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">4H</button>
+      <button onclick="tvSetTF('D')"   id="tvTFD"
+        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">1D</button>
+    </div>
+  </div>
+
+  <!-- TradingView Widget -->
+  <div style="border-radius:var(--r);overflow:hidden;border:1px solid var(--bd);box-shadow:var(--sh);width:100%;max-width:100%;position:relative">
+    <div id="tv_chart_container" style="height:calc(100vh - 200px);min-height:480px;width:100%;overflow:hidden;max-width:100%"></div>
+  </div>
+  <div style="font-size:8px;color:var(--t5);text-align:right;padding:4px 8px">
+    TradingView · OKX Perpetual Futures
+  </div>
+</div>
+
+<!-- ── FAZA 2: OTOPİLOT SİNYAL MERKEZİ ── -->
 <div class="sec fade" data-mode="trade" style="padding-top:12px">
   <div class="sec-lbl">⚡ Karar Merkezi</div>
 
@@ -1953,42 +1989,6 @@ body[data-active-mode="stats"] [data-mode="stats"]{display:block}
   </div>
 </div>
 <!-- ── FAZA 2: GRAFİK ── -->
-<div class="sec fade" data-mode="trade">
-  <div class="sec-lbl">Grafik</div>
-
-  <!-- Parite & TF seçici -->
-  <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px;box-shadow:var(--sh)">
-    <div style="display:flex;gap:4px">
-      <button onclick="tvSetPair('OKX:ETHUSDT.P')" id="tvBtnETH"
-        style="padding:4px 12px;border-radius:20px;border:none;background:var(--t1);color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font)">ETH</button>
-      <button onclick="tvSetPair('OKX:BTCUSDT.P')" id="tvBtnBTC"
-        style="padding:4px 12px;border-radius:20px;border:none;background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid var(--bd)">BTC</button>
-      <button onclick="tvSetPair('OKX:SOLUSDT.P')" id="tvBtnSOL"
-        style="padding:4px 12px;border-radius:20px;border:none;background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid var(--bd)">SOL</button>
-    </div>
-    <div style="width:1px;height:16px;background:var(--bd)"></div>
-    <div style="display:flex;gap:3px">
-      <button onclick="tvSetTF('15')"  id="tvTF15"
-        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">15m</button>
-      <button onclick="tvSetTF('60')"  id="tvTF60"
-        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">1H</button>
-      <button onclick="tvSetTF('240')" id="tvTF240"
-        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--t1);color:#fff;font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">4H</button>
-      <button onclick="tvSetTF('D')"   id="tvTFD"
-        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">1D</button>
-    </div>
-  </div>
-
-  <!-- TradingView Widget -->
-  <div style="border-radius:var(--r);overflow:hidden;border:1px solid var(--bd);box-shadow:var(--sh)">
-    <div id="tv_chart_container" style="height:420px"></div>
-  </div>
-  <div style="font-size:8px;color:var(--t5);text-align:right;padding:4px 8px">
-    TradingView · OKX Perpetual Futures
-  </div>
-</div>
-
-<!-- ── FAZA 2: OTOPİLOT SİNYAL MERKEZİ ── -->
 <div class="sec fade" data-mode="trade">
   <div class="sec-lbl">🤖 Otopilot Sinyal Merkezi</div>
 
@@ -6361,11 +6361,8 @@ let _tvWidget = null;
 function tvInitChart() {
   const container = document.getElementById('tv_chart_container');
   if (!container) return;
-
-  // Eski widget'ı temizle
   container.innerHTML = '';
 
-  // TradingView Advanced Chart Widget
   const script = document.createElement('script');
   script.type  = 'text/javascript';
   script.src   = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
@@ -6375,34 +6372,56 @@ function tvInitChart() {
                  localStorage.getItem('darkMode') === '1';
 
   script.innerHTML = JSON.stringify({
-    "autosize":           true,
-    "symbol":             _tvPair,
-    "interval":           _tvTF,
-    "timezone":           "Europe/Istanbul",
-    "theme":              isDark ? "dark" : "light",
-    "style":              "1",          // Candlestick
-    "locale":             "tr",
-    "backgroundColor":    isDark ? "rgba(15,15,20,1)" : "rgba(255,255,255,1)",
-    "gridColor":          isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
-    "withdateranges":     false,
-    "hide_side_toolbar":  false,
-    "allow_symbol_change":false,
-    "calendar":           false,
-    "support_host":       "https://www.tradingview.com",
+    "autosize":            true,
+    "symbol":              _tvPair,
+    "interval":            _tvTF,
+    "timezone":            "Europe/Istanbul",
+    "theme":               isDark ? "dark" : "light",
+    "style":               "1",
+    "locale":              "tr",
+    "backgroundColor":     isDark ? "rgba(13,13,18,1)" : "rgba(255,255,255,1)",
+    "gridColor":           isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
+    "withdateranges":      true,
+    "range":               "5D",
+    "hide_side_toolbar":   true,
+    "hide_top_toolbar":    false,
+    "hide_legend":         false,
+    "allow_symbol_change": true,
+    "save_image":          false,
+    "calendar":            false,
+    "hide_volume":         false,
+    "support_host":        "https://www.tradingview.com",
     "studies": [
-      "STD;EMA@tv-basicstudies",
       "STD;Bollinger_Bands@tv-basicstudies",
-      "STD;RSI@tv-basicstudies"
-    ]
+      "STD;EMA@tv-basicstudies",
+      "STD;RSI@tv-basicstudies",
+      "STD;Volume@tv-basicstudies"
+    ],
+    "studies_overrides": {
+      "bollinger bands.upper.color": "#2962FF",
+      "bollinger bands.lower.color": "#2962FF",
+      "bollinger bands.median.color": "#FF6D00",
+      "rsi.rsi.color": "#7B1FA2",
+      "rsi.overbought value": 70,
+      "rsi.oversold value": 30
+    },
+    "overrides": {
+      "mainSeriesProperties.candleStyle.upColor":           "#26a69a",
+      "mainSeriesProperties.candleStyle.downColor":         "#ef5350",
+      "mainSeriesProperties.candleStyle.borderUpColor":     "#26a69a",
+      "mainSeriesProperties.candleStyle.borderDownColor":   "#ef5350",
+      "mainSeriesProperties.candleStyle.wickUpColor":       "#26a69a",
+      "mainSeriesProperties.candleStyle.wickDownColor":     "#ef5350"
+    }
   });
 
   const wrapper = document.createElement('div');
   wrapper.className = 'tradingview-widget-container';
-  wrapper.style.height = '100%';
+  wrapper.style.cssText = 'height:100%;width:100%;max-width:100%;overflow:hidden';
 
   const inner = document.createElement('div');
   inner.className = 'tradingview-widget-container__widget';
-  inner.style.height = '100%';
+  inner.style.cssText = 'height:100%;width:100%;max-width:100%;overflow:hidden';
 
   wrapper.appendChild(inner);
   wrapper.appendChild(script);
