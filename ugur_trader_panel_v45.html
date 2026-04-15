@@ -2544,73 +2544,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(255,255,255,0.97) !im
 </div>
 
   <!-- İşlem Kaydı -->
-  <div class="card mt8">
-    <div class="card-head">
-      <div class="card-title">📝 İşlem Kaydı</div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <span class="card-hint" id="jrnCount">0 işlem</span>
-        <button onclick="jrnClearAll()" style="font-size:9px;color:var(--red);background:none;border:none;cursor:pointer;font-family:var(--font)">Temizle</button>
-      </div>
-    </div>
-    <div class="card-body">
-
-      <!-- Özet istatistik -->
-      <div class="jrn-summary" id="jrnSummary" style="display:none">
-        <div class="jrn-sum-box">
-          <div class="jrn-sum-lbl">Win Rate</div>
-          <div class="jrn-sum-val" id="jrnWR">—</div>
-        </div>
-        <div class="jrn-sum-box">
-          <div class="jrn-sum-lbl">Toplam PnL</div>
-          <div class="jrn-sum-val" id="jrnTotalPnl">—</div>
-        </div>
-        <div class="jrn-sum-box">
-          <div class="jrn-sum-lbl">Ort. R:R</div>
-          <div class="jrn-sum-val" id="jrnAvgRR" style="color:var(--amber)">—</div>
-        </div>
-      </div>
-
-      <!-- Pair seçimi -->
-      <div class="jrn-pair-row">
-        <button class="jrn-pair-btn on" id="jrnP_ETH" onclick="jrnSetPair('ETH')">ETH</button>
-        <button class="jrn-pair-btn" id="jrnP_BTC" onclick="jrnSetPair('BTC')">BTC</button>
-        <button class="jrn-pair-btn" id="jrnP_SOL" onclick="jrnSetPair('SOL')">SOL</button>
-        <button class="jrn-pair-btn" id="jrnP_BNB" onclick="jrnSetPair('BNB')">BNB</button>
-        <button class="jrn-pair-btn" id="jrnP_XRP" onclick="jrnSetPair('XRP')">XRP</button>
-        <button class="jrn-pair-btn" id="jrnP_OTHER" onclick="jrnSetPair('OTHER')">Diğer</button>
-      </div>
-      <!-- Yön -->
-      <div class="jrn-dir-row">
-        <button class="jrn-dir-btn" id="jrnDirLong" onclick="jrnSetDir('LONG')">▲ LONG</button>
-        <button class="jrn-dir-btn" id="jrnDirShort" onclick="jrnSetDir('SHORT')">▼ SHORT</button>
-      </div>
-      <!-- Fiyat + Pozisyon -->
-      <div class="jrn-inputs">
-        <div class="jrn-field">
-          <div class="jrn-lbl">Giriş Fiyatı</div>
-          <input class="jrn-inp" id="jrnEntry" type="number" placeholder="örn. 2450" step="any">
-        </div>
-        <div class="jrn-field">
-          <div class="jrn-lbl">Çıkış Fiyatı</div>
-          <input class="jrn-inp" id="jrnExit" type="number" placeholder="örn. 2510" step="any">
-        </div>
-        <div class="jrn-field">
-          <div class="jrn-lbl">Pozisyon Büyüklüğü ($)</div>
-          <input class="jrn-inp" id="jrnSize" type="number" placeholder="örn. 5000" step="any">
-        </div>
-        <div class="jrn-field">
-          <div class="jrn-lbl">Not (isteğe bağlı)</div>
-          <input class="jrn-inp" id="jrnNote" type="text" placeholder="kısa not…" style="font-family:var(--font);font-size:11px">
-        </div>
-      </div>
-      <button class="jrn-save-btn" onclick="jrnSave()">+ İşlem Kaydet</button>
-
-      <!-- İşlem Listesi -->
-      <div class="jrn-list" id="jrnList">
-        <div class="jrn-empty">Henüz kayıt yok. İlk işlemini kaydet.</div>
-      </div>
-    </div>
-  </div>
+  
 </div>
 
 
