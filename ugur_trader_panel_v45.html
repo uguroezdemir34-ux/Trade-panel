@@ -4485,13 +4485,13 @@ document.getElementById('datePill').textContent =
 function getBal() {
   const v = ld('ug7_bal');
   if (v !== null) return v;
-  return -25662.65; // varsayılan başlangıç
+  return 0;
 }
 
-// Başlangıç: -25662.65 (toplam geçmiş zarar), bir kez yaz
+// Başlangıç bakiyesi — OKX bağlanınca üzerine yazılır
 if (ld('ug7_bal') === null) {
-  sv('ug7_bal', -25662.65);
-  sv('ug7_start', -25662.65);
+  sv('ug7_bal', 0);
+  sv('ug7_start', 0);
 }
 
 // OKX API bakiyeyi otomatik günceller — manuel giriş yok
@@ -5255,6 +5255,7 @@ async function spotManualRefresh() {
       const finalBal = totalOKX > 0 ? totalOKX : getBal();
 
       sv('ug7_bal', finalBal);
+      sv('ug7_start', finalBal); // başlangıç bakiyesini de güncelle
       const balInp = document.getElementById('balInp');
       if (balInp) balInp.value = finalBal.toFixed(2);
 
