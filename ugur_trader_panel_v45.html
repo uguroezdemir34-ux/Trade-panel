@@ -3318,468 +3318,663 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(255,255,255,0.97) !im
 <!-- ── BILDIRIM MODALI ── -->
 <div id="notifToast" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--t1);color:var(--bg);padding:10px 18px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--font);z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:opacity .3s">—</div>
 
-<!-- ═══ KOKPİT v3 — RESPONSIVE CLEAN QUANT TERMINAL ═══ -->
+<!-- ═══ KOKPİT v4 — BLOOMBERG TERMINAL ═══ -->
 <div class="sec fade" data-mode="cockpit" style="padding:0;margin:0">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap');
 
-/* ─── CSS VARIABLES ─── */
-:root {
-  --cq-bg:      #F1F5F9;
-  --cq-card:    #FFFFFF;
-  --cq-border:  #E2E8F0;
-  --cq-sh:      0 1px 3px rgba(0,0,0,.05), 0 4px 16px rgba(0,0,0,.04);
-  --cq-sh-h:    0 8px 30px rgba(0,0,0,.10);
-  --cq-text:    #0F172A;
-  --cq-muted:   #64748B;
-  --cq-faint:   #94A3B8;
-  --cq-accent:  #3B82F6;
-  --cq-green:   #16A34A;
-  --cq-red:     #DC2626;
-  --cq-amber:   #D97706;
-  --cq-r:       14px;
-  --cq-r-lg:    20px;
-}
-body.cq-green-mode { --cq-accent: #16A34A; }
-body.cq-red-mode   { --cq-accent: #DC2626; }
-body.cq-amber-mode { --cq-accent: #D97706; }
-
-/* ─── WRAP ─── */
-#cqv3 {
-  background: var(--cq-bg);
+/* ─── BLOOMBERG TERMINAL THEME ─── */
+#blm {
+  background: #0A0A0A;
   min-height: 100vh;
-  padding: 12px 10px 100px;
+  padding: 0 0 60px 0;
   box-sizing: border-box;
   overflow-x: hidden;
-  font-family: 'Inter', sans-serif;
+  font-family: 'IBM Plex Mono', monospace;
+  color: #E8E8E8;
 }
 
-/* ─── RESPONSIVE GRID ─── */
-/* Mobile: 1 col | Tablet: 2 col | Desktop: 3 col */
-.cq-layout {
+/* ─── TOP BAR ─── */
+.blm-topbar {
+  background: #FF6600;
+  padding: 5px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.blm-topbar-brand {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 700;
+  color: #000;
+  letter-spacing: .12em;
+}
+.blm-topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.blm-topbar-time {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  font-weight: 600;
+  color: #000;
+  letter-spacing: .06em;
+}
+.blm-topbar-live {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 9px;
+  font-weight: 700;
+  color: #000;
+}
+.blm-live-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #00CC44;
+  animation: blmpulse 1.5s ease-in-out infinite;
+}
+@keyframes blmpulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.blm-refresh {
+  background: #000;
+  border: none;
+  color: #FF6600;
+  padding: 3px 10px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: .08em;
+}
+.blm-refresh:active { opacity: .7; }
+
+/* ─── STATUS BAR ─── */
+.blm-statusbar {
+  background: #1A1A1A;
+  border-bottom: 1px solid #FF6600;
+  padding: 4px 12px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.blm-status-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.blm-status-lbl {
+  font-size: 8px;
+  font-weight: 700;
+  color: #666;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.blm-status-val {
+  font-size: 10px;
+  font-weight: 700;
+  color: #FF6600;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+/* ─── GRID ─── */
+.blm-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 10px;
+  gap: 1px;
+  background: #222;
+  padding: 1px;
 }
-@media (min-width: 768px) {
-  #cqv3 { padding: 16px 20px 40px; }
-  .cq-layout { grid-template-columns: 220px 1fr 220px; gap: 14px; align-items: start; }
-  .cq-col-left, .cq-col-right { display: flex; flex-direction: column; gap: 10px; }
-  .cq-col-center { display: flex; flex-direction: column; gap: 10px; }
-  .cq-prices { grid-template-columns: 1fr 1fr; }
-  .cq-g3 { grid-template-columns: 1fr 1fr 1fr; }
+@media (min-width: 600px) {
+  .blm-grid { grid-template-columns: 1fr 1fr; }
 }
-@media (min-width: 1200px) {
-  #cqv3 { padding: 20px 40px 40px; max-width: 1400px; margin: 0 auto; }
-  .cq-layout { grid-template-columns: 260px 1fr 260px; gap: 18px; }
+@media (min-width: 960px) {
+  .blm-grid { grid-template-columns: 1fr 1fr 1fr; }
 }
-
-/* Mobile: kolon düzeni yok, düz sıra */
-.cq-col-left, .cq-col-center, .cq-col-right {
-  display: contents; /* Mobile: içerik sırasına göre */
-}
-@media (min-width: 768px) {
-  .cq-col-left, .cq-col-center, .cq-col-right {
-    display: flex; flex-direction: column; gap: 10px;
-  }
+@media (min-width: 1280px) {
+  .blm-grid { grid-template-columns: 1fr 1fr 1fr 1fr; }
 }
 
-/* ─── HEADER ─── */
-.cq3-header {
-  background: var(--cq-card);
-  border: 1px solid var(--cq-border);
-  border-radius: var(--cq-r);
-  padding: 12px 16px;
-  margin-bottom: 10px;
-  display: flex; align-items: center; justify-content: space-between;
-  box-shadow: var(--cq-sh);
-}
-.cq3-brand {
-  display: flex; align-items: center; gap: 8px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px; font-weight: 700;
-  color: var(--cq-text); letter-spacing: .08em;
-}
-.cq3-brand .live-dot {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--cq-green);
-  animation: cq3pulse 2s ease-in-out infinite;
-}
-@keyframes cq3pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.25;transform:scale(.6)} }
-.cq3-time { font-family:'JetBrains Mono',monospace; font-size:9px; color:var(--cq-faint); margin-top:2px; }
-.cq3-refresh {
-  background: var(--cq-bg); border: 1px solid var(--cq-border);
-  color: var(--cq-muted); border-radius: 8px;
-  padding: 6px 12px; font-size: 9px; font-weight: 600;
-  font-family: 'Inter', sans-serif; cursor: pointer;
-  transition: all .15s; letter-spacing: .04em;
-}
-.cq3-refresh:active { background: var(--cq-border); transform: scale(.95); }
-
-/* ─── MENTAL BANNER ─── */
-.cq3-mental {
-  border-radius: var(--cq-r);
-  border: 1.5px solid var(--cq-accent);
-  background: color-mix(in srgb, var(--cq-accent) 8%, white);
-  padding: 12px 14px;
-  display: flex; align-items: center; gap: 10px;
-  cursor: pointer; transition: all .3s;
-  margin-bottom: 10px;
-}
-.cq3-mental-emoji { font-size: 24px; flex-shrink: 0; }
-.cq3-mental-title { font-size: 12px; font-weight: 700; color: var(--cq-text); }
-.cq3-mental-sub   { font-size: 10px; color: var(--cq-muted); margin-top: 2px; }
-.cq3-mental-badge {
-  margin-left: auto; padding: 5px 12px; border-radius: 20px;
-  background: var(--cq-accent); color: #fff;
-  font-size: 10px; font-weight: 700; white-space: nowrap;
-  font-family: 'JetBrains Mono', monospace; letter-spacing: .04em;
-}
-
-/* ─── KART ─── */
-.cq3-card {
-  background: var(--cq-card);
-  border: 1px solid var(--cq-border);
-  border-radius: var(--cq-r);
-  padding: 14px;
-  box-shadow: var(--cq-sh);
+/* ─── PANEL ─── */
+.blm-panel {
+  background: #0F0F0F;
+  padding: 0;
   cursor: pointer;
-  transition: box-shadow .2s, border-color .2s, transform .15s;
-  position: relative; overflow: hidden;
+  transition: background .1s;
+  min-height: 120px;
 }
-.cq3-card::before {
-  content: ''; position: absolute;
-  top: 0; left: 0; right: 0; height: 3px;
-  border-radius: var(--cq-r) var(--cq-r) 0 0;
-  background: var(--cq-accent);
-  opacity: 0; transition: opacity .2s;
-}
-.cq3-card:hover { box-shadow: var(--cq-sh-h); border-color: var(--cq-accent); }
-.cq3-card:hover::before { opacity: 1; }
-.cq3-card:active { transform: scale(.97); }
-.cq3-card.accent::before { opacity: 1; background: var(--cq-accent); }
-.cq3-card.green::before  { opacity: 1; background: var(--cq-green); }
-.cq3-card.red::before    { opacity: 1; background: var(--cq-red); }
-.cq3-card.amber::before  { opacity: 1; background: var(--cq-amber); }
+.blm-panel:hover { background: #161616; }
+.blm-panel:active { background: #1A1A1A; }
 
-.cq3-label {
-  font-size: 8px; font-weight: 700; letter-spacing: .12em;
-  text-transform: uppercase; color: var(--cq-faint);
-  margin-bottom: 8px; display: flex; align-items: center; gap: 5px;
+/* Panel başlık çubuğu */
+.blm-panel-header {
+  background: #1C1C1C;
+  border-bottom: 1px solid #333;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
-.cq3-num  { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: var(--cq-text); line-height: 1.1; letter-spacing: -.02em; }
-.cq3-med  { font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: var(--cq-text); }
-.cq3-sub  { font-size: 10px; color: var(--cq-muted); margin-top: 4px; }
-.cq3-xs   { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: var(--cq-faint); }
-
-.cq3-green { color: var(--cq-green) !important; }
-.cq3-red   { color: var(--cq-red)   !important; }
-.cq3-amber { color: var(--cq-amber) !important; }
-.cq3-blue  { color: #2563EB !important; }
-
-/* ─── BADGE ─── */
-.cq3-badge {
-  display: inline-flex; align-items: center;
-  padding: 3px 9px; border-radius: 20px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; font-weight: 700; margin-top: 5px;
+.blm-panel-title {
+  font-size: 8px;
+  font-weight: 700;
+  color: #FF6600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
 }
-.cq3-badge.green  { background:#F0FDF4; color:#166534; border:1px solid #BBF7D0; }
-.cq3-badge.red    { background:#FFF1F2; color:#9F1239; border:1px solid #FECDD3; }
-.cq3-badge.amber  { background:#FFFBEB; color:#92400E; border:1px solid #FDE68A; }
-.cq3-badge.blue   { background:#EFF6FF; color:#1E40AF; border:1px solid #BFDBFE; }
-.cq3-badge.gray   { background:#F8FAFC; color:#475569; border:1px solid #E2E8F0; }
-
-/* ─── FİYAT KARTLARI ─── */
-.cq3-prices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-.cq3-price {
-  background: var(--cq-card); border: 1px solid var(--cq-border);
-  border-radius: var(--cq-r); padding: 14px;
-  box-shadow: var(--cq-sh); cursor: pointer; transition: all .2s;
-  position: relative; overflow: hidden;
+.blm-panel-tag {
+  font-size: 7px;
+  color: #444;
+  letter-spacing: .08em;
 }
-.cq3-price::after { content:''; position:absolute; top:0;left:0;right:0;height:3px; }
-.cq3-price.eth::after { background: linear-gradient(90deg,#3B82F6,#06B6D4); }
-.cq3-price.btc::after { background: linear-gradient(90deg,#F59E0B,#EF4444); }
-.cq3-price:hover { box-shadow:var(--cq-sh-h); border-color:var(--cq-accent); transform:translateY(-1px); }
-.cq3-price:active { transform:scale(.97); }
-.cq3-price-lbl { font-size:8px;font-weight:700;color:var(--cq-faint);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:5px; }
-.cq3-price-val { font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;color:var(--cq-text);letter-spacing:-.02em;line-height:1.1; }
-.cq3-price-chg { font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;margin-top:4px; }
+
+/* Panel içerik */
+.blm-panel-body {
+  padding: 10px;
+}
+
+/* ─── TİP'LER ─── */
+.blm-big {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.01em;
+}
+.blm-med {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1.1;
+}
+.blm-sm {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  color: #888;
+  margin-top: 3px;
+}
+.blm-xs {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px;
+  color: #555;
+}
+
+/* ─── RENKLER ─── */
+.blm-orange { color: #FF6600 !important; }
+.blm-green  { color: #00CC44 !important; }
+.blm-red    { color: #FF3333 !important; }
+.blm-amber  { color: #FFB800 !important; }
+.blm-white  { color: #E8E8E8 !important; }
+.blm-dim    { color: #555 !important; }
+
+/* ─── SEPARATOR ─── */
+.blm-sep {
+  border: none;
+  border-top: 1px solid #2A2A2A;
+  margin: 8px 0;
+}
+
+/* ─── TABLE ─── */
+.blm-table { width: 100%; border-collapse: collapse; }
+.blm-table td {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 10px;
+  padding: 3px 0;
+  border-bottom: 1px solid #1C1C1C;
+}
+.blm-table td:last-child { text-align: right; }
+.blm-table tr:last-child td { border: none; }
 
 /* ─── GAUGE ─── */
-.cq3-gauge { position:relative;width:82px;height:82px;margin:0 auto 6px; }
-.cq3-gauge svg { transform:rotate(-90deg); }
-.cq3-gauge-val { position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-family:'JetBrains Mono',monospace;font-size:19px;font-weight:700;color:var(--cq-text);text-align:center; }
-.cq3-conf-lbl { font-size:9px;font-weight:700;text-align:center;padding:4px 10px;border-radius:20px;margin:0 auto;display:table; }
-.cq3-conf-high { background:#F0FDF4;color:#166534;border:1px solid #BBF7D0; }
-.cq3-conf-mid  { background:#FFFBEB;color:#92400E;border:1px solid #FDE68A; }
-.cq3-conf-low  { background:#F8FAFC;color:#94A3B8;border:1px solid #E2E8F0; }
+.blm-gauge-wrap {
+  position: relative;
+  width: 80px; height: 80px;
+  margin: 0 auto;
+}
+.blm-gauge-wrap svg { transform: rotate(-90deg); }
+.blm-gauge-val {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 18px;
+  font-weight: 700;
+  color: #FF6600;
+  text-align: center;
+}
 
 /* ─── PROGRESS BAR ─── */
-.cq3-bar { height:4px;background:#F1F5F9;border-radius:2px;overflow:hidden;margin-top:8px; }
-.cq3-bar-fill { height:100%;border-radius:2px;transition:width .6s ease; }
+.blm-bar { height: 3px; background: #222; margin-top: 6px; }
+.blm-bar-fill { height: 100%; transition: width .6s ease; }
 
 /* ─── PRE-FLIGHT ─── */
-.cq3-pf { display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid #F8FAFC; }
-.cq3-pf:last-child { border:none; }
-.cq3-pf-dot { width:9px;height:9px;border-radius:50%;flex-shrink:0;transition:background .3s,box-shadow .3s; }
-.cq3-pf-name { font-size:10px;font-weight:500;color:var(--cq-text);flex:1; }
-.cq3-pf-val  { font-family:'JetBrains Mono',monospace;font-size:8px;color:var(--cq-faint);max-width:80px;text-align:right; }
-
-/* ─── KELLY BOX ─── */
-.cq3-kelly-row { display:flex;justify-content:space-between;align-items:center;background:var(--cq-bg);border:1px solid var(--cq-border);border-radius:10px;padding:10px 12px;margin-top:8px; }
-.cq3-kelly-lbl { font-size:9px;color:var(--cq-faint);font-weight:500;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px; }
-.cq3-kelly-val { font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:var(--cq-text); }
-
-/* ─── İŞLEM KAYDI FORM ─── */
-.cq3-input {
-  width:100%; padding:9px 10px;
-  border:1px solid var(--cq-border); border-radius:8px;
-  font-family:'JetBrains Mono',monospace; font-size:12px;
-  color:var(--cq-text); background:var(--cq-bg);
-  box-sizing:border-box; outline:none; transition:border-color .2s;
+.blm-pf-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid #1C1C1C;
 }
-.cq3-input:focus { border-color:var(--cq-accent); background:#fff; }
-.cq3-input-lbl { font-size:8px;font-weight:700;color:var(--cq-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px; }
+.blm-pf-row:last-child { border: none; }
+.blm-pf-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.blm-pf-name {
+  font-size: 9px;
+  color: #888;
+  flex: 1;
+  letter-spacing: .04em;
+}
+.blm-pf-val {
+  font-size: 8px;
+  color: #555;
+  text-align: right;
+}
 
 /* ─── TRADE BUTONLAR ─── */
-.cq3-btn-long  { width:100%;padding:14px;border:none;border-radius:10px;background:#16A34A;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 12px rgba(22,163,74,.25);transition:all .15s; }
-.cq3-btn-short { width:100%;padding:14px;border:none;border-radius:10px;background:#DC2626;color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;box-shadow:0 4px 12px rgba(220,38,38,.25);transition:all .15s; }
-.cq3-btn-long:active,.cq3-btn-short:active { transform:scale(.97); }
+.blm-btn-long {
+  width: 100%; padding: 12px;
+  background: #003311;
+  border: 1px solid #00CC44;
+  color: #00CC44;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; letter-spacing: .1em;
+  transition: all .1s;
+}
+.blm-btn-long:active { background: #004D1A; }
+.blm-btn-short {
+  width: 100%; padding: 12px;
+  background: #330000;
+  border: 1px solid #FF3333;
+  color: #FF3333;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px; font-weight: 700;
+  cursor: pointer; letter-spacing: .1em;
+  transition: all .1s;
+}
+.blm-btn-short:active { background: #4D0000; }
 
-/* ─── SECTION TITLE ─── */
-.cq3-section-ttl { font-size:8px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--cq-faint);margin:12px 0 8px 1px;display:flex;align-items:center;gap:6px; }
-.cq3-section-ttl::after { content:'';flex:1;height:1px;background:var(--cq-border); }
+/* ─── İNPUT ─── */
+.blm-input {
+  width: 100%;
+  background: #1A1A1A;
+  border: 1px solid #333;
+  color: #E8E8E8;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  padding: 7px 8px;
+  box-sizing: border-box;
+  outline: none;
+  transition: border-color .15s;
+}
+.blm-input:focus { border-color: #FF6600; }
+.blm-input-lbl {
+  font-size: 8px;
+  font-weight: 700;
+  color: #555;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
 
-/* ─── GRAFİK BUTONLAR ─── */
-.cq3-chart-grid { display:grid;grid-template-columns:repeat(4,1fr);gap:6px; }
-.cq3-chart-btn  { padding:11px 4px;border-radius:10px;border:1px solid var(--cq-border);background:var(--cq-card);cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--cq-text);transition:all .15s;box-shadow:var(--cq-sh); }
-.cq3-chart-btn:hover { border-color:var(--cq-accent);color:var(--cq-accent); }
-.cq3-chart-btn:active { transform:scale(.95); }
+/* ─── TICKER PAIRS ─── */
+.blm-pair-btn {
+  padding: 4px 9px;
+  background: #1A1A1A;
+  border: 1px solid #333;
+  color: #888;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  cursor: pointer;
+  transition: all .1s;
+}
+.blm-pair-btn.on {
+  background: #FF6600;
+  border-color: #FF6600;
+  color: #000;
+}
+
+/* ─── GRAFIK BUTONLAR ─── */
+.blm-chart-btn {
+  padding: 8px;
+  background: #1A1A1A;
+  border: 1px solid #333;
+  color: #888;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 9px; font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: all .1s;
+}
+.blm-chart-btn:hover { border-color: #FF6600; color: #FF6600; }
+.blm-chart-btn:active { background: #FF6600; color: #000; }
 
 /* ─── MODAL ─── */
-#ckModal { display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(15,23,42,.5);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);z-index:9999;padding:16px;overflow-y:auto;box-sizing:border-box; }
-#ckModal.open { display:flex;flex-direction:column;justify-content:flex-end; }
-#ckModalContent { background:#fff;border-radius:20px;padding:22px;box-shadow:0 -20px 60px rgba(0,0,0,.12);max-height:80vh;overflow-y:auto;position:relative; }
-#ckModalClose { position:absolute;top:14px;right:14px;background:var(--cq-bg);border:1px solid var(--cq-border);color:var(--cq-muted);border-radius:50%;width:32px;height:32px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700; }
-#ckModalTitle { font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--cq-text);letter-spacing:.06em;margin-bottom:16px;padding-right:40px; }
-
-/* ─── ANİMASYON ─── */
-@keyframes cq3in { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
-.cq3-card,.cq3-price { animation:cq3in .3s ease both; }
-.cq3-card:nth-child(1){animation-delay:.04s}.cq3-card:nth-child(2){animation-delay:.08s}
-.cq3-card:nth-child(3){animation-delay:.12s}.cq3-card:nth-child(4){animation-delay:.16s}
-.cq3-card:nth-child(5){animation-delay:.20s}.cq3-card:nth-child(6){animation-delay:.24s}
+#ckModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,.85);
+  z-index: 9999;
+  padding: 20px;
+  overflow-y: auto;
+  box-sizing: border-box;
+}
+#ckModal.open { display: flex; flex-direction: column; justify-content: center; }
+#ckModalContent {
+  background: #0F0F0F;
+  border: 1px solid #FF6600;
+  max-width: 500px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 20px;
+  position: relative;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+#ckModalClose {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: none;
+  border: 1px solid #333;
+  color: #888;
+  width: 28px; height: 28px;
+  font-size: 14px;
+  cursor: pointer;
+  font-family: monospace;
+  display: flex; align-items: center; justify-content: center;
+}
+#ckModalClose:hover { border-color: #FF6600; color: #FF6600; }
+#ckModalTitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px; font-weight: 700;
+  color: #FF6600;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  padding-right: 36px;
+  border-bottom: 1px solid #222;
+  padding-bottom: 10px;
+}
 </style>
 
-<div id="cqv3">
+<div id="blm">
 
-  <!-- ─── HEADER ─── -->
-  <div class="cq3-header">
-    <div>
-      <div class="cq3-brand"><span class="live-dot"></span>COMMAND CENTER</div>
-      <div class="cq3-time" id="cq3Time">—</div>
+  <!-- ─── TOPBAR ─── -->
+  <div class="blm-topbar">
+    <div class="blm-topbar-brand">▶ UĞUR TRADER · COMMAND CENTER</div>
+    <div class="blm-topbar-right">
+      <div class="blm-topbar-live"><span class="blm-live-dot"></span>LIVE</div>
+      <div class="blm-topbar-time" id="blmTime">--:--:--</div>
+      <button class="blm-refresh" onclick="refreshCockpit()">F5 REFRESH</button>
     </div>
-    <button class="cq3-refresh" onclick="refreshCockpit()">↻ YENİLE</button>
   </div>
 
-  <!-- ─── MENTAL BANNER ─── -->
-  <div class="cq3-mental" id="cq3Mental" onclick="openCockpitModal('mental')">
-    <div class="cq3-mental-emoji" id="cq3MentalEmoji">⚪</div>
-    <div>
-      <div class="cq3-mental-title">Kaptan Durumu</div>
-      <div class="cq3-mental-sub" id="cq3MentalSub">Hazırlık sekmesinden mental durumunu gir</div>
+  <!-- ─── STATUS BAR (fiyatlar + durum) ─── -->
+  <div class="blm-statusbar">
+    <div class="blm-status-item">
+      <span class="blm-status-lbl">ETH/USDT</span>
+      <span class="blm-status-val" id="blmEthBar">—</span>
+      <span id="blmEthBarChg" style="font-size:9px;font-family:'IBM Plex Mono',monospace"></span>
     </div>
-    <div class="cq3-mental-badge" id="cq3MentalBadge">—</div>
+    <div class="blm-status-item">
+      <span class="blm-status-lbl">BTC/USDT</span>
+      <span class="blm-status-val blm-amber" id="blmBtcBar">—</span>
+      <span id="blmBtcBarChg" style="font-size:9px;font-family:'IBM Plex Mono',monospace"></span>
+    </div>
+    <div class="blm-status-item">
+      <span class="blm-status-lbl">REJİM</span>
+      <span class="blm-status-val" id="blmRegBar">—</span>
+    </div>
+    <div class="blm-status-item">
+      <span class="blm-status-lbl">F&G</span>
+      <span class="blm-status-val" id="blmFngBar2">—</span>
+    </div>
+    <div class="blm-status-item">
+      <span class="blm-status-lbl">MENTAL</span>
+      <span class="blm-status-val" id="blmMentalBar">—</span>
+    </div>
+    <div class="blm-status-item">
+      <span class="blm-status-lbl">BAKİYE</span>
+      <span class="blm-status-val" id="blmBalBar">—</span>
+    </div>
   </div>
 
-  <!-- ─── 3 SÜTUN LAYOUT ─── -->
-  <div class="cq-layout">
+  <!-- ─── PANEL GRID ─── -->
+  <div class="blm-grid">
 
-    <!-- SOL: Kontrol Merkezi -->
-    <div class="cq-col-left">
+    <!-- 1. ETH/BTC FİYATLAR -->
+    <div class="blm-panel" onclick="openCockpitModal('chart','ETH')">
+      <div class="blm-panel-header">
+        <span class="blm-panel-title">ETH/USDT PERP</span>
+        <span class="blm-panel-tag">OKX</span>
+      </div>
+      <div class="blm-panel-body">
+        <div class="blm-big" id="blmEthPx">—</div>
+        <div class="blm-sm" id="blmEthChg">—</div>
+        <hr class="blm-sep">
+        <div class="blm-panel-header" style="background:none;border:none;padding:0;margin-top:2px">
+          <span class="blm-panel-title" style="color:#FFB800">BTC/USDT PERP</span>
+          <span class="blm-panel-tag">OKX</span>
+        </div>
+        <div class="blm-med blm-amber" id="blmBtcPx" style="margin-top:4px">—</div>
+        <div class="blm-sm" id="blmBtcChg">—</div>
+      </div>
+    </div>
 
-      <div class="cq3-section-ttl">✈️ Uçuş Öncesi</div>
-      <div class="cq3-card green" onclick="openCockpitModal('preflight')">
-        <div class="cq3-label">✈️ Kalkış Kontrolü</div>
-        <div id="cq3PfRows">
-          <div class="cq3-pf"><div class="cq3-pf-dot" id="cq3pf1" style="background:#CBD5E0"></div><div class="cq3-pf-name">Likidite</div><div class="cq3-pf-val" id="cq3pf1v">—</div></div>
-          <div class="cq3-pf"><div class="cq3-pf-dot" id="cq3pf2" style="background:#CBD5E0"></div><div class="cq3-pf-name">Momentum</div><div class="cq3-pf-val" id="cq3pf2v">—</div></div>
-          <div class="cq3-pf"><div class="cq3-pf-dot" id="cq3pf3" style="background:#CBD5E0"></div><div class="cq3-pf-name">Volatilite</div><div class="cq3-pf-val" id="cq3pf3v">—</div></div>
-          <div class="cq3-pf"><div class="cq3-pf-dot" id="cq3pf4" style="background:#CBD5E0"></div><div class="cq3-pf-name">Teknik</div><div class="cq3-pf-val" id="cq3pf4v">—</div></div>
+    <!-- 2. SİNYAL GÜCÜ -->
+    <div class="blm-panel" onclick="openCockpitModal('signal')">
+      <div class="blm-panel-header">
+        <span class="blm-panel-title">CONFLUENCE METER</span>
+        <span class="blm-panel-tag">SIGNAL STRENGTH</span>
+      </div>
+      <div class="blm-panel-body" style="display:flex;align-items:center;gap:12px">
+        <div class="blm-gauge-wrap" style="width:72px;height:72px;flex-shrink:0">
+          <svg width="72" height="72" viewBox="0 0 72 72">
+            <circle cx="36" cy="36" r="28" fill="none" stroke="#1C1C1C" stroke-width="6"/>
+            <circle id="blmScoreArc" cx="36" cy="36" r="28" fill="none" stroke="#FF6600" stroke-width="6"
+              stroke-dasharray="0 176" stroke-linecap="round" style="transition:all 1s ease"/>
+          </svg>
+          <div class="blm-gauge-val" id="blmScore">—</div>
+        </div>
+        <div style="flex:1">
+          <div id="blmScoreLbl" style="font-size:9px;font-weight:700;color:#FF6600;letter-spacing:.08em;margin-bottom:6px">BEKLENIYOR</div>
+          <div id="blmSigDir" style="font-size:13px;font-weight:700;font-family:'IBM Plex Mono',monospace">—</div>
+          <div class="blm-xs" id="blmSigPair" style="margin-top:3px">—</div>
+          <div class="blm-xs" id="blmSigTime" style="margin-top:2px">—</div>
         </div>
       </div>
+    </div>
 
-      <div class="cq3-section-ttl">💰 Finansal</div>
-      <div class="cq3-card" onclick="openCockpitModal('pnl')">
-        <div class="cq3-label">💰 Bakiye</div>
-        <div class="cq3-num" id="cq3Bal" style="font-size:20px">—</div>
-        <div class="cq3-sub">Toplam Bakiye</div>
-        <div style="height:1px;background:var(--cq-border);margin:10px 0"></div>
-        <div class="cq3-label" style="margin-bottom:4px">📅 Bugün P&L</div>
-        <div class="cq3-num" id="cq3DayPnl" style="font-size:18px">—</div>
+    <!-- 3. PİYASA REJİMİ + F&G -->
+    <div class="blm-panel" onclick="openCockpitModal('regime')">
+      <div class="blm-panel-header">
+        <span class="blm-panel-title">MARKET REGIME</span>
+        <span class="blm-panel-tag">FEAR &amp; GREED</span>
       </div>
-
-    </div><!-- /sol -->
-
-    <!-- ORTA: Operasyon -->
-    <div class="cq-col-center">
-
-      <div class="cq3-section-ttl">📊 Canlı Fiyatlar</div>
-      <div class="cq3-prices">
-        <div class="cq3-price eth" onclick="openCockpitModal('chart','ETH')">
-          <div class="cq3-price-lbl">🔷 ETH · PERP</div>
-          <div class="cq3-price-val" id="cq3EthPx">—</div>
-          <div class="cq3-price-chg" id="cq3EthChg">—</div>
-        </div>
-        <div class="cq3-price btc" onclick="openCockpitModal('chart','BTC')">
-          <div class="cq3-price-lbl">🟡 BTC · PERP</div>
-          <div class="cq3-price-val" id="cq3BtcPx">—</div>
-          <div class="cq3-price-chg" id="cq3BtcChg">—</div>
-        </div>
-      </div>
-
-      <div class="cq3-section-ttl">🎯 Piyasa Durumu</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
-
-        <!-- Confluence -->
-        <div class="cq3-card accent" onclick="openCockpitModal('signal')" style="text-align:center">
-          <div class="cq3-label" style="justify-content:center">🎯 Sinyal</div>
-          <div class="cq3-gauge">
-            <svg width="82" height="82" viewBox="0 0 82 82">
-              <circle cx="41" cy="41" r="33" fill="none" stroke="#F1F5F9" stroke-width="7"/>
-              <circle id="cq3ScoreArc" cx="41" cy="41" r="33" fill="none" stroke="#3B82F6" stroke-width="7"
-                stroke-dasharray="0 207" stroke-linecap="round" style="transition:all 1s ease"/>
-            </svg>
-            <div class="cq3-gauge-val" id="cq3Score">—</div>
-          </div>
-          <div id="cq3ScoreLbl" class="cq3-conf-lbl cq3-conf-low">Bekleniyor</div>
-        </div>
-
-        <!-- Rejim -->
-        <div class="cq3-card" onclick="openCockpitModal('regime')" style="text-align:center">
-          <div class="cq3-label" style="justify-content:center">📡 Rejim</div>
-          <div id="cq3RegIcon" style="font-size:28px;margin:8px 0">—</div>
-          <div id="cq3RegTxt" class="cq3-sub" style="text-align:center;font-weight:700;font-size:10px">—</div>
-        </div>
-
-        <!-- F&G -->
-        <div class="cq3-card amber" onclick="openCockpitModal('fng')" style="text-align:center">
-          <div class="cq3-label" style="justify-content:center">😨 Korku</div>
-          <div class="cq3-num" id="cq3FngVal" style="text-align:center;font-size:28px">—</div>
-          <div id="cq3FngLbl" class="cq3-sub" style="text-align:center">—</div>
-          <div class="cq3-bar"><div class="cq3-bar-fill" id="cq3FngBar" style="width:0%;background:linear-gradient(90deg,#3B82F6,#F59E0B,#EF4444)"></div></div>
-        </div>
-      </div>
-
-      <!-- Son Sinyal + Anomali -->
-      <div style="display:grid;grid-template-columns:2fr 1fr;gap:8px">
-        <div class="cq3-card accent" onclick="openCockpitModal('signal')">
-          <div class="cq3-label">📶 Son Sinyal</div>
-          <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-            <div id="cq3SigDir" style="font-family:'JetBrains Mono',monospace;font-size:17px;font-weight:700;min-width:65px">—</div>
-            <div style="flex:1">
-              <div style="font-weight:600;color:var(--cq-text);font-size:11px" id="cq3SigPair">—</div>
-              <div class="cq3-xs" id="cq3SigScore">—</div>
-            </div>
-            <div style="text-align:right">
-              <div class="cq3-xs" id="cq3SigEntry">—</div>
-              <div class="cq3-xs" id="cq3SigTime">—</div>
-            </div>
+      <div class="blm-panel-body">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <div id="blmRegIcon" style="font-size:24px">—</div>
+          <div>
+            <div id="blmRegTxt" class="blm-med">—</div>
+            <div class="blm-xs">Piyasa rejimi</div>
           </div>
         </div>
-        <div class="cq3-card" onclick="openCockpitModal('anomaly')" style="text-align:center">
-          <div class="cq3-label" style="justify-content:center">🔍 Anomali</div>
-          <div id="cq3AnoIcon" style="font-size:24px;margin:4px 0">✅</div>
-          <div id="cq3AnoTxt" class="cq3-xs" style="text-align:center;font-weight:700">NORMAL</div>
+        <hr class="blm-sep">
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div class="blm-xs blm-dim">FEAR &amp; GREED INDEX</div>
+            <div class="blm-med" id="blmFngVal" style="margin-top:2px">—</div>
+          </div>
+          <div id="blmFngLbl" style="font-size:9px;color:#888;text-align:right">—</div>
         </div>
+        <div class="blm-bar"><div class="blm-bar-fill" id="blmFngFill" style="width:0%;background:#FF6600"></div></div>
       </div>
+    </div>
 
-      <!-- Long / Short -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <button class="cq3-btn-long"  onclick="setMode('trade')">▲ LONG GİR</button>
-        <button class="cq3-btn-short" onclick="setMode('trade')">▼ SHORT GİR</button>
+    <!-- 4. UÇUŞ ÖNCESİ -->
+    <div class="blm-panel" onclick="openCockpitModal('preflight')">
+      <div class="blm-panel-header">
+        <span class="blm-panel-title">PRE-FLIGHT CHECK</span>
+        <span class="blm-panel-tag">4 SİSTEM</span>
       </div>
-
-      <!-- Grafik -->
-      <div class="cq3-section-ttl">📈 Grafik</div>
-      <div class="cq3-chart-grid">
-        <button class="cq3-chart-btn" onclick="openTV('OKX:ETHUSDT.P')" style="color:#2563EB;border-color:#BFDBFE">🔷 ETH</button>
-        <button class="cq3-chart-btn" onclick="openTV('OKX:BTCUSDT.P')" style="color:#D97706;border-color:#FDE68A">🟡 BTC</button>
-        <button class="cq3-chart-btn" onclick="openTV('OKX:SOLUSDT.P')" style="color:#7C3AED;border-color:#DDD6FE">🟣 SOL</button>
-        <button class="cq3-chart-btn" onclick="openTV('OKX:BNBUSDT.P')" style="color:#16A34A;border-color:#BBF7D0">🟢 BNB</button>
+      <div class="blm-panel-body">
+        <div class="blm-pf-row"><div class="blm-pf-dot" id="blmpf1" style="background:#333"></div><div class="blm-pf-name">LIKIDİTE (YAKIT)</div><div class="blm-pf-val" id="blmpf1v">—</div></div>
+        <div class="blm-pf-row"><div class="blm-pf-dot" id="blmpf2" style="background:#333"></div><div class="blm-pf-name">MOMENTUM (MOTOR)</div><div class="blm-pf-val" id="blmpf2v">—</div></div>
+        <div class="blm-pf-row"><div class="blm-pf-dot" id="blmpf3" style="background:#333"></div><div class="blm-pf-name">VOLATİLİTE (HAVA)</div><div class="blm-pf-val" id="blmpf3v">—</div></div>
+        <div class="blm-pf-row"><div class="blm-pf-dot" id="blmpf4" style="background:#333"></div><div class="blm-pf-name">TEKNİK DURUM</div><div class="blm-pf-val" id="blmpf4v">—</div></div>
       </div>
+    </div>
 
-    </div><!-- /orta -->
-
-    <!-- SAĞ: Hesaplayıcılar -->
-    <div class="cq-col-right">
-
-      <div class="cq3-section-ttl">⚖️ Risk Hesaplayıcı</div>
-      <div class="cq3-card" style="cursor:default">
-        <div class="cq3-label">⚖️ Kelly & Pozisyon</div>
-        <div class="cq3-kelly-row">
-          <div><div class="cq3-kelly-lbl">Kelly Risk</div><div class="cq3-kelly-val" id="cq3Kelly">—</div></div>
-          <div><div class="cq3-kelly-lbl">BTC Durumu</div><div class="cq3-kelly-val" id="cq3BtcSw" style="font-size:11px">—</div></div>
-        </div>
-        <!-- Hızlı hesap -->
-        <div style="margin-top:12px">
-          <div style="margin-bottom:6px"><div class="cq3-input-lbl">Bakiye ($)</div><input id="cq3CalcBal" class="cq3-input" type="number" placeholder="örn. 1000" oninput="cq3Calc()"></div>
-          <div style="margin-bottom:6px"><div class="cq3-input-lbl">Risk %</div><input id="cq3CalcRisk" class="cq3-input" type="number" placeholder="örn. 1" value="1" oninput="cq3Calc()"></div>
-          <div style="margin-bottom:6px"><div class="cq3-input-lbl">SL Uzaklığı %</div><input id="cq3CalcSL" class="cq3-input" type="number" placeholder="örn. 2" oninput="cq3Calc()"></div>
-          <div id="cq3CalcResult" style="display:none;background:var(--cq-bg);border:1px solid var(--cq-border);border-radius:8px;padding:10px;margin-top:8px">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-              <span class="cq3-xs">Risk Tutarı</span>
-              <span class="cq3-xs cq3-red font-bold" id="cq3ResRisk" style="font-weight:700">—</span>
-            </div>
-            <div style="display:flex;justify-content:space-between">
-              <span class="cq3-xs">Pozisyon Büyüklüğü</span>
-              <span class="cq3-xs" id="cq3ResPos" style="font-weight:700;color:var(--cq-text)">—</span>
-            </div>
+    <!-- 5. MENTAL + BAKİYE -->
+    <div class="blm-panel" onclick="openCockpitModal('mental')">
+      <div class="blm-panel-header">
+        <span class="blm-panel-title">KAPTAN DURUMU</span>
+        <span class="blm-panel-tag">P&amp;L</span>
+      </div>
+      <div class="blm-panel-body">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div id="blmMentalEmoji" style="font-size:26px">⚪</div>
+          <div>
+            <div id="blmMentalTxt" class="blm-med">—</div>
+            <div id="blmMentalSub" class="blm-xs" style="margin-top:2px">—</div>
           </div>
         </div>
+        <hr class="blm-sep">
+        <table class="blm-table">
+          <tr><td class="blm-dim">BAKİYE</td><td id="blmBal" class="blm-orange">—</td></tr>
+          <tr><td class="blm-dim">BUGÜN P&amp;L</td><td id="blmDayPnl">—</td></tr>
+          <tr><td class="blm-dim">KELLY RİSK</td><td id="blmKelly" class="blm-amber">—</td></tr>
+          <tr><td class="blm-dim">BTC SWITCH</td><td id="blmBtcSw">—</td></tr>
+        </table>
       </div>
+    </div>
 
-      <div class="cq3-section-ttl">📝 Hızlı İşlem</div>
-      <div class="cq3-card" style="cursor:default">
-        <div class="cq3-label">📝 İşlem Kaydı <span style="margin-left:auto;font-weight:400;font-size:8px;color:var(--cq-faint)" id="cq3JrnCnt">0 kayıt</span></div>
-        <!-- Coin + Yön -->
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px" id="cq3JrnPairBtns">
-          <button onclick="cqJrnSetPair('ETH')" id="cqJrnETH" style="padding:4px 9px;border-radius:20px;border:none;background:#0F172A;color:#F8FAFC;font-size:9px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace">ETH</button>
-          <button onclick="cqJrnSetPair('BTC')" id="cqJrnBTC" style="padding:4px 9px;border-radius:20px;border:1px solid var(--cq-border);background:var(--cq-bg);color:var(--cq-muted);font-size:9px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace">BTC</button>
-          <button onclick="cqJrnSetPair('SOL')" id="cqJrnSOL" style="padding:4px 9px;border-radius:20px;border:1px solid var(--cq-border);background:var(--cq-bg);color:var(--cq-muted);font-size:9px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace">SOL</button>
-          <button onclick="cqJrnSetPair('BNB')" id="cqJrnBNB" style="padding:4px 9px;border-radius:20px;border:1px solid var(--cq-border);background:var(--cq-bg);color:var(--cq-muted);font-size:9px;font-weight:700;cursor:pointer;font-family:'JetBrains Mono',monospace">BNB</button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:8px">
-          <button onclick="cqJrnSetDir('LONG')" id="cqJrnLong" style="padding:8px;border-radius:8px;border:2px solid #16A34A;background:#F0FDF4;color:#16A34A;font-weight:700;font-size:10px;cursor:pointer">▲ LONG</button>
-          <button onclick="cqJrnSetDir('SHORT')" id="cqJrnShort" style="padding:8px;border-radius:8px;border:1px solid var(--cq-border);background:var(--cq-bg);color:var(--cq-muted);font-weight:700;font-size:10px;cursor:pointer">▼ SHORT</button>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-          <div><div class="cq3-input-lbl">Giriş</div><input id="cqJrnEntry" class="cq3-input" type="number" placeholder="2450" oninput="cqJrnCalc()"></div>
-          <div><div class="cq3-input-lbl">Çıkış</div><input id="cqJrnExit" class="cq3-input" type="number" placeholder="2510" oninput="cqJrnCalc()"></div>
-        </div>
-        <div style="margin-bottom:8px"><div class="cq3-input-lbl">Boyut ($)</div><input id="cqJrnSize" class="cq3-input" type="number" placeholder="5000" oninput="cqJrnCalc()"></div>
-        <div id="cqJrnPreview" style="display:none;background:var(--cq-bg);border:1px solid var(--cq-border);border-radius:8px;padding:8px 10px;margin-bottom:8px;display:flex;justify-content:space-between">
-          <span class="cq3-xs">Tahmini P&L</span>
-          <span id="cqJrnPnlPrev" style="font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700">—</span>
-        </div>
-        <button onclick="cqJrnSave()" style="width:100%;padding:11px;background:#0F172A;border:none;border-radius:8px;color:#F8FAFC;font-size:11px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif">+ Kaydet</button>
-        <div id="cqJrnList" style="margin-top:10px"></div>
+    <!-- 6. ANOMALİ + TARAMA -->
+    <div class="blm-panel" onclick="openCockpitModal('anomaly')">
+      <div class="blm-panel-header">
+        <span class="blm-panel-title">SİSTEM DURUM</span>
+        <span class="blm-panel-tag">ANOMALİ · TARAMA</span>
       </div>
+      <div class="blm-panel-body">
+        <table class="blm-table">
+          <tr>
+            <td class="blm-dim">ANOMALİ DEDEKTÖR</td>
+            <td><span id="blmAnoIcon">✅</span> <span id="blmAnoTxt" class="blm-green">NORMAL</span></td>
+          </tr>
+          <tr>
+            <td class="blm-dim">OTOPİLOT TARAMA</td>
+            <td id="blmScanTxt" class="blm-green">—</td>
+          </tr>
+          <tr>
+            <td class="blm-dim">SİNYAL KAYDI</td>
+            <td id="blmSigCount" class="blm-white">—</td>
+          </tr>
+          <tr>
+            <td class="blm-dim">SON GÜNCELLEME</td>
+            <td id="blmLastUpdate" class="blm-dim">—</td>
+          </tr>
+        </table>
+      </div>
+    </div>
 
-    </div><!-- /sağ -->
+    <!-- 7. LONG/SHORT + GRAFİK -->
+    <div class="blm-panel" style="cursor:default">
+      <div class="blm-panel-header">
+        <span class="blm-panel-title">HIZLI İŞLEM</span>
+        <span class="blm-panel-tag">GRAFIK ERİŞİM</span>
+      </div>
+      <div class="blm-panel-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px">
+          <button class="blm-btn-long"  onclick="setMode('trade')">▲ LONG</button>
+          <button class="blm-btn-short" onclick="setMode('trade')">▼ SHORT</button>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px">
+          <button class="blm-chart-btn" onclick="openTV('OKX:ETHUSDT.P')">ETH</button>
+          <button class="blm-chart-btn" onclick="openTV('OKX:BTCUSDT.P')">BTC</button>
+          <button class="blm-chart-btn" onclick="openTV('OKX:SOLUSDT.P')">SOL</button>
+          <button class="blm-chart-btn" onclick="openTV('OKX:BNBUSDT.P')">BNB</button>
+        </div>
+      </div>
+    </div>
 
-  </div><!-- /layout -->
+    <!-- 8. KELLY HESAP + İŞLEM KAYDI -->
+    <div class="blm-panel" style="cursor:default">
+      <div class="blm-panel-header">
+        <span class="blm-panel-title">POSITION CALCULATOR</span>
+        <span class="blm-panel-tag">QUICK LOG</span>
+      </div>
+      <div class="blm-panel-body">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px;margin-bottom:8px">
+          <div>
+            <div class="blm-input-lbl">BAKİYE $</div>
+            <input id="blmCalcBal" class="blm-input" type="number" placeholder="1000" oninput="blmCalc()">
+          </div>
+          <div>
+            <div class="blm-input-lbl">RİSK %</div>
+            <input id="blmCalcRisk" class="blm-input" type="number" placeholder="1" value="1" oninput="blmCalc()">
+          </div>
+          <div>
+            <div class="blm-input-lbl">SL %</div>
+            <input id="blmCalcSL" class="blm-input" type="number" placeholder="2" oninput="blmCalc()">
+          </div>
+        </div>
+        <div id="blmCalcResult" style="display:none;background:#1A1A1A;border:1px solid #333;padding:7px 10px;margin-bottom:8px">
+          <div style="display:flex;justify-content:space-between">
+            <span class="blm-xs blm-dim">RİSK TUTARI</span>
+            <span id="blmResRisk" style="font-size:10px;font-weight:700;color:#FF3333;font-family:'IBM Plex Mono',monospace">—</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;margin-top:3px">
+            <span class="blm-xs blm-dim">POZİSYON</span>
+            <span id="blmResPos" style="font-size:10px;font-weight:700;color:#FF6600;font-family:'IBM Plex Mono',monospace">—</span>
+          </div>
+        </div>
+        <hr class="blm-sep">
+        <!-- Hızlı işlem kayıt -->
+        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px">
+          <button onclick="cqJrnSetPair('ETH')" id="cqJrnETH" class="blm-pair-btn on">ETH</button>
+          <button onclick="cqJrnSetPair('BTC')" id="cqJrnBTC" class="blm-pair-btn">BTC</button>
+          <button onclick="cqJrnSetPair('SOL')" id="cqJrnSOL" class="blm-pair-btn">SOL</button>
+          <button onclick="cqJrnSetPair('BNB')" id="cqJrnBNB" class="blm-pair-btn">BNB</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-bottom:5px">
+          <button onclick="cqJrnSetDir('LONG')" id="cqJrnLong" class="blm-btn-long" style="padding:7px;font-size:10px">▲ LONG</button>
+          <button onclick="cqJrnSetDir('SHORT')" id="cqJrnShort" class="blm-btn-short" style="padding:7px;font-size:10px">▼ SHORT</button>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-bottom:5px">
+          <div><div class="blm-input-lbl">GİRİŞ</div><input id="cqJrnEntry" class="blm-input" type="number" placeholder="2450" oninput="cqJrnCalc()"></div>
+          <div><div class="blm-input-lbl">ÇIKIŞ</div><input id="cqJrnExit" class="blm-input" type="number" placeholder="2510" oninput="cqJrnCalc()"></div>
+          <div><div class="blm-input-lbl">BOYUT</div><input id="cqJrnSize" class="blm-input" type="number" placeholder="5000" oninput="cqJrnCalc()"></div>
+        </div>
+        <div id="cqJrnPreview" style="display:none;background:#1A1A1A;border:1px solid #333;padding:5px 8px;margin-bottom:5px;display:flex;justify-content:space-between">
+          <span class="blm-xs blm-dim">TAHMİNİ P&L</span>
+          <span id="cqJrnPnlPrev" style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700">—</span>
+        </div>
+        <button onclick="cqJrnSave()" style="width:100%;padding:8px;background:#1A1A1A;border:1px solid #FF6600;color:#FF6600;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;cursor:pointer;letter-spacing:.08em">
+          + KAYDET
+        </button>
+        <div id="cqJrnList" style="margin-top:6px"></div>
+      </div>
+    </div>
 
-</div><!-- /cqv3 -->
+  </div><!-- /grid -->
+</div><!-- /blm -->
 
 <!-- Modal -->
 <div id="ckModal">
   <div id="ckModalContent">
     <button id="ckModalClose" onclick="closeCockpitModal()">✕</button>
     <div id="ckModalTitle">DETAY</div>
-    <div id="ckModalBody" style="font-family:'Inter',sans-serif;font-size:13px;color:#475569;line-height:1.6"></div>
+    <div id="ckModalBody" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#888;line-height:1.7"></div>
   </div>
 </div>
 
@@ -11508,28 +11703,12 @@ function calcAdaptiveWeights() {
   return result;
 }
 
-// ── v45: KOKPIT v3 — Responsive Clean Quant Terminal ──
+// ── v45: KOKPİT v4 — Bloomberg Terminal ──
 async function refreshCockpit() {
-  const s = (id,v)=>{ const e=document.getElementById(id); if(e)e.textContent=v; };
-  const c = (id,col)=>{ const e=document.getElementById(id); if(e)e.style.color=col; };
-
+  const s=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   // Saat
-  const t=document.getElementById('cq3Time');
-  if(t)t.textContent=new Date().toLocaleTimeString('tr-TR')+' · OKX FUTURES';
-
-  // ── Mental → accent renk ──
-  const mental=ld('ug_mental_quick')||ld('ug6_mental')||{};
-  const mState=mental.state||mental.last;
-  const mMap={
-    green: {emoji:'🟢',sub:'Net ve odaklanmış. Kurallara bağlı kal.',badge:'HAZIR',     mode:'cq-green-mode',bc:'#16A34A'},
-    yellow:{emoji:'🟡',sub:'Dikkatli ol. Impulse işlemden kaçın.',   badge:'DİKKATLİ', mode:'cq-amber-mode',bc:'#D97706'},
-    red:   {emoji:'🔴',sub:'⚠️ Bugün işlem AÇMA. Bekle.',           badge:'RİSKLİ',   mode:'cq-red-mode',  bc:'#DC2626'},
-  };
-  const mm=mMap[mState]||{emoji:'⚪',sub:'Hazırlık sekmesinden mental durumunu gir.',badge:'—',mode:'',bc:'#94A3B8'};
-  document.body.classList.remove('cq-green-mode','cq-red-mode','cq-amber-mode');
-  if(mm.mode)document.body.classList.add(mm.mode);
-  s('cq3MentalEmoji',mm.emoji); s('cq3MentalSub',mm.sub); s('cq3MentalBadge',mm.badge);
-  const mb=document.getElementById('cq3MentalBadge'); if(mb)mb.style.background=mm.bc;
+  const t=document.getElementById('blmTime');
+  if(t)t.textContent=new Date().toLocaleTimeString('tr-TR');
 
   // ── Fiyatlar ──
   try {
@@ -11539,114 +11718,126 @@ async function refreshCockpit() {
     ]);
     const eth=er.data?.[0],btc=br.data?.[0];
     if(eth){
-      const p=((parseFloat(eth.last)-parseFloat(eth.open24h))/parseFloat(eth.open24h)*100);
-      s('cq3EthPx','$'+parseFloat(eth.last).toLocaleString('en-US',{maximumFractionDigits:2}));
-      const el=document.getElementById('cq3EthChg');
-      if(el){el.textContent=(p>=0?'+':'')+p.toFixed(2)+'%';el.style.color=p>=0?'#16A34A':'#DC2626';}
+      const px=parseFloat(eth.last);
+      const p=((px-parseFloat(eth.open24h))/parseFloat(eth.open24h)*100);
+      const fmtPx='$'+px.toLocaleString('en-US',{maximumFractionDigits:2});
+      const fmtChg=(p>=0?'+':'')+p.toFixed(2)+'%';
+      s('blmEthPx',fmtPx); s('blmEthBar',fmtPx);
+      const ec=document.getElementById('blmEthChg');if(ec){ec.textContent=fmtChg;ec.style.color=p>=0?'#00CC44':'#FF3333';}
+      const eb=document.getElementById('blmEthBarChg');if(eb){eb.textContent=' '+fmtChg;eb.style.color=p>=0?'#00CC44':'#FF3333';}
     }
     if(btc){
-      const p=((parseFloat(btc.last)-parseFloat(btc.open24h))/parseFloat(btc.open24h)*100);
-      s('cq3BtcPx','$'+parseFloat(btc.last).toLocaleString('en-US',{maximumFractionDigits:0}));
-      const el=document.getElementById('cq3BtcChg');
-      if(el){el.textContent=(p>=0?'+':'')+p.toFixed(2)+'%';el.style.color=p>=0?'#16A34A':'#DC2626';}
+      const px=parseFloat(btc.last);
+      const p=((px-parseFloat(btc.open24h))/parseFloat(btc.open24h)*100);
+      const fmtPx='$'+px.toLocaleString('en-US',{maximumFractionDigits:0});
+      const fmtChg=(p>=0?'+':'')+p.toFixed(2)+'%';
+      s('blmBtcPx',fmtPx); s('blmBtcBar',fmtPx);
+      const bc=document.getElementById('blmBtcChg');if(bc){bc.textContent=fmtChg;bc.style.color=p>=0?'#00CC44':'#FF3333';}
+      const bb=document.getElementById('blmBtcBarChg');if(bb){bb.textContent=' '+fmtChg;bb.style.color=p>=0?'#00CC44':'#FF3333';}
     }
   } catch(e){}
 
-  // ── Confluence Meter ──
+  // ── Sinyal Skoru ──
   const sigs=ld('ug_signal_history')||[];
   const score=sigs[0]?.score||0;
-  const arc=document.getElementById('cq3ScoreArc');
+  const arc=document.getElementById('blmScoreArc');
   if(arc){
-    const circ=2*Math.PI*33;
-    arc.setAttribute('stroke-dasharray',`${(score/100)*circ} ${circ-(score/100)*circ}`);
-    arc.setAttribute('stroke',score>=80?'#16A34A':score>=60?'#F59E0B':score>=40?'#3B82F6':'#CBD5E0');
+    const c=2*Math.PI*28;
+    arc.setAttribute('stroke-dasharray',`${(score/100)*c} ${c-(score/100)*c}`);
+    arc.setAttribute('stroke',score>=80?'#00CC44':score>=60?'#FF6600':'#FF3333');
   }
-  s('cq3Score',score||'—');
-  const sl=document.getElementById('cq3ScoreLbl');
+  s('blmScore',score||'—');
+  const sl=document.getElementById('blmScoreLbl');
   if(sl){
-    if(score>=80){sl.textContent='Yüksek Olasılıklı';sl.className='cq3-conf-lbl cq3-conf-high';}
-    else if(score>=60){sl.textContent='Orta Güç';sl.className='cq3-conf-lbl cq3-conf-mid';}
-    else{sl.textContent='Bekleniyor';sl.className='cq3-conf-lbl cq3-conf-low';}
+    if(score>=80){sl.textContent='HIGH PROBABILITY';sl.style.color='#00CC44';}
+    else if(score>=60){sl.textContent='MODERATE SIGNAL';sl.style.color='#FF6600';}
+    else{sl.textContent='NO SIGNAL';sl.style.color='#555';}
+  }
+  if(sigs.length>0){
+    const sg=sigs[0];
+    const de=document.getElementById('blmSigDir');
+    if(de){de.textContent=sg.direction||'—';de.style.color=sg.direction==='LONG'?'#00CC44':'#FF3333';}
+    s('blmSigPair',(sg.symbol||'').replace('USDT','/USDT')+' · '+(sg.tf||'').toUpperCase());
+    const ago=sg.time?Math.round((Date.now()-sg.time)/60000):null;
+    s('blmSigTime',ago!==null?(ago<60?ago+'dk':'>1s')+' önce':'—');
   }
 
   // ── Rejim ──
   const regime=_currentRegime||ld('ug_regime')||'neutral';
-  const rm={trend_bull:{icon:'🚀',txt:'TREND BULL',col:'#16A34A'},trend_bear:{icon:'📉',txt:'BEAR',col:'#DC2626'},range:{icon:'↔️',txt:'RANGE',col:'#D97706'},volatile:{icon:'⚡',txt:'VOLATİL',col:'#EF4444'},crash:{icon:'💥',txt:'CRASH',col:'#DC2626'},neutral:{icon:'⚖️',txt:'NÖTR',col:'#94A3B8'}}[regime]||{icon:'⚖️',txt:'NÖTR',col:'#94A3B8'};
-  s('cq3RegIcon',rm.icon);
-  const re=document.getElementById('cq3RegTxt');if(re){re.textContent=rm.txt;re.style.color=rm.col;}
+  const rm={trend_bull:{icon:'🚀',txt:'TREND BULL',c:'#00CC44'},trend_bear:{icon:'📉',txt:'TREND BEAR',c:'#FF3333'},range:{icon:'↔',txt:'RANGE',c:'#FF6600'},volatile:{icon:'⚡',txt:'VOLATILE',c:'#FF3333'},crash:{icon:'💥',txt:'CRASH',c:'#FF3333'},neutral:{icon:'◆',txt:'NEUTRAL',c:'#888'}}[regime]||{icon:'◆',txt:'NEUTRAL',c:'#888'};
+  s('blmRegIcon',rm.icon); s('blmRegBar',rm.txt);
+  const re=document.getElementById('blmRegTxt');if(re){re.textContent=rm.txt;re.style.color=rm.c;}
 
   // ── F&G ──
   const fng=ld('ug_fng')||{};
   if(fng.value){
     const v=parseInt(fng.value);
-    const fe=document.getElementById('cq3FngVal');if(fe){fe.textContent=v;fe.style.color=v<=25?'#DC2626':v>=75?'#16A34A':'#D97706';}
-    s('cq3FngLbl',fng.label||'—');
-    const fb=document.getElementById('cq3FngBar');if(fb)fb.style.width=v+'%';
+    const fc=v<=25?'#FF3333':v>=75?'#00CC44':'#FF6600';
+    const fe=document.getElementById('blmFngVal');if(fe){fe.textContent=v;fe.style.color=fc;}
+    const fb=document.getElementById('blmFngBar2');if(fb){fb.textContent=v+' '+fng.label;fb.style.color=fc;}
+    s('blmFngLbl',fng.label||'—');
+    const ff=document.getElementById('blmFngFill');if(ff){ff.style.width=v+'%';ff.style.background=fc;}
   }
 
   // ── Pre-Flight ──
-  [{d:'cq3pf1',v:'cq3pf1v',s:'preCheckFuel'},{d:'cq3pf2',v:'cq3pf2v',s:'preCheckMom'},{d:'cq3pf3',v:'cq3pf3v',s:'preCheckVol'},{d:'cq3pf4',v:'cq3pf4v',s:'preCheckTech'}].forEach(({d,v,s:srcId})=>{
+  [{d:'blmpf1',v:'blmpf1v',s:'preCheckFuel'},{d:'blmpf2',v:'blmpf2v',s:'preCheckMom'},{d:'blmpf3',v:'blmpf3v',s:'preCheckVol'},{d:'blmpf4',v:'blmpf4v',s:'preCheckTech'}].forEach(({d,v,s:srcId})=>{
     const src=document.getElementById(srcId);const dot=document.getElementById(d);
     if(!dot)return;
     if(src){
       const txt=src.textContent||'';
       const ok=txt.includes('✅');const err=txt.includes('❌');
-      dot.style.background=ok?'#16A34A':err?'#DC2626':'#F59E0B';
-      dot.style.boxShadow=ok?'0 0 6px #16A34A':err?'0 0 6px #DC2626':'0 0 6px #F59E0B';
+      dot.style.background=ok?'#00CC44':err?'#FF3333':'#FF6600';
     }
   });
 
+  // ── Mental ──
+  const mental=ld('ug_mental_quick')||ld('ug6_mental')||{};
+  const mState=mental.state||mental.last;
+  const mMap={green:{emoji:'🟢',txt:'HAZIR',sub:'Odaklanmış ve net',c:'#00CC44',bar:'HAZIR'},yellow:{emoji:'🟡',txt:'DİKKATLİ',sub:'Impulse işlemden kaçın',c:'#FF6600',bar:'DİKKAT'},red:{emoji:'🔴',txt:'RİSKLİ',sub:'BUGÜN İŞLEM AÇMA',c:'#FF3333',bar:'RİSKLİ'}};
+  const mm=mMap[mState]||{emoji:'⚪',txt:'GİRİLMEDİ',sub:'Hazırlık sekmesinden gir',c:'#555',bar:'—'};
+  s('blmMentalEmoji',mm.emoji); s('blmMentalBar',mm.bar);
+  const mt=document.getElementById('blmMentalTxt');if(mt){mt.textContent=mm.txt;mt.style.color=mm.c;}
+  s('blmMentalSub',mm.sub);
+
   // ── Bakiye + P&L ──
   const bal=getTotalBal?getTotalBal():0;
-  const be=document.getElementById('cq3Bal');if(be){be.textContent=bal?'$'+bal.toFixed(0):'—';be.style.color=bal>=0?'#0F172A':'#DC2626';}
+  const be=document.getElementById('blmBal');if(be){be.textContent=bal?'$'+bal.toFixed(0):'—';be.style.color=bal>=0?'#FF6600':'#FF3333';}
+  const balb=document.getElementById('blmBalBar');if(balb)balb.textContent=bal?'$'+bal.toFixed(0):'—';
   const cal=ld('ug6_cal')||{};const today=new Date().toISOString().slice(0,10);const dp=cal[today]?.pnl||0;
-  const de=document.getElementById('cq3DayPnl');if(de){de.textContent=(dp>=0?'+':'')+'$'+dp.toFixed(2);de.style.color=dp>=0?'#16A34A':'#DC2626';}
-
-  // ── Kelly ──
-  const ksl=document.getElementById('riskPctSlider');if(ksl)s('cq3Kelly','%'+parseFloat(ksl.value).toFixed(1));
-
-  // ── BTC Switch ──
+  const de2=document.getElementById('blmDayPnl');if(de2){de2.textContent=(dp>=0?'+':'')+'$'+dp.toFixed(2);de2.style.color=dp>=0?'#00CC44':'#FF3333';}
+  const ksl=document.getElementById('riskPctSlider');if(ksl)s('blmKelly','%'+parseFloat(ksl.value).toFixed(1));
   const sw=_btcMasterSwitch||'neutral';
-  const swm={bull:{txt:'🐂 BULL',c:'#16A34A'},bear:{txt:'🐻 BEAR',c:'#DC2626'},neutral:{txt:'⚖️ NÖTR',c:'#94A3B8'}}[sw]||{txt:'—',c:'#94A3B8'};
-  const bse=document.getElementById('cq3BtcSw');if(bse){bse.textContent=swm.txt;bse.style.color=swm.c;}
+  const swm={bull:{t:'BULL',c:'#00CC44'},bear:{t:'BEAR',c:'#FF3333'},neutral:{t:'NEUTRAL',c:'#888'}}[sw]||{t:'—',c:'#888'};
+  const bse=document.getElementById('blmBtcSw');if(bse){bse.textContent=swm.t;bse.style.color=swm.c;}
 
-  // ── Son Sinyal ──
-  if(sigs.length>0){
-    const sg=sigs[0];
-    const de2=document.getElementById('cq3SigDir');if(de2){de2.textContent=sg.direction||'—';de2.style.color=sg.direction==='LONG'?'#16A34A':'#DC2626';}
-    s('cq3SigPair',(sg.symbol||'').replace('USDT','/USDT'));
-    s('cq3SigScore','Skor: '+(sg.score||'—')+' · '+(sg.tf||'').toUpperCase());
-    s('cq3SigEntry',sg.entry?'$'+parseFloat(sg.entry).toFixed(2):'—');
-    const ago=sg.time?Math.round((Date.now()-sg.time)/60000):null;
-    s('cq3SigTime',ago!==null?(ago<60?ago+'dk':'>1s')+' önce':'—');
-  }
-
-  // ── Anomali ──
+  // ── Anomali + Tarama ──
   const ae=document.getElementById('anomalyStatus');
   if(ae){
     const ok=ae.textContent.includes('Normal');
-    s('cq3AnoIcon',ok?'✅':'⚠️');
-    const at=document.getElementById('cq3AnoTxt');if(at){at.textContent=ok?'NORMAL':'UYARI';at.style.color=ok?'#16A34A':'#DC2626';}
+    s('blmAnoIcon',ok?'✅':'⚠️');
+    const at=document.getElementById('blmAnoTxt');if(at){at.textContent=ok?'NORMAL':'UYARI!';at.style.color=ok?'#00CC44':'#FF3333';}
   }
+  const scanOn=_autoScanTimer!==null;
+  const stt=document.getElementById('blmScanTxt');if(stt){stt.textContent=scanOn?'AKTİF':'PASİF';stt.style.color=scanOn?'#00CC44':'#555';}
+  s('blmSigCount',(sigs.length||0)+' sinyal kaydı');
+  s('blmLastUpdate',new Date().toLocaleTimeString('tr-TR'));
 
-  // ── İşlem Kaydı render ──
+  // İşlem kaydı
   cqJrnRender();
 }
 
-// Hesaplayıcı
-function cq3Calc() {
-  const bal  = parseFloat(document.getElementById('cq3CalcBal')?.value);
-  const risk = parseFloat(document.getElementById('cq3CalcRisk')?.value);
-  const sl   = parseFloat(document.getElementById('cq3CalcSL')?.value);
-  const res  = document.getElementById('cq3CalcResult');
-  if (!bal || !risk || !sl || !res) return;
-  const riskAmt = bal * risk / 100;
-  const posSize = riskAmt / (sl / 100);
-  res.style.display = 'flex';
-  res.style.flexDirection = 'column';
-  res.style.gap = '4px';
-  const rr = document.getElementById('cq3ResRisk'); if(rr) rr.textContent = '$'+riskAmt.toFixed(2);
-  const rp = document.getElementById('cq3ResPos');  if(rp) rp.textContent = '$'+posSize.toFixed(0);
+// Bloomberg hesaplayıcı
+function blmCalc(){
+  const bal=parseFloat(document.getElementById('blmCalcBal')?.value);
+  const risk=parseFloat(document.getElementById('blmCalcRisk')?.value);
+  const sl=parseFloat(document.getElementById('blmCalcSL')?.value);
+  const res=document.getElementById('blmCalcResult');
+  if(!bal||!risk||!sl||!res)return;
+  const riskAmt=bal*risk/100;
+  const pos=riskAmt/(sl/100);
+  res.style.display='block';
+  const rr=document.getElementById('blmResRisk');if(rr)rr.textContent='$'+riskAmt.toFixed(2);
+  const rp=document.getElementById('blmResPos');if(rp)rp.textContent='$'+pos.toFixed(0);
 }
 
 // ── Kokpit Modal ──
