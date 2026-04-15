@@ -9970,6 +9970,7 @@ let _autoScan    = true; // Varsayılan: AÇIK
 let _autoScanTimer = null;
 let _activeSignals = [];
 const AUTO_SCAN_INTERVAL = 5 * 60 * 1000; // 5 dakika
+var _cockpitTimer = null; // v45 kokpit yenileme timer (var: TDZ yok)
 
 // ── Telegram ──
 function tgSave() {
@@ -11792,7 +11793,7 @@ function closeCockpitModal() {
 }
 
 // Kokpit otomatik yenileme (30sn)
-let _cockpitTimer = null;
+// Kokpit otomatik yenileme timer
 
 // ── v45: Mini Backtest Motoru ──
 // Son 300 mumda sinyal mantığını simüle eder
