@@ -8588,7 +8588,7 @@ fetchAll();
 // TradingView grafik — sayfa yüklenince başlat
 setTimeout(() => { try { tvInitChart(); } catch(e) {} }, 500);
 fetchATR();
-document.getElementById('cbt15m').className = 'cbt on';
+const _cbt15m = document.getElementById('cbt15m'); if (_cbt15m) _cbt15m.className = 'cbt on';
 // OKX açık pozisyonları — API varsa yükle
 if (secureGetKey('okx_api_key')) fetchOpenPositions();
 // ATR 60sn'de bir yenile
