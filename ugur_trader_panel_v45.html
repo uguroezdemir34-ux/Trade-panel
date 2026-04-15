@@ -2995,6 +2995,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(255,255,255,0.97) !im
       <div id="okxKeyBar" style="display:flex;align-items:center;gap:8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);padding:6px 10px;margin-bottom:10px">
         <div style="font-size:11px">🔐</div>
         <div style="font-size:9px;color:var(--t3);flex:1;font-family:var(--mono)" id="okxKeyTxt">OKX API — futures bakiyesi için</div>
+        <button onclick="syncOKXBalance()" style="padding:4px 10px;background:var(--t1);color:var(--bg);border:none;border-radius:var(--rsm);font-size:9px;font-weight:700;cursor:pointer;font-family:var(--font)">↻ Bakiye Çek</button>
         <button onclick="okxKeyOpen()" style="padding:2px 8px;border-radius:4px;border:1px solid var(--bd2);background:transparent;color:var(--t2);font-size:9px;font-weight:700;cursor:pointer;font-family:var(--font)" id="okxKeyBtn">Gir</button>
       </div>
 
@@ -6570,6 +6571,19 @@ if (ld('ug_dark')) {
 // ═══════════════════════════════════════════════════════
 // OKX AÇIK POZİSYON MONİTÖRÜ
 // ═══════════════════════════════════════════════════════
+async function syncOKXBalance() {
+  const btn = event?.target;
+  if (btn) { btn.textContent = '⟳ Çekiliyor…'; btn.disabled = true; }
+  try {
+    await fetchAll();
+    showToast('✅ OKX bakiyesi güncellendi');
+  } catch(e) {
+    showToast('❌ OKX bağlanamadı: ' + e.message);
+  } finally {
+    if (btn) { btn.textContent = '↻ Bakiye Çek'; btn.disabled = false; }
+  }
+}
+
 async function fetchOpenPositions() {
   const ak = secureGetKey('okx_api_key') || '';
   const emptyEl = document.getElementById('posEmpty');
