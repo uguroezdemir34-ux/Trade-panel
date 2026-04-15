@@ -1065,6 +1065,7 @@ body[data-active-mode="trade"] [data-mode="trade"],
 body[data-active-mode="manage"] [data-mode="manage"],
 body[data-active-mode="stats"] [data-mode="stats"],
 body[data-active-mode="cockpit"] [data-mode="cockpit"]{display:block}
+body[data-active-mode="cockpit"]{background:#03040a !important;overflow-x:hidden}
 </style>
 
 
@@ -3386,7 +3387,9 @@ body[data-active-mode="cockpit"] [data-mode="cockpit"]{display:block}
   min-height: 100vh;
   padding: 10px 10px 80px;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 /* Animated scanlines */
@@ -8579,7 +8582,7 @@ initGuardian();
 // Ses durumunu topbar'a yansıt
 (function(){ const el = document.getElementById('soundToggleBtn'); if(el && localStorage.getItem('ug_sound')==='off') el.textContent='🔇'; })();
 // Mod sistemi — kaydedilen modu yükle, yoksa Hazırlık
-const _savedMode = localStorage.getItem('ug_mode') || 'pre';
+const _savedMode = localStorage.getItem('ug_mode') || 'cockpit';
 document.body.setAttribute('data-active-mode', _savedMode);
 setMode(_savedMode);
 renderSpList({});
