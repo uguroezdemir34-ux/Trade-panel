@@ -1022,6 +1022,7 @@ select.tf-inp{cursor:pointer}
     <div class="pill" id="datePill"></div>
     <div class="pill live"><div class="live-dot"></div>CANLI</div>
     <button onclick="toggleSound()" id="soundToggleBtn" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px" title="Ses">🔔</button>
+    <button onclick="requestPushPermission()" id="pushNotifBtn" style="background:none;border:1px solid var(--bd);border-radius:20px;cursor:pointer;font-size:10px;padding:2px 8px;color:var(--t4);font-family:var(--font)" title="Push Bildirim">📳 Bildirim</button>
     <button onclick="showCustomizeModal()" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px" title="Özelleştir">⚙️</button>
     <button class="dm-btn" id="dmBtn" onclick="toggleDark()" title="Karanlık Mod">🌙</button>
   </div>
@@ -1251,6 +1252,184 @@ body[data-active-mode="stats"] [data-mode="stats"]{display:block}
 </div>
 
 <!-- ── FAZA 1: PSİKOLOJİ KİLİTLERİ ── -->
+<div class="sec fade" data-mode="pre">
+  <div class="sec-lbl">Psikoloji & Zeka</div>
+
+  <!-- Mental Durum — Sadeleştirildi: Tek Soru -->
+  <div class="card" id="mentalCard">
+    <div class="card-head">
+      <div class="card-title">🧘 Kaptan, Şu An Nasılsın?</div>
+      <div class="card-hint" id="mentalDate">—</div>
+    </div>
+    <div style="padding:11px 13px">
+      <div style="font-size:10px;color:var(--t3);margin-bottom:8px;line-height:1.5">10 saniye dur. Dürüst ol. Otopilot geri kalanını halleder.</div>
+      <!-- v42: Bot otomatik öneri -->
+      <div id="mentalAutoHint" style="display:none;font-size:9px;font-weight:700;padding:5px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);margin-bottom:8px;text-align:center"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
+        <button onclick="quickMental('green')" id="mqGreen"
+          style="padding:14px 8px;border-radius:var(--r);border:2px solid var(--bd);background:var(--s2);cursor:pointer;font-family:var(--font);transition:all .15s;text-align:center">
+          <div style="font-size:22px">🟢</div>
+          <div style="font-size:10px;font-weight:700;color:var(--green);margin-top:4px">Hazırım</div>
+          <div style="font-size:8px;color:var(--t4)">Net, sakin, planlı</div>
+        </button>
+        <button onclick="quickMental('yellow')" id="mqYellow"
+          style="padding:14px 8px;border-radius:var(--r);border:2px solid var(--bd);background:var(--s2);cursor:pointer;font-family:var(--font);transition:all .15s;text-align:center">
+          <div style="font-size:22px">🟡</div>
+          <div style="font-size:10px;font-weight:700;color:var(--amber);margin-top:4px">Olur</div>
+          <div style="font-size:8px;color:var(--t4)">Dikkatli ol</div>
+        </button>
+        <button onclick="quickMental('red')" id="mqRed"
+          style="padding:14px 8px;border-radius:var(--r);border:2px solid var(--bd);background:var(--s2);cursor:pointer;font-family:var(--font);transition:all .15s;text-align:center">
+          <div style="font-size:22px">🔴</div>
+          <div style="font-size:10px;font-weight:700;color:var(--red);margin-top:4px">Değil</div>
+          <div style="font-size:8px;color:var(--t4)">Bugün trade yok</div>
+        </button>
+      </div>
+      <div id="mentalQuickMsg" style="display:none;padding:8px 12px;border-radius:var(--rsm);font-size:10px;font-weight:600;text-align:center"></div>
+    </div>
+  </div>
+
+  <!-- Mental istatistik -->
+  <div class="card mt8">
+    <div class="card-body" style="padding:11px 13px">
+      <div style="margin-bottom:4px">
+        <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:8px">📊 Mental Durum → Performans Korelasyonu</div>
+        <div id="mentalStats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px"></div>
+        <div id="mentalEmpty" style="font-size:10px;color:var(--t4);text-align:center;padding:10px 0">En az 5 kayıt sonra istatistik oluşur</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- v44 FIX: AI / Adaptif Ağırlık Sistemi -->
+  <div class="card mt8">
+    <div class="card-head">
+      <div class="card-title">🧠 AI Öğrenme Sistemi</div>
+      <div style="display:flex;align-items:center;gap:6px">
+        <span id="tfStatusPill" style="font-size:8px;font-family:var(--mono);padding:2px 7px;border-radius:10px;background:var(--s3);color:var(--t4)">⏳ Yükleniyor</span>
+        <button onclick="calcAdaptiveWeights();buildTFModel()" style="font-size:8px;padding:2px 8px;border:1px solid var(--bd);border-radius:4px;background:var(--s2);color:var(--t3);cursor:pointer;font-family:var(--font)">↻ Yeniden Eğit</button>
+      </div>
+    </div>
+    <div class="card-body">
+      <!-- TF.js Tahmin Doğruluğu -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);padding:10px;text-align:center">
+          <div style="font-size:7px;font-weight:700;text-transform:uppercase;color:var(--t4);margin-bottom:3px">🧠 AI Doğruluk</div>
+          <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--blue)" id="tfAccDisplay">—</div>
+          <div style="font-size:8px;color:var(--t4);margin-top:1px">TensorFlow.js</div>
+        </div>
+        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);padding:10px;text-align:center">
+          <div style="font-size:7px;font-weight:700;text-transform:uppercase;color:var(--t4);margin-bottom:3px">📊 Genel WR</div>
+          <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--t1)" id="overallWRDisplay">—</div>
+          <div style="font-size:8px;color:var(--t4);margin-top:1px">Geçmiş tradesler</div>
+        </div>
+      </div>
+      <!-- Adaptif Koşul Ağırlıkları -->
+      <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:6px">Koşul Win Rate Analizi</div>
+      <div id="adaptiveWeightsUI" style="font-size:9px;color:var(--t4)">Henüz veri yok — trade yaptıkça otomatik öğrenir</div>
+    </div>
+  </div>
+
+  <!-- Risk of Ruin Hesaplayıcı -->
+  <div class="card mt8">
+    <div class="card-head">
+      <div class="card-title">💀 Risk of Ruin Hesaplayıcısı</div>
+      <div class="card-hint">Matematiksel hesap bitirme ihtimali</div>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Win Rate %</div>
+          <input type="number" id="rorWR" value="50" min="1" max="99" step="1" oninput="calcRoR()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
+        </div>
+        <div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Ort. R:R</div>
+          <input type="number" id="rorRR" value="1.5" min="0.1" max="10" step="0.1" oninput="calcRoR()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
+        </div>
+        <div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Risk % / Trade</div>
+          <input type="number" id="rorRisk" value="2" min="0.1" max="20" step="0.1" oninput="calcRoR()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
+        </div>
+      </div>
+      <div id="rorResult" style="padding:12px;border-radius:var(--r);background:var(--s2);border:1px solid var(--bd)">
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
+          <div>
+            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--green)" id="rorPct">—</div>
+            <div style="font-size:8px;color:var(--t4);margin-top:2px">Risk of Ruin</div>
+          </div>
+          <div>
+            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--blue)" id="rorEdge">—</div>
+            <div style="font-size:8px;color:var(--t4);margin-top:2px">Matematiksel Edge</div>
+          </div>
+          <div>
+            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--amber)" id="rorKelly">—</div>
+            <div style="font-size:8px;color:var(--t4);margin-top:2px">Kelly %</div>
+          </div>
+        </div>
+        <div id="rorVerdict" style="margin-top:10px;padding:8px 10px;border-radius:var(--rsm);font-size:10px;font-weight:600;text-align:center">—</div>
+      </div>
+      <div style="margin-top:8px;font-size:9px;color:var(--t4);line-height:1.6">
+        <strong>Risk of Ruin:</strong> Mevcut parametrelerle hesabın sıfırlanma ihtimali<br>
+        <strong>Edge:</strong> Her trade'de beklenen ortalama kazanç (pozitif = sistem çalışıyor)<br>
+        <strong>Kelly %:</strong> Matematiğin önerdiği optimal pozisyon büyüklüğü
+      </div>
+    </div>
+  </div>
+
+  <!-- Monte Carlo Simülasyonu -->
+  <div class="card mt8">
+    <div class="card-head">
+      <div class="card-title">🎲 Monte Carlo Simülasyonu</div>
+      <div class="card-hint">1000 senaryo · gelecek tahmini</div>
+    </div>
+    <div class="card-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Win Rate %</div>
+          <input type="number" id="mcWR" value="50" min="1" max="99" oninput="runMC()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
+        </div>
+        <div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">R:R</div>
+          <input type="number" id="mcRR" value="1.5" min="0.1" max="10" step="0.1" oninput="runMC()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
+        </div>
+        <div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Trade Sayısı</div>
+          <input type="number" id="mcN" value="100" min="10" max="500" step="10" oninput="runMC()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+        <div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Başlangıç Bakiye $</div>
+          <input type="number" id="mcBal" value="1000" min="100" oninput="runMC()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
+        </div>
+        <div>
+          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Risk % / Trade</div>
+          <input type="number" id="mcRisk" value="2" min="0.1" max="20" step="0.1" oninput="runMC()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px" id="mcResults">
+        <div style="background:var(--gbg);border:1px solid var(--gbd);border-radius:var(--rsm);padding:8px;text-align:center">
+          <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--green)" id="mcMedian">—</div>
+          <div style="font-size:8px;color:var(--t4);margin-top:2px">Medyan Sonuç</div>
+        </div>
+        <div style="background:var(--bbg);border:1px solid var(--bbd);border-radius:var(--rsm);padding:8px;text-align:center">
+          <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--blue)" id="mcBest10">—</div>
+          <div style="font-size:8px;color:var(--t4);margin-top:2px">En İyi %10</div>
+        </div>
+        <div style="background:var(--rbg);border:1px solid var(--rbd);border-radius:var(--rsm);padding:8px;text-align:center">
+          <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--red)" id="mcWorst10">—</div>
+          <div style="font-size:8px;color:var(--t4);margin-top:2px">En Kötü %10</div>
+        </div>
+        <div style="background:var(--abg);border:1px solid var(--abd);border-radius:var(--rsm);padding:8px;text-align:center">
+          <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--amber)" id="mcProfit">—</div>
+          <div style="font-size:8px;color:var(--t4);margin-top:2px">Kârlı %</div>
+        </div>
+      </div>
+      <canvas id="mcCanvas" height="80" style="width:100%;border-radius:var(--rsm)"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- ── 9. GELİŞMİŞ ANALİTİK ── -->
 <div class="sec fade" data-mode="pre">
   <div class="sec-lbl">Psikoloji & Disiplin</div>
 
@@ -1776,37 +1955,36 @@ body[data-active-mode="stats"] [data-mode="stats"]{display:block}
 <!-- ── FAZA 2: GRAFİK ── -->
 <div class="sec fade" data-mode="trade">
   <div class="sec-lbl">Grafik</div>
-  <div class="chart-wrap">
-    <div class="chart-bar">
-      <div class="chart-info">
-        <span class="chart-pair" id="chartPair">ETH/USDT</span>
-        <span class="chart-px" id="chartPx">—</span>
-        <span class="chart-chg fl" id="chartChg">—</span>
-      </div>
-      <div class="chart-btns">
-        <button class="cbt" onclick="chartSetPair('ETH')">ETH</button>
-        <button class="cbt" onclick="chartSetPair('BTC')">BTC</button>
-        <div class="cdiv"></div>
-        <button class="cbt on" onclick="chartSetTF('15m')" id="cbt15m">15m</button>
-        <button class="cbt" onclick="chartSetTF('1h')" id="cbt1h">1H</button>
-        <button class="cbt" onclick="chartSetTF('4h')" id="cbt4h">4H</button>
-      </div>
+
+  <!-- Parite & TF seçici -->
+  <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px;box-shadow:var(--sh)">
+    <div style="display:flex;gap:4px">
+      <button onclick="tvSetPair('OKXP:ETHUSDTPERP')" id="tvBtnETH"
+        style="padding:4px 12px;border-radius:20px;border:none;background:var(--t1);color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font)">ETH</button>
+      <button onclick="tvSetPair('OKXP:BTCUSDTPERP')" id="tvBtnBTC"
+        style="padding:4px 12px;border-radius:20px;border:none;background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid var(--bd)">BTC</button>
+      <button onclick="tvSetPair('OKXP:SOLUSDTPERP')" id="tvBtnSOL"
+        style="padding:4px 12px;border-radius:20px;border:none;background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid var(--bd)">SOL</button>
     </div>
-    <div class="chart-canvas-wrap">
-      <canvas id="cChart"></canvas>
-      <div class="chart-overlay" id="chartOverlay">Yükleniyor…</div>
+    <div style="width:1px;height:16px;background:var(--bd)"></div>
+    <div style="display:flex;gap:3px">
+      <button onclick="tvSetTF('15')"  id="tvTF15"
+        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">15m</button>
+      <button onclick="tvSetTF('60')"  id="tvTF60"
+        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">1H</button>
+      <button onclick="tvSetTF('240')" id="tvTF240"
+        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--t1);color:#fff;font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">4H</button>
+      <button onclick="tvSetTF('D')"   id="tvTFD"
+        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">1D</button>
     </div>
-    <div class="chart-ohlcv" id="chartOHLCV" style="display:none">
-      <div class="ohlcv-item"><div class="ohlcv-lbl">OPEN</div><div class="ohlcv-val" id="ohlcvO">—</div></div>
-      <div class="ohlcv-item"><div class="ohlcv-lbl">HIGH</div><div class="ohlcv-val" id="ohlcvH" style="color:var(--green)">—</div></div>
-      <div class="ohlcv-item"><div class="ohlcv-lbl">LOW</div><div class="ohlcv-val" id="ohlcvL" style="color:var(--red)">—</div></div>
-      <div class="ohlcv-item"><div class="ohlcv-lbl">CLOSE</div><div class="ohlcv-val" id="ohlcvC">—</div></div>
-      <div class="ohlcv-item"><div class="ohlcv-lbl">VOL</div><div class="ohlcv-val" id="ohlcvV">—</div></div>
-    </div>
-    <div style="padding:4px 12px 6px;border-top:1px solid var(--bd);display:flex;justify-content:space-between">
-      <span style="font-size:8px;color:var(--t4);font-family:var(--mono)" id="chartMeta">—</span>
-      <span style="font-size:8px;color:var(--t4);font-family:var(--mono)" id="chartCandles">Binance</span>
-    </div>
+  </div>
+
+  <!-- TradingView Widget -->
+  <div style="border-radius:var(--r);overflow:hidden;border:1px solid var(--bd);box-shadow:var(--sh)">
+    <div id="tv_chart_container" style="height:420px"></div>
+  </div>
+  <div style="font-size:8px;color:var(--t5);text-align:right;padding:4px 8px">
+    TradingView · OKX Perpetual Futures
   </div>
 </div>
 
@@ -2405,7 +2583,7 @@ body[data-active-mode="stats"] [data-mode="stats"]{display:block}
 <div id="faza5"></div>
 
 <!-- VERİ YEDEKLEMESİ -->
-<div class="sec fade" data-mode="stats">
+<div class="sec fade" data-mode="manage">
   <div class="sec-lbl">💾 Veri Yedekleme</div>
   <div class="card">
     <div class="card-head">
@@ -2796,184 +2974,6 @@ body[data-active-mode="stats"] [data-mode="stats"]{display:block}
      ═══════════════════════════════════════════════════════ -->
 
 <!-- ── 8. MENTAL DURUM LOGU ── -->
-<div class="sec fade" data-mode="stats">
-  <div class="sec-lbl">Psikoloji & Zeka</div>
-
-  <!-- Mental Durum — Sadeleştirildi: Tek Soru -->
-  <div class="card" id="mentalCard">
-    <div class="card-head">
-      <div class="card-title">🧘 Kaptan, Şu An Nasılsın?</div>
-      <div class="card-hint" id="mentalDate">—</div>
-    </div>
-    <div style="padding:11px 13px">
-      <div style="font-size:10px;color:var(--t3);margin-bottom:8px;line-height:1.5">10 saniye dur. Dürüst ol. Otopilot geri kalanını halleder.</div>
-      <!-- v42: Bot otomatik öneri -->
-      <div id="mentalAutoHint" style="display:none;font-size:9px;font-weight:700;padding:5px 10px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);margin-bottom:8px;text-align:center"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:10px">
-        <button onclick="quickMental('green')" id="mqGreen"
-          style="padding:14px 8px;border-radius:var(--r);border:2px solid var(--bd);background:var(--s2);cursor:pointer;font-family:var(--font);transition:all .15s;text-align:center">
-          <div style="font-size:22px">🟢</div>
-          <div style="font-size:10px;font-weight:700;color:var(--green);margin-top:4px">Hazırım</div>
-          <div style="font-size:8px;color:var(--t4)">Net, sakin, planlı</div>
-        </button>
-        <button onclick="quickMental('yellow')" id="mqYellow"
-          style="padding:14px 8px;border-radius:var(--r);border:2px solid var(--bd);background:var(--s2);cursor:pointer;font-family:var(--font);transition:all .15s;text-align:center">
-          <div style="font-size:22px">🟡</div>
-          <div style="font-size:10px;font-weight:700;color:var(--amber);margin-top:4px">Olur</div>
-          <div style="font-size:8px;color:var(--t4)">Dikkatli ol</div>
-        </button>
-        <button onclick="quickMental('red')" id="mqRed"
-          style="padding:14px 8px;border-radius:var(--r);border:2px solid var(--bd);background:var(--s2);cursor:pointer;font-family:var(--font);transition:all .15s;text-align:center">
-          <div style="font-size:22px">🔴</div>
-          <div style="font-size:10px;font-weight:700;color:var(--red);margin-top:4px">Değil</div>
-          <div style="font-size:8px;color:var(--t4)">Bugün trade yok</div>
-        </button>
-      </div>
-      <div id="mentalQuickMsg" style="display:none;padding:8px 12px;border-radius:var(--rsm);font-size:10px;font-weight:600;text-align:center"></div>
-    </div>
-  </div>
-
-  <!-- Mental istatistik -->
-  <div class="card mt8">
-    <div class="card-body" style="padding:11px 13px">
-      <div style="margin-bottom:4px">
-        <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:8px">📊 Mental Durum → Performans Korelasyonu</div>
-        <div id="mentalStats" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px"></div>
-        <div id="mentalEmpty" style="font-size:10px;color:var(--t4);text-align:center;padding:10px 0">En az 5 kayıt sonra istatistik oluşur</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- v44 FIX: AI / Adaptif Ağırlık Sistemi -->
-  <div class="card mt8">
-    <div class="card-head">
-      <div class="card-title">🧠 AI Öğrenme Sistemi</div>
-      <div style="display:flex;align-items:center;gap:6px">
-        <span id="tfStatusPill" style="font-size:8px;font-family:var(--mono);padding:2px 7px;border-radius:10px;background:var(--s3);color:var(--t4)">⏳ Yükleniyor</span>
-        <button onclick="calcAdaptiveWeights();buildTFModel()" style="font-size:8px;padding:2px 8px;border:1px solid var(--bd);border-radius:4px;background:var(--s2);color:var(--t3);cursor:pointer;font-family:var(--font)">↻ Yeniden Eğit</button>
-      </div>
-    </div>
-    <div class="card-body">
-      <!-- TF.js Tahmin Doğruluğu -->
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);padding:10px;text-align:center">
-          <div style="font-size:7px;font-weight:700;text-transform:uppercase;color:var(--t4);margin-bottom:3px">🧠 AI Doğruluk</div>
-          <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--blue)" id="tfAccDisplay">—</div>
-          <div style="font-size:8px;color:var(--t4);margin-top:1px">TensorFlow.js</div>
-        </div>
-        <div style="background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);padding:10px;text-align:center">
-          <div style="font-size:7px;font-weight:700;text-transform:uppercase;color:var(--t4);margin-bottom:3px">📊 Genel WR</div>
-          <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--t1)" id="overallWRDisplay">—</div>
-          <div style="font-size:8px;color:var(--t4);margin-top:1px">Geçmiş tradesler</div>
-        </div>
-      </div>
-      <!-- Adaptif Koşul Ağırlıkları -->
-      <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:6px">Koşul Win Rate Analizi</div>
-      <div id="adaptiveWeightsUI" style="font-size:9px;color:var(--t4)">Henüz veri yok — trade yaptıkça otomatik öğrenir</div>
-    </div>
-  </div>
-
-  <!-- Risk of Ruin Hesaplayıcı -->
-  <div class="card mt8">
-    <div class="card-head">
-      <div class="card-title">💀 Risk of Ruin Hesaplayıcısı</div>
-      <div class="card-hint">Matematiksel hesap bitirme ihtimali</div>
-    </div>
-    <div class="card-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-        <div>
-          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Win Rate %</div>
-          <input type="number" id="rorWR" value="50" min="1" max="99" step="1" oninput="calcRoR()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
-        </div>
-        <div>
-          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Ort. R:R</div>
-          <input type="number" id="rorRR" value="1.5" min="0.1" max="10" step="0.1" oninput="calcRoR()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
-        </div>
-        <div>
-          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Risk % / Trade</div>
-          <input type="number" id="rorRisk" value="2" min="0.1" max="20" step="0.1" oninput="calcRoR()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:13px;color:var(--t1);outline:none">
-        </div>
-      </div>
-      <div id="rorResult" style="padding:12px;border-radius:var(--r);background:var(--s2);border:1px solid var(--bd)">
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center">
-          <div>
-            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--green)" id="rorPct">—</div>
-            <div style="font-size:8px;color:var(--t4);margin-top:2px">Risk of Ruin</div>
-          </div>
-          <div>
-            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--blue)" id="rorEdge">—</div>
-            <div style="font-size:8px;color:var(--t4);margin-top:2px">Matematiksel Edge</div>
-          </div>
-          <div>
-            <div style="font-size:20px;font-weight:700;font-family:var(--mono);color:var(--amber)" id="rorKelly">—</div>
-            <div style="font-size:8px;color:var(--t4);margin-top:2px">Kelly %</div>
-          </div>
-        </div>
-        <div id="rorVerdict" style="margin-top:10px;padding:8px 10px;border-radius:var(--rsm);font-size:10px;font-weight:600;text-align:center">—</div>
-      </div>
-      <div style="margin-top:8px;font-size:9px;color:var(--t4);line-height:1.6">
-        <strong>Risk of Ruin:</strong> Mevcut parametrelerle hesabın sıfırlanma ihtimali<br>
-        <strong>Edge:</strong> Her trade'de beklenen ortalama kazanç (pozitif = sistem çalışıyor)<br>
-        <strong>Kelly %:</strong> Matematiğin önerdiği optimal pozisyon büyüklüğü
-      </div>
-    </div>
-  </div>
-
-  <!-- Monte Carlo Simülasyonu -->
-  <div class="card mt8">
-    <div class="card-head">
-      <div class="card-title">🎲 Monte Carlo Simülasyonu</div>
-      <div class="card-hint">1000 senaryo · gelecek tahmini</div>
-    </div>
-    <div class="card-body">
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px">
-        <div>
-          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Win Rate %</div>
-          <input type="number" id="mcWR" value="50" min="1" max="99" oninput="runMC()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
-        </div>
-        <div>
-          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">R:R</div>
-          <input type="number" id="mcRR" value="1.5" min="0.1" max="10" step="0.1" oninput="runMC()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
-        </div>
-        <div>
-          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Trade Sayısı</div>
-          <input type="number" id="mcN" value="100" min="10" max="500" step="10" oninput="runMC()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div>
-          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Başlangıç Bakiye $</div>
-          <input type="number" id="mcBal" value="1000" min="100" oninput="runMC()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
-        </div>
-        <div>
-          <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Risk % / Trade</div>
-          <input type="number" id="mcRisk" value="2" min="0.1" max="20" step="0.1" oninput="runMC()" style="width:100%;padding:7px 8px;background:var(--s2);border:1px solid var(--bd);border-radius:var(--rsm);font-family:var(--mono);font-size:12px;color:var(--t1);outline:none">
-        </div>
-      </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:10px" id="mcResults">
-        <div style="background:var(--gbg);border:1px solid var(--gbd);border-radius:var(--rsm);padding:8px;text-align:center">
-          <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--green)" id="mcMedian">—</div>
-          <div style="font-size:8px;color:var(--t4);margin-top:2px">Medyan Sonuç</div>
-        </div>
-        <div style="background:var(--bbg);border:1px solid var(--bbd);border-radius:var(--rsm);padding:8px;text-align:center">
-          <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--blue)" id="mcBest10">—</div>
-          <div style="font-size:8px;color:var(--t4);margin-top:2px">En İyi %10</div>
-        </div>
-        <div style="background:var(--rbg);border:1px solid var(--rbd);border-radius:var(--rsm);padding:8px;text-align:center">
-          <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--red)" id="mcWorst10">—</div>
-          <div style="font-size:8px;color:var(--t4);margin-top:2px">En Kötü %10</div>
-        </div>
-        <div style="background:var(--abg);border:1px solid var(--abd);border-radius:var(--rsm);padding:8px;text-align:center">
-          <div style="font-size:14px;font-weight:700;font-family:var(--mono);color:var(--amber)" id="mcProfit">—</div>
-          <div style="font-size:8px;color:var(--t4);margin-top:2px">Kârlı %</div>
-        </div>
-      </div>
-      <canvas id="mcCanvas" height="80" style="width:100%;border-radius:var(--rsm)"></canvas>
-    </div>
-  </div>
-</div>
-
-<!-- ── 9. GELİŞMİŞ ANALİTİK ── -->
 <div class="sec fade" data-mode="stats">
   <div class="sec-lbl" style="cursor:pointer" onclick="toggleAdvanced()">
     Gelişmiş Analitik
@@ -3596,6 +3596,58 @@ function toggleSound() {
   if (el) el.textContent = cur ? '🔇 Ses Kapalı' : '🔔 Ses Açık';
   showToast(cur ? '🔇 Bildirim sesi kapatıldı' : '🔔 Bildirim sesi açıldı');
 }
+
+// ── v45: MASAÜSTÜ PUSH BİLDİRİMİ ──
+let _pushEnabled = false;
+
+async function requestPushPermission() {
+  if (!('Notification' in window)) {
+    showToast('⚠️ Bu tarayıcı bildirim desteklemiyor'); return false;
+  }
+  if (Notification.permission === 'granted') {
+    _pushEnabled = true;
+    showToast('✅ Push bildirim zaten aktif');
+    return true;
+  }
+  if (Notification.permission === 'denied') {
+    showToast('❌ İzin reddedildi — Chrome Ayarlar → Site Ayarları → Bildirimler → İzin ver');
+    return false;
+  }
+  const perm = await Notification.requestPermission();
+  _pushEnabled = perm === 'granted';
+  if (_pushEnabled) {
+    sendPushNotification('🔔 Uğur Trader Panel', 'Bildirimler aktif! Sinyal gelince haber vereceğim.', '📊');
+    showToast('✅ Push bildirim aktif!');
+    const btn = document.getElementById('pushNotifBtn');
+    if (btn) { btn.textContent = '🔔 Bildirim Açık'; btn.style.color = 'var(--green)'; btn.style.borderColor = 'var(--gbd)'; }
+  } else {
+    showToast('⚠️ Bildirim izni verilmedi');
+  }
+  return _pushEnabled;
+}
+
+function sendPushNotification(title, body, icon = '📊') {
+  if (!_pushEnabled || Notification.permission !== 'granted') return;
+  try {
+    const svg = (em) => `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${em}</text></svg>`;
+    const n = new Notification(title, {
+      body,
+      icon: svg(icon),
+      tag: 'ugur-trader',
+      requireInteraction: true,
+      silent: false,
+    });
+    n.onclick = () => { window.focus(); n.close(); };
+    setTimeout(() => n.close(), 30000);
+  } catch(e) {}
+}
+
+// Sayfa yüklenince push durumunu kontrol et
+(function initPush() {
+  if ('Notification' in window && Notification.permission === 'granted') {
+    _pushEnabled = true;
+  }
+})();
 
 // ═══════════════════════════════════════════════════════
 // 5. LAZY LOADING — Kritik olmayan bölümler
@@ -6301,124 +6353,97 @@ let chartTF   = '15m';
 let chartData = [];
 let _prevBtcPx = 0, _prevEthPx = 0;
 
-function chartSetPair(p) {
-  chartPair = p;
-  document.getElementById('chartPair').textContent = p + '/USDT';
-  fetchChart();
+// ── TradingView Grafik Fonksiyonları ──
+let _tvPair = 'OKXP:ETHUSDTPERP';
+let _tvTF   = '240';
+let _tvWidget = null;
+
+function tvInitChart() {
+  const container = document.getElementById('tv_chart_container');
+  if (!container) return;
+
+  // Eski widget'ı temizle
+  container.innerHTML = '';
+
+  // TradingView Advanced Chart Widget
+  const script = document.createElement('script');
+  script.type  = 'text/javascript';
+  script.src   = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+  script.async = true;
+
+  const isDark = document.body.classList.contains('dark') ||
+                 localStorage.getItem('darkMode') === '1';
+
+  script.innerHTML = JSON.stringify({
+    "autosize":           true,
+    "symbol":             _tvPair,
+    "interval":           _tvTF,
+    "timezone":           "Europe/Istanbul",
+    "theme":              isDark ? "dark" : "light",
+    "style":              "1",          // Candlestick
+    "locale":             "tr",
+    "backgroundColor":    isDark ? "rgba(15,15,20,1)" : "rgba(255,255,255,1)",
+    "gridColor":          isDark ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+    "withdateranges":     false,
+    "hide_side_toolbar":  false,
+    "allow_symbol_change":false,
+    "calendar":           false,
+    "support_host":       "https://www.tradingview.com",
+    "studies": [
+      "STD;EMA@tv-basicstudies",
+      "STD;Bollinger_Bands@tv-basicstudies",
+      "STD;RSI@tv-basicstudies"
+    ]
+  });
+
+  const wrapper = document.createElement('div');
+  wrapper.className = 'tradingview-widget-container';
+  wrapper.style.height = '100%';
+
+  const inner = document.createElement('div');
+  inner.className = 'tradingview-widget-container__widget';
+  inner.style.height = '100%';
+
+  wrapper.appendChild(inner);
+  wrapper.appendChild(script);
+  container.appendChild(wrapper);
 }
+
+function tvSetPair(pair) {
+  _tvPair = pair;
+  // Buton durumunu güncelle
+  ['ETH','BTC','SOL'].forEach(p => {
+    const btn = document.getElementById('tvBtn' + p);
+    if (!btn) return;
+    const isActive = pair.includes(p);
+    btn.style.background = isActive ? 'var(--t1)' : 'var(--s2)';
+    btn.style.color      = isActive ? '#fff'       : 'var(--t3)';
+    btn.style.border     = isActive ? 'none'       : '1px solid var(--bd)';
+  });
+  tvInitChart();
+}
+
+function tvSetTF(tf) {
+  _tvTF = tf;
+  ['15','60','240','D'].forEach(t => {
+    const btn = document.getElementById('tvTF' + t);
+    if (!btn) return;
+    const isActive = t === tf;
+    btn.style.background = isActive ? 'var(--t1)' : 'var(--s2)';
+    btn.style.color      = isActive ? '#fff'       : 'var(--t3)';
+  });
+  tvInitChart();
+}
+
+// fetchChart artık TradingView init çağırır
+function fetchChart() { tvInitChart(); }
+function chartSetPair(p) { tvSetPair('OKXP:' + p + 'USDTPERP'); }
 function chartSetTF(tf) {
-  chartTF = tf;
-  ['15m','1h','4h'].forEach(t => {
-    const id = 'cbt' + t.replace('h','h');
-    const btn = document.getElementById('cbt'+t);
-    if(btn) btn.className = 'cbt' + (t===tf?' on':'');
-  });
-  fetchChart();
+  const map = { '15m':'15', '1h':'60', '4h':'240', '1d':'D' };
+  tvSetTF(map[tf] || '240');
 }
 
-async function fetchChart() {
-  const overlay = document.getElementById('chartOverlay');
-  if(overlay) { overlay.textContent = 'Yükleniyor…'; overlay.classList.remove('hidden'); }
-  try {
-    const limit = 80;
-    const r = await fetch(`https://api.binance.com/api/v3/klines?symbol=${chartPair}USDT&interval=${chartTF}&limit=${limit}`);
-    const raw = await r.json();
-    chartData = raw.map(c => ({
-      t: c[0], o: +c[1], h: +c[2], l: +c[3], c: +c[4], v: +c[5]
-    }));
-    drawChart();
-    if(overlay) overlay.classList.add('hidden');
-    // OHLCV son mum
-    const last = chartData[chartData.length-1];
-    const fmtC = v => v>=1000 ? v.toLocaleString('en-US',{maximumFractionDigits:0}) : v>=1 ? v.toFixed(2) : v.toFixed(4);
-    const fmtV = v => v>=1e6 ? (v/1e6).toFixed(1)+'M' : v>=1e3 ? (v/1e3).toFixed(0)+'K' : v.toFixed(0);
-    document.getElementById('ohlcvO').textContent = '$'+fmtC(last.o);
-    document.getElementById('ohlcvH').textContent = '$'+fmtC(last.h);
-    document.getElementById('ohlcvL').textContent = '$'+fmtC(last.l);
-    document.getElementById('ohlcvC').textContent = '$'+fmtC(last.c);
-    document.getElementById('ohlcvV').textContent = fmtV(last.v);
-    document.getElementById('chartOHLCV').style.display = '';
-    // Fiyat ve değişim
-    const first = chartData[0];
-    const pct = (last.c - first.o) / first.o * 100;
-    const fmtP = v => v>=1000 ? v.toLocaleString('en-US',{maximumFractionDigits:0}) : v.toFixed(2);
-    document.getElementById('chartPx').textContent = '$'+fmtP(last.c);
-    const chgEl = document.getElementById('chartChg');
-    chgEl.textContent = (pct>=0?'+':'') + pct.toFixed(2)+'%';
-    chgEl.className = 'chart-chg '+(Math.abs(pct)<0.01?'fl':pct>0?'up':'dn');
-    document.getElementById('chartMeta').textContent = new Date(last.t).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
-  } catch(e) {
-    if(overlay) { overlay.textContent = 'Grafik yüklenemedi'; overlay.classList.remove('hidden'); }
-  }
-}
-
-function drawChart() {
-  const canvas = document.getElementById('cChart');
-  if(!canvas || !chartData.length) return;
-  const dpr = window.devicePixelRatio || 1;
-  const W = canvas.parentElement.offsetWidth;
-  const H = canvas.parentElement.offsetHeight;
-  canvas.width  = W * dpr; canvas.height = H * dpr;
-  canvas.style.width = W+'px'; canvas.style.height = H+'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  const pad = { t:12, b:22, l:6, r:50 };
-  const pw  = W - pad.l - pad.r;
-  const ph  = H - pad.t - pad.b;
-  const n   = chartData.length;
-
-  const highs = chartData.map(d=>d.h), lows = chartData.map(d=>d.l);
-  const maxH = Math.max(...highs), minL = Math.min(...lows);
-  const range = maxH - minL || 1;
-
-  const toX = i => pad.l + (i + 0.5) * (pw / n);
-  const toY = v => pad.t + (1 - (v - minL) / range) * ph;
-  const cw  = Math.max(1, pw / n * 0.6);
-
-  // Grid lines (3 horizontal)
-  ctx.strokeStyle = '#e8e8e8'; ctx.lineWidth = 0.5; ctx.setLineDash([2,3]);
-  for(let i=1; i<=3; i++) {
-    const y = pad.t + (i/4)*ph;
-    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W-pad.r+4, y); ctx.stroke();
-    const price = maxH - (i/4)*range;
-    ctx.fillStyle = '#aaa'; ctx.font = `${9*dpr/dpr}px "Fira Code",monospace`;
-    ctx.textAlign = 'left';
-    const fmtG = v => v>=1000 ? v.toLocaleString('en-US',{maximumFractionDigits:0}) : v.toFixed(1);
-    ctx.fillText('$'+fmtG(price), W-pad.r+7, y+3);
-  }
-  ctx.setLineDash([]);
-
-  // Candles
-  chartData.forEach((d, i) => {
-    const x  = toX(i);
-    const oY = toY(d.o), cY = toY(d.c), hY = toY(d.h), lY = toY(d.l);
-    const bull = d.c >= d.o;
-    const col  = bull ? '#15803d' : '#b91c1c';
-    const fillCol = bull ? 'rgba(21,128,61,.12)' : 'rgba(185,28,28,.12)';
-
-    // Wick
-    ctx.strokeStyle = col; ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(x, hY); ctx.lineTo(x, lY); ctx.stroke();
-
-    // Body
-    const bodyTop = Math.min(oY, cY);
-    const bodyH   = Math.max(1, Math.abs(cY - oY));
-    ctx.fillStyle = bull ? fillCol : fillCol;
-    ctx.strokeStyle = col; ctx.lineWidth = 1;
-    ctx.fillRect(x - cw/2, bodyTop, cw, bodyH);
-    ctx.strokeRect(x - cw/2, bodyTop, cw, bodyH);
-  });
-
-  // Son fiyat çizgisi
-  const last = chartData[chartData.length-1];
-  const lastY = toY(last.c);
-  const bull = last.c >= last.o;
-  ctx.strokeStyle = bull ? '#15803d' : '#b91c1c';
-  ctx.lineWidth = 1; ctx.setLineDash([3,3]);
-  ctx.beginPath(); ctx.moveTo(pad.l, lastY); ctx.lineTo(W-pad.r, lastY); ctx.stroke();
-  ctx.setLineDash([]);
-}
+// Fiyat flash animasyonu
 
 // Fiyat flash animasyonu
 function flashPrice(el, dir) {
@@ -7696,6 +7721,7 @@ function updateFlightPnlFromPrice(data, now) {
         if (!data._tp2Alert) {
           data._tp2Alert = true;
           showCriticalAlert('🎯 TP2 Vuruldu!', `${data.base} TP2'ye ulaştı. SL otomatik TP1'e çekildi: $${data.tp1.toFixed(2)}`, 'success');
+          sendPushNotification('🎯 TP2 VURULDU!', `${data.base}/USDT — Harika! SL TP1'e çekildi.`, '🎯');
           tgEnqueue(`🎯 TP2 VURULDU: ${data.base}/USDT\nSL otomatik TP1'e çekildi: $${data.tp1.toFixed(2)}`);
         }
       } else if (tp1Hit) {
@@ -8076,7 +8102,8 @@ setMode(_savedMode);
 renderSpList({});
 spotManualRefresh();
 fetchAll();
-fetchChart();
+// TradingView grafik — sayfa yüklenince başlat
+setTimeout(() => { try { tvInitChart(); } catch(e) {} }, 500);
 fetchATR();
 document.getElementById('cbt15m').className = 'cbt on';
 // OKX açık pozisyonları — API varsa yükle
@@ -10485,7 +10512,20 @@ async function runSignalScan(notify = true) {
   _activeSignals = finalSignals;
   renderSignals();
   addToSignalHistory(finalSignals);
-  if (finalSignals.length > 0) playAlert('signal');
+  if (finalSignals.length > 0) {
+    playAlert('signal');
+    // v45: Push bildirimi — panel kapalıyken de sinyal bildir
+    if (finalSignals.length > 0) {
+      const s = finalSignals[0];
+      const dir = s.direction === 'LONG' ? '🟢 LONG' : '🔴 SHORT';
+      const pair = s.symbol.replace('USDT', '/USDT');
+      sendPushNotification(
+        `${dir} Sinyal: ${pair}`,
+        `Skor: ${s.score}/100 · ${s.tf.toUpperCase()} · Giriş: $${s.entry?.toFixed(s.entry > 100 ? 1 : 4) || '—'}`,
+        s.direction === 'LONG' ? '🟢' : '🔴'
+      );
+    }
+  }
 
   // ── v42: Tüm otomasyonları tetikle ──
   autoChecklistEval();
