@@ -50,6 +50,97 @@ body.dark{
 }
 body.dark .topbar{background:rgba(22,22,22,.97)}
 body.dark canvas{filter:brightness(.92)}
+
+/* ─── DARK MODE: Beyaz alan düzeltmeleri ─── */
+body.dark .card,
+body.dark .sec,
+body.dark .modal,
+body.dark .ak-modal-inner,
+body.dark #customizeModal .ak-modal-inner,
+body.dark #okxModal .ak-modal-inner {
+  background: var(--card) !important;
+  color: var(--t1) !important;
+  border-color: var(--bd) !important;
+}
+body.dark input,
+body.dark select,
+body.dark textarea {
+  background: var(--s2) !important;
+  color: var(--t1) !important;
+  border-color: var(--bd) !important;
+}
+body.dark input::placeholder { color: var(--t4) !important; }
+body.dark .ak-modal { background: rgba(0,0,0,.85) !important; }
+body.dark .ak-modal-inner { background: #161616 !important; border: 1px solid var(--bd) !important; }
+body.dark .ak-title { color: var(--t1) !important; }
+body.dark label { color: var(--t2) !important; }
+body.dark .ak-save { background: var(--t1) !important; color: #000 !important; }
+body.dark .ak-cancel { color: var(--t3) !important; }
+/* Kokpit modal */
+body.dark #ckModalContent { background: #161616 !important; color: var(--t1) !important; border: 1px solid var(--bd) !important; }
+body.dark #ckModalTitle { color: #FF6600 !important; }
+body.dark #ckModalBody { color: var(--t2) !important; }
+body.dark #ckModalClose { background: var(--s2) !important; border-color: var(--bd) !important; color: var(--t3) !important; }
+/* Customize modal */
+body.dark #customizeModal { background: rgba(0,0,0,.85) !important; }
+/* Scan pair butonları */
+body.dark .scan-pair-btn { background: var(--s2) !important; color: var(--t2) !important; border-color: var(--bd) !important; }
+body.dark .scan-pair-btn.on { background: var(--t1) !important; color: #000 !important; }
+/* Genel beyaz arka planlar */
+body.dark [style*="background:#fff"],
+body.dark [style*="background: #fff"],
+body.dark [style*="background:white"],
+body.dark [style*="background:#ffffff"],
+body.dark [style*="background: white"] {
+  background: var(--card) !important;
+}
+body.dark [style*="color:#000"],
+body.dark [style*="color: #000"],
+body.dark [style*="color:black"],
+body.dark [style*="color:#0f172a"],
+body.dark [style*="color:#1e293b"],
+body.dark [style*="color:#0F172A"],
+body.dark [style*="color:#1E293B"] {
+  color: var(--t1) !important;
+}
+/* F8FAFC, F1F5F9 gibi açık gri arka planlar */
+body.dark [style*="background:#f8fafc"],
+body.dark [style*="background:#F8FAFC"],
+body.dark [style*="background:#f1f5f9"],
+body.dark [style*="background:#F1F5F9"],
+body.dark [style*="background:#eff6ff"],
+body.dark [style*="background:#f0fdf4"],
+body.dark [style*="background:#fff1f2"],
+body.dark [style*="background:#fffbeb"] {
+  background: var(--s2) !important;
+}
+/* CQ3 card dark */
+body.dark .cq3-card,
+body.dark .cq-price,
+body.dark .cq3-price,
+body.dark .ck2-card {
+  background: var(--card) !important;
+  border-color: var(--bd) !important;
+  color: var(--t1) !important;
+}
+body.dark .cq3-num,
+body.dark .cq3-med,
+body.dark .ck2-big { color: var(--t1) !important; }
+body.dark .cq3-label,
+body.dark .cq3-sub,
+body.dark .cq3-xs,
+body.dark .ck2-label,
+body.dark .ck2-sub { color: var(--t4) !important; }
+body.dark .cq3-input {
+  background: var(--s2) !important;
+  border-color: var(--bd) !important;
+  color: var(--t1) !important;
+}
+body.dark .cq3-header,
+body.dark .cq3-mental { background: var(--card) !important; border-color: var(--bd) !important; }
+body.dark #cqv3, body.dark #ckv2 { background: var(--bg) !important; }
+/* Bloomberg terminal dark modda zaten koyu — koru */
+body.dark #blm { background: #0A0A0A !important; }
 html{scroll-behavior:smooth}
 body{font-family:var(--font);background:var(--bg);color:var(--t1);min-height:100vh;font-size:14px;line-height:1.5;overflow-x:hidden}
 .app{max-width:480px;margin:0 auto;padding:0 0 80px}
@@ -1024,6 +1115,7 @@ select.tf-inp{cursor:pointer}
     <button onclick="toggleSound()" id="soundToggleBtn" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px" title="Ses">🔔</button>
     <button onclick="requestPushPermission()" id="pushNotifBtn" style="background:none;border:1px solid var(--bd);border-radius:20px;cursor:pointer;font-size:10px;padding:2px 8px;color:var(--t4);font-family:var(--font)" title="Push Bildirim">📳 Bildirim</button>
     <button onclick="showCustomizeModal()" style="background:none;border:none;cursor:pointer;font-size:14px;padding:2px 4px" title="Özelleştir">⚙️</button>
+    <button onclick="document.getElementById('okxModal').classList.add('open')" style="background:none;border:none;cursor:pointer;font-size:13px;padding:2px 4px" title="OKX API Key">🔑</button>
     <button class="dm-btn" id="dmBtn" onclick="toggleDark()" title="Karanlık Mod">🌙</button>
   </div>
 </div>
