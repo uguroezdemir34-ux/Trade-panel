@@ -3378,418 +3378,360 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(255,255,255,0.97) !im
 <div id="notifToast" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--t1);color:var(--bg);padding:10px 18px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--font);z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:opacity .3s">—</div>
 
 <!-- ═══════════════════════════════════════════════════════
-     🎛️ KOKPİT — DARK MATTER COMMAND CENTER
+     🎛️ KOKPİT — COMMAND CENTER
      ═══════════════════════════════════════════════════════ -->
 <div class="sec fade" data-mode="cockpit" style="padding:0;margin:0">
 
-<!-- Cockpit CSS -->
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
-#cockpitWrap {
-  background: #f0f2f5;
-  min-height: 100vh;
-  padding: 10px 10px 80px;
-  position: relative;
-  overflow-x: hidden;
-  max-width: 100%;
-  box-sizing: border-box;
+#ckWrap {
+  background: #f8fafc;
+  min-height:100vh;
+  padding:8px 8px 90px;
+  box-sizing:border-box;
+  overflow-x:hidden;
 }
 
-.ck-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px;
-  position: relative;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+/* ─ Başlık ─ */
+#ckHeader {
+  display:flex; align-items:center; justify-content:space-between;
+  background:#fff; border:1px solid #e2e8f0; border-radius:12px;
+  padding:10px 14px; margin-bottom:8px;
+  box-shadow:0 2px 8px rgba(0,0,0,0.06);
 }
-.ck-card:active {
-  transform: scale(0.97);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+#ckTitle {
+  font-family:'Orbitron',monospace; font-size:12px; font-weight:900;
+  color:#0f172a; letter-spacing:.15em;
 }
-.ck-card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
-  border-color: #cbd5e0;
+#ckTime2 { font-family:'JetBrains Mono',monospace; font-size:9px; color:#94a3b8; margin-top:2px; }
+
+/* ─ Temel kart ─ */
+.ck2-card {
+  background:#fff; border:1px solid #e2e8f0; border-radius:14px;
+  padding:14px 12px; cursor:pointer; transition:all .2s;
+  box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  position:relative; overflow:hidden;
+}
+.ck2-card:active { transform:scale(.97); box-shadow:0 1px 4px rgba(0,0,0,0.1); }
+.ck2-card::after {
+  content:'›'; position:absolute; bottom:8px; right:10px;
+  font-size:14px; color:#cbd5e0; font-weight:700;
 }
 
-/* Corner bracket */
-.ck-card::after {
-  content: '';
-  position: absolute;
-  top: 6px; right: 6px;
-  width: 8px; height: 8px;
-  border-top: 2px solid #e2e8f0;
-  border-right: 2px solid #e2e8f0;
+/* ─ Renk şeridi ─ */
+.ck2-card::before {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  border-radius:14px 14px 0 0;
+}
+.ck2-card.blue::before   { background:linear-gradient(90deg,#3b82f6,#06b6d4); }
+.ck2-card.green::before  { background:linear-gradient(90deg,#22c55e,#16a34a); }
+.ck2-card.orange::before { background:linear-gradient(90deg,#f59e0b,#ef4444); }
+.ck2-card.purple::before { background:linear-gradient(90deg,#8b5cf6,#3b82f6); }
+.ck2-card.red::before    { background:linear-gradient(90deg,#ef4444,#dc2626); }
+.ck2-card.gray::before   { background:linear-gradient(90deg,#94a3b8,#64748b); }
+
+.ck2-label {
+  font-family:'Orbitron',monospace; font-size:7.5px; font-weight:700;
+  letter-spacing:.12em; text-transform:uppercase; color:#64748b; margin-bottom:8px;
+  display:flex; align-items:center; gap:5px;
+}
+.ck2-icon { font-size:13px; }
+.ck2-big  { font-family:'JetBrains Mono',monospace; font-size:22px; font-weight:700; color:#0f172a; line-height:1; }
+.ck2-med  { font-family:'JetBrains Mono',monospace; font-size:16px; font-weight:700; color:#0f172a; line-height:1; }
+.ck2-sm   { font-family:'JetBrains Mono',monospace; font-size:11px; color:#475569; margin-top:4px; }
+.ck2-xs   { font-family:'JetBrains Mono',monospace; font-size:9px; color:#94a3b8; margin-top:3px; }
+
+.ck2-green  { color:#16a34a !important; }
+.ck2-red    { color:#dc2626 !important; }
+.ck2-blue   { color:#2563eb !important; }
+.ck2-orange { color:#d97706 !important; }
+.ck2-purple { color:#7c3aed !important; }
+
+/* ─ Badge ─ */
+.ck2-badge {
+  display:inline-block; padding:3px 8px; border-radius:20px;
+  font-family:'JetBrains Mono',monospace; font-size:9px; font-weight:700;
+  margin-top:6px;
+}
+.ck2-badge.green  { background:#dcfce7; color:#15803d; }
+.ck2-badge.red    { background:#fee2e2; color:#b91c1c; }
+.ck2-badge.orange { background:#fef3c7; color:#b45309; }
+.ck2-badge.blue   { background:#dbeafe; color:#1d4ed8; }
+.ck2-badge.gray   { background:#f1f5f9; color:#475569; }
+
+/* ─ Progress bar ─ */
+.ck2-bar { height:5px; background:#f1f5f9; border-radius:3px; overflow:hidden; margin-top:8px; }
+.ck2-bar-fill { height:100%; border-radius:3px; transition:width .6s ease; }
+
+/* ─ Fiyat Kartı ─ */
+.ck2-price {
+  background:#fff; border:1px solid #e2e8f0; border-radius:14px;
+  padding:12px 14px; box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  cursor:pointer; transition:all .2s;
+}
+.ck2-price:active { transform:scale(.97); }
+
+/* ─ Gauge SVG ─ */
+.ck2-gauge { position:relative; width:72px; height:72px; margin:4px auto; }
+.ck2-gauge svg { transform:rotate(-90deg); }
+.ck2-gauge-val {
+  position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-family:'JetBrains Mono',monospace; font-size:17px; font-weight:700;
+  color:#0f172a; text-align:center;
 }
 
-.ck-label {
-  font-family: 'Orbitron', monospace;
-  font-size: 7px;
-  font-weight: 700;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: #94a3b8;
-  margin-bottom: 6px;
+/* ─ Preflight satırları ─ */
+.ck2-pf-row {
+  display:flex; align-items:center; gap:8px; padding:4px 0;
+  border-bottom:1px solid #f1f5f9;
 }
-.ck-val {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1;
-  color: #1e293b;
+.ck2-pf-row:last-child { border:none; }
+.ck2-pf-dot {
+  width:10px; height:10px; border-radius:50%; flex-shrink:0;
 }
-.ck-sub {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px;
-  color: #64748b;
-  margin-top: 4px;
-}
-.ck-green { color: #16a34a; }
-.ck-red   { color: #dc2626; }
-.ck-cyan  { color: #0284c7; }
-.ck-amber { color: #d97706; }
-.ck-white { color: #1e293b; }
+.ck2-pf-txt { font-family:'JetBrains Mono',monospace; font-size:9px; color:#475569; flex:1; }
+.ck2-pf-val { font-family:'JetBrains Mono',monospace; font-size:8px; color:#94a3b8; }
 
-/* Pulse dot */
-.ck-pulse {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  background: #16a34a;
-  display: inline-block;
-  animation: pulse 2s ease-in-out infinite;
-}
-@keyframes pulse {
-  0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.8)}
-}
+/* ─ Grid ─ */
+.ck2-g2 { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:8px; }
+.ck2-g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px; margin-bottom:8px; }
+.ck2-g21 { display:grid; grid-template-columns:2fr 1fr; gap:8px; margin-bottom:8px; }
 
-/* Gauge */
-.ck-gauge-wrap {
-  position: relative;
-  width: 70px; height: 70px;
-  margin: 4px auto;
+/* ─ Aksiyon butonları ─ */
+.ck2-btn-long {
+  width:100%; padding:15px; border:none; border-radius:12px; cursor:pointer;
+  background:linear-gradient(135deg,#16a34a,#15803d);
+  color:#fff; font-family:'Orbitron',monospace; font-size:12px; font-weight:700;
+  letter-spacing:.08em; box-shadow:0 4px 12px rgba(22,163,74,.3);
+  transition:all .2s;
 }
-.ck-gauge-wrap svg { transform: rotate(-90deg); }
-.ck-gauge-text {
-  position: absolute;
-  top: 50%; left: 50%;
-  transform: translate(-50%, -50%);
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 18px;
-  font-weight: 700;
-  text-align: center;
-  color: #1e293b;
+.ck2-btn-short {
+  width:100%; padding:15px; border:none; border-radius:12px; cursor:pointer;
+  background:linear-gradient(135deg,#dc2626,#b91c1c);
+  color:#fff; font-family:'Orbitron',monospace; font-size:12px; font-weight:700;
+  letter-spacing:.08em; box-shadow:0 4px 12px rgba(220,38,38,.3);
+  transition:all .2s;
 }
+.ck2-btn-long:active, .ck2-btn-short:active { transform:scale(.97); }
 
-/* Fiyat kartları */
-.ck-pricebar {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 8px;
+/* ─ Grafik butonları ─ */
+.ck2-chart-btn {
+  padding:10px 4px; border-radius:10px; border:1px solid #e2e8f0;
+  background:#fff; cursor:pointer; font-family:'JetBrains Mono',monospace;
+  font-size:10px; font-weight:700; color:#0f172a; transition:all .2s;
+  box-shadow:0 1px 4px rgba(0,0,0,0.04);
 }
-.ck-price-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 12px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-  cursor: pointer;
-  transition: all .2s;
-}
-.ck-price-card:active { transform: scale(0.97); }
+.ck2-chart-btn:active { transform:scale(.95); }
 
-/* Grid */
-.ck-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-.ck-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-.ck-grid2x1 { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px; }
-
-/* Animasyon */
-.ck-card { animation: ckFadeIn .3s ease both; }
-@keyframes ckFadeIn { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
-.ck-card:nth-child(1){animation-delay:.03s}
-.ck-card:nth-child(2){animation-delay:.06s}
-.ck-card:nth-child(3){animation-delay:.09s}
-.ck-card:nth-child(4){animation-delay:.12s}
-.ck-card:nth-child(5){animation-delay:.15s}
-.ck-card:nth-child(6){animation-delay:.18s}
-
-/* Scan bar */
-.ck-scanbar {
-  height: 3px;
-  background: #e2e8f0;
-  border-radius: 2px;
-  overflow: hidden;
-  margin-top: 6px;
-}
-.ck-scanbar-fill {
-  height: 100%;
-  background: linear-gradient(90deg, #0284c7, #16a34a);
-  border-radius: 2px;
-  transition: width .5s ease;
-}
-
-/* Modal */
+/* ─ Modal ─ */
 #ckModal {
-  display: none;
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0,0,0,0.5);
-  backdrop-filter: blur(8px);
-  z-index: 9999;
-  padding: 20px;
-  overflow-y: auto;
+  display:none; position:fixed; top:0; left:0; right:0; bottom:0;
+  background:rgba(15,23,42,0.6); backdrop-filter:blur(12px);
+  z-index:9999; padding:16px; overflow-y:auto; box-sizing:border-box;
 }
-#ckModal.open { display: flex; flex-direction: column; }
+#ckModal.open { display:flex; flex-direction:column; justify-content:flex-end; }
 #ckModalContent {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 20px;
-  flex: 1;
-  position: relative;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  background:#fff; border-radius:20px; padding:20px;
+  box-shadow:0 -20px 60px rgba(0,0,0,0.2); max-height:80vh; overflow-y:auto;
 }
 #ckModalClose {
-  position: absolute;
-  top: 14px; right: 14px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
-  border-radius: 50%;
-  width: 32px; height: 32px;
-  font-size: 16px;
-  cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-family: monospace;
+  position:absolute; top:16px; right:16px;
+  background:#f1f5f9; border:none; color:#475569;
+  border-radius:50%; width:34px; height:34px; font-size:18px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center;
 }
 #ckModalTitle {
-  font-family: 'Orbitron', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  color: #475569;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  margin-bottom: 16px;
-  padding-right: 40px;
+  font-family:'Orbitron',monospace; font-size:12px; font-weight:900;
+  color:#0f172a; letter-spacing:.1em; margin-bottom:16px; padding-right:40px;
 }
 </style>
 
-<div id="cockpitWrap">
+<div id="ckWrap">
 
-  <!-- Başlık -->
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;z-index:1;position:relative">
+  <!-- ─ Başlık ─ -->
+  <div id="ckHeader">
     <div>
-      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:#0284c7;letter-spacing:.2em;text-shadow:0 0 20px rgba(0,240,255,0.8)">COMMAND CENTER</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#0284c7;margin-top:2px" id="ckTime">—</div>
+      <div id="ckTitle">🎛 COMMAND CENTER</div>
+      <div id="ckTime2">—</div>
     </div>
-    <div style="display:flex;align-items:center;gap:6px">
-      <span class="ck-pulse"></span>
-      <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#16a34a">CANLI</span>
-      <button onclick="refreshCockpit()" style="background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.2);color:#0284c7;border-radius:6px;padding:4px 10px;font-size:8px;font-family:'Orbitron',monospace;cursor:pointer;letter-spacing:.1em">↻ YENİLE</button>
+    <div style="display:flex;align-items:center;gap:8px">
+      <div style="display:flex;align-items:center;gap:4px">
+        <div style="width:7px;height:7px;border-radius:50%;background:#16a34a;animation:ck2pulse 2s infinite"></div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#16a34a;font-weight:700">CANLI</span>
+      </div>
+      <button onclick="refreshCockpit()" style="background:#f1f5f9;border:1px solid #e2e8f0;color:#475569;border-radius:8px;padding:5px 10px;font-size:8px;font-family:'Orbitron',monospace;cursor:pointer;font-weight:700">↻ YENİLE</button>
+    </div>
+  </div>
+  <style>@keyframes ck2pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}</style>
+
+  <!-- ─ Fiyat Satırı ─ -->
+  <div class="ck2-g2">
+    <div class="ck2-price" onclick="openCockpitModal('chart','ETH')">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span style="font-size:18px">🔷</span>
+        <span style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:#64748b;letter-spacing:.1em">ETH/USDT</span>
+      </div>
+      <div class="ck2-big ck2-blue" id="ck2EthPx">—</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        <span class="ck2-xs" id="ck2EthChg">—</span>
+        <span class="ck2-xs" style="color:#cbd5e0">PERP</span>
+      </div>
+    </div>
+    <div class="ck2-price" onclick="openCockpitModal('chart','BTC')">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+        <span style="font-size:18px">🟡</span>
+        <span style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:#64748b;letter-spacing:.1em">BTC/USDT</span>
+      </div>
+      <div class="ck2-big ck2-orange" id="ck2BtcPx">—</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
+        <span class="ck2-xs" id="ck2BtcChg">—</span>
+        <span class="ck2-xs" style="color:#cbd5e0">PERP</span>
+      </div>
     </div>
   </div>
 
-  <!-- Fiyat Bar: ETH + BTC -->
-  <div class="ck-pricebar">
-    <div class="ck-price-card" onclick="openCockpitModal('chart','ETH')">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-        <span style="font-size:16px">🔷</span>
-        <span style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#0284c7;letter-spacing:.1em">ETH/USDT</span>
-      </div>
-      <div class="ck-val" id="ckEthPx" style="color:#0284c7;font-size:20px">—</div>
-      <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-        <span class="ck-sub" id="ckEthChg">—</span>
-        <span class="ck-sub" id="ckEthFund" style="color:#cbd5e0">—</span>
-      </div>
-    </div>
-    <div class="ck-price-card" onclick="openCockpitModal('chart','BTC')">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
-        <span style="font-size:16px">🟡</span>
-        <span style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:rgba(255,170,0,0.6);letter-spacing:.1em">BTC/USDT</span>
-      </div>
-      <div class="ck-val" id="ckBtcPx" style="color:#ffaa00;font-size:20px">—</div>
-      <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
-        <span class="ck-sub" id="ckBtcChg">—</span>
-        <span class="ck-sub" id="ckBtcFund" style="color:#cbd5e0">—</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- Row 1: Sinyal + F&G + Rejim -->
-  <div class="ck-grid3">
+  <!-- ─ Sinyal + F&G + Rejim ─ -->
+  <div class="ck2-g3">
 
     <!-- Sinyal Skoru -->
-    <div class="ck-card" style="grid-column:1" onclick="openCockpitModal('signal')">
-      <div class="ck-label">SİNYAL</div>
-      <div class="ck-gauge-wrap">
-        <svg width="70" height="70" viewBox="0 0 70 70">
-          <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(0,240,255,0.2)" stroke-width="5"/>
-          <circle id="ckScoreArc" cx="35" cy="35" r="28" fill="none" stroke="#00f0ff" stroke-width="5"
-            stroke-dasharray="0 176" stroke-linecap="round"
-            style="transition:stroke-dasharray 1s ease;filter:drop-shadow(0 0 4px #00f0ff)"/>
+    <div class="ck2-card blue" onclick="openCockpitModal('signal')">
+      <div class="ck2-label"><span class="ck2-icon">🎯</span>SİNYAL</div>
+      <div class="ck2-gauge">
+        <svg width="72" height="72" viewBox="0 0 72 72">
+          <circle cx="36" cy="36" r="28" fill="none" stroke="#f1f5f9" stroke-width="6"/>
+          <circle id="ck2ScoreArc" cx="36" cy="36" r="28" fill="none" stroke="#3b82f6" stroke-width="6"
+            stroke-dasharray="0 176" stroke-linecap="round" style="transition:stroke-dasharray 1s ease"/>
         </svg>
-        <div class="ck-gauge-text ck-cyan" id="ckScore">—</div>
+        <div class="ck2-gauge-val" id="ck2Score">—</div>
       </div>
-      <div class="ck-sub" id="ckScoreDir" style="text-align:center">—</div>
+      <div class="ck2-xs" id="ck2ScoreDir" style="text-align:center">—</div>
     </div>
 
     <!-- Fear & Greed -->
-    <div class="ck-card" onclick="openCockpitModal('fng')">
-      <div class="ck-label">F&G İND.</div>
-      <div class="ck-val" id="ckFng" style="font-size:26px;text-align:center">—</div>
-      <div class="ck-sub" id="ckFngLbl" style="text-align:center">—</div>
-      <div class="ck-scanbar"><div class="ck-scanbar-fill" id="ckFngBar" style="width:0%"></div></div>
+    <div class="ck2-card orange" onclick="openCockpitModal('fng')">
+      <div class="ck2-label"><span class="ck2-icon">😨</span>KORKU/AÇG</div>
+      <div class="ck2-big" id="ck2Fng" style="text-align:center;font-size:28px">—</div>
+      <div class="ck2-xs" id="ck2FngLbl" style="text-align:center">—</div>
+      <div class="ck2-bar" style="margin-top:6px">
+        <div class="ck2-bar-fill" id="ck2FngBar" style="width:0%;background:linear-gradient(90deg,#3b82f6,#f59e0b,#ef4444)"></div>
+      </div>
     </div>
 
-    <!-- Piyasa Rejimi -->
-    <div class="ck-card" onclick="openCockpitModal('regime')">
-      <div class="ck-label">REJİM</div>
-      <div style="text-align:center;margin:6px 0">
-        <div id="ckRegimeIcon" style="font-size:24px">—</div>
-        <div class="ck-val" id="ckRegime" style="font-size:11px;margin-top:4px">—</div>
-      </div>
-      <div class="ck-sub" id="ckRegimeSub" style="text-align:center">—</div>
+    <!-- Rejim -->
+    <div class="ck2-card purple" onclick="openCockpitModal('regime')">
+      <div class="ck2-label"><span class="ck2-icon">📡</span>PİYASA</div>
+      <div id="ck2RegIcon" style="text-align:center;font-size:24px;margin:4px 0">—</div>
+      <div class="ck2-sm" id="ck2Reg" style="text-align:center;font-size:10px">—</div>
     </div>
   </div>
 
-  <!-- Row 2: Pre-Flight + Mental + Bakiye -->
-  <div class="ck-grid3">
+  <!-- ─ Uçuş Öncesi + Mental + Bakiye ─ -->
+  <div class="ck2-g3">
 
-    <!-- Uçuş Öncesi -->
-    <div class="ck-card" onclick="openCockpitModal('preflight')">
-      <div class="ck-label">PRE-FLT</div>
-      <div style="display:flex;flex-direction:column;gap:3px;margin-top:4px" id="ckPreFlt">
-        <div style="display:flex;align-items:center;gap:4px">
-          <span id="ckPfFuel" style="font-size:10px">⚪</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.65)">Yakıt</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span id="ckPfMom" style="font-size:10px">⚪</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.65)">Motor</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span id="ckPfVol" style="font-size:10px">⚪</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.65)">Hava</span>
-        </div>
-        <div style="display:flex;align-items:center;gap:4px">
-          <span id="ckPfTech" style="font-size:10px">⚪</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.65)">Teknik</span>
-        </div>
+    <!-- Uçuş Öncesi Kontrol -->
+    <div class="ck2-card green" onclick="openCockpitModal('preflight')">
+      <div class="ck2-label"><span class="ck2-icon">✈️</span>UÇUŞ ÖNCESİ</div>
+      <div id="ck2PfRows" style="margin-top:4px">
+        <div class="ck2-pf-row"><div class="ck2-pf-dot" id="ck2pf1" style="background:#cbd5e0"></div><div class="ck2-pf-txt">Likidite</div></div>
+        <div class="ck2-pf-row"><div class="ck2-pf-dot" id="ck2pf2" style="background:#cbd5e0"></div><div class="ck2-pf-txt">Momentum</div></div>
+        <div class="ck2-pf-row"><div class="ck2-pf-dot" id="ck2pf3" style="background:#cbd5e0"></div><div class="ck2-pf-txt">Volatilite</div></div>
+        <div class="ck2-pf-row"><div class="ck2-pf-dot" id="ck2pf4" style="background:#cbd5e0"></div><div class="ck2-pf-txt">Teknik</div></div>
       </div>
     </div>
 
     <!-- Mental Durum -->
-    <div class="ck-card" onclick="openCockpitModal('mental')">
-      <div class="ck-label">MENTAL</div>
-      <div style="text-align:center;margin:4px 0">
-        <div id="ckMentalIcon" style="font-size:28px">—</div>
-        <div class="ck-sub" id="ckMentalTxt" style="text-align:center;margin-top:4px">—</div>
+    <div class="ck2-card blue" onclick="openCockpitModal('mental')">
+      <div class="ck2-label"><span class="ck2-icon">🧠</span>MENTAL</div>
+      <div id="ck2MentalIcon" style="text-align:center;font-size:30px;margin:4px 0">—</div>
+      <div style="text-align:center">
+        <span class="ck2-badge gray" id="ck2MentalBadge">—</span>
       </div>
     </div>
 
     <!-- Bakiye & P&L -->
-    <div class="ck-card" onclick="openCockpitModal('pnl')">
-      <div class="ck-label">BAKİYE</div>
-      <div class="ck-val ck-cyan" id="ckBal" style="font-size:14px">—</div>
-      <div style="margin-top:6px">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:#94a3b8">BUGÜN P&L</div>
-        <div class="ck-val" id="ckDayPnl" style="font-size:14px">—</div>
-      </div>
+    <div class="ck2-card green" onclick="openCockpitModal('pnl')">
+      <div class="ck2-label"><span class="ck2-icon">💰</span>BAKİYE</div>
+      <div class="ck2-med" id="ck2Bal">—</div>
+      <div class="ck2-xs" style="margin-top:8px;color:#94a3b8">BUGÜN</div>
+      <div class="ck2-med" id="ck2DayPnl" style="font-size:14px">—</div>
     </div>
   </div>
 
-  <!-- Row 3: Son Sinyal (geniş) + Kelly -->
-  <div class="ck-grid2x1">
+  <!-- ─ Son Sinyal + Kelly ─ -->
+  <div class="ck2-g21">
 
     <!-- Son Sinyal -->
-    <div class="ck-card" onclick="openCockpitModal('signal')">
-      <div class="ck-label">SON SİNYAL</div>
-      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
-        <div id="ckLastSigDir" style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900">—</div>
-        <div>
-          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,0.8)" id="ckLastSigPair">—</div>
-          <div class="ck-sub" id="ckLastSigScore">—</div>
+    <div class="ck2-card blue" onclick="openCockpitModal('signal')">
+      <div class="ck2-label"><span class="ck2-icon">📶</span>SON SİNYAL</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+        <div id="ck2SigDir" style="font-family:'Orbitron',monospace;font-size:16px;font-weight:900;min-width:60px">—</div>
+        <div style="flex:1">
+          <div class="ck2-sm" id="ck2SigPair">—</div>
+          <div class="ck2-xs" id="ck2SigScore">—</div>
         </div>
-        <div style="margin-left:auto;text-align:right">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,240,255,0.8)" id="ckLastSigEntry">—</div>
-          <div class="ck-sub" id="ckLastSigTime">—</div>
+        <div style="text-align:right">
+          <div class="ck2-xs" id="ck2SigEntry">—</div>
+          <div class="ck2-xs" id="ck2SigTime">—</div>
         </div>
       </div>
     </div>
 
-    <!-- Kelly Pozisyon -->
-    <div class="ck-card" onclick="openCockpitModal('kelly')">
-      <div class="ck-label">KELLY</div>
-      <div class="ck-val ck-amber" id="ckKelly" style="font-size:18px">—</div>
-      <div class="ck-sub" id="ckKellySub">Risk %</div>
+    <!-- Kelly Risk -->
+    <div class="ck2-card orange" onclick="openCockpitModal('kelly')">
+      <div class="ck2-label"><span class="ck2-icon">⚖️</span>RİSK</div>
+      <div class="ck2-big ck2-orange" id="ck2Kelly" style="font-size:24px">—</div>
+      <div class="ck2-xs">Kelly Risk</div>
     </div>
   </div>
 
-  <!-- Row 4: Scan Durumu + Korelasyon + Anomali -->
-  <div class="ck-grid3">
+  <!-- ─ Tarama + Anomali + BTC ─ -->
+  <div class="ck2-g3">
 
-    <!-- Otopilot Tarama -->
-    <div class="ck-card" onclick="openCockpitModal('scan')">
-      <div class="ck-label">TARAMA</div>
-      <div style="text-align:center">
-        <div id="ckScanIcon" style="font-size:20px">📡</div>
-        <div class="ck-sub" id="ckScanTxt" style="text-align:center;margin-top:4px">—</div>
-      </div>
+    <div class="ck2-card gray" onclick="openCockpitModal('scan')">
+      <div class="ck2-label"><span class="ck2-icon">📡</span>TARAMA</div>
+      <div id="ck2ScanIcon" style="text-align:center;font-size:22px;margin:4px 0">📡</div>
+      <div style="text-align:center"><span class="ck2-badge gray" id="ck2ScanBadge">—</span></div>
     </div>
 
-    <!-- Anomali -->
-    <div class="ck-card" onclick="openCockpitModal('anomaly')">
-      <div class="ck-label">ANOMALİ</div>
-      <div style="text-align:center">
-        <div id="ckAnoIcon" style="font-size:20px">✅</div>
-        <div class="ck-sub" id="ckAnoTxt" style="text-align:center;margin-top:4px">Normal</div>
-      </div>
+    <div class="ck2-card green" onclick="openCockpitModal('anomaly')">
+      <div class="ck2-label"><span class="ck2-icon">🔍</span>ANOMALİ</div>
+      <div id="ck2AnoIcon" style="text-align:center;font-size:22px;margin:4px 0">✅</div>
+      <div style="text-align:center"><span class="ck2-badge green" id="ck2AnoBadge">NORMAL</span></div>
     </div>
 
-    <!-- BTC Switch -->
-    <div class="ck-card" onclick="openCockpitModal('btcswitch')">
-      <div class="ck-label">BTC SWITCH</div>
-      <div style="text-align:center">
-        <div id="ckBtcSwIcon" style="font-size:20px">—</div>
-        <div class="ck-sub" id="ckBtcSwTxt" style="text-align:center;margin-top:4px">—</div>
-      </div>
+    <div class="ck2-card orange" onclick="openCockpitModal('btcswitch')">
+      <div class="ck2-label"><span class="ck2-icon">🔀</span>BTC ANA</div>
+      <div id="ck2BtcSwIcon" style="text-align:center;font-size:22px;margin:4px 0">—</div>
+      <div style="text-align:center"><span class="ck2-badge gray" id="ck2BtcSwBadge">—</span></div>
     </div>
   </div>
 
-  <!-- Row 5: Hızlı Trade Butonları -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
-    <button onclick="setMode('trade');setTimeout(()=>document.getElementById('longBtn')?.click(),600)"
-      style="padding:14px;background:#f0fdf4;border:1px solid #86efac;border-radius:10px;color:#15803d;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.1em;text-shadow:0 0 10px rgba(0,255,136,0.5)">
-      ▲ LONG
-    </button>
-    <button onclick="setMode('trade');setTimeout(()=>document.getElementById('shortBtn')?.click(),600)"
-      style="padding:14px;background:#fff1f2;border:1px solid #fecdd3;border-radius:10px;color:#be123c;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.1em;text-shadow:0 0 10px rgba(255,51,102,0.5)">
-      ▼ SHORT
-    </button>
+  <!-- ─ LONG / SHORT ─ -->
+  <div class="ck2-g2" style="margin-bottom:8px">
+    <button class="ck2-btn-long" onclick="setMode('trade')">▲ LONG GİR</button>
+    <button class="ck2-btn-short" onclick="setMode('trade')">▼ SHORT GİR</button>
   </div>
 
-  <!-- Row 6: Grafik Kısayolları -->
-  <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(0,240,255,0.2);border-radius:10px;padding:10px;position:relative;z-index:1">
-    <div class="ck-label" style="margin-bottom:8px">GRAFİK KISA ERİŞİM</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
-      <button onclick="openTV('OKX:ETHUSDT.P')" style="padding:8px 4px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.2);border-radius:6px;color:#0284c7;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">ETH</button>
-      <button onclick="openTV('OKX:BTCUSDT.P')" style="padding:8px 4px;background:#fffbeb;border:1px solid #fde68a;border-radius:6px;color:#b45309;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">BTC</button>
-      <button onclick="openTV('OKX:SOLUSDT.P')" style="padding:8px 4px;background:#f5f3ff;border:1px solid #ddd6fe;border-radius:6px;color:#7c3aed;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">SOL</button>
-      <button onclick="openTV('OKX:BNBUSDT.P')" style="padding:8px 4px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;color:#475569;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">BNB</button>
+  <!-- ─ Grafik Kısayolları ─ -->
+  <div style="background:#fff;border:1px solid #e2e8f0;border-radius:14px;padding:12px;box-shadow:0 2px 8px rgba(0,0,0,0.05)">
+    <div style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;letter-spacing:.1em;color:#94a3b8;text-transform:uppercase;margin-bottom:8px">📈 GRAFİK KISA ERİŞİM</div>
+    <div class="ck2-g2" style="margin-bottom:0;gap:6px">
+      <button class="ck2-chart-btn" onclick="openTV('OKX:ETHUSDT.P')" style="background:linear-gradient(135deg,#eff6ff,#fff);border-color:#bfdbfe;color:#1d4ed8">🔷 ETH</button>
+      <button class="ck2-chart-btn" onclick="openTV('OKX:BTCUSDT.P')" style="background:linear-gradient(135deg,#fffbeb,#fff);border-color:#fde68a;color:#b45309">🟡 BTC</button>
+      <button class="ck2-chart-btn" onclick="openTV('OKX:SOLUSDT.P')" style="background:linear-gradient(135deg,#f5f3ff,#fff);border-color:#ddd6fe;color:#7c3aed">🟣 SOL</button>
+      <button class="ck2-chart-btn" onclick="openTV('OKX:BNBUSDT.P')" style="background:linear-gradient(135deg,#f0fdf4,#fff);border-color:#bbf7d0;color:#15803d">🟢 BNB</button>
     </div>
   </div>
 
-</div><!-- /cockpitWrap -->
+</div><!-- /ckWrap -->
 
-<!-- Kokpit Modal -->
+<!-- Modal -->
 <div id="ckModal">
-  <div id="ckModalContent">
+  <div id="ckModalContent" style="position:relative">
     <button id="ckModalClose" onclick="closeCockpitModal()">✕</button>
     <div id="ckModalTitle">DETAY</div>
-    <div id="ckModalBody" style="color:#1e293b;font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6"></div>
+    <div id="ckModalBody" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#475569;line-height:1.6"></div>
   </div>
 </div>
 
@@ -11514,240 +11456,167 @@ function calcAdaptiveWeights() {
 
 // ── v45: KOKPIT — Command Center ──
 async function refreshCockpit() {
-  // Saat
-  const ckTime = document.getElementById('ckTime');
-  if (ckTime) ckTime.textContent = new Date().toLocaleTimeString('tr-TR') + ' · OKX FUTURES';
+  const t = document.getElementById('ckTime2');
+  if (t) t.textContent = new Date().toLocaleTimeString('tr-TR') + ' · OKX FUTURES';
 
-  const set = (id, v, cls) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.textContent = v;
-    if (cls) el.className = cls;
-  };
+  const set = (id,v,cls) => { const e=document.getElementById(id); if(!e)return; e.textContent=v; if(cls){e.className=cls;} };
 
   // ── Fiyatlar ──
   try {
-    const [ethR, btcR] = await Promise.all([
+    const [er,br] = await Promise.all([
       fetch('https://www.okx.com/api/v5/market/ticker?instId=ETH-USDT-SWAP').then(r=>r.json()),
       fetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP').then(r=>r.json()),
     ]);
-    const eth = ethR.data?.[0], btc = btcR.data?.[0];
+    const eth = er.data?.[0], btc = br.data?.[0];
     if (eth) {
-      const pct = ((parseFloat(eth.last) - parseFloat(eth.open24h)) / parseFloat(eth.open24h) * 100).toFixed(2);
-      set('ckEthPx', '$' + parseFloat(eth.last).toLocaleString('en-US', {maximumFractionDigits:2}));
-      const el = document.getElementById('ckEthChg');
-      if (el) { el.textContent = (pct>0?'+':'')+pct+'%'; el.style.color = pct>=0?'#00ff88':'#ff3366'; }
+      const pct = ((parseFloat(eth.last)-parseFloat(eth.open24h))/parseFloat(eth.open24h)*100).toFixed(2);
+      set('ck2EthPx', '$'+parseFloat(eth.last).toLocaleString('en-US',{maximumFractionDigits:2}));
+      const el=document.getElementById('ck2EthChg');
+      if(el){el.textContent=(pct>0?'+':'')+pct+'%';el.style.color=pct>=0?'#16a34a':'#dc2626';}
     }
     if (btc) {
-      const pct = ((parseFloat(btc.last) - parseFloat(btc.open24h)) / parseFloat(btc.open24h) * 100).toFixed(2);
-      set('ckBtcPx', '$' + parseFloat(btc.last).toLocaleString('en-US', {maximumFractionDigits:0}));
-      const el = document.getElementById('ckBtcChg');
-      if (el) { el.textContent = (pct>0?'+':'')+pct+'%'; el.style.color = pct>=0?'#00ff88':'#ff3366'; }
+      const pct = ((parseFloat(btc.last)-parseFloat(btc.open24h))/parseFloat(btc.open24h)*100).toFixed(2);
+      set('ck2BtcPx', '$'+parseFloat(btc.last).toLocaleString('en-US',{maximumFractionDigits:0}));
+      const el=document.getElementById('ck2BtcChg');
+      if(el){el.textContent=(pct>0?'+':'')+pct+'%';el.style.color=pct>=0?'#16a34a':'#dc2626';}
     }
-  } catch(e) {}
+  } catch(e){}
 
-  // ── Son Sinyal ──
-  const sigs = ld('ug_signal_history') || [];
-  if (sigs.length > 0) {
-    const s = sigs[0];
-    const dirEl = document.getElementById('ckLastSigDir');
-    if (dirEl) {
-      dirEl.textContent = s.direction || '—';
-      dirEl.style.color = s.direction === 'LONG' ? '#00ff88' : '#ff3366';
-      dirEl.style.textShadow = s.direction === 'LONG' ? '0 0 10px rgba(0,255,136,0.5)' : '0 0 10px rgba(255,51,102,0.5)';
-    }
-    set('ckLastSigPair', (s.symbol||'').replace('USDT','/USDT'));
-    set('ckLastSigScore', 'Skor: ' + (s.score||'—') + ' · ' + (s.tf||'').toUpperCase());
-    set('ckLastSigEntry', s.entry ? '$'+parseFloat(s.entry).toFixed(2) : '—');
-    const ago = s.time ? Math.round((Date.now()-s.time)/60000) : null;
-    set('ckLastSigTime', ago !== null ? ago + 'dk önce' : '—');
+  // ── Sinyal Skoru ──
+  const sigs = ld('ug_signal_history')||[];
+  const score = sigs[0]?.score||0;
+  const arc = document.getElementById('ck2ScoreArc');
+  if(arc){
+    const c=2*Math.PI*28;
+    arc.setAttribute('stroke-dasharray',`${(score/100)*c} ${c-(score/100)*c}`);
+    arc.setAttribute('stroke', score>=75?'#16a34a':score>=55?'#f59e0b':'#ef4444');
   }
-
-  // ── Sinyal Skoru (gauge) ──
-  const score = sigs[0]?.score || 0;
-  const arc = document.getElementById('ckScoreArc');
-  if (arc) {
-    const circumference = 2 * Math.PI * 28; // r=28
-    const fill = (score / 100) * circumference;
-    arc.setAttribute('stroke-dasharray', `${fill} ${circumference - fill}`);
-    arc.setAttribute('stroke', score >= 75 ? '#00ff88' : score >= 55 ? '#ffaa00' : '#ff3366');
-    arc.style.filter = `drop-shadow(0 0 4px ${score >= 75 ? '#00ff88' : score >= 55 ? '#ffaa00' : '#ff3366'})`;
+  set('ck2Score', score||'—');
+  const sd=document.getElementById('ck2ScoreDir');
+  if(sd&&sigs[0]){
+    sd.textContent=sigs[0].direction||'—';
+    sd.style.color=sigs[0].direction==='LONG'?'#16a34a':'#dc2626';
   }
-  set('ckScore', score || '—');
-  set('ckScoreDir', sigs[0]?.direction || '—');
 
   // ── Fear & Greed ──
-  const fng = ld('ug_fng') || {};
-  if (fng.value) {
-    const v = parseInt(fng.value);
-    const fngEl = document.getElementById('ckFng');
-    if (fngEl) {
-      fngEl.textContent = v;
-      fngEl.style.color = v <= 25 ? '#ff3366' : v >= 75 ? '#00ff88' : '#ffaa00';
-    }
-    set('ckFngLbl', fng.label || '—');
-    const bar = document.getElementById('ckFngBar');
-    if (bar) bar.style.width = v + '%';
+  const fng=ld('ug_fng')||{};
+  if(fng.value){
+    const v=parseInt(fng.value);
+    const fe=document.getElementById('ck2Fng');
+    if(fe){fe.textContent=v;fe.style.color=v<=25?'#dc2626':v>=75?'#16a34a':'#d97706';}
+    set('ck2FngLbl',fng.label||'—');
+    const b=document.getElementById('ck2FngBar');
+    if(b)b.style.width=v+'%';
   }
 
-  // ── Piyasa Rejimi ──
-  const regime = _currentRegime || ld('ug_regime') || 'neutral';
-  const regimeMap = {
-    trend_bull: {icon:'🚀', txt:'TREND BULL', color:'#00ff88'},
-    trend_bear: {icon:'📉', txt:'TREND BEAR', color:'#ff3366'},
-    range:      {icon:'↔️', txt:'RANGE',      color:'#ffaa00'},
-    volatile:   {icon:'⚡', txt:'VOLATİL',    color:'#ff3366'},
-    crash:      {icon:'💥', txt:'CRASH',      color:'#ff3366'},
-    neutral:    {icon:'⚖️', txt:'NÖTR',       color:'rgba(255,255,255,0.5)'},
-  };
-  const rm = regimeMap[regime] || regimeMap.neutral;
-  set('ckRegimeIcon', rm.icon);
-  const rmEl = document.getElementById('ckRegime');
-  if (rmEl) { rmEl.textContent = rm.txt; rmEl.style.color = rm.color; }
-  set('ckRegimeSub', regime);
+  // ── Rejim ──
+  const regime=_currentRegime||ld('ug_regime')||'neutral';
+  const rm={
+    trend_bull:{icon:'🚀',txt:'TREND BULL',c:'#16a34a'},
+    trend_bear:{icon:'📉',txt:'TREND BEAR',c:'#dc2626'},
+    range:     {icon:'↔️',txt:'RANGE',     c:'#d97706'},
+    volatile:  {icon:'⚡',txt:'VOLATİL',   c:'#ef4444'},
+    crash:     {icon:'💥',txt:'CRASH',     c:'#dc2626'},
+    neutral:   {icon:'⚖️',txt:'NÖTR',      c:'#64748b'},
+  }[regime]||{icon:'⚖️',txt:'NÖTR',c:'#64748b'};
+  set('ck2RegIcon',rm.icon);
+  const re2=document.getElementById('ck2Reg');
+  if(re2){re2.textContent=rm.txt;re2.style.color=rm.c;}
 
   // ── Pre-Flight ──
-  const pfColors = { green:'#00ff88', yellow:'#ffaa00', red:'#ff3366' };
-  const pfEls = [
-    {id:'ckPfFuel', src: document.getElementById('preCheckFuel')},
-    {id:'ckPfMom',  src: document.getElementById('preCheckMom')},
-    {id:'ckPfVol',  src: document.getElementById('preCheckVol')},
-    {id:'ckPfTech', src: document.getElementById('preCheckTech')},
-  ];
-  pfEls.forEach(({id, src}) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    if (src) {
-      const txt = src.textContent;
-      const isGreen = txt.includes('✅') || src.style.color?.includes('green');
-      const isRed   = txt.includes('❌') || src.style.color?.includes('red');
-      el.textContent = isGreen ? '🟢' : isRed ? '🔴' : '🟡';
+  const pfIds=['ck2pf1','ck2pf2','ck2pf3','ck2pf4'];
+  const pfSrcs=['preCheckFuel','preCheckMom','preCheckVol','preCheckTech'];
+  pfSrcs.forEach((srcId,i)=>{
+    const src=document.getElementById(srcId);
+    const dot=document.getElementById(pfIds[i]);
+    if(!dot)return;
+    if(src){
+      const txt=src.textContent||'';
+      dot.style.background=txt.includes('✅')?'#16a34a':txt.includes('❌')?'#dc2626':'#f59e0b';
     }
   });
 
-  // ── Mental Durum ──
-  const mental = ld('ug_mental_quick') || ld('ug6_mental') || {};
-  const mState = mental.state || mental.last;
-  const mentalMap = {
-    green:  {icon:'🟢', txt:'HAZIR'},
-    yellow: {icon:'🟡', txt:'DİKKAT'},
-    red:    {icon:'🔴', txt:'TİCAR YOK'},
-  };
-  const mm = mentalMap[mState] || {icon:'⚪', txt:'GİRİLMEDİ'};
-  set('ckMentalIcon', mm.icon);
-  set('ckMentalTxt', mm.txt);
+  // ── Mental ──
+  const mental=ld('ug_mental_quick')||ld('ug6_mental')||{};
+  const mState=mental.state||mental.last;
+  const mm={green:{icon:'🟢',txt:'HAZIR',cls:'green'},yellow:{icon:'🟡',txt:'DİKKAT',cls:'orange'},red:{icon:'🔴',txt:'TİCAR YOK',cls:'red'}}[mState]||{icon:'⚪',txt:'GİRİLMEDİ',cls:'gray'};
+  set('ck2MentalIcon',mm.icon);
+  const mb=document.getElementById('ck2MentalBadge');
+  if(mb){mb.textContent=mm.txt;mb.className='ck2-badge '+mm.cls;}
 
-  // ── Bakiye & P&L ──
-  const bal = getTotalBal ? getTotalBal() : 0;
-  const balEl = document.getElementById('ckBal');
-  if (balEl) balEl.textContent = bal ? '$' + bal.toFixed(0) : '—';
-  const calData = ld('ug6_cal') || {};
-  const today = new Date().toISOString().slice(0,10);
-  const dayPnl = calData[today]?.pnl || 0;
-  const pnlEl = document.getElementById('ckDayPnl');
-  if (pnlEl) {
-    pnlEl.textContent = (dayPnl >= 0 ? '+' : '') + '$' + dayPnl.toFixed(2);
-    pnlEl.style.color = dayPnl >= 0 ? '#00ff88' : '#ff3366';
-  }
+  // ── Bakiye ──
+  const bal=getTotalBal?getTotalBal():0;
+  const be=document.getElementById('ck2Bal');
+  if(be)be.textContent=bal?'$'+bal.toFixed(0):'—';
+  const cal=ld('ug6_cal')||{};
+  const today=new Date().toISOString().slice(0,10);
+  const dp=cal[today]?.pnl||0;
+  const dpe=document.getElementById('ck2DayPnl');
+  if(dpe){dpe.textContent=(dp>=0?'+':'')+'$'+dp.toFixed(2);dpe.style.color=dp>=0?'#16a34a':'#dc2626';}
 
   // ── Kelly ──
-  const kellyEl = document.getElementById('ckKelly');
-  const slider = document.getElementById('riskPctSlider');
-  if (kellyEl && slider) {
-    kellyEl.textContent = '%' + parseFloat(slider.value).toFixed(1);
+  const sl=document.getElementById('riskPctSlider');
+  if(sl)set('ck2Kelly','%'+parseFloat(sl.value).toFixed(1));
+
+  // ── Son Sinyal ──
+  if(sigs.length>0){
+    const s=sigs[0];
+    const de=document.getElementById('ck2SigDir');
+    if(de){de.textContent=s.direction||'—';de.style.color=s.direction==='LONG'?'#16a34a':'#dc2626';}
+    set('ck2SigPair',(s.symbol||'').replace('USDT','/USDT'));
+    set('ck2SigScore','Skor: '+(s.score||'—')+' · '+(s.tf||'').toUpperCase());
+    set('ck2SigEntry',s.entry?'$'+parseFloat(s.entry).toFixed(2):'—');
+    const ago=s.time?Math.round((Date.now()-s.time)/60000):null;
+    set('ck2SigTime',ago!==null?ago+'dk önce':'—');
   }
 
   // ── Tarama ──
-  const scanActive = _autoScanTimer !== null;
-  set('ckScanTxt', scanActive ? 'AKTİF' : 'PASIF');
-  const scanIcon = document.getElementById('ckScanIcon');
-  if (scanIcon) scanIcon.style.animation = scanActive ? 'pulse 1.5s infinite' : 'none';
+  const scanOn=_autoScanTimer!==null;
+  const sb=document.getElementById('ck2ScanBadge');
+  if(sb){sb.textContent=scanOn?'AKTİF':'PASİF';sb.className='ck2-badge '+(scanOn?'green':'gray');}
 
   // ── Anomali ──
-  const anomalyEl = document.getElementById('anomalyStatus');
-  if (anomalyEl) {
-    const isNormal = anomalyEl.textContent.includes('Normal');
-    set('ckAnoIcon', isNormal ? '✅' : '⚠️');
-    set('ckAnoTxt', isNormal ? 'NORMAL' : 'UYARI');
+  const ae=document.getElementById('anomalyStatus');
+  if(ae){
+    const norm=ae.textContent.includes('Normal');
+    set('ck2AnoIcon',norm?'✅':'⚠️');
+    const ab=document.getElementById('ck2AnoBadge');
+    if(ab){ab.textContent=norm?'NORMAL':'UYARI';ab.className='ck2-badge '+(norm?'green':'red');}
   }
 
   // ── BTC Switch ──
-  const sw = _btcMasterSwitch || 'neutral';
-  const swMap = {bull:{icon:'🐂',txt:'BULL',color:'#00ff88'}, bear:{icon:'🐻',txt:'BEAR',color:'#ff3366'}, neutral:{icon:'⚖️',txt:'NÖTR',color:'#ffaa00'}};
-  const swm = swMap[sw] || swMap.neutral;
-  set('ckBtcSwIcon', swm.icon);
-  const swEl = document.getElementById('ckBtcSwTxt');
-  if (swEl) { swEl.textContent = swm.txt; swEl.style.color = swm.color; }
+  const sw=_btcMasterSwitch||'neutral';
+  const swm={bull:{icon:'🐂',txt:'BULL',cls:'green'},bear:{icon:'🐻',txt:'BEAR',cls:'red'},neutral:{icon:'⚖️',txt:'NÖTR',cls:'gray'}}[sw]||{icon:'⚖️',txt:'NÖTR',cls:'gray'};
+  set('ck2BtcSwIcon',swm.icon);
+  const bsb=document.getElementById('ck2BtcSwBadge');
+  if(bsb){bsb.textContent=swm.txt;bsb.className='ck2-badge '+swm.cls;}
 }
 
 // Kokpit Modal
 function openCockpitModal(type, extra) {
-  const modal = document.getElementById('ckModal');
-  const title = document.getElementById('ckModalTitle');
-  const body  = document.getElementById('ckModalBody');
-  if (!modal) return;
-
-  const titles = {
-    signal:    '🎯 SİNYAL DETAYI',
-    fng:       '😨 FEAR & GREED',
-    regime:    '📊 PİYASA REJİMİ',
-    preflight: '✈️ UÇUŞ ÖNCESİ KONTROL',
-    mental:    '🧠 MENTAL DURUM',
-    pnl:       '💰 BAKİYE & P&L',
-    kelly:     '⚡ KELLY KRİTERİ',
-    scan:      '📡 OTOPİLOT TARAMA',
-    anomaly:   '⚠️ ANOMALİ DEDEKTÖRÜ',
-    btcswitch: '🔀 BTC MASTER SWİTCH',
-    chart:     '📈 GRAFİK',
-  };
-  if (title) title.textContent = titles[type] || type.toUpperCase();
-
-  // Modal içeriği
-  if (type === 'chart') {
-    const sym = extra === 'BTC' ? 'OKX:BTCUSDT.P' : 'OKX:ETHUSDT.P';
-    if (body) body.innerHTML = `
-      <button onclick="openTV('${sym}')" style="width:100%;padding:16px;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.3);border-radius:10px;color:#00f0ff;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px">
-        📈 TradingView'da Aç — ${extra}/USDT Perpetual
-      </button>
-      <div style="color:rgba(255,255,255,0.4);font-size:10px;text-align:center">BB · EMA · RSI · Hacim · Tüm araçlar</div>`;
-  } else if (type === 'signal') {
-    const sigs = ld('ug_signal_history') || [];
-    if (body) body.innerHTML = sigs.slice(0,5).map(s => `
-      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(0,240,255,0.1);border-radius:8px;padding:10px;margin-bottom:8px">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
-          <span style="font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:${s.direction==='LONG'?'#00ff88':'#ff3366'}">${s.direction}</span>
-          <span style="font-size:10px;color:rgba(255,255,255,0.4)">${s.symbol?.replace('USDT','/USDT')} · ${s.tf?.toUpperCase()}</span>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:10px">
-          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">SKOR</div><div style="color:#ffaa00">${s.score}/100</div></div>
-          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">GİRİŞ</div><div>$${s.entry?.toFixed?.(2)||'—'}</div></div>
-          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">SL</div><div style="color:#ff3366">$${s.sl?.toFixed?.(2)||'—'}</div></div>
-          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">TP1</div><div style="color:#00ff88">$${s.tp1?.toFixed?.(2)||'—'}</div></div>
-          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">TP2</div><div style="color:#00ff88">$${s.tp2?.toFixed?.(2)||'—'}</div></div>
-          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">R:R</div><div>${s.rr?.toFixed?.(1)||'—'}</div></div>
-        </div>
-      </div>`).join('') || '<div style="color:rgba(255,255,255,0.3);text-align:center;padding:20px">Henüz sinyal yok</div>';
+  const modal=document.getElementById('ckModal');
+  const title=document.getElementById('ckModalTitle');
+  const body=document.getElementById('ckModalBody');
+  if(!modal)return;
+  const titles={signal:'🎯 SON SİNYALLER',fng:'😨 KORKU & AÇGÖZLÜLÜK ENDEKSİ',regime:'📡 PİYASA REJİMİ',preflight:'✈️ UÇUŞ ÖNCESİ KONTROL',mental:'🧠 MENTAL DURUM',pnl:'💰 BAKİYE & KÂR/ZARAR',kelly:'⚖️ KELLY KRİTERİ',scan:'📡 OTOMATİK TARAMA',anomaly:'🔍 ANOMALİ DEDEKTÖRÜ',btcswitch:'🔀 BTC ANA GÖSTERGE',chart:'📈 GRAFİK AÇ'};
+  if(title)title.textContent=titles[type]||type.toUpperCase();
+  if(type==='chart'){
+    const sym=extra==='BTC'?'OKX:BTCUSDT.P':'OKX:ETHUSDT.P';
+    if(body)body.innerHTML=`<button onclick="openTV('${sym}')" style="width:100%;padding:16px;background:linear-gradient(135deg,#2563eb,#0284c7);border:none;border-radius:12px;color:#fff;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px">📈 TradingView'da Aç — ${extra}/USDT</button><p style="text-align:center;color:#94a3b8;font-size:11px">BB · EMA · RSI · Hacim · Tüm araçlar</p>`;
+  } else if(type==='signal'){
+    const sigs=ld('ug_signal_history')||[];
+    if(body)body.innerHTML=sigs.slice(0,5).map(s=>`<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:${s.direction==='LONG'?'#16a34a':'#dc2626'}">${s.direction}</span><span style="font-size:10px;color:#94a3b8">${(s.symbol||'').replace('USDT','/USDT')} · ${(s.tf||'').toUpperCase()}</span></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:10px"><div><div style="color:#94a3b8;margin-bottom:2px">SKOR</div><div style="color:#d97706;font-weight:700">${s.score}/100</div></div><div><div style="color:#94a3b8;margin-bottom:2px">GİRİŞ</div><div>$${s.entry?.toFixed?.(2)||'—'}</div></div><div><div style="color:#94a3b8;margin-bottom:2px">SL</div><div style="color:#dc2626">$${s.sl?.toFixed?.(2)||'—'}</div></div><div><div style="color:#94a3b8;margin-bottom:2px">TP1</div><div style="color:#16a34a">$${s.tp1?.toFixed?.(2)||'—'}</div></div><div><div style="color:#94a3b8;margin-bottom:2px">TP2</div><div style="color:#16a34a">$${s.tp2?.toFixed?.(2)||'—'}</div></div><div><div style="color:#94a3b8;margin-bottom:2px">R:R</div><div>${s.rr?.toFixed?.(1)||'—'}</div></div></div></div>`).join('')||'<p style="text-align:center;color:#94a3b8;padding:20px">Henüz sinyal yok</p>';
   } else {
-    // Diğerleri için ilgili sekmeye yönlendir
-    if (body) body.innerHTML = `
-      <div style="text-align:center;padding:20px">
-        <div style="font-size:40px;margin-bottom:12px">${titles[type]?.split(' ')[0]||'📊'}</div>
-        <button onclick="closeCockpitModal();setMode('${type==='preflight'||type==='mental'?'pre':'trade'}')" style="padding:12px 24px;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.3);border-radius:10px;color:#00f0ff;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer">
-          TAM EKRAN AÇ →
-        </button>
-      </div>`;
+    const sectionMap={preflight:'pre',mental:'pre',pnl:'stats',kelly:'trade',scan:'trade',fng:'trade',regime:'trade',anomaly:'trade',btcswitch:'trade'};
+    if(body)body.innerHTML=`<div style="text-align:center;padding:20px"><div style="font-size:48px;margin-bottom:16px">${titles[type]?.split(' ')[0]||'📊'}</div><button onclick="closeCockpitModal();setMode('${sectionMap[type]||'trade'}')" style="padding:14px 28px;background:linear-gradient(135deg,#2563eb,#0284c7);border:none;border-radius:12px;color:#fff;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer">TAM DETAY →</button></div>`;
   }
-
   modal.classList.add('open');
 }
 
-function closeCockpitModal() {
-  const modal = document.getElementById('ckModal');
-  if (modal) modal.classList.remove('open');
+function closeCockpitModal(){
+  const m=document.getElementById('ckModal');
+  if(m)m.classList.remove('open');
 }
-
-// Kokpit otomatik yenileme (30sn)
-// Kokpit otomatik yenileme timer
 
 // ── v45: Mini Backtest Motoru ──
 // Son 300 mumda sinyal mantığını simüle eder
