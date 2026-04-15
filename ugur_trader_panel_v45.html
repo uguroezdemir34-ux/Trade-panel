@@ -1731,12 +1731,16 @@ body[data-active-mode="stats"] [data-mode="stats"]{display:block}
     </div>
   </div>
 
-  <!-- TradingView Widget -->
+  <!-- TradingView iframe — tüm coinler, tam özellik -->
   <div style="border-radius:var(--r);overflow:hidden;border:1px solid var(--bd);box-shadow:var(--sh);width:100%;max-width:100%;position:relative">
-    <div id="tv_chart_container" style="height:calc(100vh - 200px);min-height:480px;width:100%;overflow:hidden;max-width:100%"></div>
+    <iframe id="tvIframe"
+      src="https://s.tradingview.com/widgetembed/?frameElementId=tvIframe&symbol=OKX%3AETHUSDT.P&interval=240&hidesidetoolbar=0&hidetoptoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3f6&studies=BB%401%7CRSI%401%7CEMA%401%7CVolume%401&theme=light&style=1&timezone=Europe%2FIstanbul&locale=tr&withdateranges=1"
+      style="width:100%;height:calc(100vh - 200px);min-height:520px;border:none;display:block;max-width:100%"
+      allowfullscreen>
+    </iframe>
   </div>
   <div style="font-size:8px;color:var(--t5);text-align:right;padding:4px 8px">
-    TradingView · OKX Perpetual Futures
+    TradingView · Tüm semboller aranabilir ↗
   </div>
 </div>
 
@@ -6359,78 +6363,20 @@ let _tvTF   = '240';
 let _tvWidget = null;
 
 function tvInitChart() {
-  const container = document.getElementById('tv_chart_container');
-  if (!container) return;
-  container.innerHTML = '';
+  // iframe zaten HTML'de var, sadece URL güncelle
+  tvUpdateIframe();
+}
 
-  const script = document.createElement('script');
-  script.type  = 'text/javascript';
-  script.src   = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
-  script.async = true;
-
-  const isDark = document.body.classList.contains('dark') ||
-                 localStorage.getItem('darkMode') === '1';
-
-  script.innerHTML = JSON.stringify({
-    "autosize":            true,
-    "symbol":              _tvPair,
-    "interval":            _tvTF,
-    "timezone":            "Europe/Istanbul",
-    "theme":               isDark ? "dark" : "light",
-    "style":               "1",
-    "locale":              "tr",
-    "backgroundColor":     isDark ? "rgba(13,13,18,1)" : "rgba(255,255,255,1)",
-    "gridColor":           isDark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.04)",
-    "withdateranges":      true,
-    "range":               "5D",
-    "hide_side_toolbar":   true,
-    "hide_top_toolbar":    false,
-    "hide_legend":         false,
-    "allow_symbol_change": true,
-    "save_image":          false,
-    "calendar":            false,
-    "hide_volume":         false,
-    "support_host":        "https://www.tradingview.com",
-    "studies": [
-      "STD;Bollinger_Bands@tv-basicstudies",
-      "STD;EMA@tv-basicstudies",
-      "STD;RSI@tv-basicstudies",
-      "STD;Volume@tv-basicstudies"
-    ],
-    "studies_overrides": {
-      "bollinger bands.upper.color": "#2962FF",
-      "bollinger bands.lower.color": "#2962FF",
-      "bollinger bands.median.color": "#FF6D00",
-      "rsi.rsi.color": "#7B1FA2",
-      "rsi.overbought value": 70,
-      "rsi.oversold value": 30
-    },
-    "overrides": {
-      "mainSeriesProperties.candleStyle.upColor":           "#26a69a",
-      "mainSeriesProperties.candleStyle.downColor":         "#ef5350",
-      "mainSeriesProperties.candleStyle.borderUpColor":     "#26a69a",
-      "mainSeriesProperties.candleStyle.borderDownColor":   "#ef5350",
-      "mainSeriesProperties.candleStyle.wickUpColor":       "#26a69a",
-      "mainSeriesProperties.candleStyle.wickDownColor":     "#ef5350"
-    }
-  });
-
-  const wrapper = document.createElement('div');
-  wrapper.className = 'tradingview-widget-container';
-  wrapper.style.cssText = 'height:100%;width:100%;max-width:100%;overflow:hidden';
-
-  const inner = document.createElement('div');
-  inner.className = 'tradingview-widget-container__widget';
-  inner.style.cssText = 'height:100%;width:100%;max-width:100%;overflow:hidden';
-
-  wrapper.appendChild(inner);
-  wrapper.appendChild(script);
-  container.appendChild(wrapper);
+function tvUpdateIframe() {
+  const iframe = document.getElementById('tvIframe');
+  if (!iframe) return;
+  const isDark = localStorage.getItem('darkMode') === '1';
+  const theme  = isDark ? 'dark' : 'light';
+  iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tvIframe&symbol=${encodeURIComponent(_tvPair)}&interval=${_tvTF}&hidesidetoolbar=0&hidetoptoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3f6&studies=BB%401%7CRSI%401%7CEMA%401%7CVolume%401&theme=${theme}&style=1&timezone=Europe%2FIstanbul&locale=tr&withdateranges=1`;
 }
 
 function tvSetPair(pair) {
   _tvPair = pair;
-  // Buton durumunu güncelle
   ['ETH','BTC','SOL'].forEach(p => {
     const btn = document.getElementById('tvBtn' + p);
     if (!btn) return;
@@ -6439,7 +6385,7 @@ function tvSetPair(pair) {
     btn.style.color      = isActive ? '#fff'       : 'var(--t3)';
     btn.style.border     = isActive ? 'none'       : '1px solid var(--bd)';
   });
-  tvInitChart();
+  tvUpdateIframe();
 }
 
 function tvSetTF(tf) {
@@ -6451,7 +6397,7 @@ function tvSetTF(tf) {
     btn.style.background = isActive ? 'var(--t1)' : 'var(--s2)';
     btn.style.color      = isActive ? '#fff'       : 'var(--t3)';
   });
-  tvInitChart();
+  tvUpdateIframe();
 }
 
 // fetchChart artık TradingView init çağırır
