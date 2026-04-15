@@ -3381,424 +3381,473 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(255,255,255,0.97) !im
 <!-- ── BILDIRIM MODALI ── -->
 <div id="notifToast" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--t1);color:var(--bg);padding:10px 18px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--font);z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:opacity .3s">—</div>
 
-<!-- ═══════════════════════════════════════════════════════
-     🎛️ KOKPİT — COMMAND CENTER
-     ═══════════════════════════════════════════════════════ -->
+<!-- ═══ KOKPİT v2 — CLEAN QUANT TERMINAL ═══ -->
 <div class="sec fade" data-mode="cockpit" style="padding:0;margin:0">
-
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=JetBrains+Mono:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap');
 
-/* ══ WRAP ══ */
-#ckWrap {
-  background: #f1f4f8;
+/* ─── ROOT ─── */
+:root {
+  --ck-bg:       #F8FAFC;
+  --ck-card:     #FFFFFF;
+  --ck-border:   rgba(226,232,240,0.8);
+  --ck-shadow:   0 1px 3px rgba(0,0,0,.06), 0 4px 16px rgba(0,0,0,.04);
+  --ck-shadow-h: 0 10px 24px rgba(0,0,0,.10);
+  --ck-text:     #1E293B;
+  --ck-muted:    #64748B;
+  --ck-faint:    #94A3B8;
+  --ck-accent:   #3B82F6;
+  --ck-green:    #16A34A;
+  --ck-red:      #DC2626;
+  --ck-amber:    #D97706;
+  --ck-r:        16px;
+}
+
+/* Mental state renk modları */
+body.ck-mental-green { --ck-accent: #16A34A; }
+body.ck-mental-red   { --ck-accent: #DC2626; }
+body.ck-mental-warn  { --ck-accent: #D97706; }
+
+/* ─── WRAP ─── */
+#ckv2 {
+  background: var(--ck-bg);
   min-height: 100vh;
-  padding: 8px 8px 90px;
+  padding: 12px 10px 100px;
   box-sizing: border-box;
   overflow-x: hidden;
+  font-family: 'Inter', sans-serif;
 }
 
-/* ══ HEADER ══ */
-#ckHeader {
-  background: #0f172a;
-  border-radius: 14px;
+/* ─── HEADER BAR ─── */
+.cq-header {
+  display: flex; align-items: center; justify-content: space-between;
   padding: 12px 16px;
+  background: var(--ck-card);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-r);
+  box-shadow: var(--ck-shadow);
   margin-bottom: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
-#ckTitle {
-  font-family: 'Orbitron', monospace;
-  font-size: 13px; font-weight: 900;
-  color: #f8fafc; letter-spacing: .18em;
-}
-#ckTime2 {
+.cq-header-brand {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; color: #64748b; margin-top: 3px;
-  letter-spacing: .05em;
+  font-size: 11px; font-weight: 700;
+  color: var(--ck-text); letter-spacing: .08em;
+  text-transform: uppercase;
+  display: flex; align-items: center; gap: 8px;
+}
+.cq-header-brand span.dot {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--ck-green);
+  animation: cqpulse 2s ease-in-out infinite;
+}
+@keyframes cqpulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.6)} }
+.cq-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; color: var(--ck-faint); letter-spacing: .04em;
+}
+.cq-refresh {
+  background: var(--ck-bg); border: 1px solid var(--ck-border);
+  color: var(--ck-muted); border-radius: 8px;
+  padding: 6px 12px; font-size: 9px; font-weight: 600;
+  font-family: 'Inter', sans-serif; cursor: pointer; letter-spacing: .04em;
+  transition: all .15s;
+}
+.cq-refresh:active { transform: scale(.95); background: var(--ck-border); }
+
+/* ─── MENTAL STATE BANNER ─── */
+.cq-mental-banner {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  border-radius: var(--ck-r);
+  border: 1.5px solid var(--ck-accent);
+  background: color-mix(in srgb, var(--ck-accent) 6%, white);
+  margin-bottom: 10px;
+  transition: all .3s;
+}
+.cq-mental-emoji { font-size: 22px; }
+.cq-mental-info  { flex: 1; }
+.cq-mental-title { font-size: 11px; font-weight: 700; color: var(--ck-text); }
+.cq-mental-sub   { font-size: 9px; color: var(--ck-muted); margin-top: 2px; }
+.cq-mental-state {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px; font-weight: 700; padding: 4px 10px;
+  border-radius: 20px; background: var(--ck-accent);
+  color: white; letter-spacing: .06em;
 }
 
-/* ══ KART ══ */
-.ck2-card {
-  background: #ffffff;
-  border-radius: 14px;
-  padding: 13px 12px 16px;
-  cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
-  box-shadow: 0 1px 3px rgba(0,0,0,.07), 0 4px 12px rgba(0,0,0,.04);
-  position: relative;
-  overflow: hidden;
+/* ─── FİYAT SATIRI ─── */
+.cq-prices {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 8px;
+  margin-bottom: 10px;
 }
-.ck2-card:active { transform: scale(.96); box-shadow: 0 1px 3px rgba(0,0,0,.1); }
-
-/* Üst şerit */
-.ck2-card::before {
+.cq-price {
+  background: var(--ck-card);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-r);
+  padding: 14px;
+  box-shadow: var(--ck-shadow);
+  cursor: pointer; transition: all .2s;
+  position: relative; overflow: hidden;
+}
+.cq-price::before {
   content: ''; position: absolute;
   top: 0; left: 0; right: 0; height: 3px;
-  border-radius: 14px 14px 0 0;
 }
-.ck2-card.blue::before   { background: #2563eb; }
-.ck2-card.green::before  { background: #16a34a; }
-.ck2-card.orange::before { background: #d97706; }
-.ck2-card.purple::before { background: #7c3aed; }
-.ck2-card.red::before    { background: #dc2626; }
-.ck2-card.gray::before   { background: #94a3b8; }
-.ck2-card.dark::before   { background: #0f172a; }
-
-/* Ok ikonu */
-.ck2-card::after {
-  content: '›'; position: absolute;
-  bottom: 10px; right: 12px;
-  font-size: 16px; color: #e2e8f0; font-weight: 700;
-}
-
-.ck2-label {
-  font-family: 'Orbitron', monospace;
-  font-size: 7px; font-weight: 700;
-  letter-spacing: .14em; text-transform: uppercase;
-  color: #94a3b8; margin-bottom: 8px;
-  display: flex; align-items: center; gap: 5px;
-}
-.ck2-icon { font-size: 12px; }
-
-.ck2-big  { font-family: 'JetBrains Mono', monospace; font-size: 22px; font-weight: 700; color: #0f172a; line-height: 1.1; }
-.ck2-med  { font-family: 'JetBrains Mono', monospace; font-size: 15px; font-weight: 700; color: #0f172a; line-height: 1.2; }
-.ck2-sm   { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: #475569; margin-top: 4px; }
-.ck2-xs   { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: #94a3b8; margin-top: 3px; }
-
-.ck2-green  { color: #16a34a !important; }
-.ck2-red    { color: #dc2626 !important; }
-.ck2-blue   { color: #2563eb !important; }
-.ck2-orange { color: #d97706 !important; }
-.ck2-slate  { color: #0f172a !important; }
-
-/* ══ BADGE ══ */
-.ck2-badge {
-  display: inline-flex; align-items: center; gap: 3px;
-  padding: 3px 9px; border-radius: 20px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; font-weight: 700; margin-top: 6px;
-}
-.ck2-badge.green  { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
-.ck2-badge.red    { background: #fff1f2; color: #9f1239; border: 1px solid #fecdd3; }
-.ck2-badge.orange { background: #fffbeb; color: #92400e; border: 1px solid #fde68a; }
-.ck2-badge.blue   { background: #eff6ff; color: #1e40af; border: 1px solid #bfdbfe; }
-.ck2-badge.gray   { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
-.ck2-badge.dark   { background: #0f172a; color: #e2e8f0; border: 1px solid #334155; }
-
-/* ══ PROGRESS BAR ══ */
-.ck2-bar {
-  height: 4px; background: #f1f5f9;
-  border-radius: 2px; overflow: hidden; margin-top: 8px;
-}
-.ck2-bar-fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
-
-/* ══ FİYAT KARTI ══ */
-.ck2-price {
-  background: #0f172a;
-  border-radius: 14px; padding: 14px;
-  cursor: pointer; transition: transform .15s;
-  box-shadow: 0 4px 14px rgba(15,23,42,.15);
-}
-.ck2-price:active { transform: scale(.97); }
-.ck2-price-label {
-  font-family: 'Orbitron', monospace;
-  font-size: 8px; font-weight: 700;
-  letter-spacing: .12em; color: #475569; margin-bottom: 6px;
+.cq-price.eth::before { background: linear-gradient(90deg,#3B82F6,#06B6D4); }
+.cq-price.btc::before { background: linear-gradient(90deg,#F59E0B,#EF4444); }
+.cq-price:hover { box-shadow: var(--ck-shadow-h); border-color: var(--ck-accent); transform: translateY(-1px); }
+.cq-price:active { transform: scale(.97); }
+.cq-price-head {
   display: flex; align-items: center; gap: 6px;
+  font-size: 8px; font-weight: 700; color: var(--ck-faint);
+  letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px;
 }
-.ck2-price-val {
+.cq-price-val {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 22px; font-weight: 700; line-height: 1.1;
+  font-size: 21px; font-weight: 700;
+  color: var(--ck-text); letter-spacing: -.02em; line-height: 1.1;
 }
-.ck2-price-chg {
+.cq-price-chg {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; margin-top: 5px;
+  font-size: 10px; font-weight: 600; margin-top: 4px;
 }
 
-/* ══ GAUGE ══ */
-.ck2-gauge { position: relative; width: 68px; height: 68px; margin: 4px auto; }
-.ck2-gauge svg { transform: rotate(-90deg); }
-.ck2-gauge-val {
+/* ─── GENEL KART ─── */
+.cq-card {
+  background: var(--ck-card);
+  border: 1px solid var(--ck-border);
+  border-radius: var(--ck-r);
+  padding: 14px 13px;
+  box-shadow: var(--ck-shadow);
+  cursor: pointer; transition: all .2s;
+  position: relative;
+}
+.cq-card:hover { box-shadow: var(--ck-shadow-h); border-color: var(--ck-accent); }
+.cq-card:active { transform: scale(.97); }
+.cq-card-label {
+  font-size: 8px; font-weight: 700; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ck-faint);
+  margin-bottom: 8px; display: flex; align-items: center; gap: 5px;
+}
+.cq-card-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px; font-weight: 700;
+  color: var(--ck-text); line-height: 1.1;
+}
+.cq-card-sub {
+  font-size: 10px; color: var(--ck-muted); margin-top: 5px;
+}
+
+/* ─── CONFLUENCE METER (Signal Gauge) ─── */
+.cq-gauge-wrap {
+  position: relative; width: 80px; height: 80px; margin: 0 auto 4px;
+}
+.cq-gauge-wrap svg { transform: rotate(-90deg); }
+.cq-gauge-num {
   position: absolute; top: 50%; left: 50%;
   transform: translate(-50%, -50%);
   font-family: 'JetBrains Mono', monospace;
-  font-size: 16px; font-weight: 700; color: #0f172a; text-align: center;
+  font-size: 18px; font-weight: 700; color: var(--ck-text); text-align: center;
 }
+.cq-confluence-label {
+  font-size: 9px; font-weight: 700; text-align: center;
+  padding: 4px 10px; border-radius: 20px; margin-top: 4px;
+  display: inline-block;
+}
+.cq-conf-high { background: #F0FDF4; color: #166534; border: 1px solid #BBF7D0; }
+.cq-conf-mid  { background: #FFFBEB; color: #92400E; border: 1px solid #FDE68A; }
+.cq-conf-low  { background: #F8FAFC; color: #475569; border: 1px solid #E2E8F0; }
 
-/* ══ PRE-FLIGHT SATIRLAR ══ */
-.ck2-pf-row {
+/* ─── PROGRESS BAR ─── */
+.cq-bar { height: 4px; background: #F1F5F9; border-radius: 2px; overflow: hidden; margin-top: 8px; }
+.cq-bar-fill { height: 100%; border-radius: 2px; transition: width .6s ease; }
+
+/* ─── PRE-FLIGHT ─── */
+.cq-pf-row {
   display: flex; align-items: center; gap: 8px;
-  padding: 5px 0; border-bottom: 1px solid #f8fafc;
+  padding: 6px 0; border-bottom: 1px solid #F8FAFC;
 }
-.ck2-pf-row:last-child { border: none; }
-.ck2-pf-dot {
-  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
-  box-shadow: 0 0 6px currentColor;
+.cq-pf-row:last-child { border: none; }
+.cq-pf-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; transition: background .3s;
 }
-.ck2-pf-txt {
+.cq-pf-name { font-size: 10px; color: var(--ck-text); flex: 1; font-weight: 500; }
+.cq-pf-val  { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: var(--ck-faint); }
+
+/* ─── KELLY HESAP ─── */
+.cq-kelly-box {
+  background: var(--ck-bg); border: 1px solid var(--ck-border);
+  border-radius: 10px; padding: 10px 12px; margin-top: 8px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.cq-kelly-lbl { font-size: 9px; color: var(--ck-muted); font-weight: 500; }
+.cq-kelly-val {
   font-family: 'JetBrains Mono', monospace;
-  font-size: 9px; color: #334155; flex: 1;
+  font-size: 14px; font-weight: 700; color: var(--ck-text);
 }
 
-/* ══ GRİD ══ */
-.ck2-g2  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
-.ck2-g3  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
-.ck2-g21 { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px; }
+/* ─── GRİD ─── */
+.cq-g2  { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.cq-g3  { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; margin-bottom: 8px; }
+.cq-g21 { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px; }
+.cq-g12 { display: grid; grid-template-columns: 1fr 2fr; gap: 8px; margin-bottom: 8px; }
 
-/* ══ AKSIYON BUTONLAR ══ */
-.ck2-btn-long {
-  width: 100%; padding: 15px; border: none; border-radius: 12px; cursor: pointer;
-  background: #0f172a; color: #4ade80;
-  font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
-  letter-spacing: .1em;
-  box-shadow: inset 0 1px 0 rgba(74,222,128,.2), 0 4px 12px rgba(0,0,0,.15);
-  transition: all .15s;
+/* ─── TRADE BUTONLAR ─── */
+.cq-btn {
+  width: 100%; padding: 15px; border: none; border-radius: 12px;
+  cursor: pointer; font-family: 'Inter', sans-serif;
+  font-size: 13px; font-weight: 700; letter-spacing: .02em;
+  transition: all .15s; display: flex; align-items: center;
+  justify-content: center; gap: 8px;
 }
-.ck2-btn-short {
-  width: 100%; padding: 15px; border: none; border-radius: 12px; cursor: pointer;
-  background: #0f172a; color: #f87171;
-  font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 700;
-  letter-spacing: .1em;
-  box-shadow: inset 0 1px 0 rgba(248,113,113,.2), 0 4px 12px rgba(0,0,0,.15);
-  transition: all .15s;
+.cq-btn-long {
+  background: #16A34A; color: #fff;
+  box-shadow: 0 4px 14px rgba(22,163,74,.3);
 }
-.ck2-btn-long:active, .ck2-btn-short:active { transform: scale(.97); }
+.cq-btn-short {
+  background: #DC2626; color: #fff;
+  box-shadow: 0 4px 14px rgba(220,38,38,.3);
+}
+.cq-btn:active { transform: scale(.97); opacity: .9; }
 
-/* ══ GRAFİK BUTONLAR ══ */
-.ck2-chart-btn {
+/* ─── GRAFİK KISAYOLLAR ─── */
+.cq-chart-grid {
+  display: grid; grid-template-columns: repeat(4,1fr); gap: 6px;
+}
+.cq-chart-btn {
   padding: 11px 4px; border-radius: 10px;
-  border: 1px solid #e2e8f0; background: #fff;
+  border: 1px solid var(--ck-border); background: var(--ck-card);
   cursor: pointer; font-family: 'JetBrains Mono', monospace;
-  font-size: 10px; font-weight: 700; color: #0f172a;
-  transition: all .15s;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  font-size: 10px; font-weight: 700; color: var(--ck-text);
+  transition: all .15s; box-shadow: var(--ck-shadow);
+  text-align: center;
 }
-.ck2-chart-btn:active { transform: scale(.95); }
+.cq-chart-btn:hover { border-color: var(--ck-accent); color: var(--ck-accent); }
+.cq-chart-btn:active { transform: scale(.95); }
 
-/* ══ MODAL ══ */
+/* ─── SECTION BAŞLIK ─── */
+.cq-section-title {
+  font-size: 8px; font-weight: 700; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--ck-faint);
+  margin: 14px 0 8px 2px; display: flex; align-items: center; gap: 6px;
+}
+.cq-section-title::after {
+  content: ''; flex: 1; height: 1px; background: var(--ck-border);
+}
+
+/* ─── MODAL ─── */
 #ckModal {
   display: none; position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(15,23,42,.7);
-  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-  z-index: 9999; padding: 16px;
-  overflow-y: auto; box-sizing: border-box;
+  background: rgba(15,23,42,.5);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  z-index: 9999; padding: 16px; overflow-y: auto; box-sizing: border-box;
 }
 #ckModal.open { display: flex; flex-direction: column; justify-content: flex-end; }
 #ckModalContent {
-  background: #fff; border-radius: 20px; padding: 20px;
-  box-shadow: 0 -20px 60px rgba(0,0,0,.15);
+  background: #fff; border-radius: 20px; padding: 22px;
+  box-shadow: 0 -20px 60px rgba(0,0,0,.12);
   max-height: 80vh; overflow-y: auto; position: relative;
 }
 #ckModalClose {
   position: absolute; top: 14px; right: 14px;
-  background: #f1f5f9; border: none; color: #64748b;
-  border-radius: 50%; width: 32px; height: 32px;
-  font-size: 16px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  font-family: monospace; font-weight: 700;
+  background: var(--ck-bg); border: 1px solid var(--ck-border);
+  color: var(--ck-muted); border-radius: 50%; width: 32px; height: 32px;
+  font-size: 16px; cursor: pointer; display: flex;
+  align-items: center; justify-content: center; font-weight: 700;
 }
 #ckModalTitle {
-  font-family: 'Orbitron', monospace; font-size: 11px; font-weight: 900;
-  color: #0f172a; letter-spacing: .12em; margin-bottom: 16px; padding-right: 40px;
+  font-family: 'JetBrains Mono', monospace; font-size: 12px; font-weight: 700;
+  color: var(--ck-text); letter-spacing: .06em; margin-bottom: 16px; padding-right: 40px;
 }
 
-/* ══ ANİMASYON ══ */
-@keyframes ck2pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.3;transform:scale(.65)} }
-@keyframes ck2in { from{opacity:0;transform:translateY(10px)} to{opacity:1;transform:translateY(0)} }
-.ck2-card, .ck2-price { animation: ck2in .35s ease both; }
-.ck2-card:nth-child(1){animation-delay:.04s} .ck2-card:nth-child(2){animation-delay:.08s}
-.ck2-card:nth-child(3){animation-delay:.12s} .ck2-card:nth-child(4){animation-delay:.16s}
-.ck2-card:nth-child(5){animation-delay:.20s} .ck2-card:nth-child(6){animation-delay:.24s}
+/* ─── ANİMASYON ─── */
+@keyframes cqin { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.cq-card, .cq-price { animation: cqin .3s ease both; }
+.cq-card:nth-child(1){animation-delay:.04s} .cq-card:nth-child(2){animation-delay:.08s}
+.cq-card:nth-child(3){animation-delay:.12s} .cq-card:nth-child(4){animation-delay:.16s}
+.cq-card:nth-child(5){animation-delay:.20s} .cq-card:nth-child(6){animation-delay:.24s}
 </style>
 
-<div id="ckWrap">
+<div id="ckv2">
 
-  <!-- ─ Başlık ─ -->
-  <div id="ckHeader">
+  <!-- ─── HEADER ─── -->
+  <div class="cq-header">
     <div>
-      <div id="ckTitle">🎛 COMMAND CENTER</div>
-      <div id="ckTime2">—</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <div style="display:flex;align-items:center;gap:4px">
-        <div style="width:7px;height:7px;border-radius:50%;background:#16a34a;animation:ck2pulse 2s infinite"></div>
-        <span style="font-family:'JetBrains Mono',monospace;font-size:9px;color:#16a34a;font-weight:700">CANLI</span>
+      <div class="cq-header-brand">
+        <span class="dot"></span>
+        COMMAND CENTER
       </div>
-      <button onclick="refreshCockpit()" style="background:#1e293b;border:1px solid #334155;color:#94a3b8;border-radius:8px;padding:5px 10px;font-size:8px;font-family:'Orbitron',monospace;cursor:pointer;font-weight:700;letter-spacing:.08em">↻ YENİLE</button>
+      <div class="cq-time" id="cqTime">—</div>
     </div>
+    <button class="cq-refresh" onclick="refreshCockpit()">↻ YENİLE</button>
   </div>
-  <style>@keyframes ck2pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(.7)}}</style>
 
-  <!-- ─ Fiyat Satırı ─ -->
-  <div class="ck2-g2">
-    <div class="ck2-price" onclick="openCockpitModal('chart','ETH')">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-        <span style="font-size:18px">🔷</span>
-        <span style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:#64748b;letter-spacing:.1em">ETH/USDT</span>
-      </div>
-      <div class="ck2-big ck2-blue" id="ck2EthPx">—</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-        <span class="ck2-xs" id="ck2EthChg">—</span>
-        <span class="ck2-xs" style="color:#cbd5e0">PERP</span>
-      </div>
+  <!-- ─── MENTAL STATE BANNER ─── -->
+  <div class="cq-mental-banner" id="cqMentalBanner" onclick="openCockpitModal('mental')">
+    <div class="cq-mental-emoji" id="cqMentalEmoji">⚪</div>
+    <div class="cq-mental-info">
+      <div class="cq-mental-title">Kaptan Durumu</div>
+      <div class="cq-mental-sub" id="cqMentalSub">Hazırlık sekmesinden mental durumunu gir</div>
     </div>
-    <div class="ck2-price" onclick="openCockpitModal('chart','BTC')">
-      <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
-        <span style="font-size:18px">🟡</span>
-        <span style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;color:#64748b;letter-spacing:.1em">BTC/USDT</span>
-      </div>
-      <div class="ck2-big ck2-orange" id="ck2BtcPx">—</div>
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:4px">
-        <span class="ck2-xs" id="ck2BtcChg">—</span>
-        <span class="ck2-xs" style="color:#cbd5e0">PERP</span>
-      </div>
+    <div class="cq-mental-state" id="cqMentalState">—</div>
+  </div>
+
+  <!-- ─── FİYATLAR ─── -->
+  <div class="cq-section-title">📊 Canlı Fiyatlar</div>
+  <div class="cq-prices">
+    <div class="cq-price eth" onclick="openCockpitModal('chart','ETH')">
+      <div class="cq-price-head"><span>🔷</span> ETH · PERP</div>
+      <div class="cq-price-val" id="cqEthPx">—</div>
+      <div class="cq-price-chg" id="cqEthChg">—</div>
+    </div>
+    <div class="cq-price btc" onclick="openCockpitModal('chart','BTC')">
+      <div class="cq-price-head"><span>🟡</span> BTC · PERP</div>
+      <div class="cq-price-val" id="cqBtcPx">—</div>
+      <div class="cq-price-chg" id="cqBtcChg">—</div>
     </div>
   </div>
 
-  <!-- ─ Sinyal + F&G + Rejim ─ -->
-  <div class="ck2-g3">
+  <!-- ─── CONFLUENCE + REJIM + F&G ─── -->
+  <div class="cq-section-title">🎯 Piyasa Durumu</div>
+  <div class="cq-g3">
 
-    <!-- Sinyal Skoru -->
-    <div class="ck2-card blue" onclick="openCockpitModal('signal')">
-      <div class="ck2-label"><span class="ck2-icon">🎯</span>SİNYAL</div>
-      <div class="ck2-gauge">
-        <svg width="72" height="72" viewBox="0 0 72 72">
-          <circle cx="36" cy="36" r="28" fill="none" stroke="#f1f5f9" stroke-width="6"/>
-          <circle id="ck2ScoreArc" cx="36" cy="36" r="28" fill="none" stroke="#3b82f6" stroke-width="6"
-            stroke-dasharray="0 176" stroke-linecap="round" style="transition:stroke-dasharray 1s ease"/>
+    <!-- Confluence Meter -->
+    <div class="cq-card" onclick="openCockpitModal('signal')" style="text-align:center">
+      <div class="cq-card-label" style="justify-content:center">🎯 Sinyal Gücü</div>
+      <div class="cq-gauge-wrap">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle cx="40" cy="40" r="32" fill="none" stroke="#F1F5F9" stroke-width="7"/>
+          <circle id="cqScoreArc" cx="40" cy="40" r="32" fill="none" stroke="#3B82F6" stroke-width="7"
+            stroke-dasharray="0 201" stroke-linecap="round"
+            style="transition:stroke-dasharray 1s ease,stroke .5s ease"/>
         </svg>
-        <div class="ck2-gauge-val" id="ck2Score">—</div>
+        <div class="cq-gauge-num" id="cqScore">—</div>
       </div>
-      <div class="ck2-xs" id="ck2ScoreDir" style="text-align:center">—</div>
+      <div id="cqScoreLbl" class="cq-confluence-label cq-conf-low" style="font-size:8px">Sinyal Bekleniyor</div>
+    </div>
+
+    <!-- Piyasa Rejimi -->
+    <div class="cq-card" onclick="openCockpitModal('regime')" style="text-align:center">
+      <div class="cq-card-label" style="justify-content:center">📡 Rejim</div>
+      <div id="cqRegIcon" style="font-size:28px;margin:8px 0">—</div>
+      <div id="cqRegTxt" class="cq-card-sub" style="text-align:center;font-weight:700;font-size:10px">—</div>
     </div>
 
     <!-- Fear & Greed -->
-    <div class="ck2-card orange" onclick="openCockpitModal('fng')">
-      <div class="ck2-label"><span class="ck2-icon">😨</span>KORKU/AÇG</div>
-      <div class="ck2-big" id="ck2Fng" style="text-align:center;font-size:28px">—</div>
-      <div class="ck2-xs" id="ck2FngLbl" style="text-align:center">—</div>
-      <div class="ck2-bar" style="margin-top:6px">
-        <div class="ck2-bar-fill" id="ck2FngBar" style="width:0%;background:linear-gradient(90deg,#3b82f6,#f59e0b,#ef4444)"></div>
+    <div class="cq-card" onclick="openCockpitModal('fng')" style="text-align:center">
+      <div class="cq-card-label" style="justify-content:center">😨 Korku/Açg.</div>
+      <div id="cqFngVal" class="cq-card-val" style="text-align:center;font-size:28px">—</div>
+      <div id="cqFngLbl" class="cq-card-sub" style="text-align:center">—</div>
+      <div class="cq-bar">
+        <div class="cq-bar-fill" id="cqFngBar" style="width:0%;background:linear-gradient(90deg,#3B82F6,#F59E0B,#EF4444)"></div>
       </div>
-    </div>
-
-    <!-- Rejim -->
-    <div class="ck2-card purple" onclick="openCockpitModal('regime')">
-      <div class="ck2-label"><span class="ck2-icon">📡</span>PİYASA</div>
-      <div id="ck2RegIcon" style="text-align:center;font-size:24px;margin:4px 0">—</div>
-      <div class="ck2-sm" id="ck2Reg" style="text-align:center;font-size:10px">—</div>
     </div>
   </div>
 
-  <!-- ─ Uçuş Öncesi + Mental + Bakiye ─ -->
-  <div class="ck2-g3">
+  <!-- ─── UÇUŞ ÖNCESİ + BAKİYE ─── -->
+  <div class="cq-section-title">✈️ Hazırlık & Finansal</div>
+  <div class="cq-g2">
 
     <!-- Uçuş Öncesi Kontrol -->
-    <div class="ck2-card green" onclick="openCockpitModal('preflight')">
-      <div class="ck2-label"><span class="ck2-icon">✈️</span>UÇUŞ ÖNCESİ</div>
-      <div id="ck2PfRows" style="margin-top:4px">
-        <div class="ck2-pf-row"><div class="ck2-pf-dot" id="ck2pf1" style="background:#cbd5e0"></div><div class="ck2-pf-txt">Likidite</div></div>
-        <div class="ck2-pf-row"><div class="ck2-pf-dot" id="ck2pf2" style="background:#cbd5e0"></div><div class="ck2-pf-txt">Momentum</div></div>
-        <div class="ck2-pf-row"><div class="ck2-pf-dot" id="ck2pf3" style="background:#cbd5e0"></div><div class="ck2-pf-txt">Volatilite</div></div>
-        <div class="ck2-pf-row"><div class="ck2-pf-dot" id="ck2pf4" style="background:#cbd5e0"></div><div class="ck2-pf-txt">Teknik</div></div>
+    <div class="cq-card" onclick="openCockpitModal('preflight')">
+      <div class="cq-card-label">✈️ Uçuş Öncesi Kontrol</div>
+      <div id="cqPfRows">
+        <div class="cq-pf-row">
+          <div class="cq-pf-dot" id="cqpf1" style="background:#CBD5E0"></div>
+          <div class="cq-pf-name">Likidite (Yakıt)</div>
+          <div class="cq-pf-val" id="cqpf1v">—</div>
+        </div>
+        <div class="cq-pf-row">
+          <div class="cq-pf-dot" id="cqpf2" style="background:#CBD5E0"></div>
+          <div class="cq-pf-name">Momentum (Motor)</div>
+          <div class="cq-pf-val" id="cqpf2v">—</div>
+        </div>
+        <div class="cq-pf-row">
+          <div class="cq-pf-dot" id="cqpf3" style="background:#CBD5E0"></div>
+          <div class="cq-pf-name">Volatilite (Hava)</div>
+          <div class="cq-pf-val" id="cqpf3v">—</div>
+        </div>
+        <div class="cq-pf-row">
+          <div class="cq-pf-dot" id="cqpf4" style="background:#CBD5E0"></div>
+          <div class="cq-pf-name">Teknik Durum</div>
+          <div class="cq-pf-val" id="cqpf4v">—</div>
+        </div>
       </div>
     </div>
 
-    <!-- Mental Durum -->
-    <div class="ck2-card blue" onclick="openCockpitModal('mental')">
-      <div class="ck2-label"><span class="ck2-icon">🧠</span>MENTAL</div>
-      <div id="ck2MentalIcon" style="text-align:center;font-size:30px;margin:4px 0">—</div>
-      <div style="text-align:center">
-        <span class="ck2-badge gray" id="ck2MentalBadge">—</span>
+    <!-- Bakiye & P&L + Kelly -->
+    <div class="cq-card" onclick="openCockpitModal('pnl')">
+      <div class="cq-card-label">💰 Bakiye & P&L</div>
+      <div class="cq-card-val" id="cqBal" style="font-size:18px">—</div>
+      <div class="cq-card-sub">Toplam Bakiye</div>
+      <div style="height:1px;background:#F1F5F9;margin:10px 0"></div>
+      <div style="font-size:8px;color:var(--ck-faint);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:5px">Bugünkü Kar/Zarar</div>
+      <div class="cq-card-val" id="cqDayPnl" style="font-size:18px">—</div>
+      <!-- Kelly -->
+      <div class="cq-kelly-box" style="margin-top:10px">
+        <div><div class="cq-kelly-lbl">Kelly Risk</div>
+          <div class="cq-kelly-val" id="cqKelly">—</div>
+        </div>
+        <div><div class="cq-kelly-lbl">BTC Durumu</div>
+          <div class="cq-kelly-val" id="cqBtcSw" style="font-size:11px">—</div>
+        </div>
       </div>
-    </div>
-
-    <!-- Bakiye & P&L -->
-    <div class="ck2-card green" onclick="openCockpitModal('pnl')">
-      <div class="ck2-label"><span class="ck2-icon">💰</span>BAKİYE</div>
-      <div class="ck2-med" id="ck2Bal">—</div>
-      <div class="ck2-xs" style="margin-top:8px;color:#94a3b8">BUGÜN</div>
-      <div class="ck2-med" id="ck2DayPnl" style="font-size:14px">—</div>
     </div>
   </div>
 
-  <!-- ─ Son Sinyal + Kelly ─ -->
-  <div class="ck2-g21">
+  <!-- ─── SON SİNYAL + ANOMALI ─── -->
+  <div class="cq-section-title">📶 Son Aktivite</div>
+  <div class="cq-g21">
 
     <!-- Son Sinyal -->
-    <div class="ck2-card blue" onclick="openCockpitModal('signal')">
-      <div class="ck2-label"><span class="ck2-icon">📶</span>SON SİNYAL</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
-        <div id="ck2SigDir" style="font-family:'Orbitron',monospace;font-size:16px;font-weight:900;min-width:60px">—</div>
+    <div class="cq-card" onclick="openCockpitModal('signal')">
+      <div class="cq-card-label">📶 Son Sinyal</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="cqSigDir" style="font-family:'JetBrains Mono',monospace;font-size:18px;font-weight:700;min-width:70px">—</div>
         <div style="flex:1">
-          <div class="ck2-sm" id="ck2SigPair">—</div>
-          <div class="ck2-xs" id="ck2SigScore">—</div>
+          <div style="font-weight:600;color:var(--ck-text);font-size:11px" id="cqSigPair">—</div>
+          <div class="cq-card-sub" id="cqSigScore">—</div>
         </div>
         <div style="text-align:right">
-          <div class="ck2-xs" id="ck2SigEntry">—</div>
-          <div class="ck2-xs" id="ck2SigTime">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ck-muted)" id="cqSigEntry">—</div>
+          <div class="cq-card-sub" id="cqSigTime">—</div>
         </div>
       </div>
     </div>
 
-    <!-- Kelly Risk -->
-    <div class="ck2-card orange" onclick="openCockpitModal('kelly')">
-      <div class="ck2-label"><span class="ck2-icon">⚖️</span>RİSK</div>
-      <div class="ck2-big ck2-orange" id="ck2Kelly" style="font-size:24px">—</div>
-      <div class="ck2-xs">Kelly Risk</div>
+    <!-- Anomali -->
+    <div class="cq-card" onclick="openCockpitModal('anomaly')" style="text-align:center">
+      <div class="cq-card-label" style="justify-content:center">🔍 Anomali</div>
+      <div id="cqAnoIcon" style="font-size:26px;margin:4px 0">✅</div>
+      <div id="cqAnoTxt" class="cq-card-sub" style="text-align:center;font-size:9px;font-weight:700">NORMAL</div>
     </div>
   </div>
 
-  <!-- ─ Tarama + Anomali + BTC ─ -->
-  <div class="ck2-g3">
-
-    <div class="ck2-card gray" onclick="openCockpitModal('scan')">
-      <div class="ck2-label"><span class="ck2-icon">📡</span>TARAMA</div>
-      <div id="ck2ScanIcon" style="text-align:center;font-size:22px;margin:4px 0">📡</div>
-      <div style="text-align:center"><span class="ck2-badge gray" id="ck2ScanBadge">—</span></div>
-    </div>
-
-    <div class="ck2-card green" onclick="openCockpitModal('anomaly')">
-      <div class="ck2-label"><span class="ck2-icon">🔍</span>ANOMALİ</div>
-      <div id="ck2AnoIcon" style="text-align:center;font-size:22px;margin:4px 0">✅</div>
-      <div style="text-align:center"><span class="ck2-badge green" id="ck2AnoBadge">NORMAL</span></div>
-    </div>
-
-    <div class="ck2-card orange" onclick="openCockpitModal('btcswitch')">
-      <div class="ck2-label"><span class="ck2-icon">🔀</span>BTC ANA</div>
-      <div id="ck2BtcSwIcon" style="text-align:center;font-size:22px;margin:4px 0">—</div>
-      <div style="text-align:center"><span class="ck2-badge gray" id="ck2BtcSwBadge">—</span></div>
-    </div>
+  <!-- ─── LONG / SHORT ─── -->
+  <div class="cq-section-title">⚡ Hızlı İşlem</div>
+  <div class="cq-g2" style="margin-bottom:10px">
+    <button class="cq-btn cq-btn-long" onclick="setMode('trade')">▲ LONG GİR</button>
+    <button class="cq-btn cq-btn-short" onclick="setMode('trade')">▼ SHORT GİR</button>
   </div>
 
-  <!-- ─ LONG / SHORT ─ -->
-  <div class="ck2-g2" style="margin-bottom:8px">
-    <button class="ck2-btn-long" onclick="setMode('trade')">▲ LONG GİR</button>
-    <button class="ck2-btn-short" onclick="setMode('trade')">▼ SHORT GİR</button>
+  <!-- ─── GRAFİK ─── -->
+  <div class="cq-section-title">📈 Grafik Kısayolları</div>
+  <div class="cq-chart-grid">
+    <button class="cq-chart-btn" onclick="openTV('OKX:ETHUSDT.P')" style="color:#2563EB;border-color:#BFDBFE">🔷 ETH</button>
+    <button class="cq-chart-btn" onclick="openTV('OKX:BTCUSDT.P')" style="color:#D97706;border-color:#FDE68A">🟡 BTC</button>
+    <button class="cq-chart-btn" onclick="openTV('OKX:SOLUSDT.P')" style="color:#7C3AED;border-color:#DDD6FE">🟣 SOL</button>
+    <button class="cq-chart-btn" onclick="openTV('OKX:BNBUSDT.P')" style="color:#16A34A;border-color:#BBF7D0">🟢 BNB</button>
   </div>
 
-  <!-- ─ Grafik Kısayolları ─ -->
-  <div style="background:#0f172a;border:1px solid #1e293b;border-radius:14px;padding:12px;box-shadow:0 4px 14px rgba(15,23,42,.2)">
-    <div style="font-family:'Orbitron',monospace;font-size:8px;font-weight:700;letter-spacing:.1em;color:#0f172a;text-transform:uppercase;margin-bottom:8px">📈 GRAFİK KISA ERİŞİM</div>
-    <div class="ck2-g2" style="margin-bottom:0;gap:6px">
-      <button class="ck2-chart-btn" onclick="openTV('OKX:ETHUSDT.P')" style="background:#1e293b;border-color:#2563eb;color:#93c5fd">🔷 ETH</button>
-      <button class="ck2-chart-btn" onclick="openTV('OKX:BTCUSDT.P')" style="background:#1e293b;border-color:#d97706;color:#fcd34d">🟡 BTC</button>
-      <button class="ck2-chart-btn" onclick="openTV('OKX:SOLUSDT.P')" style="background:#1e293b;border-color:#7c3aed;color:#c4b5fd">🟣 SOL</button>
-      <button class="ck2-chart-btn" onclick="openTV('OKX:BNBUSDT.P')" style="background:#1e293b;border-color:#16a34a;color:#86efac">🟢 BNB</button>
-    </div>
-  </div>
-
-</div><!-- /ckWrap -->
+</div><!-- /ckv2 -->
 
 <!-- Modal -->
 <div id="ckModal">
-  <div id="ckModalContent" style="position:relative">
+  <div id="ckModalContent">
     <button id="ckModalClose" onclick="closeCockpitModal()">✕</button>
     <div id="ckModalTitle">DETAY</div>
-    <div id="ckModalBody" style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#475569;line-height:1.6"></div>
+    <div id="ckModalBody" style="font-family:'Inter',sans-serif;font-size:13px;color:#475569;line-height:1.6"></div>
   </div>
 </div>
 
@@ -11521,168 +11570,214 @@ function calcAdaptiveWeights() {
   return result;
 }
 
-// ── v45: KOKPIT — Command Center ──
+// ── v45: KOKPIT v2 — Clean Quant Terminal ──
 async function refreshCockpit() {
-  const t = document.getElementById('ckTime2');
+  // Saat
+  const t = document.getElementById('cqTime');
   if (t) t.textContent = new Date().toLocaleTimeString('tr-TR') + ' · OKX FUTURES';
 
-  const set = (id,v,cls) => { const e=document.getElementById(id); if(!e)return; e.textContent=v; if(cls){e.className=cls;} };
+  const setEl = (id, v) => { const e=document.getElementById(id); if(e) e.textContent=v; };
+  const setClr = (id, c) => { const e=document.getElementById(id); if(e) e.style.color=c; };
+
+  // ── Mental state → Panel vurgu rengi ──
+  const mental = ld('ug_mental_quick') || ld('ug6_mental') || {};
+  const mState = mental.state || mental.last;
+  const mentalMap = {
+    green:  { emoji:'🟢', txt:'HAZIR',      sub:'Net ve odaklanmış durumdasın',    cls:'ck-mental-green', state:'HAZIR',      stateC:'#16A34A' },
+    yellow: { emoji:'🟡', txt:'DİKKATLİ',   sub:'Dikkatli ol, kurallara bağlı kal', cls:'ck-mental-warn',  state:'DİKKATLİ',  stateC:'#D97706' },
+    red:    { emoji:'🔴', txt:'TİCARET YOK', sub:'⚠️ Bugün işlem açma!',           cls:'ck-mental-red',   state:'RİSKLİ',    stateC:'#DC2626' },
+  };
+  const mm = mentalMap[mState] || { emoji:'⚪', txt:'GİRİLMEDİ', sub:'Hazırlık sekmesinden mental durumunu gir', cls:'', state:'—', stateC:'#94A3B8' };
+  document.body.classList.remove('ck-mental-green','ck-mental-red','ck-mental-warn');
+  if (mm.cls) document.body.classList.add(mm.cls);
+  setEl('cqMentalEmoji', mm.emoji);
+  setEl('cqMentalSub',   mm.sub);
+  setEl('cqMentalState', mm.state);
+  const msEl = document.getElementById('cqMentalState');
+  if (msEl) msEl.style.background = mm.stateC;
 
   // ── Fiyatlar ──
   try {
-    const [er,br] = await Promise.all([
+    const [er, br] = await Promise.all([
       fetch('https://www.okx.com/api/v5/market/ticker?instId=ETH-USDT-SWAP').then(r=>r.json()),
       fetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP').then(r=>r.json()),
     ]);
     const eth = er.data?.[0], btc = br.data?.[0];
     if (eth) {
-      const pct = ((parseFloat(eth.last)-parseFloat(eth.open24h))/parseFloat(eth.open24h)*100).toFixed(2);
-      set('ck2EthPx', '$'+parseFloat(eth.last).toLocaleString('en-US',{maximumFractionDigits:2}));
-      const el=document.getElementById('ck2EthChg');
-      if(el){el.textContent=(pct>0?'+':'')+pct+'%';el.style.color=pct>=0?'#16a34a':'#dc2626';}
+      const p = ((parseFloat(eth.last)-parseFloat(eth.open24h))/parseFloat(eth.open24h)*100);
+      setEl('cqEthPx', '$'+parseFloat(eth.last).toLocaleString('en-US',{maximumFractionDigits:2}));
+      const ce = document.getElementById('cqEthChg');
+      if(ce){ce.textContent=(p>=0?'+':'')+p.toFixed(2)+'%';ce.style.color=p>=0?'#16A34A':'#DC2626';}
     }
     if (btc) {
-      const pct = ((parseFloat(btc.last)-parseFloat(btc.open24h))/parseFloat(btc.open24h)*100).toFixed(2);
-      set('ck2BtcPx', '$'+parseFloat(btc.last).toLocaleString('en-US',{maximumFractionDigits:0}));
-      const el=document.getElementById('ck2BtcChg');
-      if(el){el.textContent=(pct>0?'+':'')+pct+'%';el.style.color=pct>=0?'#16a34a':'#dc2626';}
+      const p = ((parseFloat(btc.last)-parseFloat(btc.open24h))/parseFloat(btc.open24h)*100);
+      setEl('cqBtcPx', '$'+parseFloat(btc.last).toLocaleString('en-US',{maximumFractionDigits:0}));
+      const cb = document.getElementById('cqBtcChg');
+      if(cb){cb.textContent=(p>=0?'+':'')+p.toFixed(2)+'%';cb.style.color=p>=0?'#16A34A':'#DC2626';}
     }
   } catch(e){}
 
-  // ── Sinyal Skoru ──
+  // ── Confluence Meter (Sinyal Gücü) ──
   const sigs = ld('ug_signal_history')||[];
-  const score = sigs[0]?.score||0;
-  const arc = document.getElementById('ck2ScoreArc');
-  if(arc){
-    const c=2*Math.PI*28;
-    arc.setAttribute('stroke-dasharray',`${(score/100)*c} ${c-(score/100)*c}`);
-    arc.setAttribute('stroke', score>=75?'#16a34a':score>=55?'#f59e0b':'#ef4444');
+  const score = sigs[0]?.score || 0;
+  const arc = document.getElementById('cqScoreArc');
+  if (arc) {
+    const c = 2*Math.PI*32;
+    const fill = (score/100)*c;
+    arc.setAttribute('stroke-dasharray', `${fill} ${c-fill}`);
+    const col = score>=80?'#16A34A':score>=60?'#F59E0B':score>=40?'#3B82F6':'#CBD5E0';
+    arc.setAttribute('stroke', col);
   }
-  set('ck2Score', score||'—');
-  const sd=document.getElementById('ck2ScoreDir');
-  if(sd&&sigs[0]){
-    sd.textContent=sigs[0].direction||'—';
-    sd.style.color=sigs[0].direction==='LONG'?'#16a34a':'#dc2626';
-  }
-
-  // ── Fear & Greed ──
-  const fng=ld('ug_fng')||{};
-  if(fng.value){
-    const v=parseInt(fng.value);
-    const fe=document.getElementById('ck2Fng');
-    if(fe){fe.textContent=v;fe.style.color=v<=25?'#dc2626':v>=75?'#16a34a':'#d97706';}
-    set('ck2FngLbl',fng.label||'—');
-    const b=document.getElementById('ck2FngBar');
-    if(b)b.style.width=v+'%';
+  setEl('cqScore', score||'—');
+  const lbl = document.getElementById('cqScoreLbl');
+  if (lbl) {
+    if (score >= 80)      { lbl.textContent='Yüksek Olasılıklı Kurulum'; lbl.className='cq-confluence-label cq-conf-high'; }
+    else if (score >= 60) { lbl.textContent='Orta Güç · İzle';           lbl.className='cq-confluence-label cq-conf-mid'; }
+    else                  { lbl.textContent='Sinyal Bekleniyor';          lbl.className='cq-confluence-label cq-conf-low'; }
   }
 
   // ── Rejim ──
-  const regime=_currentRegime||ld('ug_regime')||'neutral';
-  const rm={
-    trend_bull:{icon:'🚀',txt:'TREND BULL',c:'#16a34a'},
-    trend_bear:{icon:'📉',txt:'TREND BEAR',c:'#dc2626'},
-    range:     {icon:'↔️',txt:'RANGE',     c:'#d97706'},
-    volatile:  {icon:'⚡',txt:'VOLATİL',   c:'#ef4444'},
-    crash:     {icon:'💥',txt:'CRASH',     c:'#dc2626'},
-    neutral:   {icon:'⚖️',txt:'NÖTR',      c:'#64748b'},
-  }[regime]||{icon:'⚖️',txt:'NÖTR',c:'#64748b'};
-  set('ck2RegIcon',rm.icon);
-  const re2=document.getElementById('ck2Reg');
-  if(re2){re2.textContent=rm.txt;re2.style.color=rm.c;}
+  const regime = _currentRegime || ld('ug_regime') || 'neutral';
+  const rm = {
+    trend_bull:{icon:'🚀',txt:'TREND BULL',c:'#16A34A'},
+    trend_bear:{icon:'📉',txt:'TREND BEAR',c:'#DC2626'},
+    range:     {icon:'↔️',txt:'RANGE',      c:'#D97706'},
+    volatile:  {icon:'⚡',txt:'VOLATİL',    c:'#EF4444'},
+    crash:     {icon:'💥',txt:'CRASH',      c:'#DC2626'},
+    neutral:   {icon:'⚖️',txt:'NÖTR',       c:'#94A3B8'},
+  }[regime] || {icon:'⚖️',txt:'NÖTR',c:'#94A3B8'};
+  setEl('cqRegIcon', rm.icon);
+  const rte = document.getElementById('cqRegTxt');
+  if(rte){rte.textContent=rm.txt;rte.style.color=rm.c;}
+
+  // ── Fear & Greed ──
+  const fng = ld('ug_fng')||{};
+  if (fng.value) {
+    const v = parseInt(fng.value);
+    const fe = document.getElementById('cqFngVal');
+    if(fe){fe.textContent=v;fe.style.color=v<=25?'#DC2626':v>=75?'#16A34A':'#D97706';}
+    setEl('cqFngLbl', fng.label||'—');
+    const fb = document.getElementById('cqFngBar');
+    if(fb)fb.style.width=v+'%';
+  }
 
   // ── Pre-Flight ──
-  const pfIds=['ck2pf1','ck2pf2','ck2pf3','ck2pf4'];
-  const pfSrcs=['preCheckFuel','preCheckMom','preCheckVol','preCheckTech'];
-  pfSrcs.forEach((srcId,i)=>{
-    const src=document.getElementById(srcId);
-    const dot=document.getElementById(pfIds[i]);
-    if(!dot)return;
-    if(src){
-      const txt=src.textContent||'';
-      dot.style.background=txt.includes('✅')?'#16a34a':txt.includes('❌')?'#dc2626':'#f59e0b';
+  const pfMap = [
+    {dotId:'cqpf1',valId:'cqpf1v',srcId:'preCheckFuel'},
+    {dotId:'cqpf2',valId:'cqpf2v',srcId:'preCheckMom'},
+    {dotId:'cqpf3',valId:'cqpf3v',srcId:'preCheckVol'},
+    {dotId:'cqpf4',valId:'cqpf4v',srcId:'preCheckTech'},
+  ];
+  pfMap.forEach(({dotId,valId,srcId}) => {
+    const src = document.getElementById(srcId);
+    const dot = document.getElementById(dotId);
+    const val = document.getElementById(valId);
+    if (!dot) return;
+    if (src) {
+      const txt = src.textContent||'';
+      const isGreen = txt.includes('✅') || src.style.color?.includes('green') || src.querySelector?.('.green');
+      const isRed   = txt.includes('❌') || src.style.color?.includes('red');
+      dot.style.background = isGreen?'#16A34A':isRed?'#DC2626':'#F59E0B';
+      dot.style.boxShadow  = isGreen?'0 0 8px #16A34A':isRed?'0 0 8px #DC2626':'0 0 8px #F59E0B';
+    }
+    // Değer kısmı
+    if (val && src) {
+      const parts = src.textContent?.split('·') || [];
+      if(val) val.textContent = parts[1]?.trim()?.slice(0,12) || '';
     }
   });
 
-  // ── Mental ──
-  const mental=ld('ug_mental_quick')||ld('ug6_mental')||{};
-  const mState=mental.state||mental.last;
-  const mm={green:{icon:'🟢',txt:'HAZIR',cls:'green'},yellow:{icon:'🟡',txt:'DİKKAT',cls:'orange'},red:{icon:'🔴',txt:'TİCAR YOK',cls:'red'}}[mState]||{icon:'⚪',txt:'GİRİLMEDİ',cls:'gray'};
-  set('ck2MentalIcon',mm.icon);
-  const mb=document.getElementById('ck2MentalBadge');
-  if(mb){mb.textContent=mm.txt;mb.className='ck2-badge '+mm.cls;}
-
-  // ── Bakiye ──
-  const bal=getTotalBal?getTotalBal():0;
-  const be=document.getElementById('ck2Bal');
-  if(be)be.textContent=bal?'$'+bal.toFixed(0):'—';
-  const cal=ld('ug6_cal')||{};
-  const today=new Date().toISOString().slice(0,10);
-  const dp=cal[today]?.pnl||0;
-  const dpe=document.getElementById('ck2DayPnl');
-  if(dpe){dpe.textContent=(dp>=0?'+':'')+'$'+dp.toFixed(2);dpe.style.color=dp>=0?'#16a34a':'#dc2626';}
+  // ── Bakiye & P&L ──
+  const bal = getTotalBal ? getTotalBal() : 0;
+  const be = document.getElementById('cqBal');
+  if(be){be.textContent=bal?'$'+bal.toFixed(0):'—';be.style.color=bal>=0?'#1E293B':'#DC2626';}
+  const cal = ld('ug6_cal')||{};
+  const today = new Date().toISOString().slice(0,10);
+  const dp = cal[today]?.pnl||0;
+  const dpe = document.getElementById('cqDayPnl');
+  if(dpe){dpe.textContent=(dp>=0?'+':'')+'$'+dp.toFixed(2);dpe.style.color=dp>=0?'#16A34A':'#DC2626';}
 
   // ── Kelly ──
-  const sl=document.getElementById('riskPctSlider');
-  if(sl)set('ck2Kelly','%'+parseFloat(sl.value).toFixed(1));
-
-  // ── Son Sinyal ──
-  if(sigs.length>0){
-    const s=sigs[0];
-    const de=document.getElementById('ck2SigDir');
-    if(de){de.textContent=s.direction||'—';de.style.color=s.direction==='LONG'?'#16a34a':'#dc2626';}
-    set('ck2SigPair',(s.symbol||'').replace('USDT','/USDT'));
-    set('ck2SigScore','Skor: '+(s.score||'—')+' · '+(s.tf||'').toUpperCase());
-    set('ck2SigEntry',s.entry?'$'+parseFloat(s.entry).toFixed(2):'—');
-    const ago=s.time?Math.round((Date.now()-s.time)/60000):null;
-    set('ck2SigTime',ago!==null?ago+'dk önce':'—');
-  }
-
-  // ── Tarama ──
-  const scanOn=_autoScanTimer!==null;
-  const sb=document.getElementById('ck2ScanBadge');
-  if(sb){sb.textContent=scanOn?'AKTİF':'PASİF';sb.className='ck2-badge '+(scanOn?'green':'gray');}
-
-  // ── Anomali ──
-  const ae=document.getElementById('anomalyStatus');
-  if(ae){
-    const norm=ae.textContent.includes('Normal');
-    set('ck2AnoIcon',norm?'✅':'⚠️');
-    const ab=document.getElementById('ck2AnoBadge');
-    if(ab){ab.textContent=norm?'NORMAL':'UYARI';ab.className='ck2-badge '+(norm?'green':'red');}
-  }
+  const sl = document.getElementById('riskPctSlider');
+  if(sl) setEl('cqKelly', '%'+parseFloat(sl.value).toFixed(1));
 
   // ── BTC Switch ──
-  const sw=_btcMasterSwitch||'neutral';
-  const swm={bull:{icon:'🐂',txt:'BULL',cls:'green'},bear:{icon:'🐻',txt:'BEAR',cls:'red'},neutral:{icon:'⚖️',txt:'NÖTR',cls:'gray'}}[sw]||{icon:'⚖️',txt:'NÖTR',cls:'gray'};
-  set('ck2BtcSwIcon',swm.icon);
-  const bsb=document.getElementById('ck2BtcSwBadge');
-  if(bsb){bsb.textContent=swm.txt;bsb.className='ck2-badge '+swm.cls;}
+  const sw = _btcMasterSwitch||'neutral';
+  const swm = {bull:{txt:'🐂 BULL',c:'#16A34A'},bear:{txt:'🐻 BEAR',c:'#DC2626'},neutral:{txt:'⚖️ NÖTR',c:'#94A3B8'}}[sw]||{txt:'—',c:'#94A3B8'};
+  const bse = document.getElementById('cqBtcSw');
+  if(bse){bse.textContent=swm.txt;bse.style.color=swm.c;}
+
+  // ── Son Sinyal ──
+  if (sigs.length > 0) {
+    const s = sigs[0];
+    const de = document.getElementById('cqSigDir');
+    if(de){de.textContent=s.direction||'—';de.style.color=s.direction==='LONG'?'#16A34A':'#DC2626';}
+    setEl('cqSigPair',  (s.symbol||'').replace('USDT','/USDT'));
+    setEl('cqSigScore', 'Skor: '+(s.score||'—')+' · '+(s.tf||'').toUpperCase());
+    setEl('cqSigEntry', s.entry?'$'+parseFloat(s.entry).toFixed(2):'—');
+    const ago = s.time?Math.round((Date.now()-s.time)/60000):null;
+    setEl('cqSigTime', ago!==null?(ago<60?ago+'dk':'2s+')+'önce':'—');
+  }
+
+  // ── Anomali ──
+  const ae = document.getElementById('anomalyStatus');
+  if (ae) {
+    const norm = ae.textContent.includes('Normal');
+    setEl('cqAnoIcon', norm?'✅':'⚠️');
+    const at = document.getElementById('cqAnoTxt');
+    if(at){at.textContent=norm?'NORMAL':'UYARI';at.style.color=norm?'#16A34A':'#DC2626';}
+  }
 }
 
 // Kokpit Modal
 function openCockpitModal(type, extra) {
-  const modal=document.getElementById('ckModal');
-  const title=document.getElementById('ckModalTitle');
-  const body=document.getElementById('ckModalBody');
-  if(!modal)return;
-  const titles={signal:'🎯 SON SİNYALLER',fng:'😨 KORKU & AÇGÖZLÜLÜK ENDEKSİ',regime:'📡 PİYASA REJİMİ',preflight:'✈️ UÇUŞ ÖNCESİ KONTROL',mental:'🧠 MENTAL DURUM',pnl:'💰 BAKİYE & KÂR/ZARAR',kelly:'⚖️ KELLY KRİTERİ',scan:'📡 OTOMATİK TARAMA',anomaly:'🔍 ANOMALİ DEDEKTÖRÜ',btcswitch:'🔀 BTC ANA GÖSTERGE',chart:'📈 GRAFİK AÇ'};
-  if(title)title.textContent=titles[type]||type.toUpperCase();
-  if(type==='chart'){
-    const sym=extra==='BTC'?'OKX:BTCUSDT.P':'OKX:ETHUSDT.P';
-    if(body)body.innerHTML=`<button onclick="openTV('${sym}')" style="width:100%;padding:16px;background:linear-gradient(135deg,#2563eb,#0284c7);border:none;border-radius:12px;color:#fff;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px">📈 TradingView'da Aç — ${extra}/USDT</button><p style="text-align:center;color:#94a3b8;font-size:11px">BB · EMA · RSI · Hacim · Tüm araçlar</p>`;
-  } else if(type==='signal'){
-    const sigs=ld('ug_signal_history')||[];
-    if(body)body.innerHTML=sigs.slice(0,5).map(s=>`<div style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:8px"><div style="display:flex;justify-content:space-between;margin-bottom:8px"><span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:${s.direction==='LONG'?'#16a34a':'#dc2626'}">${s.direction}</span><span style="font-size:10px;color:#94a3b8">${(s.symbol||'').replace('USDT','/USDT')} · ${(s.tf||'').toUpperCase()}</span></div><div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:10px"><div><div style="color:#94a3b8;margin-bottom:2px">SKOR</div><div style="color:#d97706;font-weight:700">${s.score}/100</div></div><div><div style="color:#94a3b8;margin-bottom:2px">GİRİŞ</div><div>$${s.entry?.toFixed?.(2)||'—'}</div></div><div><div style="color:#94a3b8;margin-bottom:2px">SL</div><div style="color:#dc2626">$${s.sl?.toFixed?.(2)||'—'}</div></div><div><div style="color:#94a3b8;margin-bottom:2px">TP1</div><div style="color:#16a34a">$${s.tp1?.toFixed?.(2)||'—'}</div></div><div><div style="color:#94a3b8;margin-bottom:2px">TP2</div><div style="color:#16a34a">$${s.tp2?.toFixed?.(2)||'—'}</div></div><div><div style="color:#94a3b8;margin-bottom:2px">R:R</div><div>${s.rr?.toFixed?.(1)||'—'}</div></div></div></div>`).join('')||'<p style="text-align:center;color:#94a3b8;padding:20px">Henüz sinyal yok</p>';
+  const modal = document.getElementById('ckModal');
+  const title = document.getElementById('ckModalTitle');
+  const body  = document.getElementById('ckModalBody');
+  if (!modal) return;
+
+  const titles = {
+    signal:'🎯 Sinyal Detayları', fng:'😨 Korku & Açgözlülük Endeksi',
+    regime:'📡 Piyasa Rejimi', preflight:'✈️ Uçuş Öncesi Kontrol Detayı',
+    mental:'🧠 Mental Durum', pnl:'💰 Bakiye & Kar/Zarar',
+    anomaly:'🔍 Anomali Dedektörü', chart:'📈 Grafik Aç',
+  };
+  if (title) title.textContent = titles[type]||type;
+
+  if (type === 'chart') {
+    const sym = extra==='BTC'?'OKX:BTCUSDT.P':'OKX:ETHUSDT.P';
+    if (body) body.innerHTML = `
+      <button onclick="openTV('${sym}')" style="width:100%;padding:16px;background:#1E293B;border:none;border-radius:12px;color:#F8FAFC;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px;display:flex;align-items:center;justify-content:center;gap:10px">
+        📈 TradingView'da Aç — ${extra}/USDT Perpetual
+      </button>
+      <p style="text-align:center;color:#94A3B8;font-size:12px">BB · EMA · RSI · Hacim · Tüm çizim araçları · Her sembol aranabilir</p>`;
+  } else if (type === 'signal') {
+    const sigs = ld('ug_signal_history')||[];
+    if (body) body.innerHTML = sigs.slice(0,5).map(s => `
+      <div style="background:#F8FAFC;border:1px solid #E2E8F0;border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;color:${s.direction==='LONG'?'#16A34A':'#DC2626'}">${s.direction}</span>
+          <span style="font-size:11px;color:#94A3B8">${(s.symbol||'').replace('USDT','/USDT')} · ${(s.tf||'').toUpperCase()}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;font-size:11px">
+          <div><div style="color:#94A3B8;margin-bottom:3px;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Skor</div><div style="font-weight:700;color:#D97706;font-family:'JetBrains Mono',monospace">${s.score}/100</div></div>
+          <div><div style="color:#94A3B8;margin-bottom:3px;font-size:9px;text-transform:uppercase;letter-spacing:.08em">Giriş</div><div style="font-weight:600;font-family:'JetBrains Mono',monospace">$${s.entry?.toFixed?.(2)||'—'}</div></div>
+          <div><div style="color:#94A3B8;margin-bottom:3px;font-size:9px;text-transform:uppercase;letter-spacing:.08em">SL</div><div style="font-weight:600;color:#DC2626;font-family:'JetBrains Mono',monospace">$${s.sl?.toFixed?.(2)||'—'}</div></div>
+          <div><div style="color:#94A3B8;margin-bottom:3px;font-size:9px;text-transform:uppercase;letter-spacing:.08em">TP1</div><div style="font-weight:600;color:#16A34A;font-family:'JetBrains Mono',monospace">$${s.tp1?.toFixed?.(2)||'—'}</div></div>
+          <div><div style="color:#94A3B8;margin-bottom:3px;font-size:9px;text-transform:uppercase;letter-spacing:.08em">TP2</div><div style="font-weight:600;color:#16A34A;font-family:'JetBrains Mono',monospace">$${s.tp2?.toFixed?.(2)||'—'}</div></div>
+          <div><div style="color:#94A3B8;margin-bottom:3px;font-size:9px;text-transform:uppercase;letter-spacing:.08em">R:R</div><div style="font-weight:600;font-family:'JetBrains Mono',monospace">${s.rr?.toFixed?.(1)||'—'}</div></div>
+        </div>
+      </div>`).join('')||'<p style="text-align:center;color:#94A3B8;padding:30px">Henüz sinyal yok</p>';
   } else {
-    const sectionMap={preflight:'pre',mental:'pre',pnl:'stats',kelly:'trade',scan:'trade',fng:'trade',regime:'trade',anomaly:'trade',btcswitch:'trade'};
-    if(body)body.innerHTML=`<div style="text-align:center;padding:20px"><div style="font-size:48px;margin-bottom:16px">${titles[type]?.split(' ')[0]||'📊'}</div><button onclick="closeCockpitModal();setMode('${sectionMap[type]||'trade'}')" style="padding:14px 28px;background:linear-gradient(135deg,#2563eb,#0284c7);border:none;border-radius:12px;color:#fff;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer">TAM DETAY →</button></div>`;
+    const sMap={mental:'pre',preflight:'pre',pnl:'stats',fng:'trade',regime:'trade',anomaly:'trade'};
+    if(body)body.innerHTML=`<div style="text-align:center;padding:24px"><div style="font-size:52px;margin-bottom:16px">${titles[type]?.split(' ')[0]||'📊'}</div><p style="color:#64748B;margin-bottom:20px;font-size:13px">Tam detaylar için ilgili sekmeye git</p><button onclick="closeCockpitModal();setMode('${sMap[type]||'trade'}')" style="padding:14px 28px;background:#1E293B;border:none;border-radius:12px;color:#F8FAFC;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer">Tam Detay →</button></div>`;
   }
   modal.classList.add('open');
 }
 
-function closeCockpitModal(){
-  const m=document.getElementById('ckModal');
-  if(m)m.classList.remove('open');
+function closeCockpitModal() {
+  const m = document.getElementById('ckModal');
+  if (m) m.classList.remove('open');
 }
 
 // ── v45: Mini Backtest Motoru ──
