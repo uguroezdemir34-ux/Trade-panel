@@ -1046,8 +1046,11 @@ select.tf-inp{cursor:pointer}
   <button onclick="setMode('manage')" id="modeManage" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid var(--bd)">
     <span style="font-size:16px">🛬</span><span>Yönet</span>
   </button>
-  <button onclick="setMode('stats')" id="modeStats" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px">
+  <button onclick="setMode('stats')" id="modeStats" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid var(--bd)">
     <span style="font-size:16px">📊</span><span>İstatistik</span>
+  </button>
+  <button onclick="setMode('cockpit')" id="modeCockpit" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px">
+    <span style="font-size:16px">🎛️</span><span>Kokpit</span>
   </button>
 </div>
 <style>
@@ -1060,7 +1063,8 @@ body.dark #quickNav{background:rgba(22,22,22,.97)}
 body[data-active-mode="pre"] [data-mode="pre"],
 body[data-active-mode="trade"] [data-mode="trade"],
 body[data-active-mode="manage"] [data-mode="manage"],
-body[data-active-mode="stats"] [data-mode="stats"]{display:block}
+body[data-active-mode="stats"] [data-mode="stats"],
+body[data-active-mode="cockpit"] [data-mode="cockpit"]{display:block}
 </style>
 
 
@@ -1703,44 +1707,61 @@ body[data-active-mode="stats"] [data-mode="stats"]{display:block}
 <div id="faza2"></div>
 
 <!-- ═══════════════════════════════════════════════════════ -->
-<!-- v39: KARAR TETİKLEYİCİ — Decision Trigger             -->
-<!-- ═══════════════════════════════════════════════════════ -->
 <div class="sec fade" data-mode="trade">
   <div class="sec-lbl">Grafik</div>
 
-  <!-- Parite & TF seçici -->
-  <div style="display:flex;align-items:center;gap:6px;padding:8px 12px;background:var(--card);border:1px solid var(--bd);border-radius:var(--r);margin-bottom:8px;box-shadow:var(--sh)">
-    <div style="display:flex;gap:4px">
-      <button onclick="tvSetPair('OKX:ETHUSDT.P')" id="tvBtnETH"
-        style="padding:4px 12px;border-radius:20px;border:none;background:var(--t1);color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font)">ETH</button>
-      <button onclick="tvSetPair('OKX:BTCUSDT.P')" id="tvBtnBTC"
-        style="padding:4px 12px;border-radius:20px;border:none;background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid var(--bd)">BTC</button>
-      <button onclick="tvSetPair('OKX:SOLUSDT.P')" id="tvBtnSOL"
-        style="padding:4px 12px;border-radius:20px;border:none;background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--font);border:1px solid var(--bd)">SOL</button>
-    </div>
-    <div style="width:1px;height:16px;background:var(--bd)"></div>
-    <div style="display:flex;gap:3px">
-      <button onclick="tvSetTF('15')"  id="tvTF15"
-        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">15m</button>
-      <button onclick="tvSetTF('60')"  id="tvTF60"
-        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">1H</button>
-      <button onclick="tvSetTF('240')" id="tvTF240"
-        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--t1);color:#fff;font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">4H</button>
-      <button onclick="tvSetTF('D')"   id="tvTFD"
-        style="padding:3px 8px;border-radius:4px;border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:9px;font-weight:600;cursor:pointer;font-family:var(--mono)">1D</button>
+  <!-- Ana coinler -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+    <button onclick="openTV('OKX:ETHUSDT.P')"
+      style="padding:14px 8px;border-radius:var(--r);border:2px solid var(--bd);background:var(--card);cursor:pointer;font-family:var(--font);text-align:center;box-shadow:var(--sh)">
+      <div style="font-size:20px">🔷</div>
+      <div style="font-size:12px;font-weight:700;color:var(--t1);margin-top:4px">ETH</div>
+      <div style="font-size:8px;color:var(--t4)">Perpetual</div>
+    </button>
+    <button onclick="openTV('OKX:BTCUSDT.P')"
+      style="padding:14px 8px;border-radius:var(--r);border:2px solid var(--bd);background:var(--card);cursor:pointer;font-family:var(--font);text-align:center;box-shadow:var(--sh)">
+      <div style="font-size:20px">🟡</div>
+      <div style="font-size:12px;font-weight:700;color:var(--t1);margin-top:4px">BTC</div>
+      <div style="font-size:8px;color:var(--t4)">Perpetual</div>
+    </button>
+    <button onclick="openTV('OKX:SOLUSDT.P')"
+      style="padding:14px 8px;border-radius:var(--r);border:2px solid var(--bd);background:var(--card);cursor:pointer;font-family:var(--font);text-align:center;box-shadow:var(--sh)">
+      <div style="font-size:20px">🟣</div>
+      <div style="font-size:12px;font-weight:700;color:var(--t1);margin-top:4px">SOL</div>
+      <div style="font-size:8px;color:var(--t4)">Perpetual</div>
+    </button>
+  </div>
+
+  <!-- Diğer coinler -->
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:10px">
+    <button onclick="openTV('OKX:BNBUSDT.P')"  style="padding:8px 4px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);cursor:pointer;font-size:10px;font-weight:700;color:var(--t2);font-family:var(--font)">BNB</button>
+    <button onclick="openTV('OKX:XRPUSDT.P')"  style="padding:8px 4px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);cursor:pointer;font-size:10px;font-weight:700;color:var(--t2);font-family:var(--font)">XRP</button>
+    <button onclick="openTV('OKX:AVAXUSDT.P')" style="padding:8px 4px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);cursor:pointer;font-size:10px;font-weight:700;color:var(--t2);font-family:var(--font)">AVAX</button>
+    <button onclick="openTV('OKX:LINKUSDT.P')" style="padding:8px 4px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);cursor:pointer;font-size:10px;font-weight:700;color:var(--t2);font-family:var(--font)">LINK</button>
+    <button onclick="openTV('OKX:DOTUSDT.P')"  style="padding:8px 4px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);cursor:pointer;font-size:10px;font-weight:700;color:var(--t2);font-family:var(--font)">DOT</button>
+    <button onclick="openTV('OKX:ADAUSDT.P')"  style="padding:8px 4px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);cursor:pointer;font-size:10px;font-weight:700;color:var(--t2);font-family:var(--font)">ADA</button>
+    <button onclick="openTV('OKX:SUIUSDT.P')"  style="padding:8px 4px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);cursor:pointer;font-size:10px;font-weight:700;color:var(--t2);font-family:var(--font)">SUI</button>
+    <button onclick="openTV('OKX:TONUSDT.P')"  style="padding:8px 4px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);cursor:pointer;font-size:10px;font-weight:700;color:var(--t2);font-family:var(--font)">TON</button>
+  </div>
+
+  <!-- TF seçici -->
+  <div style="background:var(--card);border:1px solid var(--bd);border-radius:var(--r);padding:10px 12px;margin-bottom:10px;box-shadow:var(--sh)">
+    <div style="font-size:8px;font-weight:700;color:var(--t4);margin-bottom:8px;text-transform:uppercase;letter-spacing:.08em">Zaman Dilimi</div>
+    <div style="display:flex;gap:6px">
+      <button onclick="setTvTF('15')"  id="tvTF15"  style="flex:1;padding:8px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">15m</button>
+      <button onclick="setTvTF('60')"  id="tvTF60"  style="flex:1;padding:8px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">1H</button>
+      <button onclick="setTvTF('240')" id="tvTF240" style="flex:1;padding:8px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--t1);color:#fff;font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">4H</button>
+      <button onclick="setTvTF('D')"   id="tvTFD"   style="flex:1;padding:8px;border-radius:var(--rsm);border:1px solid var(--bd);background:var(--s2);color:var(--t3);font-size:10px;font-weight:700;cursor:pointer;font-family:var(--mono)">1D</button>
     </div>
   </div>
 
-  <!-- TradingView iframe — tüm coinler, tam özellik -->
-  <div style="border-radius:var(--r);overflow:hidden;border:1px solid var(--bd);box-shadow:var(--sh);width:100%;max-width:100%;position:relative">
-    <iframe id="tvIframe"
-      src="https://s.tradingview.com/widgetembed/?frameElementId=tvIframe&symbol=OKX%3AETHUSDT.P&interval=240&hidesidetoolbar=0&hidetoptoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3f6&studies=BB%401%7CRSI%401%7CEMA%401%7CVolume%401&theme=light&style=1&timezone=Europe%2FIstanbul&locale=tr&withdateranges=1"
-      style="width:100%;height:calc(100vh - 200px);min-height:520px;border:none;display:block;max-width:100%"
-      allowfullscreen>
-    </iframe>
-  </div>
-  <div style="font-size:8px;color:var(--t5);text-align:right;padding:4px 8px">
-    TradingView · Tüm semboller aranabilir ↗
+  <!-- Tam aç butonu -->
+  <button onclick="openTV('OKX:ETHUSDT.P')"
+    style="width:100%;padding:14px;background:var(--t1);border:none;border-radius:var(--r);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font)">
+    📈 TradingView'da Aç — Tüm Coinler & İndikatörler
+  </button>
+  <div style="font-size:9px;color:var(--t4);text-align:center;margin-top:6px">
+    BB · EMA · RSI · Hacim · Çizim araçları · Her sembol aranabilir
   </div>
 </div>
 
@@ -3351,6 +3372,475 @@ body[data-active-mode="stats"] [data-mode="stats"]{display:block}
 <!-- ── BILDIRIM MODALI ── -->
 <div id="notifToast" style="display:none;position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:var(--t1);color:var(--bg);padding:10px 18px;border-radius:20px;font-size:11px;font-weight:600;font-family:var(--font);z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,0.3);transition:opacity .3s">—</div>
 
+<!-- ═══════════════════════════════════════════════════════
+     🎛️ KOKPİT — DARK MATTER COMMAND CENTER
+     ═══════════════════════════════════════════════════════ -->
+<div class="sec fade" data-mode="cockpit" style="padding:0;margin:0">
+
+<!-- Cockpit CSS -->
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+#cockpitWrap {
+  background: #03040a;
+  min-height: 100vh;
+  padding: 10px 10px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Animated scanlines */
+#cockpitWrap::before {
+  content: '';
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,240,255,0.015) 2px,
+    rgba(0,240,255,0.015) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+  animation: scanMove 8s linear infinite;
+}
+@keyframes scanMove {
+  0%{background-position:0 0} 100%{background-position:0 100px}
+}
+
+/* Ambient glow corners */
+#cockpitWrap::after {
+  content: '';
+  position: fixed;
+  top: -200px; left: -200px;
+  width: 400px; height: 400px;
+  background: radial-gradient(circle, rgba(0,240,255,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+  animation: cornerGlow 6s ease-in-out infinite alternate;
+}
+@keyframes cornerGlow {
+  0%{opacity:.5;transform:scale(1)} 100%{opacity:1;transform:scale(1.3)}
+}
+
+/* Cockpit card base */
+.ck-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(0,240,255,0.15);
+  border-radius: 10px;
+  padding: 12px;
+  position: relative;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  overflow: hidden;
+  z-index: 1;
+}
+.ck-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(135deg, rgba(0,240,255,0.04) 0%, transparent 60%);
+  pointer-events: none;
+  border-radius: 10px;
+}
+/* Corner brackets */
+.ck-card::after {
+  content: '';
+  position: absolute;
+  top: 4px; right: 4px;
+  width: 10px; height: 10px;
+  border-top: 1px solid rgba(0,240,255,0.5);
+  border-right: 1px solid rgba(0,240,255,0.5);
+}
+.ck-card:active {
+  transform: scale(0.97);
+  border-color: rgba(0,240,255,0.5);
+  box-shadow: 0 0 20px rgba(0,240,255,0.2), inset 0 0 20px rgba(0,240,255,0.05);
+}
+.ck-card:hover {
+  border-color: rgba(0,240,255,0.3);
+  box-shadow: 0 0 15px rgba(0,240,255,0.1);
+}
+
+.ck-label {
+  font-family: 'Orbitron', monospace;
+  font-size: 7px;
+  font-weight: 700;
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  color: rgba(0,240,255,0.5);
+  margin-bottom: 6px;
+}
+.ck-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  line-height: 1;
+}
+.ck-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 9px;
+  color: rgba(255,255,255,0.35);
+  margin-top: 4px;
+}
+.ck-green { color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.5); }
+.ck-red   { color: #ff3366; text-shadow: 0 0 10px rgba(255,51,102,0.5); }
+.ck-cyan  { color: #00f0ff; text-shadow: 0 0 10px rgba(0,240,255,0.5); }
+.ck-amber { color: #ffaa00; text-shadow: 0 0 10px rgba(255,170,0,0.5); }
+.ck-white { color: #ffffff; }
+
+/* Pulse dot */
+.ck-pulse {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: #00ff88;
+  box-shadow: 0 0 8px #00ff88;
+  animation: pulse 2s ease-in-out infinite;
+  display: inline-block;
+}
+@keyframes pulse {
+  0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(.8)}
+}
+
+/* Score gauge */
+.ck-gauge-wrap {
+  position: relative;
+  width: 70px; height: 70px;
+  margin: 4px auto;
+}
+.ck-gauge-wrap svg { transform: rotate(-90deg); }
+.ck-gauge-text {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Orbitron', monospace;
+  font-size: 18px;
+  font-weight: 900;
+  text-align: center;
+}
+
+/* Modal overlay */
+#ckModal {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.92);
+  backdrop-filter: blur(20px);
+  z-index: 9999;
+  padding: 20px;
+  overflow-y: auto;
+}
+#ckModal.open { display: flex; flex-direction: column; }
+#ckModalContent {
+  background: rgba(10,12,20,0.98);
+  border: 1px solid rgba(0,240,255,0.25);
+  border-radius: 14px;
+  padding: 20px;
+  flex: 1;
+  position: relative;
+}
+#ckModalClose {
+  position: absolute;
+  top: 14px; right: 14px;
+  background: rgba(0,240,255,0.1);
+  border: 1px solid rgba(0,240,255,0.3);
+  color: #00f0ff;
+  border-radius: 50%;
+  width: 32px; height: 32px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  font-family: monospace;
+}
+#ckModalTitle {
+  font-family: 'Orbitron', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(0,240,255,0.7);
+  letter-spacing: .15em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  padding-right: 40px;
+}
+
+/* Top bar fiyatlar */
+.ck-pricebar {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.ck-price-card {
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(0,240,255,0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+  position: relative;
+  overflow: hidden;
+}
+.ck-price-card::before {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(0,240,255,0.3), transparent);
+  animation: shimmer 3s ease-in-out infinite;
+}
+@keyframes shimmer { 0%,100%{opacity:0} 50%{opacity:1} }
+
+/* Grid layouts */
+.ck-grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.ck-grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px; }
+.ck-grid2x1 { display: grid; grid-template-columns: 2fr 1fr; gap: 8px; margin-bottom: 8px; }
+
+/* Animasyonlu giriş */
+.ck-card { animation: ckFadeIn .4s ease both; }
+@keyframes ckFadeIn {
+  from { opacity:0; transform:translateY(8px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.ck-card:nth-child(1){animation-delay:.05s}
+.ck-card:nth-child(2){animation-delay:.1s}
+.ck-card:nth-child(3){animation-delay:.15s}
+.ck-card:nth-child(4){animation-delay:.2s}
+.ck-card:nth-child(5){animation-delay:.25s}
+.ck-card:nth-child(6){animation-delay:.3s}
+
+/* Scan progress bar */
+.ck-scanbar {
+  height: 2px;
+  background: rgba(0,240,255,0.1);
+  border-radius: 1px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+.ck-scanbar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00f0ff, #00ff88);
+  border-radius: 1px;
+  transition: width .5s ease;
+}
+</style>
+
+<div id="cockpitWrap">
+
+  <!-- Başlık -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;z-index:1;position:relative">
+    <div>
+      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:#00f0ff;letter-spacing:.2em;text-shadow:0 0 20px rgba(0,240,255,0.5)">COMMAND CENTER</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(0,240,255,0.4);margin-top:2px" id="ckTime">—</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span class="ck-pulse"></span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(0,255,136,0.7)">CANLI</span>
+      <button onclick="refreshCockpit()" style="background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.2);color:#00f0ff;border-radius:6px;padding:4px 10px;font-size:8px;font-family:'Orbitron',monospace;cursor:pointer;letter-spacing:.1em">↻ YENİLE</button>
+    </div>
+  </div>
+
+  <!-- Fiyat Bar: ETH + BTC -->
+  <div class="ck-pricebar">
+    <div class="ck-price-card" onclick="openCockpitModal('chart','ETH')">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="font-size:16px">🔷</span>
+        <span style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:rgba(0,240,255,0.6);letter-spacing:.1em">ETH/USDT</span>
+      </div>
+      <div class="ck-val" id="ckEthPx" style="color:#00f0ff;font-size:20px">—</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+        <span class="ck-sub" id="ckEthChg">—</span>
+        <span class="ck-sub" id="ckEthFund" style="color:rgba(255,255,255,0.2)">—</span>
+      </div>
+    </div>
+    <div class="ck-price-card" onclick="openCockpitModal('chart','BTC')">
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+        <span style="font-size:16px">🟡</span>
+        <span style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:rgba(255,170,0,0.6);letter-spacing:.1em">BTC/USDT</span>
+      </div>
+      <div class="ck-val" id="ckBtcPx" style="color:#ffaa00;font-size:20px">—</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
+        <span class="ck-sub" id="ckBtcChg">—</span>
+        <span class="ck-sub" id="ckBtcFund" style="color:rgba(255,255,255,0.2)">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 1: Sinyal + F&G + Rejim -->
+  <div class="ck-grid3">
+
+    <!-- Sinyal Skoru -->
+    <div class="ck-card" style="grid-column:1" onclick="openCockpitModal('signal')">
+      <div class="ck-label">SİNYAL</div>
+      <div class="ck-gauge-wrap">
+        <svg width="70" height="70" viewBox="0 0 70 70">
+          <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(0,240,255,0.1)" stroke-width="5"/>
+          <circle id="ckScoreArc" cx="35" cy="35" r="28" fill="none" stroke="#00f0ff" stroke-width="5"
+            stroke-dasharray="0 176" stroke-linecap="round"
+            style="transition:stroke-dasharray 1s ease;filter:drop-shadow(0 0 4px #00f0ff)"/>
+        </svg>
+        <div class="ck-gauge-text ck-cyan" id="ckScore">—</div>
+      </div>
+      <div class="ck-sub" id="ckScoreDir" style="text-align:center">—</div>
+    </div>
+
+    <!-- Fear & Greed -->
+    <div class="ck-card" onclick="openCockpitModal('fng')">
+      <div class="ck-label">F&G İND.</div>
+      <div class="ck-val" id="ckFng" style="font-size:26px;text-align:center">—</div>
+      <div class="ck-sub" id="ckFngLbl" style="text-align:center">—</div>
+      <div class="ck-scanbar"><div class="ck-scanbar-fill" id="ckFngBar" style="width:0%"></div></div>
+    </div>
+
+    <!-- Piyasa Rejimi -->
+    <div class="ck-card" onclick="openCockpitModal('regime')">
+      <div class="ck-label">REJİM</div>
+      <div style="text-align:center;margin:6px 0">
+        <div id="ckRegimeIcon" style="font-size:24px">—</div>
+        <div class="ck-val" id="ckRegime" style="font-size:11px;margin-top:4px">—</div>
+      </div>
+      <div class="ck-sub" id="ckRegimeSub" style="text-align:center">—</div>
+    </div>
+  </div>
+
+  <!-- Row 2: Pre-Flight + Mental + Bakiye -->
+  <div class="ck-grid3">
+
+    <!-- Uçuş Öncesi -->
+    <div class="ck-card" onclick="openCockpitModal('preflight')">
+      <div class="ck-label">PRE-FLT</div>
+      <div style="display:flex;flex-direction:column;gap:3px;margin-top:4px" id="ckPreFlt">
+        <div style="display:flex;align-items:center;gap:4px">
+          <span id="ckPfFuel" style="font-size:10px">⚪</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4)">Yakıt</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span id="ckPfMom" style="font-size:10px">⚪</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4)">Motor</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span id="ckPfVol" style="font-size:10px">⚪</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4)">Hava</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:4px">
+          <span id="ckPfTech" style="font-size:10px">⚪</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4)">Teknik</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mental Durum -->
+    <div class="ck-card" onclick="openCockpitModal('mental')">
+      <div class="ck-label">MENTAL</div>
+      <div style="text-align:center;margin:4px 0">
+        <div id="ckMentalIcon" style="font-size:28px">—</div>
+        <div class="ck-sub" id="ckMentalTxt" style="text-align:center;margin-top:4px">—</div>
+      </div>
+    </div>
+
+    <!-- Bakiye & P&L -->
+    <div class="ck-card" onclick="openCockpitModal('pnl')">
+      <div class="ck-label">BAKİYE</div>
+      <div class="ck-val ck-cyan" id="ckBal" style="font-size:14px">—</div>
+      <div style="margin-top:6px">
+        <div style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.3)">BUGÜN P&L</div>
+        <div class="ck-val" id="ckDayPnl" style="font-size:14px">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 3: Son Sinyal (geniş) + Kelly -->
+  <div class="ck-grid2x1">
+
+    <!-- Son Sinyal -->
+    <div class="ck-card" onclick="openCockpitModal('signal')">
+      <div class="ck-label">SON SİNYAL</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+        <div id="ckLastSigDir" style="font-family:'Orbitron',monospace;font-size:14px;font-weight:900">—</div>
+        <div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,0.8)" id="ckLastSigPair">—</div>
+          <div class="ck-sub" id="ckLastSigScore">—</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,240,255,0.5)" id="ckLastSigEntry">—</div>
+          <div class="ck-sub" id="ckLastSigTime">—</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Kelly Pozisyon -->
+    <div class="ck-card" onclick="openCockpitModal('kelly')">
+      <div class="ck-label">KELLY</div>
+      <div class="ck-val ck-amber" id="ckKelly" style="font-size:18px">—</div>
+      <div class="ck-sub" id="ckKellySub">Risk %</div>
+    </div>
+  </div>
+
+  <!-- Row 4: Scan Durumu + Korelasyon + Anomali -->
+  <div class="ck-grid3">
+
+    <!-- Otopilot Tarama -->
+    <div class="ck-card" onclick="openCockpitModal('scan')">
+      <div class="ck-label">TARAMA</div>
+      <div style="text-align:center">
+        <div id="ckScanIcon" style="font-size:20px">📡</div>
+        <div class="ck-sub" id="ckScanTxt" style="text-align:center;margin-top:4px">—</div>
+      </div>
+    </div>
+
+    <!-- Anomali -->
+    <div class="ck-card" onclick="openCockpitModal('anomaly')">
+      <div class="ck-label">ANOMALİ</div>
+      <div style="text-align:center">
+        <div id="ckAnoIcon" style="font-size:20px">✅</div>
+        <div class="ck-sub" id="ckAnoTxt" style="text-align:center;margin-top:4px">Normal</div>
+      </div>
+    </div>
+
+    <!-- BTC Switch -->
+    <div class="ck-card" onclick="openCockpitModal('btcswitch')">
+      <div class="ck-label">BTC SWITCH</div>
+      <div style="text-align:center">
+        <div id="ckBtcSwIcon" style="font-size:20px">—</div>
+        <div class="ck-sub" id="ckBtcSwTxt" style="text-align:center;margin-top:4px">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Row 5: Hızlı Trade Butonları -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+    <button onclick="setMode('trade');setTimeout(()=>document.getElementById('longBtn')?.click(),600)"
+      style="padding:14px;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.3);border-radius:10px;color:#00ff88;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.1em;text-shadow:0 0 10px rgba(0,255,136,0.5)">
+      ▲ LONG
+    </button>
+    <button onclick="setMode('trade');setTimeout(()=>document.getElementById('shortBtn')?.click(),600)"
+      style="padding:14px;background:rgba(255,51,102,0.08);border:1px solid rgba(255,51,102,0.3);border-radius:10px;color:#ff3366;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer;letter-spacing:.1em;text-shadow:0 0 10px rgba(255,51,102,0.5)">
+      ▼ SHORT
+    </button>
+  </div>
+
+  <!-- Row 6: Grafik Kısayolları -->
+  <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(0,240,255,0.1);border-radius:10px;padding:10px;position:relative;z-index:1">
+    <div class="ck-label" style="margin-bottom:8px">GRAFİK KISA ERİŞİM</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
+      <button onclick="openTV('OKX:ETHUSDT.P')" style="padding:8px 4px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.2);border-radius:6px;color:#00f0ff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">ETH</button>
+      <button onclick="openTV('OKX:BTCUSDT.P')" style="padding:8px 4px;background:rgba(255,170,0,0.06);border:1px solid rgba(255,170,0,0.2);border-radius:6px;color:#ffaa00;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">BTC</button>
+      <button onclick="openTV('OKX:SOLUSDT.P')" style="padding:8px 4px;background:rgba(124,58,237,0.06);border:1px solid rgba(124,58,237,0.2);border-radius:6px;color:#a78bfa;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">SOL</button>
+      <button onclick="openTV('OKX:BNBUSDT.P')" style="padding:8px 4px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.1);border-radius:6px;color:rgba(255,255,255,0.5);font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">BNB</button>
+    </div>
+  </div>
+
+</div><!-- /cockpitWrap -->
+
+<!-- Kokpit Modal -->
+<div id="ckModal">
+  <div id="ckModalContent">
+    <button id="ckModalClose" onclick="closeCockpitModal()">✕</button>
+    <div id="ckModalTitle">DETAY</div>
+    <div id="ckModalBody" style="color:rgba(255,255,255,0.8);font-family:'JetBrains Mono',monospace;font-size:12px;line-height:1.6"></div>
+  </div>
+</div>
+
+</div><!-- /sec cockpit -->
+
 <div class="footer">UĞUR ÖZDEMİR · OKX FUTURES · $1,000,000 HEDEFİ · 18-20 AY · v45</div>
 </div>
 
@@ -4801,13 +5291,13 @@ function setMode(mode) {
   localStorage.setItem('ug_mode', mode);
   window.scrollTo({ top: 0, behavior: 'smooth' });
   // Nav butonları
-  const btns = { pre:'modePre', trade:'modeTrade', manage:'modeManage', stats:'modeStats' };
+  const btns = { pre:'modePre', trade:'modeTrade', manage:'modeManage', stats:'modeStats', cockpit:'modeCockpit' };
   Object.entries(btns).forEach(([k, id]) => {
     const el = document.getElementById(id);
     if (el) el.classList.toggle('mode-active', k === mode);
   });
   // Topbar güncelle
-  const modeLbls = { pre:'✅ Hazırlık', trade:'🚀 Trade', manage:'🛬 Yönet', stats:'📊 İstatistik' };
+  const modeLbls = { pre:'✅ Hazırlık', trade:'🚀 Trade', manage:'🛬 Yönet', stats:'📊 İstatistik', cockpit:'🎛️ Kokpit' };
   const subEl = document.getElementById('headerSub');
   if (subEl) {
     const bal = getTotalBal ? getTotalBal() : 0;
@@ -4822,6 +5312,13 @@ function setMode(mode) {
     if (secureGetKey('okx_api_key')) fetchOpenPositions();
     renderFlightStatus();
     renderLandingChecklist();
+  }
+  // Kokpit moduna geçince verileri yenile
+  if (mode === 'cockpit') {
+    setTimeout(() => refreshCockpit(), 300);
+    if (!_cockpitTimer) _cockpitTimer = setInterval(refreshCockpit, 30000);
+  } else {
+    if (_cockpitTimer) { clearInterval(_cockpitTimer); _cockpitTimer = null; }
   }
 }
 
@@ -6360,19 +6857,40 @@ let _prevBtcPx = 0, _prevEthPx = 0;
 // ── TradingView Grafik Fonksiyonları ──
 let _tvPair = 'OKX:ETHUSDT.P';
 let _tvTF   = '240';
-let _tvWidget = null;
 
-function tvInitChart() {
-  // iframe zaten HTML'de var, sadece URL güncelle
-  tvUpdateIframe();
+function openTV(symbol) {
+  const url = `https://www.tradingview.com/chart/?symbol=${encodeURIComponent(symbol)}&interval=${_tvTF}`;
+  window.open(url, '_blank');
 }
 
-function tvUpdateIframe() {
-  const iframe = document.getElementById('tvIframe');
-  if (!iframe) return;
-  const isDark = localStorage.getItem('darkMode') === '1';
-  const theme  = isDark ? 'dark' : 'light';
-  iframe.src = `https://s.tradingview.com/widgetembed/?frameElementId=tvIframe&symbol=${encodeURIComponent(_tvPair)}&interval=${_tvTF}&hidesidetoolbar=0&hidetoptoolbar=0&symboledit=1&saveimage=0&toolbarbg=f1f3f6&studies=BB%401%7CRSI%401%7CEMA%401%7CVolume%401&theme=${theme}&style=1&timezone=Europe%2FIstanbul&locale=tr&withdateranges=1`;
+function setTvTF(tf) {
+  _tvTF = tf;
+  ['15','60','240','D'].forEach(t => {
+    const btn = document.getElementById('tvTF' + t);
+    if (!btn) return;
+    btn.style.background = t === tf ? 'var(--t1)' : 'var(--s2)';
+    btn.style.color      = t === tf ? '#fff'       : 'var(--t3)';
+  });
+}
+
+function tvInitChart() {}
+function tvUpdateIframe() {}
+function tvSetPair(pair) { openTV(pair); }
+function tvSetTF(tf) { setTvTF(tf); }
+function fetchChart() {}
+function chartSetPair(p) { openTV('OKX:' + p + 'USDT.P'); }
+function chartSetTF(tf) {
+  const map = {'15m':'15','1h':'60','4h':'240','1d':'D'};
+  setTvTF(map[tf] || '240');
+}
+function tvUpdateIframe() {}
+function tvSetPair(pair) { openTV(pair); }
+function tvSetTF(tf) { setTvTF(tf); }
+function fetchChart() {}
+function chartSetPair(p) { openTV('OKX:' + p + 'USDT.P'); }
+function chartSetTF(tf) {
+  const map = {'15m':'15','1h':'60','4h':'240','1d':'D'};
+  setTvTF(map[tf] || '240');
 }
 
 function tvSetPair(pair) {
@@ -11038,6 +11556,243 @@ function calcAdaptiveWeights() {
 
   return result;
 }
+
+// ── v45: KOKPIT — Command Center ──
+async function refreshCockpit() {
+  // Saat
+  const ckTime = document.getElementById('ckTime');
+  if (ckTime) ckTime.textContent = new Date().toLocaleTimeString('tr-TR') + ' · OKX FUTURES';
+
+  const set = (id, v, cls) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = v;
+    if (cls) el.className = cls;
+  };
+
+  // ── Fiyatlar ──
+  try {
+    const [ethR, btcR] = await Promise.all([
+      fetch('https://www.okx.com/api/v5/market/ticker?instId=ETH-USDT-SWAP').then(r=>r.json()),
+      fetch('https://www.okx.com/api/v5/market/ticker?instId=BTC-USDT-SWAP').then(r=>r.json()),
+    ]);
+    const eth = ethR.data?.[0], btc = btcR.data?.[0];
+    if (eth) {
+      const pct = ((parseFloat(eth.last) - parseFloat(eth.open24h)) / parseFloat(eth.open24h) * 100).toFixed(2);
+      set('ckEthPx', '$' + parseFloat(eth.last).toLocaleString('en-US', {maximumFractionDigits:2}));
+      const el = document.getElementById('ckEthChg');
+      if (el) { el.textContent = (pct>0?'+':'')+pct+'%'; el.style.color = pct>=0?'#00ff88':'#ff3366'; }
+    }
+    if (btc) {
+      const pct = ((parseFloat(btc.last) - parseFloat(btc.open24h)) / parseFloat(btc.open24h) * 100).toFixed(2);
+      set('ckBtcPx', '$' + parseFloat(btc.last).toLocaleString('en-US', {maximumFractionDigits:0}));
+      const el = document.getElementById('ckBtcChg');
+      if (el) { el.textContent = (pct>0?'+':'')+pct+'%'; el.style.color = pct>=0?'#00ff88':'#ff3366'; }
+    }
+  } catch(e) {}
+
+  // ── Son Sinyal ──
+  const sigs = ld('ug_signal_history') || [];
+  if (sigs.length > 0) {
+    const s = sigs[0];
+    const dirEl = document.getElementById('ckLastSigDir');
+    if (dirEl) {
+      dirEl.textContent = s.direction || '—';
+      dirEl.style.color = s.direction === 'LONG' ? '#00ff88' : '#ff3366';
+      dirEl.style.textShadow = s.direction === 'LONG' ? '0 0 10px rgba(0,255,136,0.5)' : '0 0 10px rgba(255,51,102,0.5)';
+    }
+    set('ckLastSigPair', (s.symbol||'').replace('USDT','/USDT'));
+    set('ckLastSigScore', 'Skor: ' + (s.score||'—') + ' · ' + (s.tf||'').toUpperCase());
+    set('ckLastSigEntry', s.entry ? '$'+parseFloat(s.entry).toFixed(2) : '—');
+    const ago = s.time ? Math.round((Date.now()-s.time)/60000) : null;
+    set('ckLastSigTime', ago !== null ? ago + 'dk önce' : '—');
+  }
+
+  // ── Sinyal Skoru (gauge) ──
+  const score = sigs[0]?.score || 0;
+  const arc = document.getElementById('ckScoreArc');
+  if (arc) {
+    const circumference = 2 * Math.PI * 28; // r=28
+    const fill = (score / 100) * circumference;
+    arc.setAttribute('stroke-dasharray', `${fill} ${circumference - fill}`);
+    arc.setAttribute('stroke', score >= 75 ? '#00ff88' : score >= 55 ? '#ffaa00' : '#ff3366');
+    arc.style.filter = `drop-shadow(0 0 4px ${score >= 75 ? '#00ff88' : score >= 55 ? '#ffaa00' : '#ff3366'})`;
+  }
+  set('ckScore', score || '—');
+  set('ckScoreDir', sigs[0]?.direction || '—');
+
+  // ── Fear & Greed ──
+  const fng = ld('ug_fng') || {};
+  if (fng.value) {
+    const v = parseInt(fng.value);
+    const fngEl = document.getElementById('ckFng');
+    if (fngEl) {
+      fngEl.textContent = v;
+      fngEl.style.color = v <= 25 ? '#ff3366' : v >= 75 ? '#00ff88' : '#ffaa00';
+    }
+    set('ckFngLbl', fng.label || '—');
+    const bar = document.getElementById('ckFngBar');
+    if (bar) bar.style.width = v + '%';
+  }
+
+  // ── Piyasa Rejimi ──
+  const regime = _currentRegime || ld('ug_regime') || 'neutral';
+  const regimeMap = {
+    trend_bull: {icon:'🚀', txt:'TREND BULL', color:'#00ff88'},
+    trend_bear: {icon:'📉', txt:'TREND BEAR', color:'#ff3366'},
+    range:      {icon:'↔️', txt:'RANGE',      color:'#ffaa00'},
+    volatile:   {icon:'⚡', txt:'VOLATİL',    color:'#ff3366'},
+    crash:      {icon:'💥', txt:'CRASH',      color:'#ff3366'},
+    neutral:    {icon:'⚖️', txt:'NÖTR',       color:'rgba(255,255,255,0.5)'},
+  };
+  const rm = regimeMap[regime] || regimeMap.neutral;
+  set('ckRegimeIcon', rm.icon);
+  const rmEl = document.getElementById('ckRegime');
+  if (rmEl) { rmEl.textContent = rm.txt; rmEl.style.color = rm.color; }
+  set('ckRegimeSub', regime);
+
+  // ── Pre-Flight ──
+  const pfColors = { green:'#00ff88', yellow:'#ffaa00', red:'#ff3366' };
+  const pfEls = [
+    {id:'ckPfFuel', src: document.getElementById('preCheckFuel')},
+    {id:'ckPfMom',  src: document.getElementById('preCheckMom')},
+    {id:'ckPfVol',  src: document.getElementById('preCheckVol')},
+    {id:'ckPfTech', src: document.getElementById('preCheckTech')},
+  ];
+  pfEls.forEach(({id, src}) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (src) {
+      const txt = src.textContent;
+      const isGreen = txt.includes('✅') || src.style.color?.includes('green');
+      const isRed   = txt.includes('❌') || src.style.color?.includes('red');
+      el.textContent = isGreen ? '🟢' : isRed ? '🔴' : '🟡';
+    }
+  });
+
+  // ── Mental Durum ──
+  const mental = ld('ug_mental_quick') || ld('ug6_mental') || {};
+  const mState = mental.state || mental.last;
+  const mentalMap = {
+    green:  {icon:'🟢', txt:'HAZIR'},
+    yellow: {icon:'🟡', txt:'DİKKAT'},
+    red:    {icon:'🔴', txt:'TİCAR YOK'},
+  };
+  const mm = mentalMap[mState] || {icon:'⚪', txt:'GİRİLMEDİ'};
+  set('ckMentalIcon', mm.icon);
+  set('ckMentalTxt', mm.txt);
+
+  // ── Bakiye & P&L ──
+  const bal = getTotalBal ? getTotalBal() : 0;
+  const balEl = document.getElementById('ckBal');
+  if (balEl) balEl.textContent = bal ? '$' + bal.toFixed(0) : '—';
+  const calData = ld('ug6_cal') || {};
+  const today = new Date().toISOString().slice(0,10);
+  const dayPnl = calData[today]?.pnl || 0;
+  const pnlEl = document.getElementById('ckDayPnl');
+  if (pnlEl) {
+    pnlEl.textContent = (dayPnl >= 0 ? '+' : '') + '$' + dayPnl.toFixed(2);
+    pnlEl.style.color = dayPnl >= 0 ? '#00ff88' : '#ff3366';
+  }
+
+  // ── Kelly ──
+  const kellyEl = document.getElementById('ckKelly');
+  const slider = document.getElementById('riskPctSlider');
+  if (kellyEl && slider) {
+    kellyEl.textContent = '%' + parseFloat(slider.value).toFixed(1);
+  }
+
+  // ── Tarama ──
+  const scanActive = _autoScanTimer !== null;
+  set('ckScanTxt', scanActive ? 'AKTİF' : 'PASIF');
+  const scanIcon = document.getElementById('ckScanIcon');
+  if (scanIcon) scanIcon.style.animation = scanActive ? 'pulse 1.5s infinite' : 'none';
+
+  // ── Anomali ──
+  const anomalyEl = document.getElementById('anomalyStatus');
+  if (anomalyEl) {
+    const isNormal = anomalyEl.textContent.includes('Normal');
+    set('ckAnoIcon', isNormal ? '✅' : '⚠️');
+    set('ckAnoTxt', isNormal ? 'NORMAL' : 'UYARI');
+  }
+
+  // ── BTC Switch ──
+  const sw = _btcMasterSwitch || 'neutral';
+  const swMap = {bull:{icon:'🐂',txt:'BULL',color:'#00ff88'}, bear:{icon:'🐻',txt:'BEAR',color:'#ff3366'}, neutral:{icon:'⚖️',txt:'NÖTR',color:'#ffaa00'}};
+  const swm = swMap[sw] || swMap.neutral;
+  set('ckBtcSwIcon', swm.icon);
+  const swEl = document.getElementById('ckBtcSwTxt');
+  if (swEl) { swEl.textContent = swm.txt; swEl.style.color = swm.color; }
+}
+
+// Kokpit Modal
+function openCockpitModal(type, extra) {
+  const modal = document.getElementById('ckModal');
+  const title = document.getElementById('ckModalTitle');
+  const body  = document.getElementById('ckModalBody');
+  if (!modal) return;
+
+  const titles = {
+    signal:    '🎯 SİNYAL DETAYI',
+    fng:       '😨 FEAR & GREED',
+    regime:    '📊 PİYASA REJİMİ',
+    preflight: '✈️ UÇUŞ ÖNCESİ KONTROL',
+    mental:    '🧠 MENTAL DURUM',
+    pnl:       '💰 BAKİYE & P&L',
+    kelly:     '⚡ KELLY KRİTERİ',
+    scan:      '📡 OTOPİLOT TARAMA',
+    anomaly:   '⚠️ ANOMALİ DEDEKTÖRÜ',
+    btcswitch: '🔀 BTC MASTER SWİTCH',
+    chart:     '📈 GRAFİK',
+  };
+  if (title) title.textContent = titles[type] || type.toUpperCase();
+
+  // Modal içeriği
+  if (type === 'chart') {
+    const sym = extra === 'BTC' ? 'OKX:BTCUSDT.P' : 'OKX:ETHUSDT.P';
+    if (body) body.innerHTML = `
+      <button onclick="openTV('${sym}')" style="width:100%;padding:16px;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.3);border-radius:10px;color:#00f0ff;font-family:'Orbitron',monospace;font-size:12px;font-weight:700;cursor:pointer;margin-bottom:12px">
+        📈 TradingView'da Aç — ${extra}/USDT Perpetual
+      </button>
+      <div style="color:rgba(255,255,255,0.4);font-size:10px;text-align:center">BB · EMA · RSI · Hacim · Tüm araçlar</div>`;
+  } else if (type === 'signal') {
+    const sigs = ld('ug_signal_history') || [];
+    if (body) body.innerHTML = sigs.slice(0,5).map(s => `
+      <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(0,240,255,0.1);border-radius:8px;padding:10px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-family:'Orbitron',monospace;font-size:12px;font-weight:700;color:${s.direction==='LONG'?'#00ff88':'#ff3366'}">${s.direction}</span>
+          <span style="font-size:10px;color:rgba(255,255,255,0.4)">${s.symbol?.replace('USDT','/USDT')} · ${s.tf?.toUpperCase()}</span>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;font-size:10px">
+          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">SKOR</div><div style="color:#ffaa00">${s.score}/100</div></div>
+          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">GİRİŞ</div><div>$${s.entry?.toFixed?.(2)||'—'}</div></div>
+          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">SL</div><div style="color:#ff3366">$${s.sl?.toFixed?.(2)||'—'}</div></div>
+          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">TP1</div><div style="color:#00ff88">$${s.tp1?.toFixed?.(2)||'—'}</div></div>
+          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">TP2</div><div style="color:#00ff88">$${s.tp2?.toFixed?.(2)||'—'}</div></div>
+          <div><div style="color:rgba(0,240,255,0.5);margin-bottom:2px">R:R</div><div>${s.rr?.toFixed?.(1)||'—'}</div></div>
+        </div>
+      </div>`).join('') || '<div style="color:rgba(255,255,255,0.3);text-align:center;padding:20px">Henüz sinyal yok</div>';
+  } else {
+    // Diğerleri için ilgili sekmeye yönlendir
+    if (body) body.innerHTML = `
+      <div style="text-align:center;padding:20px">
+        <div style="font-size:40px;margin-bottom:12px">${titles[type]?.split(' ')[0]||'📊'}</div>
+        <button onclick="closeCockpitModal();setMode('${type==='preflight'||type==='mental'?'pre':'trade'}')" style="padding:12px 24px;background:rgba(0,240,255,0.1);border:1px solid rgba(0,240,255,0.3);border-radius:10px;color:#00f0ff;font-family:'Orbitron',monospace;font-size:11px;font-weight:700;cursor:pointer">
+          TAM EKRAN AÇ →
+        </button>
+      </div>`;
+  }
+
+  modal.classList.add('open');
+}
+
+function closeCockpitModal() {
+  const modal = document.getElementById('ckModal');
+  if (modal) modal.classList.remove('open');
+}
+
+// Kokpit otomatik yenileme (30sn)
+let _cockpitTimer = null;
 
 // ── v45: Mini Backtest Motoru ──
 // Son 300 mumda sinyal mantığını simüle eder
