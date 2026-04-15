@@ -1065,7 +1065,7 @@ body[data-active-mode="trade"] [data-mode="trade"],
 body[data-active-mode="manage"] [data-mode="manage"],
 body[data-active-mode="stats"] [data-mode="stats"],
 body[data-active-mode="cockpit"] [data-mode="cockpit"]{display:block}
-body[data-active-mode="cockpit"]{background:#03040a !important;overflow-x:hidden}
+body[data-active-mode="cockpit"]{background:#0d1117 !important;overflow-x:hidden}
 body[data-active-mode="cockpit"] .app{max-width:100% !important;padding:0 !important}
 body[data-active-mode="cockpit"] .topbar{background:rgba(3,4,10,0.95) !important;border-bottom:1px solid rgba(0,240,255,0.15) !important}
 body[data-active-mode="cockpit"] .topbar *{color:rgba(255,255,255,0.8) !important}
@@ -3387,7 +3387,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
 @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
 
 #cockpitWrap {
-  background: #03040a;
+  background: #0d1117;
   min-height: 100vh;
   padding: 10px 10px 80px;
   position: relative;
@@ -3433,8 +3433,8 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
 
 /* Cockpit card base */
 .ck-card {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(0,240,255,0.15);
+  background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(0,240,255,0.25);
   border-radius: 10px;
   padding: 12px;
   position: relative;
@@ -3457,17 +3457,17 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   position: absolute;
   top: 4px; right: 4px;
   width: 10px; height: 10px;
-  border-top: 1px solid rgba(0,240,255,0.5);
-  border-right: 1px solid rgba(0,240,255,0.5);
+  border-top: 1px solid rgba(0,240,255,0.8);
+  border-right: 1px solid rgba(0,240,255,0.8);
 }
 .ck-card:active {
   transform: scale(0.97);
-  border-color: rgba(0,240,255,0.5);
+  border-color: rgba(0,240,255,0.8);
   box-shadow: 0 0 20px rgba(0,240,255,0.2), inset 0 0 20px rgba(0,240,255,0.05);
 }
 .ck-card:hover {
   border-color: rgba(0,240,255,0.3);
-  box-shadow: 0 0 15px rgba(0,240,255,0.1);
+  box-shadow: 0 0 15px rgba(0,240,255,0.2);
 }
 
 .ck-label {
@@ -3476,7 +3476,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   font-weight: 700;
   letter-spacing: .15em;
   text-transform: uppercase;
-  color: rgba(0,240,255,0.5);
+  color: rgba(0,240,255,0.8);
   margin-bottom: 6px;
 }
 .ck-val {
@@ -3488,12 +3488,12 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
 .ck-sub {
   font-family: 'JetBrains Mono', monospace;
   font-size: 9px;
-  color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.6);
   margin-top: 4px;
 }
 .ck-green { color: #00ff88; text-shadow: 0 0 10px rgba(0,255,136,0.5); }
 .ck-red   { color: #ff3366; text-shadow: 0 0 10px rgba(255,51,102,0.5); }
-.ck-cyan  { color: #00f0ff; text-shadow: 0 0 10px rgba(0,240,255,0.5); }
+.ck-cyan  { color: #00f0ff; text-shadow: 0 0 10px rgba(0,240,255,0.8); }
 .ck-amber { color: #ffaa00; text-shadow: 0 0 10px rgba(255,170,0,0.5); }
 .ck-white { color: #ffffff; }
 
@@ -3550,7 +3550,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
 #ckModalClose {
   position: absolute;
   top: 14px; right: 14px;
-  background: rgba(0,240,255,0.1);
+  background: rgba(0,240,255,0.2);
   border: 1px solid rgba(0,240,255,0.3);
   color: #00f0ff;
   border-radius: 50%;
@@ -3564,7 +3564,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   font-family: 'Orbitron', monospace;
   font-size: 12px;
   font-weight: 700;
-  color: rgba(0,240,255,0.7);
+  color: #00f0ff;
   letter-spacing: .15em;
   text-transform: uppercase;
   margin-bottom: 16px;
@@ -3617,7 +3617,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
 /* Scan progress bar */
 .ck-scanbar {
   height: 2px;
-  background: rgba(0,240,255,0.1);
+  background: rgba(0,240,255,0.2);
   border-radius: 1px;
   overflow: hidden;
   margin-top: 6px;
@@ -3635,8 +3635,8 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   <!-- Başlık -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;z-index:1;position:relative">
     <div>
-      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:#00f0ff;letter-spacing:.2em;text-shadow:0 0 20px rgba(0,240,255,0.5)">COMMAND CENTER</div>
-      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(0,240,255,0.4);margin-top:2px" id="ckTime">—</div>
+      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:900;color:#00f0ff;letter-spacing:.2em;text-shadow:0 0 20px rgba(0,240,255,0.8)">COMMAND CENTER</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:8px;color:rgba(0,240,255,0.7);margin-top:2px" id="ckTime">—</div>
     </div>
     <div style="display:flex;align-items:center;gap:6px">
       <span class="ck-pulse"></span>
@@ -3650,7 +3650,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
     <div class="ck-price-card" onclick="openCockpitModal('chart','ETH')">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
         <span style="font-size:16px">🔷</span>
-        <span style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:rgba(0,240,255,0.6);letter-spacing:.1em">ETH/USDT</span>
+        <span style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:#00f0ff;letter-spacing:.1em">ETH/USDT</span>
       </div>
       <div class="ck-val" id="ckEthPx" style="color:#00f0ff;font-size:20px">—</div>
       <div style="display:flex;align-items:center;gap:6px;margin-top:4px">
@@ -3679,7 +3679,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
       <div class="ck-label">SİNYAL</div>
       <div class="ck-gauge-wrap">
         <svg width="70" height="70" viewBox="0 0 70 70">
-          <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(0,240,255,0.1)" stroke-width="5"/>
+          <circle cx="35" cy="35" r="28" fill="none" stroke="rgba(0,240,255,0.2)" stroke-width="5"/>
           <circle id="ckScoreArc" cx="35" cy="35" r="28" fill="none" stroke="#00f0ff" stroke-width="5"
             stroke-dasharray="0 176" stroke-linecap="round"
             style="transition:stroke-dasharray 1s ease;filter:drop-shadow(0 0 4px #00f0ff)"/>
@@ -3717,19 +3717,19 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
       <div style="display:flex;flex-direction:column;gap:3px;margin-top:4px" id="ckPreFlt">
         <div style="display:flex;align-items:center;gap:4px">
           <span id="ckPfFuel" style="font-size:10px">⚪</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4)">Yakıt</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.65)">Yakıt</span>
         </div>
         <div style="display:flex;align-items:center;gap:4px">
           <span id="ckPfMom" style="font-size:10px">⚪</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4)">Motor</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.65)">Motor</span>
         </div>
         <div style="display:flex;align-items:center;gap:4px">
           <span id="ckPfVol" style="font-size:10px">⚪</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4)">Hava</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.65)">Hava</span>
         </div>
         <div style="display:flex;align-items:center;gap:4px">
           <span id="ckPfTech" style="font-size:10px">⚪</span>
-          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.4)">Teknik</span>
+          <span style="font-family:'JetBrains Mono',monospace;font-size:7px;color:rgba(255,255,255,0.65)">Teknik</span>
         </div>
       </div>
     </div>
@@ -3767,7 +3767,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
           <div class="ck-sub" id="ckLastSigScore">—</div>
         </div>
         <div style="margin-left:auto;text-align:right">
-          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,240,255,0.5)" id="ckLastSigEntry">—</div>
+          <div style="font-family:'JetBrains Mono',monospace;font-size:10px;color:rgba(0,240,255,0.8)" id="ckLastSigEntry">—</div>
           <div class="ck-sub" id="ckLastSigTime">—</div>
         </div>
       </div>
@@ -3825,7 +3825,7 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(3,4,10,0.97) !importa
   </div>
 
   <!-- Row 6: Grafik Kısayolları -->
-  <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(0,240,255,0.1);border-radius:10px;padding:10px;position:relative;z-index:1">
+  <div style="background:rgba(255,255,255,0.02);border:1px solid rgba(0,240,255,0.2);border-radius:10px;padding:10px;position:relative;z-index:1">
     <div class="ck-label" style="margin-bottom:8px">GRAFİK KISA ERİŞİM</div>
     <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px">
       <button onclick="openTV('OKX:ETHUSDT.P')" style="padding:8px 4px;background:rgba(0,240,255,0.06);border:1px solid rgba(0,240,255,0.2);border-radius:6px;color:#00f0ff;font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;cursor:pointer">ETH</button>
