@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.3</title>
+<title>Uğur — Trader Panel v52.4</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -758,116 +758,149 @@ body{
 }
 
 /* ── COCKPIT DESKTOP (1024px+) ──────────────────────
-   Full-width, no side padding, dense 3-column grid.
-   Goal: fit everything on one screen, like a cockpit.
+   Full-width, ultra-compact, fit everything on one screen.
+   Target: even 1366x768 laptops should see everything without scroll.
 ─────────────────────────────────────────────────── */
 @media (min-width:1024px){
   .app{
     max-width:100%;
-    padding:0 14px 14px;
+    padding:0 10px 10px;
   }
-  .topbar{padding:10px 18px}
-  .tb-logo{font-size:13px}
-  .tb-sub{font-size:9px}
-  .tb-pill{font-size:10px;padding:4px 9px}
-  .tb-btn{padding:6px 10px;font-size:10px}
+  .topbar{padding:6px 14px}
+  .tb-logo{font-size:12px}
+  .tb-sub{font-size:8px}
+  .tb-pill{font-size:9px;padding:3px 7px}
+  .tb-btn{padding:4px 8px;font-size:9px}
 
-  /* Master: full width, compact */
+  /* Master: compact horizontal layout */
   .master{
-    margin:10px 0 0;
-    padding:14px 18px;
+    margin:6px 0 0;
+    padding:10px 14px;
+    border-radius:10px;
   }
-  .master-top{margin-bottom:8px}
-  .master-verdict{font-size:28px;margin:4px 0}
-  .master-verdict .icon{font-size:24px;margin-right:6px}
-  .master-sub{font-size:12px;max-width:100%}
-  .master-score-row{margin-top:10px;padding-top:10px;gap:18px}
-  .master-score-ring{width:52px;height:52px}
-  .master-score-num{font-size:15px}
-  .master-breakdown{font-size:10px;gap:3px 16px}
+  .master-top{margin-bottom:4px}
+  .master-label{font-size:9px}
+  .master-verdict{font-size:22px;margin:2px 0}
+  .master-verdict .icon{font-size:18px;margin-right:5px}
+  .master-sub{font-size:11px;max-width:100%}
+  .master-score-row{margin-top:7px;padding-top:7px;gap:14px;border-top-width:1px}
+  .master-score-ring{width:42px;height:42px}
+  .master-score-num{font-size:12px}
+  .master-breakdown{font-size:9px;gap:2px 14px}
+  .pair-btn{padding:3px 8px;font-size:9px}
 
-  /* Sizer: full width */
-  .sizer{margin:8px 0 0;padding:12px 16px}
-  .sizer-hd{margin-bottom:7px}
-  .sizer-prices{gap:8px;margin-bottom:7px}
-  .sizer-price{padding:6px 8px}
-  .sizer-divider{margin:6px 0}
+  /* Sizer: compact */
+  .sizer{margin:6px 0 0;padding:9px 13px;border-radius:10px}
+  .sizer-hd{margin-bottom:5px;font-size:9px}
+  .sizer-prices{gap:6px;margin-bottom:5px}
+  .sizer-price{padding:5px 7px}
+  .sizer-price-v{font-size:11px}
+  .sizer-price-l{font-size:7px}
+  .sizer-divider{margin:5px 0}
+  .sizer-main-v{font-size:12px}
+  .sizer-main-l{font-size:7px}
 
-  /* 3-column cockpit grid — fills rest of screen */
+  /* 3-column grid - tight */
   .dt-grid{
     display:grid;
     grid-template-columns:1fr 1fr 1fr;
-    gap:10px;
+    gap:8px;
     align-items:start;
-    margin-top:10px;
+    margin-top:8px;
   }
   .dt-grid > .sec{padding:0;min-width:0}
   .dt-grid > .sec-full{grid-column:1 / -1}
   .dt-grid > .sec-wide{grid-column:span 2}
 
-  /* Compact cards */
-  .sec-hd{font-size:9px;margin-bottom:6px}
-  .card{margin-bottom:8px;border-radius:10px}
-  .card-hd{padding:9px 12px 6px;font-size:10px}
-  .card-bd{padding:0 12px 11px}
+  /* Section headers tighter */
+  .sec-hd{font-size:8px;margin-bottom:4px}
+
+  /* Cards: tight */
+  .card{margin-bottom:6px;border-radius:8px}
+  .card-hd{padding:7px 10px 5px;font-size:9px}
+  .card-bd{padding:0 10px 9px}
+  .card-hd .tag{font-size:8px;padding:1px 5px}
 
   /* Balance compact */
-  .bal-big{font-size:26px}
-  .bal-big .cur{font-size:15px}
-  .bal-main{margin-bottom:7px}
-  .bal-sub{gap:5px;margin-top:7px}
-  .bal-stat{padding:6px 8px}
-  .bal-stat-v{font-size:12px}
-  .bal-stat-l{font-size:8px}
+  .bal-big{font-size:22px}
+  .bal-big .cur{font-size:13px}
+  .bal-main{margin-bottom:5px}
+  .bal-chg{font-size:10px;padding:2px 6px}
+  .bal-sub{gap:4px;margin-top:5px}
+  .bal-stat{padding:5px 7px;border-radius:6px}
+  .bal-stat-v{font-size:11px}
+  .bal-stat-l{font-size:7px}
 
   /* Positions compact */
-  .pos{padding:9px 11px;margin-bottom:6px}
-  .pos-top{margin-bottom:7px}
-  .pos-pair{font-size:13px}
-  .pos-pnl{font-size:13px}
-  .pos-field-l{font-size:8px}
-  .pos-field-v{font-size:11px}
+  .pos{padding:7px 9px;margin-bottom:5px;border-radius:7px}
+  .pos-top{margin-bottom:5px}
+  .pos-pair{font-size:11px}
+  .pos-side{font-size:8px;padding:1px 5px}
+  .pos-pnl{font-size:11px}
+  .pos-field-l{font-size:7px}
+  .pos-field-v{font-size:10px}
+  .pos-empty{padding:10px;font-size:10px}
 
   /* Price cards compact */
-  .px-card{padding:10px}
-  .px-val{font-size:17px}
-  .px-sub{font-size:8px}
+  .px-card{padding:8px;border-radius:7px}
+  .px-val{font-size:15px}
+  .px-sym{font-size:10px}
+  .px-chg{font-size:9px}
+  .px-sub{font-size:7px}
 
   /* Risk compact */
-  .risk-item{padding:7px 10px}
-  .risk-v{font-size:13px}
-  .risk-l{font-size:8px}
+  .risk-row{gap:5px;margin-bottom:5px}
+  .risk-item{padding:5px 7px;border-radius:6px}
+  .risk-v{font-size:11px}
+  .risk-l{font-size:7px;margin-bottom:2px}
+  .risk-bar{height:3px;margin-top:4px}
 
   /* PnL compact */
-  .pnl-summary{gap:5px;margin-bottom:8px}
-  .pnl-kpi{padding:6px}
-  .pnl-kpi-v{font-size:12px}
+  .pnl-summary{gap:4px;margin-bottom:6px}
+  .pnl-kpi{padding:4px;border-radius:6px}
+  .pnl-kpi-v{font-size:11px}
   .pnl-kpi-l{font-size:7px}
-  .pnl-cal{gap:2px;margin:3px 0 6px}
-  .pnl-cal-day .d{font-size:8px}
-  .pnl-cal-day .p{font-size:7px}
-  .trade-log{max-height:130px}
-  .trade-row{padding:5px 8px;margin-bottom:3px}
-  .trade-row-l{font-size:8px}
-  .trade-row-m{font-size:10px}
-  .trade-row-pnl{font-size:11px}
+  .pnl-cal{gap:2px;margin:2px 0 5px}
+  .pnl-cal-day{border-radius:3px}
+  .pnl-cal-day .d{font-size:7px}
+  .pnl-cal-day .p{font-size:6px}
+  .trade-log{max-height:100px}
+  .trade-row{padding:4px 7px;margin-bottom:3px;border-radius:5px}
+  .trade-row-l{font-size:7px}
+  .trade-row-m{font-size:9px}
+  .trade-row-side{font-size:7px;padding:1px 4px}
+  .trade-row-pnl{font-size:10px}
 
   /* Equity compact */
-  .equity{padding:7px 9px;margin-bottom:6px}
-  .equity-hd{font-size:9px;margin-bottom:4px}
-  .equity-svg{height:44px}
+  .equity{padding:6px 8px;margin-bottom:5px;border-radius:7px}
+  .equity-hd{font-size:8px;margin-bottom:3px}
+  .equity-delta{font-size:10px}
+  .equity-svg{height:36px}
+  .equity-empty{padding:8px;font-size:9px}
+
+  /* Telegram compact */
+  .tg-card{padding:8px;border-radius:7px}
+  .tg-status{font-size:9px;margin-bottom:5px}
+  .tg-last{padding:6px 8px;font-size:9px;border-radius:5px}
 
   /* Footer tight */
-  .foot{margin:12px 0 0;padding-top:10px;gap:6px}
-  .foot-btn{padding:6px 10px;font-size:9px}
-  .foot-version{margin-top:8px;font-size:8px}
+  .foot{margin:8px 0 0;padding-top:7px;gap:5px}
+  .foot-btn{padding:4px 8px;font-size:8px;border-radius:5px}
+  .foot-btn .ic{font-size:10px}
+  .foot-version{margin-top:6px;font-size:7px}
+
+  /* Lock overlay compact */
+  .lock-overlay{padding:7px 10px;margin-top:5px;border-radius:7px}
+  .lock-overlay .icon{font-size:14px}
+  .lock-overlay-txt{font-size:10px}
 }
 
-/* ── ULTRA-WIDE (1500px+) — extra breathing room ── */
-@media (min-width:1500px){
-  .app{padding:0 24px 20px}
-  .master-verdict{font-size:32px}
-  .bal-big{font-size:30px}
+/* ── HD+ (1600px+) — little breathing room ── */
+@media (min-width:1600px){
+  .app{padding:0 16px 14px}
+  .master-verdict{font-size:26px}
+  .bal-big{font-size:26px}
+  .dt-grid{gap:12px}
 }
 </style>
 </head>
@@ -1151,7 +1184,7 @@ body{
     <button class="foot-btn" onclick="Panel.exportData()"><span class="ic">📤</span>Yedek Al</button>
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.3 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.4 · 2026</div>
   </div>
 
 </main>
@@ -2362,7 +2395,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.3 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.4 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
