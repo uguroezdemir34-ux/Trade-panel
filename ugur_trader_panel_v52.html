@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.1</title>
+<title>Uğur — Trader Panel v52.3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -746,10 +746,128 @@ body{
 
 /* ── RESPONSIVE ──────────────────────────────── */
 @media (min-width:768px){
-  .sec{padding:16px 0 0}
+  body{font-size:14px}
+  .app{max-width:1000px;padding:0 20px 40px}
+  .topbar{padding:12px 24px}
+  .tb-logo{font-size:14px}
+  .tb-sub{font-size:10px}
+  .sec{padding:14px 0 0}
   .master{margin:16px 0}
   .foot{margin:24px 0 0}
-  .desktop-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+  .sizer{margin:12px 0 0}
+}
+
+/* ── COCKPIT DESKTOP (1024px+) ──────────────────────
+   Full-width, no side padding, dense 3-column grid.
+   Goal: fit everything on one screen, like a cockpit.
+─────────────────────────────────────────────────── */
+@media (min-width:1024px){
+  .app{
+    max-width:100%;
+    padding:0 14px 14px;
+  }
+  .topbar{padding:10px 18px}
+  .tb-logo{font-size:13px}
+  .tb-sub{font-size:9px}
+  .tb-pill{font-size:10px;padding:4px 9px}
+  .tb-btn{padding:6px 10px;font-size:10px}
+
+  /* Master: full width, compact */
+  .master{
+    margin:10px 0 0;
+    padding:14px 18px;
+  }
+  .master-top{margin-bottom:8px}
+  .master-verdict{font-size:28px;margin:4px 0}
+  .master-verdict .icon{font-size:24px;margin-right:6px}
+  .master-sub{font-size:12px;max-width:100%}
+  .master-score-row{margin-top:10px;padding-top:10px;gap:18px}
+  .master-score-ring{width:52px;height:52px}
+  .master-score-num{font-size:15px}
+  .master-breakdown{font-size:10px;gap:3px 16px}
+
+  /* Sizer: full width */
+  .sizer{margin:8px 0 0;padding:12px 16px}
+  .sizer-hd{margin-bottom:7px}
+  .sizer-prices{gap:8px;margin-bottom:7px}
+  .sizer-price{padding:6px 8px}
+  .sizer-divider{margin:6px 0}
+
+  /* 3-column cockpit grid — fills rest of screen */
+  .dt-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:10px;
+    align-items:start;
+    margin-top:10px;
+  }
+  .dt-grid > .sec{padding:0;min-width:0}
+  .dt-grid > .sec-full{grid-column:1 / -1}
+  .dt-grid > .sec-wide{grid-column:span 2}
+
+  /* Compact cards */
+  .sec-hd{font-size:9px;margin-bottom:6px}
+  .card{margin-bottom:8px;border-radius:10px}
+  .card-hd{padding:9px 12px 6px;font-size:10px}
+  .card-bd{padding:0 12px 11px}
+
+  /* Balance compact */
+  .bal-big{font-size:26px}
+  .bal-big .cur{font-size:15px}
+  .bal-main{margin-bottom:7px}
+  .bal-sub{gap:5px;margin-top:7px}
+  .bal-stat{padding:6px 8px}
+  .bal-stat-v{font-size:12px}
+  .bal-stat-l{font-size:8px}
+
+  /* Positions compact */
+  .pos{padding:9px 11px;margin-bottom:6px}
+  .pos-top{margin-bottom:7px}
+  .pos-pair{font-size:13px}
+  .pos-pnl{font-size:13px}
+  .pos-field-l{font-size:8px}
+  .pos-field-v{font-size:11px}
+
+  /* Price cards compact */
+  .px-card{padding:10px}
+  .px-val{font-size:17px}
+  .px-sub{font-size:8px}
+
+  /* Risk compact */
+  .risk-item{padding:7px 10px}
+  .risk-v{font-size:13px}
+  .risk-l{font-size:8px}
+
+  /* PnL compact */
+  .pnl-summary{gap:5px;margin-bottom:8px}
+  .pnl-kpi{padding:6px}
+  .pnl-kpi-v{font-size:12px}
+  .pnl-kpi-l{font-size:7px}
+  .pnl-cal{gap:2px;margin:3px 0 6px}
+  .pnl-cal-day .d{font-size:8px}
+  .pnl-cal-day .p{font-size:7px}
+  .trade-log{max-height:130px}
+  .trade-row{padding:5px 8px;margin-bottom:3px}
+  .trade-row-l{font-size:8px}
+  .trade-row-m{font-size:10px}
+  .trade-row-pnl{font-size:11px}
+
+  /* Equity compact */
+  .equity{padding:7px 9px;margin-bottom:6px}
+  .equity-hd{font-size:9px;margin-bottom:4px}
+  .equity-svg{height:44px}
+
+  /* Footer tight */
+  .foot{margin:12px 0 0;padding-top:10px;gap:6px}
+  .foot-btn{padding:6px 10px;font-size:9px}
+  .foot-version{margin-top:8px;font-size:8px}
+}
+
+/* ── ULTRA-WIDE (1500px+) — extra breathing room ── */
+@media (min-width:1500px){
+  .app{padding:0 24px 20px}
+  .master-verdict{font-size:32px}
+  .bal-big{font-size:30px}
 }
 </style>
 </head>
@@ -842,6 +960,9 @@ body{
     </div>
     <div class="sizer-warn hide" id="sizerWarn"></div>
   </div>
+
+  <!-- ═══════════════ DESKTOP 2-COLUMN WRAPPER ═══════════════ -->
+  <div class="dt-grid">
 
   <!-- ═══════════════ 2. BAKİYE ═══════════════ -->
   <div class="sec">
@@ -1020,6 +1141,8 @@ body{
     </div>
   </div>
 
+  </div><!-- /dt-grid -->
+
   <!-- ═══════════════ FOOTER ═══════════════ -->
   <div class="foot">
     <button class="foot-btn" onclick="Panel.openOKX()"><span class="ic">🔑</span>OKX API</button>
@@ -1028,7 +1151,7 @@ body{
     <button class="foot-btn" onclick="Panel.exportData()"><span class="ic">📤</span>Yedek Al</button>
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.1 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.3 · 2026</div>
   </div>
 
 </main>
@@ -2239,7 +2362,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.1 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.3 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
