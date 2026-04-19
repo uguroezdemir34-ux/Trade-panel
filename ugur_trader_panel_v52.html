@@ -4,10 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.4</title>
+<title>Uğur — Trader Panel v52.8</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
 <style>
 /* ═══════════════════════════════════════════════════════════
    UĞUR TRADER PANEL v52 — clean rewrite
@@ -738,6 +739,174 @@ body{
 .week-insight.warn{border-left-color:var(--red)}
 .week-insight.warn b{color:var(--red)}
 
+/* ── SCANNER TABLE (5-pair parallel scan) ───────── */
+.scanner{
+  margin-top:8px;
+  background:var(--card2);
+  border:1px solid var(--bd);
+  border-radius:9px;
+  padding:8px 10px 4px;
+}
+.scanner-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--mono);font-size:9px;
+  color:var(--t3);margin-bottom:6px;
+  letter-spacing:.1em;text-transform:uppercase;
+}
+.scanner-hd::before{content:'◆';color:var(--orange);margin-right:5px;font-size:7px}
+.scanner-upd{font-size:8px;color:var(--t4);letter-spacing:0;text-transform:none}
+.scan-row{
+  display:grid;
+  grid-template-columns:42px 1fr 60px 50px 40px;
+  gap:6px;align-items:center;
+  padding:6px 4px;
+  border-bottom:1px solid var(--bd);
+  cursor:pointer;
+  transition:background .1s;
+  font-family:var(--mono);
+}
+.scan-row:last-child{border-bottom:none}
+.scan-row:hover{background:rgba(255,107,26,.05)}
+.scan-row.top{background:rgba(255,107,26,.08)}
+.scan-row.top .scan-pair{color:var(--orange)}
+.scan-pair{font-weight:700;font-size:11px;color:var(--t1)}
+.scan-px{font-size:10px;color:var(--t2)}
+.scan-chg{font-size:10px;font-weight:700;text-align:right}
+.scan-chg.p{color:var(--green)}
+.scan-chg.n{color:var(--red)}
+.scan-verd{
+  font-size:9px;font-weight:700;
+  padding:2px 5px;border-radius:3px;
+  text-align:center;letter-spacing:.05em;
+}
+.scan-verd.go{background:var(--gbg);color:var(--green)}
+.scan-verd.wait{background:var(--abg);color:var(--amber)}
+.scan-verd.no{background:var(--rbg);color:var(--red)}
+.scan-score{font-size:11px;font-weight:700;text-align:right}
+.scan-score.g{color:var(--green)}
+.scan-score.y{color:var(--amber)}
+.scan-score.r{color:var(--red)}
+.scan-loading{
+  padding:12px;text-align:center;
+  color:var(--t4);font-family:var(--mono);font-size:10px;
+}
+@media (min-width:1024px){
+  .scanner{padding:6px 8px 3px;margin-top:6px}
+  .scanner-hd{font-size:8px;margin-bottom:4px}
+  .scan-row{grid-template-columns:36px 1fr 52px 44px 32px;gap:5px;padding:4px 3px}
+  .scan-pair{font-size:10px}
+  .scan-px,.scan-chg{font-size:9px}
+  .scan-verd{font-size:8px;padding:1px 4px}
+  .scan-score{font-size:10px}
+}
+
+/* ── TRADINGVIEW CHART ──────────────────────────── */
+.tvchart{
+  margin-top:8px;
+  background:var(--card2);
+  border:1px solid var(--bd);
+  border-radius:9px;
+  overflow:hidden;
+}
+.tvchart-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--mono);font-size:9px;
+  color:var(--t3);padding:8px 10px 6px;
+  letter-spacing:.1em;text-transform:uppercase;
+  border-bottom:1px solid var(--bd);
+}
+.tvchart-sym{color:var(--orange);font-weight:700}
+.tvchart-actions{display:flex;gap:5px;align-items:center}
+.tvchart-btn{
+  background:transparent;border:1px solid var(--bd);
+  color:var(--t3);padding:3px 8px;border-radius:4px;
+  font-family:var(--mono);font-size:9px;font-weight:700;
+  cursor:pointer;letter-spacing:.03em;
+  transition:all .12s;
+}
+.tvchart-btn:hover{border-color:var(--orange);color:var(--orange)}
+.tvchart-btn.on{background:var(--orange);border-color:var(--orange);color:#000}
+.tvchart-body{
+  width:100%;
+  height:300px;
+  position:relative;
+  transition:height .25s ease;
+}
+.tvchart-body.expanded{height:600px}
+.tvchart-body > div{width:100%;height:100%}
+.tvchart-loading{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  color:var(--t4);font-family:var(--mono);font-size:11px;
+  pointer-events:none;
+  background:var(--card2);
+}
+@media (min-width:1024px){
+  .tvchart-hd{font-size:8px;padding:6px 9px 4px}
+  .tvchart-btn{padding:2px 6px;font-size:8px}
+  .tvchart-body{height:250px}
+  .tvchart-body.expanded{height:500px}
+}
+
+/* ── DISCIPLINE SCOREBOARD (honest mirror, not gamification) ── */
+.disc{
+  margin-top:10px;
+  background:linear-gradient(135deg, rgba(255,107,26,.04) 0%, var(--card2) 60%);
+  border:1px solid var(--bd);
+  border-radius:9px;
+  padding:10px 12px 8px;
+}
+.disc-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--mono);font-size:10px;
+  color:var(--t3);letter-spacing:.12em;text-transform:uppercase;
+  margin-bottom:10px;
+}
+.disc-hd::before{content:'◎';color:var(--orange);margin-right:5px;font-size:9px}
+.disc-score{
+  font-family:var(--mono);font-size:11px;font-weight:700;
+  letter-spacing:0;text-transform:none;
+}
+.disc-score.g{color:var(--green)}
+.disc-score.y{color:var(--amber)}
+.disc-score.r{color:var(--red)}
+.disc-grid{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  margin-bottom:10px;
+}
+.disc-stat{
+  background:var(--card);border:1px solid var(--bd);
+  border-radius:7px;padding:8px 10px;text-align:center;
+}
+.disc-stat-v{
+  font-family:var(--mono);font-size:18px;font-weight:700;
+  color:var(--t1);line-height:1;
+}
+.disc-stat-v.g{color:var(--green)}
+.disc-stat-v.r{color:var(--red)}
+.disc-stat-l{
+  font-family:var(--mono);font-size:8px;
+  color:var(--t3);letter-spacing:.08em;text-transform:uppercase;
+  margin-top:4px;line-height:1.3;
+}
+.disc-msg{
+  font-size:11px;color:var(--t2);line-height:1.45;
+  padding:8px 10px;background:var(--card);
+  border-left:2px solid var(--orange);
+  border-radius:0 5px 5px 0;
+}
+.disc-msg.good{border-left-color:var(--green)}
+.disc-msg.warn{border-left-color:var(--red)}
+
+@media (min-width:1024px){
+  .disc{padding:8px 10px 6px;margin-top:8px}
+  .disc-hd{font-size:8px;margin-bottom:7px}
+  .disc-stat{padding:6px 8px}
+  .disc-stat-v{font-size:15px}
+  .disc-stat-l{font-size:7px;margin-top:2px}
+  .disc-msg{font-size:10px;padding:6px 9px}
+}
+
 /* ── UTILS ──────────────────────────────────── */
 .hide{display:none !important}
 .mono{font-family:var(--mono)}
@@ -924,10 +1093,14 @@ body{
   <!-- ═══════════════ 1. MASTER DECISION (EN ÖNEMLİ) ═══════════════ -->
   <div class="master verd-wait" id="master">
     <div class="master-top">
-      <div class="master-label">KARAR</div>
+      <div class="master-label" id="masterLabel">KARAR · <span id="masterPairLbl">ETH</span> (OTOMATİK)</div>
       <div class="master-pair">
-        <button class="pair-btn on" data-pair="ETH" onclick="Panel.selectPair('ETH')">ETH</button>
+        <button class="pair-btn on" data-pair="AUTO" onclick="Panel.setAutoPair()" title="En yüksek skorlu pariteyi otomatik seç">AUTO</button>
+        <button class="pair-btn" data-pair="ETH" onclick="Panel.selectPair('ETH')">ETH</button>
         <button class="pair-btn" data-pair="BTC" onclick="Panel.selectPair('BTC')">BTC</button>
+        <button class="pair-btn" data-pair="SOL" onclick="Panel.selectPair('SOL')">SOL</button>
+        <button class="pair-btn" data-pair="BNB" onclick="Panel.selectPair('BNB')">BNB</button>
+        <button class="pair-btn" data-pair="XRP" onclick="Panel.selectPair('XRP')">XRP</button>
       </div>
     </div>
     <div class="master-verdict" id="masterVerdict">
@@ -1067,6 +1240,35 @@ body{
             <div class="px-sub">24h · Perpetual</div>
           </div>
         </div>
+
+        <!-- SCANNER: 5-pair parallel scan -->
+        <div class="scanner">
+          <div class="scanner-hd">
+            <span>TARAMA · 5 PARİTE</span>
+            <span class="scanner-upd" id="scannerUpd">—</span>
+          </div>
+          <div id="scannerBody">
+            <div class="scan-loading">Taranıyor…</div>
+          </div>
+        </div>
+
+        <!-- TradingView advanced chart -->
+        <div class="tvchart">
+          <div class="tvchart-hd">
+            <span><span class="tvchart-sym" id="tvchartSym">ETH</span>/USDT · TradingView</span>
+            <div class="tvchart-actions">
+              <button class="tvchart-btn" onclick="Panel.tvSetTF('15')" id="tvTf15">15M</button>
+              <button class="tvchart-btn on" onclick="Panel.tvSetTF('60')" id="tvTf60">1H</button>
+              <button class="tvchart-btn" onclick="Panel.tvSetTF('240')" id="tvTf240">4H</button>
+              <button class="tvchart-btn" onclick="Panel.tvSetTF('D')" id="tvTfD">1D</button>
+              <button class="tvchart-btn" onclick="Panel.tvToggleSize()" id="tvSizeBtn" title="Büyüt/Küçült">⛶</button>
+            </div>
+          </div>
+          <div class="tvchart-body" id="tvchartBody">
+            <div class="tvchart-loading" id="tvchartLoading">TradingView yükleniyor…</div>
+            <div id="tvchartWidget"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1154,6 +1356,29 @@ body{
         <div class="trade-log" id="tradeLog">
           <div class="pos-empty">Henüz işlem yok</div>
         </div>
+
+        <!-- DISCIPLINE SCOREBOARD (motivation through honesty) -->
+        <div class="disc">
+          <div class="disc-hd">
+            <span>DİSİPLİN · Bugün</span>
+            <span class="disc-score" id="discScore">— / 100</span>
+          </div>
+          <div class="disc-grid">
+            <div class="disc-stat">
+              <div class="disc-stat-v" id="discSignals">0</div>
+              <div class="disc-stat-l">Sinyal<br>Geldi</div>
+            </div>
+            <div class="disc-stat">
+              <div class="disc-stat-v g" id="discSkipped">0</div>
+              <div class="disc-stat-l">Sisteme<br>Uyum</div>
+            </div>
+            <div class="disc-stat">
+              <div class="disc-stat-v r" id="discOverrides">0</div>
+              <div class="disc-stat-l">Kural<br>İhlali</div>
+            </div>
+          </div>
+          <div class="disc-msg" id="discMsg">Sistem bugün seni izliyor.</div>
+        </div>
       </div>
     </div>
   </div>
@@ -1184,7 +1409,7 @@ body{
     <button class="foot-btn" onclick="Panel.exportData()"><span class="ic">📤</span>Yedek Al</button>
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.4 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.8 · 2026</div>
   </div>
 
 </main>
@@ -1279,15 +1504,19 @@ body{
 'use strict';
 
 // ═══════════════ STATE ═══════════════
+const PAIRS = ['ETH', 'BTC', 'SOL', 'BNB', 'XRP'];
+
 const ST = {
-  pair: 'ETH',
-  px: { ETH: 0, BTC: 0, ETH_CHG: 0, BTC_CHG: 0, ETH_PREV: 0, BTC_PREV: 0 },
+  pair: 'ETH', // auto-selected by scanner
+  autoPair: true, // true = scanner picks highest; false = user-locked
+  pairScores: {}, // { ETH: {score, sub, reasons, verdict}, ... }
+  px: { ETH: 0, BTC: 0, SOL: 0, BNB: 0, XRP: 0, ETH_CHG: 0, BTC_CHG: 0, SOL_CHG: 0, BNB_CHG: 0, XRP_CHG: 0 },
   balance: { total: 0, used: 0, free: 0, prev: 0 },
   positions: [],
   score: 0,
   verdict: 'wait',
   subScores: { trend: 0, momentum: 0, vol: 0, macro: 0 },
-  indicators: { ETH: null, BTC: null },
+  indicators: { ETH: null, BTC: null, SOL: null, BNB: null, XRP: null },
   macro: { fg: 50, btcD: 0, usdtD: 0 },
   ws: null,
   wsConnected: false,
@@ -1300,6 +1529,16 @@ const ST = {
   lockReason: '',
   lastSignalFp: '',
   signalCooldownUntil: 0,
+  tvInterval: '60', // TradingView default: 1H
+  discipline: {
+    // Daily counters, reset at midnight
+    signalsToday: 0,      // Panel "AÇ" verdiği sayı
+    signalsTaken: 0,      // Açtığın trade sayısı
+    signalsSkipped: 0,    // AÇ dedi ama açmadıklarım (iyi disiplin)
+    overrides: 0,         // AÇMA/BEKLE dediği halde açtıklarım (kötü disiplin)
+    lastSignalAt: 0,
+    lastSignalVerdict: '',
+  },
 };
 
 // ═══════════════ UTIL ═══════════════
@@ -1721,15 +1960,231 @@ function renderWeeklySummary() {
   `;
 }
 
+// ═══════════════ DISCIPLINE SCOREBOARD ═══════════════
+// Tracks: signals given vs followed vs overridden.
+// Storage: per-day, resets at midnight.
+
+function getDiscKey(date = todayKey()) { return 'ug52_disc_' + date; }
+
+function loadDiscipline() {
+  const saved = LS.get(getDiscKey(), null);
+  if (saved) {
+    ST.discipline = { ...ST.discipline, ...saved };
+  }
+}
+
+function saveDiscipline() {
+  LS.set(getDiscKey(), ST.discipline);
+}
+
+// Called whenever the master verdict changes; tracks that a signal was shown
+function trackSignalShown(verdict) {
+  const now = Date.now();
+  const d = ST.discipline;
+  // Only count "AÇ" (go) as a new signal opportunity, and only if enough time passed
+  if (verdict === 'go' && (now - d.lastSignalAt) > 30*60*1000) {
+    d.signalsToday++;
+    d.lastSignalAt = now;
+    d.lastSignalVerdict = verdict;
+    saveDiscipline();
+    renderDiscipline();
+  } else if (verdict !== d.lastSignalVerdict) {
+    d.lastSignalVerdict = verdict;
+  }
+}
+
+// Called when a new trade is detected from OKX history
+// Determines: did the user follow the signal or override?
+function trackTradeTaken() {
+  const d = ST.discipline;
+  const now = Date.now();
+  const lastVerdict = ST.verdict;
+
+  if (lastVerdict === 'go') {
+    // System said GO, user traded → good discipline
+    d.signalsTaken++;
+  } else if (lastVerdict === 'no' || lastVerdict === 'lock') {
+    // System said NO, user traded anyway → rule break
+    d.overrides++;
+  } else {
+    // wait/caution — neither good nor bad, don't count
+  }
+  saveDiscipline();
+  renderDiscipline();
+}
+
+// Called every minute — counts implicit skips (signal shown, time passed, not taken)
+function checkImplicitSkip() {
+  const d = ST.discipline;
+  // If last signal was GO and 30+ minutes passed without a trade → counted as skipped
+  if (d.lastSignalVerdict === 'go' && d.lastSignalAt > 0) {
+    const elapsed = Date.now() - d.lastSignalAt;
+    const todayTrades = getTodayTrades();
+    // Crude heuristic: if no trade opened in last 30 min after GO signal, count as skip
+    if (elapsed > 30*60*1000 && !todayTrades.some(t => (Date.now() - new Date(t.date).getTime()) < elapsed)) {
+      // Only increment once per signal cycle
+      if (d.lastSignalVerdict === 'go') {
+        d.signalsSkipped++;
+        d.lastSignalVerdict = 'counted'; // mark so we don't count again
+        saveDiscipline();
+        renderDiscipline();
+      }
+    }
+  }
+}
+
+function computeDisciplineScore() {
+  const d = ST.discipline;
+  const totalDecisions = d.signalsTaken + d.signalsSkipped + d.overrides;
+  if (totalDecisions === 0) return null; // no data yet
+
+  // Score formula:
+  // +1 point for each signal taken (if system said GO)
+  // +1 point for each skip (followed the system's NO/CAUTION)
+  // -2 points for each override (broke a rule)
+  // Normalized to 0-100
+  const raw = d.signalsTaken + d.signalsSkipped - (d.overrides * 2);
+  const max = totalDecisions;
+  const pct = Math.max(0, Math.min(100, Math.round((raw / max) * 100)));
+  return pct;
+}
+
+function renderDiscipline() {
+  const d = ST.discipline;
+  const score = computeDisciplineScore();
+  const scoreEl = document.getElementById('discScore');
+  const msgEl = document.getElementById('discMsg');
+
+  document.getElementById('discSignals').textContent = d.signalsToday;
+  document.getElementById('discSkipped').textContent = d.signalsSkipped;
+  document.getElementById('discOverrides').textContent = d.overrides;
+
+  if (score === null) {
+    scoreEl.textContent = '— / 100';
+    scoreEl.className = 'disc-score';
+    msgEl.textContent = 'Henüz karar yok. İlk sinyali bekle, sisteme uyum göster.';
+    msgEl.className = 'disc-msg';
+    return;
+  }
+
+  scoreEl.textContent = score + ' / 100';
+  if (score >= 80) { scoreEl.className = 'disc-score g'; }
+  else if (score >= 50) { scoreEl.className = 'disc-score y'; }
+  else { scoreEl.className = 'disc-score r'; }
+
+  // Honest messages — no false celebration
+  let msg, cls;
+  if (d.overrides > 0 && d.signalsSkipped === 0) {
+    msg = `⚠️ Bugün ${d.overrides} kez sisteme karşı geldin. Panel sana bir sebep için kurallar koyuyor. Yarın daha iyi ol.`;
+    cls = 'warn';
+  } else if (d.overrides > d.signalsSkipped + d.signalsTaken) {
+    msg = `🛑 Kural ihlalleri uyumdan fazla. Bu tempo para kaybetmenin kısa yolu. Bir gün mola ver.`;
+    cls = 'warn';
+  } else if (d.signalsSkipped >= 2 && d.overrides === 0) {
+    msg = `✓ Sistem ${d.signalsSkipped} kez "açma" dedi, sen uydun. Fark ettiğinden fazla önemli — çoğu trader bunu yapamaz.`;
+    cls = 'good';
+  } else if (d.signalsTaken > 0 && d.overrides === 0) {
+    msg = `✓ ${d.signalsTaken} trade sistemin izinli olduğu zamanlarda açıldı. Disiplin çalışıyor.`;
+    cls = 'good';
+  } else if (d.signalsToday === 0) {
+    msg = `Sakin bir gün. Sistem henüz "aç" demedi. Zorlama, bekle.`;
+    cls = '';
+  } else {
+    msg = `Sistem ${d.signalsToday} sinyal verdi. Kararların kaydediliyor.`;
+    cls = '';
+  }
+  msgEl.textContent = msg;
+  msgEl.className = 'disc-msg' + (cls ? ' ' + cls : '');
+}
+
+// Day rollover — reset discipline at midnight
+function checkDisciplineDayRollover() {
+  const last = LS.get('ug52_disc_last_day', todayKey());
+  if (last !== todayKey()) {
+    // New day → reset to empty, keep yesterday's in storage
+    ST.discipline = {
+      signalsToday: 0, signalsTaken: 0, signalsSkipped: 0, overrides: 0,
+      lastSignalAt: 0, lastSignalVerdict: '',
+    };
+    LS.set('ug52_disc_last_day', todayKey());
+    saveDiscipline();
+    renderDiscipline();
+  }
+}
+
+// ═══════════════ TRADINGVIEW CHART ═══════════════
+// Uses TradingView's embed widget (tv.js). No API key needed.
+// OKX pair format: "ETH" → TradingView symbol: "OKX:ETHUSDT.P" (perpetual)
+function tvSymbolFor(pair) {
+  return `OKX:${pair}USDT.P`;
+}
+
+function loadTVChart() {
+  const pair = ST.pair;
+  const sym = document.getElementById('tvchartSym');
+  if (sym) sym.textContent = pair;
+
+  // Wait for TradingView library to be available
+  if (typeof TradingView === 'undefined') {
+    // Library not loaded yet — retry in a moment
+    setTimeout(loadTVChart, 400);
+    return;
+  }
+
+  // Clear previous widget completely (destroy iframe) before creating new one
+  const container = document.getElementById('tvchartWidget');
+  const loading = document.getElementById('tvchartLoading');
+  if (!container) return;
+  container.innerHTML = '';
+  if (loading) loading.style.display = 'flex';
+
+  try {
+    ST._tvWidget = new TradingView.widget({
+      container_id: 'tvchartWidget',
+      symbol: tvSymbolFor(pair),
+      interval: ST.tvInterval || '60',
+      width: '100%',
+      height: '100%',
+      autosize: true,
+      timezone: 'Europe/Istanbul',
+      theme: 'dark',
+      style: '1',
+      locale: 'tr',
+      toolbar_bg: '#141414',
+      enable_publishing: false,
+      allow_symbol_change: false,
+      hide_side_toolbar: false,
+      hide_top_toolbar: false,
+      hide_legend: false,
+      save_image: false,
+      studies: ['STD;EMA%1', 'STD;RSI', 'BB@tv-basicstudies'],
+      backgroundColor: '#141414',
+      gridColor: '#2A2A2A',
+      withdateranges: false,
+      details: false,
+      hotlist: false,
+      calendar: false,
+    });
+    // Hide loading overlay after a short delay (TV widget doesn't fire a ready event in embed mode)
+    setTimeout(() => {
+      if (loading) loading.style.display = 'none';
+    }, 1500);
+  } catch (e) {
+    if (loading) loading.innerHTML = '⚠️ Grafik yüklenemedi';
+    console.error('TV chart error:', e);
+  }
+}
+
 // ═══════════════ INITIAL PRICE SNAPSHOT (before WS connects) ═══════════════
 async function fetchInitialPrices() {
   try {
     const r = await fetch('https://www.okx.com/api/v5/market/tickers?instType=SWAP');
     const d = await r.json();
     if (d.code !== '0') return;
+    const wantedIds = PAIRS.map(p => p + '-USDT-SWAP');
     for (const t of d.data) {
-      if (t.instId === 'ETH-USDT-SWAP' || t.instId === 'BTC-USDT-SWAP') {
-        const sym = t.instId.startsWith('ETH') ? 'ETH' : 'BTC';
+      if (wantedIds.includes(t.instId)) {
+        const sym = t.instId.split('-')[0];
         const last = parseFloat(t.last);
         const open24 = parseFloat(t.open24h || last);
         const chg = open24 > 0 ? ((last - open24) / open24) * 100 : 0;
@@ -1757,7 +2212,10 @@ function initWS() {
         op: 'subscribe',
         args: [
           { channel: 'tickers', instId: 'ETH-USDT-SWAP' },
-          { channel: 'tickers', instId: 'BTC-USDT-SWAP' }
+          { channel: 'tickers', instId: 'BTC-USDT-SWAP' },
+          { channel: 'tickers', instId: 'SOL-USDT-SWAP' },
+          { channel: 'tickers', instId: 'BNB-USDT-SWAP' },
+          { channel: 'tickers', instId: 'XRP-USDT-SWAP' }
         ]
       }));
       // OKX WS requires ping every 30s or it disconnects
@@ -1768,12 +2226,14 @@ function initWS() {
       }, 25000);
     };
     ws.onmessage = (ev) => {
-      if (ev.data === 'pong') return; // ping response
+      if (ev.data === 'pong') return;
       try {
         const msg = JSON.parse(ev.data);
         if (msg.arg?.channel === 'tickers' && msg.data?.[0]) {
           const t = msg.data[0];
-          const sym = t.instId.startsWith('ETH') ? 'ETH' : 'BTC';
+          // instId format: "ETH-USDT-SWAP" → take first part
+          const sym = t.instId.split('-')[0];
+          if (!PAIRS.includes(sym)) return;
           const last = parseFloat(t.last);
           const open24 = parseFloat(t.open24h || last);
           const chg = open24 > 0 ? ((last - open24) / open24) * 100 : 0;
@@ -1805,17 +2265,41 @@ function initWS() {
 }
 
 function updatePriceDisplay(sym, last, chg, prev) {
-  const pxEl = $(sym.toLowerCase() + 'Px');
-  const chgEl = $(sym.toLowerCase() + 'Chg');
-  if (!pxEl) return;
-  pxEl.textContent = fmtPx(last);
-  chgEl.textContent = fmtChg(chg);
-  chgEl.className = 'px-chg ' + (chg>=0?'p':'n');
-  if (prev && prev !== last) {
-    pxEl.classList.remove('flash-up','flash-dn');
-    void pxEl.offsetWidth; // reflow
-    pxEl.classList.add(last > prev ? 'flash-up' : 'flash-dn');
+  // Only ETH/BTC have dedicated price cards; others only update scanner
+  const pxEl = document.getElementById(sym.toLowerCase() + 'Px');
+  const chgEl = document.getElementById(sym.toLowerCase() + 'Chg');
+  if (pxEl && chgEl) {
+    pxEl.textContent = fmtPx(last);
+    chgEl.textContent = fmtChg(chg);
+    chgEl.className = 'px-chg ' + (chg>=0?'p':'n');
+    if (prev && prev !== last) {
+      pxEl.classList.remove('flash-up','flash-dn');
+      void pxEl.offsetWidth;
+      pxEl.classList.add(last > prev ? 'flash-up' : 'flash-dn');
+    }
   }
+  // Update scanner row inline (without full re-render)
+  updateScannerRow(sym, last, chg);
+  // Note: TradingView widget handles its own real-time feed, no manual update needed
+}
+
+// Update a single scanner row's price/change without full re-render
+function updateScannerRow(sym, last, chg) {
+  const body = document.getElementById('scannerBody');
+  if (!body) return;
+  const rows = body.querySelectorAll('.scan-row');
+  rows.forEach(row => {
+    const pairEl = row.querySelector('.scan-pair');
+    if (pairEl && pairEl.textContent === sym) {
+      const pxCell = row.querySelector('.scan-px');
+      const chgCell = row.querySelector('.scan-chg');
+      if (pxCell) pxCell.textContent = fmtPx(last);
+      if (chgCell) {
+        chgCell.textContent = fmtChg(chg);
+        chgCell.className = 'scan-chg ' + (chg>=0?'p':'n');
+      }
+    }
+  });
 }
 
 // ═══════════════ OKX KLINES (indicators) ═══════════════
@@ -1914,22 +2398,16 @@ async function fetchBtcDom() {
 }
 
 // ═══════════════ SCORE ENGINE (hidden, only result shown) ═══════════════
-async function computeScore() {
-  const pair = ST.pair;
+// Computes score for a single pair. Returns result object, does NOT render.
+async function computeScoreForPair(pair) {
   // Fetch multi-timeframe klines from OKX in parallel
   const [k4h, k1h, k15m] = await Promise.all([
     getKlines(pair, '4h', 60),
     getKlines(pair, '1h', 100),
     getKlines(pair, '15m', 100)
   ]);
-  // Graceful fallback if data unavailable — don't break verdict card
   if (!k1h.length || !k4h.length) {
-    $('master').className = 'master verd-wait';
-    $('masterVerdict').innerHTML = `<span class="icon">⏳</span>VERİ BEKLENİYOR`;
-    $('masterSub').textContent = 'Piyasa verisi şu an alınamıyor. 3 dakika içinde tekrar denenecek.';
-    $('scoreNum').textContent = '--';
-    ST.verdict = 'wait';
-    return;
+    return { pair, score: 0, verdict: 'nodata', reasons: {}, sub: {trend:0,momentum:0,vol:0,macro:0} };
   }
 
   const closes1h = k1h.map(c => c.c);
@@ -1950,9 +2428,8 @@ async function computeScore() {
   // ── Sub-scores (100 max) ──
   let trendS = 0, momS = 0, volS = 0, macroS = 0;
   const reasons = { trend:'—', momentum:'—', vol:'—', macro:'—' };
-  const chgPct = ((closes1h.at(-1) - closes1h.at(-24))/closes1h.at(-24))*100;
 
-  // TREND (30 pts): EMA relationship + price vs EMAs
+  // TREND (30 pts)
   if (ema50 && ema200 && px) {
     const aboveE50 = px > ema50;
     const aboveE200 = px > ema200;
@@ -1964,7 +2441,7 @@ async function computeScore() {
     else { trendS = 12; reasons.trend = 'Kararsız'; }
   }
 
-  // MOMENTUM (25 pts): RSI alignment across TFs
+  // MOMENTUM (25 pts)
   if (rsi4 && rsi1 && rsi15) {
     const allGood = rsi4 > 40 && rsi4 < 70 && rsi1 > 40 && rsi1 < 70 && rsi15 > 45;
     const extremeOB = rsi4 > 75 || rsi1 > 78;
@@ -1977,7 +2454,7 @@ async function computeScore() {
     else { momS = 12; reasons.momentum = 'Nötr'; }
   }
 
-  // VOLATILITY / BB (20 pts): avoid squeeze top + prefer mid-band
+  // VOLATILITY / BB (20 pts)
   if (bb1h) {
     const p = bb1h.pct;
     if (p > 0.95) { volS = 3; reasons.vol = 'Üst Bant'; }
@@ -1987,7 +2464,7 @@ async function computeScore() {
     else { volS = 13; reasons.vol = 'Nötr'; }
   }
 
-  // MACRO (25 pts): F&G + BTC dominance
+  // MACRO (25 pts) — shared across all pairs
   const fg = ST.macro.fg;
   if (fg < 20) { macroS = 22; reasons.macro = 'Aşırı Korku (fırsat)'; }
   else if (fg > 80) { macroS = 6; reasons.macro = 'Aşırı Açgözlü (risk)'; }
@@ -1996,55 +2473,155 @@ async function computeScore() {
   else { macroS = 10; reasons.macro = 'Zayıf'; }
 
   const total = trendS + momS + volS + macroS;
-  ST.score = Math.round(total);
-  ST.subScores = { trend: trendS, momentum: momS, vol: volS, macro: macroS };
+  const score = Math.round(total);
+  const sub = { trend: trendS, momentum: momS, vol: volS, macro: macroS };
 
-  // Determine verdict — higher bar to reduce low-quality signals
+  // Determine verdict
+  let verdict;
+  if (score >= 70) {
+    const bbOK = bb1h && bb1h.pct > 0.05 && bb1h.pct < 0.95;
+    const momOK = momS >= 15;
+    verdict = (bbOK && momOK) ? 'go' : 'wait';
+  } else if (score >= 50) verdict = 'wait';
+  else verdict = 'no';
+
+  return { pair, score, verdict, reasons, sub, px };
+}
+
+// Scan all pairs in parallel, pick the best-scoring one, render result
+async function computeAllScores() {
+  const results = await Promise.all(PAIRS.map(p => computeScoreForPair(p)));
+  // Save all results
+  results.forEach(r => { ST.pairScores[r.pair] = r; });
+
+  // Sort by score desc
+  const sorted = [...results].sort((a,b) => b.score - a.score);
+  const winner = sorted[0];
+
+  // Auto-pick winner unless user has manually locked a pair
+  if (ST.autoPair && winner) {
+    // Only auto-switch if a different pair has a meaningfully higher score
+    // (avoids flipping between similar scores)
+    const currentScore = ST.pairScores[ST.pair]?.score || 0;
+    const winnerScore = winner.score;
+    if (winner.pair !== ST.pair && winnerScore > currentScore + 3) {
+      ST.pair = winner.pair;
+      // Refresh TV chart for new pair
+      loadTVChart();
+    } else if (winner.pair === ST.pair) {
+      // Same pair still best, no action
+    } else if (!ST.pairScores[ST.pair] || currentScore === 0) {
+      // Fallback: no current data, take winner
+      ST.pair = winner.pair;
+      loadTVChart();
+    }
+  }
+
+  renderMasterCard();
+  renderScanner(sorted);
+
+  // Signal fires only on the top-scoring pair if it passes quality gate
+  if (winner && winner.verdict === 'go' && !ST.locked) {
+    maybeFireSignal(winner.pair, winner.reasons, winner.sub.trend + winner.sub.momentum);
+  }
+}
+
+function renderMasterCard() {
+  const pair = ST.pair;
+  const r = ST.pairScores[pair];
+  if (!r) return;
+
+  ST.score = r.score;
+  ST.subScores = r.sub;
+
+  // Update label
+  const lbl = document.getElementById('masterPairLbl');
+  if (lbl) lbl.textContent = pair + (ST.autoPair ? ' · OTO' : ' · MANUEL');
+
+  // Determine display verdict (respect global lock)
   let verdict, verdictText, icon, subTxt;
   if (ST.locked) {
     verdict = 'lock'; verdictText = 'TRADE AÇMA'; icon = '🔒';
     subTxt = ST.lockReason || 'Psikoloji kilidi aktif.';
-  } else if (ST.score >= 70) {
-    // Additional signal quality filter: require no extreme conditions
-    const bbOK = bb1h && bb1h.pct > 0.05 && bb1h.pct < 0.95;
-    const momOK = momS >= 15;
-    if (bbOK && momOK) {
-      verdict = 'go'; verdictText = 'TRADE AÇ'; icon = '✅';
-      subTxt = `${pair}: Güçlü kurulum. ${reasons.trend} · ${reasons.momentum}.`;
-      maybeFireSignal(pair, reasons, trendS+momS);
-    } else {
-      verdict = 'wait'; verdictText = 'BEKLE'; icon = '⚠️';
-      subTxt = `${pair}: Skor yüksek ama sinyal kalitesi düşük. Onay bekle.`;
-    }
-  } else if (ST.score >= 50) {
+  } else if (r.verdict === 'go') {
+    verdict = 'go'; verdictText = 'TRADE AÇ'; icon = '✅';
+    subTxt = `${pair}: Güçlü kurulum. ${r.reasons.trend} · ${r.reasons.momentum}.`;
+  } else if (r.verdict === 'wait' && r.score >= 70) {
+    verdict = 'wait'; verdictText = 'BEKLE'; icon = '⚠️';
+    subTxt = `${pair}: Skor yüksek ama sinyal kalitesi düşük. Onay bekle.`;
+  } else if (r.verdict === 'wait') {
     verdict = 'wait'; verdictText = 'DİKKATLİ'; icon = '⚠️';
-    subTxt = `${pair}: ${reasons.trend} · ${reasons.macro}. Dar stop kullan.`;
+    subTxt = `${pair}: ${r.reasons.trend} · ${r.reasons.macro}. Dar stop kullan.`;
+  } else if (r.verdict === 'nodata') {
+    verdict = 'wait'; verdictText = 'VERİ BEKLENİYOR'; icon = '⏳';
+    subTxt = `${pair}: Piyasa verisi alınamıyor, tekrar denenecek.`;
   } else {
     verdict = 'no'; verdictText = 'TRADE AÇMA'; icon = '⛔';
-    subTxt = `${pair}: ${reasons.trend}. Koşullar yetersiz.`;
+    subTxt = `${pair}: ${r.reasons.trend}. Koşullar yetersiz.`;
   }
   ST.verdict = verdict;
 
-  // Render
-  const m = $('master');
+  const m = document.getElementById('master');
   m.className = 'master verd-' + verdict;
-  $('masterVerdict').innerHTML = `<span class="icon">${icon}</span>${verdictText}`;
-  $('masterSub').textContent = subTxt;
-  $('scoreNum').textContent = ST.score;
+  document.getElementById('masterVerdict').innerHTML = `<span class="icon">${icon}</span>${verdictText}`;
+  document.getElementById('masterSub').textContent = subTxt;
+  document.getElementById('scoreNum').textContent = r.score;
   const circ = 157;
-  $('scoreRing').style.strokeDashoffset = circ - (circ * (ST.score/100));
-  $('scoreRing').style.stroke = ST.score >= 70 ? 'var(--green)' : ST.score >= 50 ? 'var(--amber)' : 'var(--red)';
+  document.getElementById('scoreRing').style.strokeDashoffset = circ - (circ * (r.score/100));
+  document.getElementById('scoreRing').style.stroke = r.score >= 70 ? 'var(--green)' : r.score >= 50 ? 'var(--amber)' : 'var(--red)';
 
   const bdGrade = s => s >= 20 ? 'g' : s >= 10 ? 'y' : 'r';
-  $('masterBreakdown').innerHTML = `
-    <div class="mb-item"><span>Trend</span><span class="v ${bdGrade(trendS)}">${reasons.trend}</span></div>
-    <div class="mb-item"><span>Momentum</span><span class="v ${bdGrade(momS)}">${reasons.momentum}</span></div>
-    <div class="mb-item"><span>Volatilite</span><span class="v ${bdGrade(volS)}">${reasons.vol}</span></div>
-    <div class="mb-item"><span>Makro</span><span class="v ${bdGrade(macroS)}">${reasons.macro}</span></div>
+  document.getElementById('masterBreakdown').innerHTML = `
+    <div class="mb-item"><span>Trend</span><span class="v ${bdGrade(r.sub.trend)}">${r.reasons.trend}</span></div>
+    <div class="mb-item"><span>Momentum</span><span class="v ${bdGrade(r.sub.momentum)}">${r.reasons.momentum}</span></div>
+    <div class="mb-item"><span>Volatilite</span><span class="v ${bdGrade(r.sub.vol)}">${r.reasons.vol}</span></div>
+    <div class="mb-item"><span>Makro</span><span class="v ${bdGrade(r.sub.macro)}">${r.reasons.macro}</span></div>
   `;
 
-  // Render position sizer (only shown if verdict === 'go')
+  // Update active pair button highlight
+  document.querySelectorAll('.pair-btn').forEach(b => {
+    const p = b.dataset.pair;
+    if (p === 'AUTO') b.classList.toggle('on', ST.autoPair);
+    else b.classList.toggle('on', !ST.autoPair && p === pair);
+  });
+
+  // Render position sizer
   renderPositionSizer();
+
+  // Track discipline: signal shown
+  trackSignalShown(ST.verdict);
+}
+
+function renderScanner(sortedResults) {
+  const body = document.getElementById('scannerBody');
+  const upd = document.getElementById('scannerUpd');
+  if (upd) upd.textContent = new Date().toLocaleTimeString('tr',{hour:'2-digit',minute:'2-digit'});
+  if (!sortedResults || !sortedResults.length) {
+    body.innerHTML = '<div class="scan-loading">Taranıyor…</div>';
+    return;
+  }
+  let html = '';
+  sortedResults.forEach((r, i) => {
+    const px = ST.px[r.pair] || r.px || 0;
+    const chg = ST.px[r.pair+'_CHG'] || 0;
+    const scCls = r.score >= 70 ? 'g' : r.score >= 50 ? 'y' : 'r';
+    const vCls = r.verdict === 'go' ? 'go' : r.verdict === 'wait' ? 'wait' : 'no';
+    const vTxt = r.verdict === 'go' ? 'AÇ' : r.verdict === 'wait' ? 'BEKLE' : r.verdict === 'nodata' ? '—' : 'AÇMA';
+    const topCls = i === 0 ? 'top' : '';
+    html += `<div class="scan-row ${topCls}" onclick="Panel.selectPair('${r.pair}')">
+      <div class="scan-pair">${r.pair}</div>
+      <div class="scan-px">${fmtPx(px)}</div>
+      <div class="scan-chg ${chg>=0?'p':'n'}">${fmtChg(chg)}</div>
+      <div class="scan-verd ${vCls}">${vTxt}</div>
+      <div class="scan-score ${scCls}">${r.score}</div>
+    </div>`;
+  });
+  body.innerHTML = html;
+}
+
+// Legacy wrapper - still called from selectPair & some intervals
+async function computeScore() {
+  await computeAllScores();
 }
 
 // ═══════════════ SIGNAL QUALITY + COOLDOWN ═══════════════
@@ -2264,6 +2841,13 @@ async function syncTradeHistory() {
     LS.set('ug52_trades', ST.trades);
     renderPnL();
     renderRisk();
+    // Track discipline for each new trade detected today
+    const todayNew = ST.trades.filter(t => t.date === todayKey()).length;
+    const prevToday = ST.discipline.signalsTaken + ST.discipline.overrides;
+    if (todayNew > prevToday) {
+      const diff = todayNew - prevToday;
+      for (let i = 0; i < diff; i++) trackTradeTaken();
+    }
   }
 }
 
@@ -2285,11 +2869,48 @@ const Panel = {
   },
 
   selectPair(pair) {
+    if (!PAIRS.includes(pair)) return;
     ST.pair = pair;
+    ST.autoPair = false; // manual selection disables auto
     document.querySelectorAll('.pair-btn').forEach(b => {
-      b.classList.toggle('on', b.dataset.pair === pair);
+      const p = b.dataset.pair;
+      if (p === 'AUTO') b.classList.remove('on');
+      else b.classList.toggle('on', p === pair);
     });
-    computeScore();
+    // If we have cached results, render immediately
+    if (ST.pairScores[pair]) renderMasterCard();
+    loadTVChart();
+  },
+
+  setAutoPair() {
+    ST.autoPair = true;
+    // Find current winner
+    const sorted = Object.values(ST.pairScores).sort((a,b) => b.score - a.score);
+    if (sorted.length && sorted[0].score > 0) {
+      ST.pair = sorted[0].pair;
+    }
+    renderMasterCard();
+    loadTVChart();
+    toast('Otomatik taramaya geçildi', 'ok');
+  },
+
+  tvSetTF(interval) {
+    ST.tvInterval = interval;
+    // Highlight the active TF button
+    ['15','60','240','D'].forEach(t => {
+      const b = document.getElementById('tvTf'+t);
+      if (b) b.classList.toggle('on', t === interval);
+    });
+    loadTVChart();
+  },
+
+  tvToggleSize() {
+    const body = document.getElementById('tvchartBody');
+    if (!body) return;
+    body.classList.toggle('expanded');
+    const btn = document.getElementById('tvSizeBtn');
+    if (btn) btn.textContent = body.classList.contains('expanded') ? '⊠' : '⛶';
+    // TradingView widget re-sizes via its autosize:true option, no manual refresh needed
   },
 
   openOKX() {
@@ -2395,7 +3016,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.4 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.8 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
@@ -2461,6 +3082,8 @@ async function init() {
   renderRisk();
   renderPnL();
   renderEquityCurve();
+  loadDiscipline();
+  renderDiscipline();
 
   // Start clock
   updateClock();
@@ -2483,6 +3106,7 @@ async function init() {
     toast('OKX API anahtarı gerekli — sağ alttan ekle', 'warn');
   }
   await computeScore();
+  loadTVChart();
 
   // Weekly summary check — once per load, if Sunday eve / Monday
   setTimeout(maybeShowWeeklySummary, 2500);
@@ -2500,6 +3124,9 @@ async function init() {
   }, 180000); // 3min
 
   setInterval(syncTradeHistory, 120000); // 2min
+  setInterval(checkImplicitSkip, 60000); // 1min — implicit skip detection
+  setInterval(checkDisciplineDayRollover, 60000); // 1min — midnight reset
+  // TradingView chart has its own real-time feed — no periodic reload needed
 
   // Modal close on backdrop click
   document.querySelectorAll('.modal').forEach(m => {
