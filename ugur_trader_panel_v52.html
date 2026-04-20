@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.12</title>
+<title>Uğur — Trader Panel v52.13</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -929,12 +929,22 @@ body{
 .tvchart-btn.on{background:var(--orange);border-color:var(--orange);color:#000}
 .tvchart-body{
   width:100%;
-  height:420px;
+  height:480px;
   position:relative;
   transition:height .25s ease;
 }
 .tvchart-body.expanded{height:700px}
-.tvchart-body > div{width:100%;height:100%}
+/* Force all TradingView nested containers to fill the parent height */
+.tvchart-body > div,
+.tvchart-body iframe,
+.tvchart-body .tradingview-widget-container,
+.tvchart-body .tradingview-widget-container__widget{
+  width:100% !important;
+  height:100% !important;
+  min-height:100%;
+  display:block;
+  border:0;
+}
 .tvchart-loading{
   position:absolute;inset:0;
   display:flex;align-items:center;justify-content:center;
@@ -946,8 +956,12 @@ body{
 @media (min-width:1024px){
   .tvchart-hd{font-size:9px;padding:8px 12px 6px}
   .tvchart-btn{padding:3px 8px;font-size:9px}
-  .tvchart-body{height:480px}
-  .tvchart-body.expanded{height:720px}
+  .tvchart-body{height:520px}
+  .tvchart-body.expanded{height:760px}
+}
+@media (max-width:1023px){
+  .tvchart-body{height:400px}
+  .tvchart-body.expanded{height:600px}
 }
 
 /* ── POSITION LIVE TRACKER (TV chart altında açık pozisyon varsa) ── */
@@ -1597,7 +1611,7 @@ body{
     <button class="foot-btn" onclick="Panel.exportData()"><span class="ic">📤</span>Yedek Al</button>
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.12 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.13 · 2026</div>
   </div>
 
 </main>
@@ -2550,88 +2564,48 @@ function loadTVChart() {
   if (selEl) selEl.textContent = pair;
 
   const container = document.getElementById('tvchartWidget');
+  const body = document.getElementById('tvchartBody');
   const loading = document.getElementById('tvchartLoading');
-  if (!container) return;
+  if (!container || !body) return;
   container.innerHTML = '';
   if (loading) {
     loading.style.display = 'flex';
     loading.textContent = 'Grafik yükleniyor · ' + pair + '/USDT';
   }
 
-  // Wait for TradingView library, max 4 seconds then fallback to iframe
-  if (typeof TradingView === 'undefined') {
-    if (!ST._tvWaitStart) ST._tvWaitStart = Date.now();
-    if (Date.now() - ST._tvWaitStart < 4000) {
-      setTimeout(loadTVChart, 300);
-      return;
-    }
-    // tv.js didn't load (ad blocker, network, mobile limits) — use direct iframe fallback
-    loadTVChartIframeFallback(pair);
-    return;
-  }
-  ST._tvWaitStart = 0;
-
-  try {
-    ST._tvWidget = new TradingView.widget({
-      container_id: 'tvchartWidget',
-      symbol: tvSymbolFor(pair),
-      interval: ST.tvInterval || '60',
-      width: '100%',
-      height: '100%',
-      autosize: true,
-      timezone: 'Europe/Istanbul',
-      theme: 'dark',
-      style: '1',
-      locale: 'tr',
-      toolbar_bg: '#141414',
-      enable_publishing: false,
-      allow_symbol_change: false,
-      hide_side_toolbar: false,
-      hide_top_toolbar: false,
-      hide_legend: false,
-      save_image: false,
-      studies: ['STD;EMA', 'STD;RSI', 'BB@tv-basicstudies'],
-      backgroundColor: '#141414',
-      gridColor: '#2A2A2A',
-      withdateranges: false,
-      details: false,
-      hotlist: false,
-      calendar: false,
-    });
-    // Watch for the iframe to appear, then hide loading
-    let attempts = 0;
-    const checkIframe = setInterval(() => {
-      attempts++;
-      const iframe = container.querySelector('iframe');
-      if (iframe) {
-        clearInterval(checkIframe);
-        setTimeout(() => {
-          if (loading) loading.style.display = 'none';
-        }, 600);
-      } else if (attempts > 50) {
-        // 10 seconds passed, no iframe → fallback
-        clearInterval(checkIframe);
-        loadTVChartIframeFallback(pair);
-      }
-    }, 200);
-  } catch (e) {
-    console.error('TV chart error:', e);
-    loadTVChartIframeFallback(pair);
-  }
-}
-
-// Fallback: direct iframe embedding for cases where tv.js fails
-function loadTVChartIframeFallback(pair) {
-  const container = document.getElementById('tvchartWidget');
-  const loading = document.getElementById('tvchartLoading');
-  if (!container) return;
+  // Always use the direct iframe embed — more reliable than tv.js widget constructor,
+  // works on mobile + desktop + with ad blockers, and resizes cleanly.
   const tvSymbol = encodeURIComponent('OKX:' + pair + 'USDT.P');
   const interval = ST.tvInterval || '60';
-  const iframeSrc = `https://www.tradingview.com/widgetembed/?symbol=${tvSymbol}&interval=${interval}&theme=dark&style=1&locale=tr&timezone=Europe%2FIstanbul&withdateranges=0&hideideas=1&studies=%5B%5D`;
-  container.innerHTML = `<iframe src="${iframeSrc}" style="width:100%;height:100%;border:0;display:block" frameborder="0" allowfullscreen></iframe>`;
-  if (loading) {
-    setTimeout(() => { loading.style.display = 'none'; }, 1200);
-  }
+  const iframeSrc = `https://www.tradingview.com/widgetembed/?frameElementId=tradingview_ug52` +
+    `&symbol=${tvSymbol}` +
+    `&interval=${interval}` +
+    `&hidesidetoolbar=0` +
+    `&symboledit=0` +
+    `&saveimage=0` +
+    `&toolbarbg=141414` +
+    `&studies=%5B%22STD%3BEMA%22%2C%22STD%3BRSI%22%2C%22BB%40tv-basicstudies%22%5D` +
+    `&theme=dark` +
+    `&style=1` +
+    `&timezone=Europe%2FIstanbul` +
+    `&withdateranges=0` +
+    `&studies_overrides=%7B%7D` +
+    `&overrides=%7B%7D` +
+    `&enabled_features=%5B%5D` +
+    `&disabled_features=%5B%22use_localstorage_for_settings%22%5D` +
+    `&locale=tr`;
+
+  container.innerHTML = `<iframe id="tradingview_ug52" src="${iframeSrc}" style="width:100%;height:100%;border:0;display:block" frameborder="0" allowtransparency="true" scrolling="no" allowfullscreen></iframe>`;
+
+  // Hide loading after iframe starts loading
+  setTimeout(() => {
+    if (loading) loading.style.display = 'none';
+  }, 1200);
+}
+
+// Legacy fallback kept for compatibility — same as loadTVChart now
+function loadTVChartIframeFallback(pair) {
+  loadTVChart();
 }
 
 // ═══════════════ INITIAL PRICE SNAPSHOT (before WS connects) ═══════════════
@@ -3500,7 +3474,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.12 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.13 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
