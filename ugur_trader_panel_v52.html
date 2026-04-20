@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.15</title>
+<title>Uğur — Trader Panel v52.16</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1612,7 +1612,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.15 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.16 · 2026</div>
   </div>
 
 </main>
@@ -3139,11 +3139,80 @@ function maybeFireSignal(pair, reasons, trendMom) {
   ST.signalCooldownUntil = Date.now() + 30*60*1000; // 30 min cooldown
   // Send Telegram if configured
   if (ST.tg.token && ST.tg.chat) {
-    const msg = `🟢 *TRADE SİNYALİ*\n\n*Çift:* ${pair}/USDT\n*Skor:* ${ST.score}/100\n*Trend:* ${reasons.trend}\n*Momentum:* ${reasons.momentum}\n*Makro:* ${reasons.macro}\n\n_Fiyat: $${fmtPx(ST.px[pair])}_`;
+    const msg = buildTelegramSignalMsg(pair, reasons);
     sendTelegram(msg);
     $('tgLast').textContent = `[${new Date().toLocaleTimeString('tr',{hour:'2-digit',minute:'2-digit'})}] ${pair} · Skor ${ST.score}`;
     $('tgLast').className = 'tg-last';
   }
+}
+
+// Build a rich Telegram signal message with SL/TP/Size calculated the same way as the panel sizer
+function buildTelegramSignalMsg(pair, reasons) {
+  const ind = ST.indicators[pair];
+  const px = ST.px[pair] || (ind && ind.px) || 0;
+
+  // Header: always include pair, score, trend, momentum, price
+  let msg = `🟢 *TRADE SİNYALİ*\n\n`;
+  msg += `*Çift:* ${pair}/USDT\n`;
+  msg += `*Skor:* ${ST.score}/100\n`;
+
+  // Direction + trade plan — only if we have enough indicator data to calculate SL/TP
+  if (ind && ind.atr && px > 0) {
+    const isLong = ind.ema50 && ind.ema200
+      ? (px > ind.ema50 && px > ind.ema200 && ind.ema50 > ind.ema200)
+      : (ind.ema50 ? px > ind.ema50 : true);
+    const direction = isLong ? 'LONG 📈' : 'SHORT 📉';
+
+    const atr = ind.atr;
+    const stopDistance = 1.5 * atr;
+    const stopPrice = isLong ? px - stopDistance : px + stopDistance;
+    const tpPrice = isLong ? px + stopDistance * 2 : px - stopDistance * 2;
+    const stopPct = (stopDistance / px) * 100;
+    const tpPct = (stopDistance * 2 / px) * 100;
+
+    msg += `*Yön:* ${direction}\n`;
+    msg += `*Trend:* ${reasons.trend}\n`;
+    msg += `*Momentum:* ${reasons.momentum}\n`;
+    msg += `*Makro:* ${reasons.macro}\n`;
+    msg += `\n━━━━━━━━━━━━━━━\n`;
+    msg += `💰 *Giriş:* $${fmtPx(px)}\n`;
+    msg += `🛑 *Stop:* $${fmtPx(stopPrice)} (${isLong?'-':'+'}${stopPct.toFixed(2)}%)\n`;
+    msg += `🎯 *TP:* $${fmtPx(tpPrice)} (${isLong?'+':'-'}${tpPct.toFixed(2)}%) · 1:2 R:R\n`;
+
+    // Position size — only if balance is available
+    if (ST.balance.total >= 5) {
+      const riskUsd = ST.balance.total * 0.01;
+      const positionCoin = riskUsd / stopDistance;
+      const notional = positionCoin * px;
+      const leverage = 5;
+      const margin = notional / leverage;
+      const decimals = pair === 'BTC' ? 4 : 3;
+
+      msg += `\n━━━━━━━━━━━━━━━\n`;
+      msg += `📊 *Boyut:* ${positionCoin.toFixed(decimals)} ${pair}\n`;
+      msg += `💵 *Margin:* $${fmt(margin, 2)} (${leverage}x)\n`;
+      msg += `⚠️ *Risk:* $${fmt(riskUsd, 2)} (1%)\n`;
+
+      // Feasibility warnings
+      if (notional < 10) {
+        msg += `\n⚠️ _Pozisyon OKX minimumunun altında (~$${fmt(notional,2)}). Bakiye küçük._`;
+      } else if (margin > ST.balance.free + 0.01) {
+        msg += `\n⚠️ _Yetersiz margin. Serbest: $${fmt(ST.balance.free,2)}_`;
+      }
+    } else {
+      msg += `\n_Bakiye hesaplanmadı — OKX API bağla veya sermaye yatır_`;
+    }
+  } else {
+    // Fallback: no indicator data, minimal message
+    msg += `*Trend:* ${reasons.trend}\n`;
+    msg += `*Momentum:* ${reasons.momentum}\n`;
+    msg += `*Makro:* ${reasons.macro}\n\n`;
+    msg += `_Fiyat: $${fmtPx(px)}_\n`;
+    msg += `_(ATR verisi yok — SL/TP hesaplanamadı)_`;
+  }
+
+  msg += `\n\n_${new Date().toLocaleString('tr',{hour:'2-digit',minute:'2-digit'})}_`;
+  return msg;
 }
 
 async function sendTelegram(text) {
@@ -3576,7 +3645,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.15 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.16 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
