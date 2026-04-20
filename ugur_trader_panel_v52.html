@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.14</title>
+<title>Uğur — Trader Panel v52.15</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1610,8 +1610,9 @@ body{
     <button class="foot-btn" onclick="Panel.showWeekly()"><span class="ic">📊</span>Hafta Özeti</button>
     <button class="foot-btn" onclick="Panel.exportData()"><span class="ic">📤</span>Yedek Al</button>
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
+    <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.14 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.15 · 2026</div>
   </div>
 
 </main>
@@ -3517,10 +3518,65 @@ const Panel = {
     inp.click();
   },
 
+  resetData() {
+    // Two-step confirmation — trade verilerini silmek geri alınamaz
+    const ok1 = confirm(
+      '⚠️ TÜM TRADE VERİLERİ SİLİNECEK\n\n' +
+      '• 50 işlem geçmişi\n' +
+      '• P&L takvimi\n' +
+      '• Disiplin kayıtları\n' +
+      '• Günlük risk sayaçları\n' +
+      '• Bakiye geçmişi\n\n' +
+      'OKX API ve Telegram ayarları KALACAK.\n\n' +
+      'Temiz sayfa açmak istiyor musun?'
+    );
+    if (!ok1) return;
+
+    const confirmWord = prompt('Emin misin? Onaylamak için "SIFIRLA" yaz:');
+    if (confirmWord !== 'SIFIRLA') {
+      toast('İptal edildi — hiçbir şey silinmedi', 'warn');
+      return;
+    }
+
+    // Backup OKX + Telegram settings (these are NOT wiped)
+    const keepOkx = LS.get('ug52_okx', null);
+    const keepTg = LS.get('ug52_tg', null);
+
+    // Wipe all trade/performance/risk/discipline related keys
+    const keysToWipe = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      // Keep only okx, tg, and last_day markers (for rollover tracking)
+      if (key === 'ug52_okx' || key === 'ug52_tg') continue;
+      // Wipe everything else from v52 (trades, balances, locks, discipline, weekly, old v6/v7)
+      if (key.startsWith('ug52_') || key.startsWith('ug6_') || key.startsWith('ug7_')) {
+        keysToWipe.push(key);
+      }
+    }
+    keysToWipe.forEach(k => localStorage.removeItem(k));
+
+    // Restore OKX + TG
+    if (keepOkx) LS.set('ug52_okx', keepOkx);
+    if (keepTg) LS.set('ug52_tg', keepTg);
+
+    // Reset in-memory state
+    ST.trades = [];
+    ST.discipline = {
+      signalsToday: 0, signalsTaken: 0, signalsSkipped: 0,
+      overrides: 0, lastSignalAt: 0, lastSignalVerdict: '',
+    };
+    ST.balance.prev = 0;
+
+    toast('✓ Temiz sayfa açıldı — hayırlı trade\'ler', 'ok');
+    // Reload after short delay so toast is visible
+    setTimeout(() => location.reload(), 1500);
+  },
+
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.14 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.15 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
