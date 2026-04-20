@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.9</title>
+<title>Uğur — Trader Panel v52.10</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -225,10 +225,35 @@ body{
 }
 .master-breakdown{
   flex:1;display:grid;grid-template-columns:1fr 1fr;
-  gap:4px 10px;font-family:var(--mono);font-size:10px;
+  gap:6px;font-family:var(--mono);font-size:10px;
 }
-.mb-item{display:flex;justify-content:space-between;color:var(--t3)}
-.mb-item .v{font-weight:700}
+.mb-item{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  padding:5px 8px;
+  background:var(--card2);
+  border:1px solid var(--bd);
+  border-radius:5px;
+  min-width:0;
+  overflow:hidden;
+}
+.mb-item > span:first-child{
+  font-size:8px;
+  color:var(--t4);
+  letter-spacing:.1em;
+  text-transform:uppercase;
+  margin-bottom:2px;
+}
+.mb-item .v{
+  font-weight:700;
+  font-size:11px;
+  color:var(--t2);
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  max-width:100%;
+}
 .mb-item .v.g{color:var(--green)}
 .mb-item .v.r{color:var(--red)}
 .mb-item .v.y{color:var(--amber)}
@@ -1082,7 +1107,10 @@ body{
   .master-score-row{margin-top:7px;padding-top:7px;gap:14px;border-top-width:1px}
   .master-score-ring{width:42px;height:42px}
   .master-score-num{font-size:12px}
-  .master-breakdown{font-size:9px;gap:2px 14px}
+  .master-breakdown{font-size:9px;gap:4px}
+  .mb-item{padding:4px 6px}
+  .mb-item > span:first-child{font-size:7px;margin-bottom:1px}
+  .mb-item .v{font-size:10px}
   .pair-btn{padding:3px 8px;font-size:9px}
 
   /* Sizer: compact */
@@ -1566,7 +1594,7 @@ body{
     <button class="foot-btn" onclick="Panel.exportData()"><span class="ic">📤</span>Yedek Al</button>
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.9 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.10 · 2026</div>
   </div>
 
 </main>
@@ -3435,7 +3463,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.9 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.10 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
