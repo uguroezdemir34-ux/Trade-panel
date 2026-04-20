@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.10</title>
+<title>Uğur — Trader Panel v52.11</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -929,11 +929,11 @@ body{
 .tvchart-btn.on{background:var(--orange);border-color:var(--orange);color:#000}
 .tvchart-body{
   width:100%;
-  height:340px;
+  height:420px;
   position:relative;
   transition:height .25s ease;
 }
-.tvchart-body.expanded{height:650px}
+.tvchart-body.expanded{height:700px}
 .tvchart-body > div{width:100%;height:100%}
 .tvchart-loading{
   position:absolute;inset:0;
@@ -944,10 +944,10 @@ body{
   z-index:5;
 }
 @media (min-width:1024px){
-  .tvchart-hd{font-size:8px;padding:6px 9px 4px}
-  .tvchart-btn{padding:2px 6px;font-size:8px}
-  .tvchart-body{height:320px}
-  .tvchart-body.expanded{height:560px}
+  .tvchart-hd{font-size:9px;padding:8px 12px 6px}
+  .tvchart-btn{padding:3px 8px;font-size:9px}
+  .tvchart-body{height:480px}
+  .tvchart-body.expanded{height:720px}
 }
 
 /* ── POSITION LIVE TRACKER (TV chart altında açık pozisyon varsa) ── */
@@ -1412,53 +1412,56 @@ body{
             <div class="scan-loading">Taranıyor…</div>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
 
-        <!-- TradingView advanced chart -->
-        <div class="tvchart">
-          <div class="tvchart-hd">
-            <span><span class="tvchart-sym" id="tvchartSym">BTC</span>/USDT · TradingView</span>
-            <div class="tvchart-actions">
-              <button class="tvchart-btn" onclick="Panel.tvSetTF('15')" id="tvTf15">15M</button>
-              <button class="tvchart-btn on" onclick="Panel.tvSetTF('60')" id="tvTf60">1H</button>
-              <button class="tvchart-btn" onclick="Panel.tvSetTF('240')" id="tvTf240">4H</button>
-              <button class="tvchart-btn" onclick="Panel.tvSetTF('D')" id="tvTfD">1D</button>
-              <button class="tvchart-btn" onclick="Panel.tvToggleSize()" id="tvSizeBtn" title="Büyüt/Küçült">⛶</button>
-            </div>
-          </div>
-          <div class="tvchart-body" id="tvchartBody">
-            <div class="tvchart-loading" id="tvchartLoading">TradingView yükleniyor…</div>
-            <div id="tvchartWidget"></div>
-          </div>
+  <!-- ═══════════════ 4B. GRAFİK (Full width, her zaman görünür) ═══════════════ -->
+  <div class="sec sec-full">
+    <div class="sec-hd"><span class="sec-num">4B</span>GRAFİK · <span id="tvSelectedPair" style="color:var(--orange);font-weight:700">BTC</span>/USDT</div>
+    <div class="tvchart">
+      <div class="tvchart-hd">
+        <span><span class="tvchart-sym" id="tvchartSym">BTC</span>/USDT · TradingView</span>
+        <div class="tvchart-actions">
+          <button class="tvchart-btn" onclick="Panel.tvSetTF('15')" id="tvTf15">15M</button>
+          <button class="tvchart-btn on" onclick="Panel.tvSetTF('60')" id="tvTf60">1H</button>
+          <button class="tvchart-btn" onclick="Panel.tvSetTF('240')" id="tvTf240">4H</button>
+          <button class="tvchart-btn" onclick="Panel.tvSetTF('D')" id="tvTfD">1D</button>
+          <button class="tvchart-btn" onclick="Panel.tvToggleSize()" id="tvSizeBtn" title="Büyüt/Küçült">⛶</button>
         </div>
+      </div>
+      <div class="tvchart-body" id="tvchartBody">
+        <div class="tvchart-loading" id="tvchartLoading">TradingView yükleniyor…</div>
+        <div id="tvchartWidget"></div>
+      </div>
+    </div>
 
-        <!-- POSITION LIVE TRACKER (only visible when there's an open position) -->
-        <div class="ptrack hide" id="ptrack">
-          <div class="ptrack-hd">
-            <span>CANLI POZİSYON TAKİP</span>
-            <span class="ptrack-side long" id="ptrackSide">LONG</span>
-          </div>
-          <div class="ptrack-grid">
-            <div class="ptrack-cell">
-              <div class="ptrack-cell-l">Giriş</div>
-              <div class="ptrack-cell-v" id="ptrackEntry">—</div>
-            </div>
-            <div class="ptrack-cell">
-              <div class="ptrack-cell-l">Şimdi</div>
-              <div class="ptrack-cell-v" id="ptrackNow">—</div>
-            </div>
-            <div class="ptrack-cell">
-              <div class="ptrack-cell-l">Stop</div>
-              <div class="ptrack-cell-v sl" id="ptrackSL">—</div>
-            </div>
-            <div class="ptrack-cell">
-              <div class="ptrack-cell-l">TP</div>
-              <div class="ptrack-cell-v tp" id="ptrackTP">—</div>
-            </div>
-            <div class="ptrack-cell">
-              <div class="ptrack-cell-l">PnL</div>
-              <div class="ptrack-cell-v" id="ptrackPnL">—</div>
-            </div>
-          </div>
+    <!-- POSITION LIVE TRACKER (only visible when there's an open position) -->
+    <div class="ptrack hide" id="ptrack">
+      <div class="ptrack-hd">
+        <span>CANLI POZİSYON TAKİP</span>
+        <span class="ptrack-side long" id="ptrackSide">LONG</span>
+      </div>
+      <div class="ptrack-grid">
+        <div class="ptrack-cell">
+          <div class="ptrack-cell-l">Giriş</div>
+          <div class="ptrack-cell-v" id="ptrackEntry">—</div>
+        </div>
+        <div class="ptrack-cell">
+          <div class="ptrack-cell-l">Şimdi</div>
+          <div class="ptrack-cell-v" id="ptrackNow">—</div>
+        </div>
+        <div class="ptrack-cell">
+          <div class="ptrack-cell-l">Stop</div>
+          <div class="ptrack-cell-v sl" id="ptrackSL">—</div>
+        </div>
+        <div class="ptrack-cell">
+          <div class="ptrack-cell-l">TP</div>
+          <div class="ptrack-cell-v tp" id="ptrackTP">—</div>
+        </div>
+        <div class="ptrack-cell">
+          <div class="ptrack-cell-l">PnL</div>
+          <div class="ptrack-cell-v" id="ptrackPnL">—</div>
         </div>
       </div>
     </div>
@@ -1594,7 +1597,7 @@ body{
     <button class="foot-btn" onclick="Panel.exportData()"><span class="ic">📤</span>Yedek Al</button>
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.10 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.11 · 2026</div>
   </div>
 
 </main>
@@ -2542,7 +2545,9 @@ function tvSymbolFor(pair) {
 function loadTVChart() {
   const pair = ST.pair;
   const sym = document.getElementById('tvchartSym');
+  const selEl = document.getElementById('tvSelectedPair');
   if (sym) sym.textContent = pair;
+  if (selEl) selEl.textContent = pair;
 
   // Wait for TradingView library to be available
   if (typeof TradingView === 'undefined') {
@@ -2613,8 +2618,9 @@ async function fetchInitialPrices() {
   try {
     const r = await fetch('https://www.okx.com/api/v5/market/tickers?instType=SWAP');
     const d = await r.json();
-    if (d.code !== '0') return;
+    if (d.code !== '0') return false;
     const wantedIds = PAIRS.map(p => p + '-USDT-SWAP');
+    let found = 0;
     for (const t of d.data) {
       if (wantedIds.includes(t.instId)) {
         const sym = t.instId.split('-')[0];
@@ -2624,9 +2630,11 @@ async function fetchInitialPrices() {
         ST.px[sym] = last;
         ST.px[sym+'_CHG'] = chg;
         updatePriceDisplay(sym, last, chg, 0);
+        found++;
       }
     }
-  } catch {}
+    return found === PAIRS.length;
+  } catch { return false; }
 }
 
 // ═══════════════ WEBSOCKET (OKX public) ═══════════════
@@ -2933,7 +2941,13 @@ async function computeScoreForPair(pair) {
 async function computeAllScores() {
   const results = await Promise.all(PAIRS.map(p => computeScoreForPair(p)));
   // Save all results
-  results.forEach(r => { ST.pairScores[r.pair] = r; });
+  results.forEach(r => {
+    ST.pairScores[r.pair] = r;
+    // Sync price into ST.px so scanner always has data even before WS arrives
+    if (r.px && !ST.px[r.pair]) {
+      ST.px[r.pair] = r.px;
+    }
+  });
 
   // Sort by score desc
   const sorted = [...results].sort((a,b) => b.score - a.score);
@@ -3049,16 +3063,18 @@ function renderScanner(sortedResults) {
   PAIRS.forEach(pair => {
     const r = ST.pairScores[pair];
     if (!r) return;
-    const px = ST.px[pair] || r.px || 0;
+    const px = ST.px[pair] || 0;
     const chg = ST.px[pair+'_CHG'] || 0;
+    const pxDisplay = px > 0 ? fmtPx(px) : '—';
+    const chgDisplay = px > 0 ? fmtChg(chg) : '—';
     const scCls = r.score >= 70 ? 'g' : r.score >= 50 ? 'y' : 'r';
     const vCls = r.verdict === 'go' ? 'go' : r.verdict === 'wait' ? 'wait' : 'no';
     const vTxt = r.verdict === 'go' ? 'AÇ' : r.verdict === 'wait' ? 'BEKLE' : r.verdict === 'nodata' ? '—' : 'AÇMA';
     const topCls = pair === topPair && r.score > 0 ? 'top' : '';
     html += `<div class="scan-row ${topCls}" onclick="Panel.selectPair('${pair}')">
       <div class="scan-pair">${pair}</div>
-      <div class="scan-px">${fmtPx(px)}</div>
-      <div class="scan-chg ${chg>=0?'p':'n'}">${fmtChg(chg)}</div>
+      <div class="scan-px">${pxDisplay}</div>
+      <div class="scan-chg ${chg>=0?'p':'n'}">${chgDisplay}</div>
       <div class="scan-verd ${vCls}">${vTxt}</div>
       <div class="scan-score ${scCls}">${r.score}</div>
     </div>`;
@@ -3463,7 +3479,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.10 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.11 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
@@ -3538,8 +3554,12 @@ async function init() {
 
   // Start websocket
   initWS();
-  // Fetch initial prices immediately (WS takes 1-3s)
-  fetchInitialPrices();
+  // Fetch initial prices immediately (WS takes 1-3s), await so scanner has data
+  const pricesOk = await fetchInitialPrices();
+  // If prices didn't all come through, retry once after a short delay
+  if (!pricesOk) {
+    setTimeout(() => fetchInitialPrices(), 2000);
+  }
 
   // Initial data fetch
   await Promise.all([fetchFG(), fetchBtcDom()]);
