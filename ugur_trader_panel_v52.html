@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.8</title>
+<title>Uğur — Trader Panel v52.9</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -800,6 +800,82 @@ body{
   .scan-score{font-size:10px}
 }
 
+/* ── DISCIPLINE SCOREBOARD ─────────────────────── */
+.disc{
+  background:var(--card2);
+  border:1px solid var(--bd);
+  border-radius:9px;
+  padding:10px 12px;
+  margin-top:10px;
+}
+.disc-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:8px;
+  font-family:var(--mono);font-size:9px;
+  color:var(--t3);letter-spacing:.12em;text-transform:uppercase;
+}
+.disc-hd::before{content:'◆';color:var(--orange);margin-right:5px;font-size:7px}
+.disc-hero{
+  display:flex;align-items:baseline;gap:10px;margin-bottom:10px;
+  padding-bottom:10px;border-bottom:1px solid var(--bd);
+}
+.disc-hero-val{
+  font-family:var(--mono);font-size:28px;font-weight:700;
+  letter-spacing:-.02em;line-height:1;
+}
+.disc-hero-val.g{color:var(--green)}
+.disc-hero-val.y{color:var(--amber)}
+.disc-hero-val.r{color:var(--red)}
+.disc-hero-lbl{
+  font-family:var(--mono);font-size:10px;color:var(--t3);
+  letter-spacing:.08em;text-transform:uppercase;
+}
+.disc-hero-sub{
+  font-family:var(--mono);font-size:10px;color:var(--t4);
+  margin-left:auto;
+}
+.disc-metrics{
+  display:grid;grid-template-columns:1fr;gap:6px;
+}
+.disc-m{
+  display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;
+  padding:6px 8px;
+  background:var(--card);border:1px solid var(--bd);
+  border-radius:6px;
+}
+.disc-m-l{
+  font-family:var(--sans);font-size:11px;color:var(--t2);line-height:1.3;
+}
+.disc-m-l b{color:var(--t1);font-weight:600}
+.disc-m-v{
+  font-family:var(--mono);font-size:13px;font-weight:700;
+  min-width:42px;text-align:right;
+}
+.disc-m-v.g{color:var(--green)}
+.disc-m-v.y{color:var(--amber)}
+.disc-m-v.r{color:var(--red)}
+.disc-m-v.muted{color:var(--t4)}
+.disc-tip{
+  margin-top:8px;padding:7px 9px;
+  background:var(--card);border-left:3px solid var(--orange);
+  border-radius:5px;
+  font-family:var(--sans);font-size:11px;color:var(--t2);line-height:1.4;
+}
+.disc-tip.warn{border-left-color:var(--amber)}
+.disc-tip.good{border-left-color:var(--green)}
+@media (min-width:1024px){
+  .disc{padding:7px 9px;margin-top:6px}
+  .disc-hd{font-size:8px;margin-bottom:5px}
+  .disc-hero{margin-bottom:6px;padding-bottom:6px;gap:8px}
+  .disc-hero-val{font-size:22px}
+  .disc-hero-lbl{font-size:8px}
+  .disc-hero-sub{font-size:8px}
+  .disc-m{padding:4px 6px;gap:6px}
+  .disc-m-l{font-size:10px}
+  .disc-m-v{font-size:11px;min-width:36px}
+  .disc-tip{padding:5px 7px;font-size:10px;margin-top:6px}
+}
+
 /* ── TRADINGVIEW CHART ──────────────────────────── */
 .tvchart{
   margin-top:8px;
@@ -828,11 +904,11 @@ body{
 .tvchart-btn.on{background:var(--orange);border-color:var(--orange);color:#000}
 .tvchart-body{
   width:100%;
-  height:300px;
+  height:340px;
   position:relative;
   transition:height .25s ease;
 }
-.tvchart-body.expanded{height:600px}
+.tvchart-body.expanded{height:650px}
 .tvchart-body > div{width:100%;height:100%}
 .tvchart-loading{
   position:absolute;inset:0;
@@ -840,12 +916,63 @@ body{
   color:var(--t4);font-family:var(--mono);font-size:11px;
   pointer-events:none;
   background:var(--card2);
+  z-index:5;
 }
 @media (min-width:1024px){
   .tvchart-hd{font-size:8px;padding:6px 9px 4px}
   .tvchart-btn{padding:2px 6px;font-size:8px}
-  .tvchart-body{height:250px}
-  .tvchart-body.expanded{height:500px}
+  .tvchart-body{height:320px}
+  .tvchart-body.expanded{height:560px}
+}
+
+/* ── POSITION LIVE TRACKER (TV chart altında açık pozisyon varsa) ── */
+.ptrack{
+  margin-top:8px;
+  padding:10px 12px;
+  background:var(--card2);
+  border:1px solid var(--bd);
+  border-radius:9px;
+  position:relative;overflow:hidden;
+}
+.ptrack.long{border-left:3px solid var(--green)}
+.ptrack.short{border-left:3px solid var(--red)}
+.ptrack.hide{display:none}
+.ptrack-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  font-family:var(--mono);font-size:10px;
+  color:var(--t3);letter-spacing:.12em;text-transform:uppercase;
+  margin-bottom:8px;
+}
+.ptrack-hd::before{content:'●';margin-right:5px;animation:pulse 1.8s infinite}
+.ptrack.long .ptrack-hd::before{color:var(--green)}
+.ptrack.short .ptrack-hd::before{color:var(--red)}
+.ptrack-side{
+  font-size:10px;padding:2px 7px;border-radius:4px;
+  font-weight:700;letter-spacing:.1em;
+}
+.ptrack-side.long{background:var(--gbg);color:var(--green);border:1px solid var(--green)}
+.ptrack-side.short{background:var(--rbg);color:var(--red);border:1px solid var(--red)}
+.ptrack-grid{
+  display:grid;grid-template-columns:repeat(5, 1fr);gap:6px;
+  font-family:var(--mono);
+}
+.ptrack-cell{text-align:center}
+.ptrack-cell-l{
+  font-size:8px;color:var(--t3);
+  letter-spacing:.08em;text-transform:uppercase;
+}
+.ptrack-cell-v{font-size:12px;font-weight:700;color:var(--t1);margin-top:2px}
+.ptrack-cell-v.sl{color:var(--red)}
+.ptrack-cell-v.tp{color:var(--green)}
+.ptrack-cell-v.p{color:var(--green)}
+.ptrack-cell-v.n{color:var(--red)}
+
+@media (min-width:1024px){
+  .ptrack{padding:7px 10px;margin-top:6px}
+  .ptrack-hd{font-size:8px;margin-bottom:5px}
+  .ptrack-grid{gap:4px}
+  .ptrack-cell-v{font-size:11px}
+  .ptrack-cell-l{font-size:7px}
 }
 
 /* ── DISCIPLINE SCOREBOARD (honest mirror, not gamification) ── */
@@ -1093,14 +1220,14 @@ body{
   <!-- ═══════════════ 1. MASTER DECISION (EN ÖNEMLİ) ═══════════════ -->
   <div class="master verd-wait" id="master">
     <div class="master-top">
-      <div class="master-label" id="masterLabel">KARAR · <span id="masterPairLbl">ETH</span> (OTOMATİK)</div>
+      <div class="master-label" id="masterLabel">KARAR · <span id="masterPairLbl">BTC</span> (OTOMATİK)</div>
       <div class="master-pair">
         <button class="pair-btn on" data-pair="AUTO" onclick="Panel.setAutoPair()" title="En yüksek skorlu pariteyi otomatik seç">AUTO</button>
-        <button class="pair-btn" data-pair="ETH" onclick="Panel.selectPair('ETH')">ETH</button>
         <button class="pair-btn" data-pair="BTC" onclick="Panel.selectPair('BTC')">BTC</button>
+        <button class="pair-btn" data-pair="ETH" onclick="Panel.selectPair('ETH')">ETH</button>
         <button class="pair-btn" data-pair="SOL" onclick="Panel.selectPair('SOL')">SOL</button>
-        <button class="pair-btn" data-pair="BNB" onclick="Panel.selectPair('BNB')">BNB</button>
         <button class="pair-btn" data-pair="XRP" onclick="Panel.selectPair('XRP')">XRP</button>
+        <button class="pair-btn" data-pair="BNB" onclick="Panel.selectPair('BNB')">BNB</button>
       </div>
     </div>
     <div class="master-verdict" id="masterVerdict">
@@ -1123,6 +1250,12 @@ body{
         <div class="mb-item"><span>Volatilite</span><span class="v">—</span></div>
         <div class="mb-item"><span>Makro</span><span class="v">—</span></div>
       </div>
+    </div>
+    <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--bd);font-family:var(--mono);font-size:9px;color:var(--t4);letter-spacing:.06em;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;text-align:center">
+      <span>📊 4H · 1H · 15M</span>
+      <span>⟳ 3dk güncelleme</span>
+      <span>⏱ 30dk cooldown</span>
+      <span>🎯 Skor ≥70 · AÇ</span>
     </div>
   </div>
 
@@ -1225,18 +1358,18 @@ body{
         <div class="px-grid">
           <div class="px-card">
             <div class="px-top">
-              <span class="px-sym">ETH / USDT</span>
-              <span class="px-chg p" id="ethChg">--</span>
-            </div>
-            <div class="px-val" id="ethPx">---.--</div>
-            <div class="px-sub">24h · Perpetual</div>
-          </div>
-          <div class="px-card">
-            <div class="px-top">
               <span class="px-sym">BTC / USDT</span>
               <span class="px-chg p" id="btcChg">--</span>
             </div>
             <div class="px-val" id="btcPx">---.--</div>
+            <div class="px-sub">24h · Perpetual</div>
+          </div>
+          <div class="px-card">
+            <div class="px-top">
+              <span class="px-sym">ETH / USDT</span>
+              <span class="px-chg p" id="ethChg">--</span>
+            </div>
+            <div class="px-val" id="ethPx">---.--</div>
             <div class="px-sub">24h · Perpetual</div>
           </div>
         </div>
@@ -1255,7 +1388,7 @@ body{
         <!-- TradingView advanced chart -->
         <div class="tvchart">
           <div class="tvchart-hd">
-            <span><span class="tvchart-sym" id="tvchartSym">ETH</span>/USDT · TradingView</span>
+            <span><span class="tvchart-sym" id="tvchartSym">BTC</span>/USDT · TradingView</span>
             <div class="tvchart-actions">
               <button class="tvchart-btn" onclick="Panel.tvSetTF('15')" id="tvTf15">15M</button>
               <button class="tvchart-btn on" onclick="Panel.tvSetTF('60')" id="tvTf60">1H</button>
@@ -1267,6 +1400,36 @@ body{
           <div class="tvchart-body" id="tvchartBody">
             <div class="tvchart-loading" id="tvchartLoading">TradingView yükleniyor…</div>
             <div id="tvchartWidget"></div>
+          </div>
+        </div>
+
+        <!-- POSITION LIVE TRACKER (only visible when there's an open position) -->
+        <div class="ptrack hide" id="ptrack">
+          <div class="ptrack-hd">
+            <span>CANLI POZİSYON TAKİP</span>
+            <span class="ptrack-side long" id="ptrackSide">LONG</span>
+          </div>
+          <div class="ptrack-grid">
+            <div class="ptrack-cell">
+              <div class="ptrack-cell-l">Giriş</div>
+              <div class="ptrack-cell-v" id="ptrackEntry">—</div>
+            </div>
+            <div class="ptrack-cell">
+              <div class="ptrack-cell-l">Şimdi</div>
+              <div class="ptrack-cell-v" id="ptrackNow">—</div>
+            </div>
+            <div class="ptrack-cell">
+              <div class="ptrack-cell-l">Stop</div>
+              <div class="ptrack-cell-v sl" id="ptrackSL">—</div>
+            </div>
+            <div class="ptrack-cell">
+              <div class="ptrack-cell-l">TP</div>
+              <div class="ptrack-cell-v tp" id="ptrackTP">—</div>
+            </div>
+            <div class="ptrack-cell">
+              <div class="ptrack-cell-l">PnL</div>
+              <div class="ptrack-cell-v" id="ptrackPnL">—</div>
+            </div>
           </div>
         </div>
       </div>
@@ -1357,27 +1520,21 @@ body{
           <div class="pos-empty">Henüz işlem yok</div>
         </div>
 
-        <!-- DISCIPLINE SCOREBOARD (motivation through honesty) -->
+        <!-- DISCIPLINE SCOREBOARD (motivation through honesty — not gamification) -->
         <div class="disc">
           <div class="disc-hd">
-            <span>DİSİPLİN · Bugün</span>
-            <span class="disc-score" id="discScore">— / 100</span>
+            <span>DİSİPLİN · Son 7 Gün</span>
+            <span id="discUpd">—</span>
           </div>
-          <div class="disc-grid">
-            <div class="disc-stat">
-              <div class="disc-stat-v" id="discSignals">0</div>
-              <div class="disc-stat-l">Sinyal<br>Geldi</div>
+          <div class="disc-hero">
+            <div>
+              <div class="disc-hero-val y" id="discHeroVal">—</div>
+              <div class="disc-hero-lbl">Sistem Uyum Oranı</div>
             </div>
-            <div class="disc-stat">
-              <div class="disc-stat-v g" id="discSkipped">0</div>
-              <div class="disc-stat-l">Sisteme<br>Uyum</div>
-            </div>
-            <div class="disc-stat">
-              <div class="disc-stat-v r" id="discOverrides">0</div>
-              <div class="disc-stat-l">Kural<br>İhlali</div>
-            </div>
+            <div class="disc-hero-sub" id="discHeroSub">Veri yok</div>
           </div>
-          <div class="disc-msg" id="discMsg">Sistem bugün seni izliyor.</div>
+          <div class="disc-metrics" id="discMetrics"></div>
+          <div class="disc-tip" id="discTip">Disiplin verileri oluşturuluyor. İlk sinyalden sonra doldurulur.</div>
         </div>
       </div>
     </div>
@@ -1409,7 +1566,7 @@ body{
     <button class="foot-btn" onclick="Panel.exportData()"><span class="ic">📤</span>Yedek Al</button>
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.8 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.9 · 2026</div>
   </div>
 
 </main>
@@ -1504,19 +1661,20 @@ body{
 'use strict';
 
 // ═══════════════ STATE ═══════════════
-const PAIRS = ['ETH', 'BTC', 'SOL', 'BNB', 'XRP'];
+// PAIRS: ordered by OKX futures 24h volume (BTC > ETH > SOL > XRP > BNB)
+const PAIRS = ['BTC', 'ETH', 'SOL', 'XRP', 'BNB'];
 
 const ST = {
-  pair: 'ETH', // auto-selected by scanner
+  pair: 'BTC', // auto-selected by scanner, default BTC (highest volume)
   autoPair: true, // true = scanner picks highest; false = user-locked
-  pairScores: {}, // { ETH: {score, sub, reasons, verdict}, ... }
-  px: { ETH: 0, BTC: 0, SOL: 0, BNB: 0, XRP: 0, ETH_CHG: 0, BTC_CHG: 0, SOL_CHG: 0, BNB_CHG: 0, XRP_CHG: 0 },
+  pairScores: {}, // { BTC: {score, sub, reasons, verdict}, ... }
+  px: { BTC: 0, ETH: 0, SOL: 0, XRP: 0, BNB: 0, BTC_CHG: 0, ETH_CHG: 0, SOL_CHG: 0, XRP_CHG: 0, BNB_CHG: 0 },
   balance: { total: 0, used: 0, free: 0, prev: 0 },
   positions: [],
   score: 0,
   verdict: 'wait',
   subScores: { trend: 0, momentum: 0, vol: 0, macro: 0 },
-  indicators: { ETH: null, BTC: null, SOL: null, BNB: null, XRP: null },
+  indicators: { BTC: null, ETH: null, SOL: null, XRP: null, BNB: null },
   macro: { fg: 50, btcD: 0, usdtD: 0 },
   ws: null,
   wsConnected: false,
@@ -1530,15 +1688,9 @@ const ST = {
   lastSignalFp: '',
   signalCooldownUntil: 0,
   tvInterval: '60', // TradingView default: 1H
-  discipline: {
-    // Daily counters, reset at midnight
-    signalsToday: 0,      // Panel "AÇ" verdiği sayı
-    signalsTaken: 0,      // Açtığın trade sayısı
-    signalsSkipped: 0,    // AÇ dedi ama açmadıklarım (iyi disiplin)
-    overrides: 0,         // AÇMA/BEKLE dediği halde açtıklarım (kötü disiplin)
-    lastSignalAt: 0,
-    lastSignalVerdict: '',
-  },
+  // Discipline log: persistent, used for 7-day adherence score
+  // Each entry: { ts: timestamp, type: 'signal_go'|'signal_no'|'trade_open'|'trade_close', pair, score }
+  disciplineLog: [],
 };
 
 // ═══════════════ UTIL ═══════════════
@@ -1671,6 +1823,17 @@ async function fetchPositions() {
   // Only positions with actual size
   ST.positions = (r.data || []).filter(p => parseFloat(p.pos || 0) !== 0);
   renderPositions();
+  // If there's an active position, force TV chart to follow it
+  if (ST.positions.length > 0) {
+    const posPair = ST.positions[0].instId.split('-')[0]; // "BTC-USDT-SWAP" → "BTC"
+    if (PAIRS.includes(posPair) && ST.pair !== posPair) {
+      // Switch TV chart to the position's pair
+      ST.pair = posPair;
+      ST.autoPair = false; // lock to position while it's open
+      if (ST.pairScores[posPair]) renderMasterCard();
+      loadTVChart();
+    }
+  }
   return true;
 }
 
@@ -1690,6 +1853,7 @@ function renderPositions() {
   $('posCount').textContent = '(' + ST.positions.length + ')';
   if (!ST.positions.length) {
     list.innerHTML = '<div class="pos-empty">Açık pozisyon yok</div>';
+    renderPositionTracker(null);
     return;
   }
   let html = '';
@@ -1722,6 +1886,38 @@ function renderPositions() {
     </div>`;
   });
   list.innerHTML = html;
+  // Also update the live tracker card under TV chart
+  renderPositionTracker(ST.positions[0]);
+}
+
+// Live position tracker — shown under TV chart when position is open
+function renderPositionTracker(pos) {
+  const card = document.getElementById('ptrack');
+  if (!card) return;
+  if (!pos) {
+    card.classList.add('hide');
+    return;
+  }
+  const side = getPosSide(pos);
+  const sideLo = side.toLowerCase();
+  const entry = parseFloat(pos.avgPx || 0);
+  const pair = pos.instId.split('-')[0];
+  const now = ST.px[pair] || entry;
+  const pnl = parseFloat(pos.upl || pos.unrealizedPnl || 0);
+  // SL/TP come from OKX if user set them when opening
+  const sl = parseFloat(pos.slTriggerPx || 0);
+  const tp = parseFloat(pos.tpTriggerPx || 0);
+
+  card.className = 'ptrack ' + sideLo;
+  document.getElementById('ptrackSide').textContent = side;
+  document.getElementById('ptrackSide').className = 'ptrack-side ' + sideLo;
+  document.getElementById('ptrackEntry').textContent = '$' + fmtPx(entry);
+  document.getElementById('ptrackNow').textContent = '$' + fmtPx(now);
+  document.getElementById('ptrackSL').textContent = sl ? '$' + fmtPx(sl) : '—';
+  document.getElementById('ptrackTP').textContent = tp ? '$' + fmtPx(tp) : '—';
+  const pnlEl = document.getElementById('ptrackPnL');
+  pnlEl.textContent = (pnl>=0?'+$':'-$') + fmt(Math.abs(pnl), 2);
+  pnlEl.className = 'ptrack-cell-v ' + (pnl>=0?'p':'n');
 }
 
 // ═══════════════ POSITION SIZER ═══════════════
@@ -2112,6 +2308,202 @@ function checkDisciplineDayRollover() {
   }
 }
 
+// ═══════════════ DISCIPLINE LOG & SCOREBOARD ═══════════════
+// Records panel verdicts and your trade actions. Computes a "system adherence"
+// score over the last 7 days. This is NOT gamification — it's a mirror.
+// The higher the score, the better you're following the system.
+
+const DISC_KEY = 'ug52_disc_log';
+
+function loadDisciplineLog() {
+  ST.disciplineLog = LS.get(DISC_KEY, []);
+  // Prune entries older than 30 days to keep storage small
+  const cutoff = Date.now() - 30 * 86400000;
+  ST.disciplineLog = ST.disciplineLog.filter(e => e.ts >= cutoff);
+  LS.set(DISC_KEY, ST.disciplineLog);
+}
+
+function logDiscipline(type, extra = {}) {
+  const entry = { ts: Date.now(), type, ...extra };
+  ST.disciplineLog.push(entry);
+  // Cap at 500 entries
+  if (ST.disciplineLog.length > 500) ST.disciplineLog = ST.disciplineLog.slice(-500);
+  LS.set(DISC_KEY, ST.disciplineLog);
+}
+
+// Track verdict changes — log when we see a new GO verdict (not continuous, only transitions)
+let _lastLoggedVerdict = null;
+let _lastLoggedVerdictAt = 0;
+function trackVerdictForDiscipline() {
+  const v = ST.verdict;
+  const now = Date.now();
+  // Only log meaningful transitions, max once per 5 min
+  if (v === _lastLoggedVerdict) return;
+  if (now - _lastLoggedVerdictAt < 5 * 60 * 1000) return;
+  _lastLoggedVerdict = v;
+  _lastLoggedVerdictAt = now;
+  if (v === 'go') {
+    logDiscipline('verdict_go', { pair: ST.pair, score: ST.score });
+  } else if (v === 'no' || v === 'lock') {
+    logDiscipline('verdict_no', { pair: ST.pair, score: ST.score });
+  }
+}
+
+// Track trade opens — detected when a new position appears
+let _knownPositionIds = new Set();
+function trackPositionsForDiscipline(positions) {
+  const currentIds = new Set(positions.map(p => p.instId + '_' + (p.cTime || p.uTime || '')));
+  // Find newly-opened positions
+  for (const id of currentIds) {
+    if (!_knownPositionIds.has(id) && _knownPositionIds.size > 0) {
+      // New position opened. Was the panel saying "GO" recently?
+      const last5min = Date.now() - 5 * 60 * 1000;
+      const recentVerdict = ST.disciplineLog
+        .filter(e => e.ts >= last5min && (e.type === 'verdict_go' || e.type === 'verdict_no'))
+        .pop();
+      const wasSystemGo = recentVerdict?.type === 'verdict_go' || ST.verdict === 'go';
+      logDiscipline(wasSystemGo ? 'trade_with_system' : 'trade_against_system', {
+        pair: positions.find(p => (p.instId + '_' + (p.cTime || p.uTime || '')) === id)?.instId,
+      });
+    }
+  }
+  _knownPositionIds = currentIds;
+}
+
+function renderDisciplineScoreboard() {
+  const now = Date.now();
+  const weekAgo = now - 7 * 86400000;
+  const log = ST.disciplineLog.filter(e => e.ts >= weekAgo);
+
+  const goVerdicts = log.filter(e => e.type === 'verdict_go').length;
+  const tradesWithSystem = log.filter(e => e.type === 'trade_with_system').length;
+  const tradesAgainstSystem = log.filter(e => e.type === 'trade_against_system').length;
+  const totalTrades = tradesWithSystem + tradesAgainstSystem;
+
+  // Adherence score calculation
+  // 1. If no signals and no trades: null (no data)
+  // 2. If trades exist: % that aligned with system
+  // 3. Bonus: if signals came but you didn't overtrade (patience)
+  let adherenceScore = null;
+  let adherenceLbl = '';
+  let adherenceCls = '';
+  let subTxt = '';
+
+  if (totalTrades === 0 && goVerdicts === 0) {
+    adherenceLbl = 'VERİ YOK';
+    subTxt = 'Sistem henüz seni tanımıyor';
+    adherenceCls = 'muted';
+  } else if (totalTrades === 0) {
+    // Signals came but no trades. Perfect patience.
+    adherenceScore = 100;
+    adherenceLbl = 'SABIR';
+    subTxt = `${goVerdicts} sinyalde açmadın — kötü değil`;
+    adherenceCls = 'g';
+  } else {
+    const pct = Math.round((tradesWithSystem / totalTrades) * 100);
+    adherenceScore = pct;
+    adherenceLbl = `${pct}%`;
+    subTxt = `${tradesWithSystem} sistemle · ${tradesAgainstSystem} kuralı delen`;
+    adherenceCls = pct >= 80 ? 'g' : pct >= 50 ? 'y' : 'r';
+  }
+
+  const heroVal = document.getElementById('discHeroVal');
+  const heroSub = document.getElementById('discHeroSub');
+  const upd = document.getElementById('discUpd');
+  if (heroVal) {
+    heroVal.textContent = adherenceLbl;
+    heroVal.className = 'disc-hero-val ' + adherenceCls;
+  }
+  if (heroSub) heroSub.textContent = subTxt;
+  if (upd) upd.textContent = 'son 7 gün';
+
+  // Metrics list
+  const metrics = document.getElementById('discMetrics');
+  if (metrics) {
+    // Additional calculations
+    const allTrades = ST.trades.filter(t => new Date(t.date).getTime() >= weekAgo);
+    const wins = allTrades.filter(t => t.pnl > 0).length;
+    const wr = allTrades.length ? Math.round((wins/allTrades.length)*100) : null;
+
+    // Daily limits compliance
+    let daysOvertraded = 0;
+    let daysWithinLimit = 0;
+    const tradesByDay = {};
+    allTrades.forEach(t => {
+      tradesByDay[t.date] = (tradesByDay[t.date] || 0) + 1;
+    });
+    Object.values(tradesByDay).forEach(count => {
+      if (count > 2) daysOvertraded++;
+      else daysWithinLimit++;
+    });
+
+    // Max losing streak
+    let maxStreak = 0, curStreak = 0;
+    for (const t of allTrades) {
+      if (t.pnl < 0) { curStreak++; maxStreak = Math.max(maxStreak, curStreak); }
+      else curStreak = 0;
+    }
+
+    const items = [
+      {
+        lbl: '🎯 <b>Sisteme uyum:</b> sistem "AÇ" derken aldığın trade oranı',
+        val: totalTrades ? `${tradesWithSystem}/${totalTrades}` : '—',
+        cls: totalTrades === 0 ? 'muted' : tradesWithSystem === totalTrades ? 'g' : tradesAgainstSystem > 0 ? 'r' : 'g',
+      },
+      {
+        lbl: '🧘 <b>Sabır:</b> sinyal gelip ama açmadığın zamanlar',
+        val: goVerdicts > 0 ? `${goVerdicts - tradesWithSystem}/${goVerdicts}` : '—',
+        cls: goVerdicts === 0 ? 'muted' : 'g',
+      },
+      {
+        lbl: '📅 <b>Günlük limit:</b> 2 trade/gün kuralına uyduğun günler',
+        val: daysWithinLimit + daysOvertraded > 0 ? `${daysWithinLimit}/${daysWithinLimit + daysOvertraded}` : '—',
+        cls: daysOvertraded === 0 ? 'g' : daysOvertraded > daysWithinLimit ? 'r' : 'y',
+      },
+      {
+        lbl: '🔥 <b>En uzun kayıp serisi:</b> kuralı bozmadan atlatıldı mı?',
+        val: allTrades.length ? `${maxStreak}` : '—',
+        cls: maxStreak >= 3 ? 'r' : maxStreak >= 2 ? 'y' : 'g',
+      },
+      {
+        lbl: '🏆 <b>Kazanma oranı:</b> son 7 gün',
+        val: wr !== null ? `${wr}%` : '—',
+        cls: wr === null ? 'muted' : wr >= 50 ? 'g' : 'r',
+      },
+    ];
+    metrics.innerHTML = items.map(it => `
+      <div class="disc-m">
+        <div class="disc-m-l">${it.lbl}</div>
+        <div class="disc-m-v ${it.cls}">${it.val}</div>
+      </div>
+    `).join('');
+  }
+
+  // Contextual tip (mirror, not cheer)
+  const tip = document.getElementById('discTip');
+  if (tip) {
+    let msg, cls;
+    if (totalTrades === 0 && goVerdicts === 0) {
+      msg = 'Panel sessiz. Piyasayı tanıdıkça gerçek veriler gelecek. Sabırlı ol.';
+      cls = '';
+    } else if (tradesAgainstSystem > 0 && tradesAgainstSystem > tradesWithSystem) {
+      msg = `⚠️ Son 7 günde ${tradesAgainstSystem} trade sistemin kuralına ters açıldı. Panel "AÇMA" derken açmak = kendi algıladığın ile sistemin gördüğü arasında uyumsuzluk var. Hangi tarafın daha çok kazandığını rakamlar gösterecek.`;
+      cls = 'warn';
+    } else if (tradesAgainstSystem === 0 && totalTrades > 0) {
+      msg = `Sistem "AÇ" dediği ${tradesWithSystem} seferin hepsinde sen de açtın. Disiplin işliyor. Bunu korumak zor olan kısım.`;
+      cls = 'good';
+    } else if (totalTrades === 0 && goVerdicts > 2) {
+      msg = `Sistem ${goVerdicts} kere "AÇ" dedi, sen hiç açmadın. Aşırı sabır mı, yoksa başka bir sorun mu? Bir sonraki sinyalde kurulumu değerlendir.`;
+      cls = '';
+    } else {
+      msg = 'Veri birikiyor. Gerçek resim birkaç hafta sonra net olur.';
+      cls = '';
+    }
+    tip.className = 'disc-tip ' + cls;
+    tip.textContent = msg;
+  }
+}
+
 // ═══════════════ TRADINGVIEW CHART ═══════════════
 // Uses TradingView's embed widget (tv.js). No API key needed.
 // OKX pair format: "ETH" → TradingView symbol: "OKX:ETHUSDT.P" (perpetual)
@@ -2126,17 +2518,18 @@ function loadTVChart() {
 
   // Wait for TradingView library to be available
   if (typeof TradingView === 'undefined') {
-    // Library not loaded yet — retry in a moment
     setTimeout(loadTVChart, 400);
     return;
   }
 
-  // Clear previous widget completely (destroy iframe) before creating new one
   const container = document.getElementById('tvchartWidget');
   const loading = document.getElementById('tvchartLoading');
   if (!container) return;
   container.innerHTML = '';
-  if (loading) loading.style.display = 'flex';
+  if (loading) {
+    loading.style.display = 'flex';
+    loading.textContent = 'TradingView · ' + pair + '/USDT yükleniyor…';
+  }
 
   try {
     ST._tvWidget = new TradingView.widget({
@@ -2157,7 +2550,7 @@ function loadTVChart() {
       hide_top_toolbar: false,
       hide_legend: false,
       save_image: false,
-      studies: ['STD;EMA%1', 'STD;RSI', 'BB@tv-basicstudies'],
+      studies: ['STD;EMA', 'STD;RSI', 'BB@tv-basicstudies'],
       backgroundColor: '#141414',
       gridColor: '#2A2A2A',
       withdateranges: false,
@@ -2165,12 +2558,24 @@ function loadTVChart() {
       hotlist: false,
       calendar: false,
     });
-    // Hide loading overlay after a short delay (TV widget doesn't fire a ready event in embed mode)
+    // Watch for the iframe to appear, then hide loading
+    const checkIframe = setInterval(() => {
+      const iframe = container.querySelector('iframe');
+      if (iframe) {
+        clearInterval(checkIframe);
+        // Give iframe a moment to actually render content
+        setTimeout(() => {
+          if (loading) loading.style.display = 'none';
+        }, 800);
+      }
+    }, 100);
+    // Fallback: hide loading after 6 seconds no matter what
     setTimeout(() => {
       if (loading) loading.style.display = 'none';
-    }, 1500);
+      clearInterval(checkIframe);
+    }, 6000);
   } catch (e) {
-    if (loading) loading.innerHTML = '⚠️ Grafik yüklenemedi';
+    if (loading) loading.textContent = '⚠️ Grafik yüklenemedi';
     console.error('TV chart error:', e);
   }
 }
@@ -2280,6 +2685,14 @@ function updatePriceDisplay(sym, last, chg, prev) {
   }
   // Update scanner row inline (without full re-render)
   updateScannerRow(sym, last, chg);
+  // Update live position tracker if this is the position's pair
+  if (ST.positions.length > 0) {
+    const posPair = ST.positions[0].instId.split('-')[0];
+    if (posPair === sym) {
+      const nowEl = document.getElementById('ptrackNow');
+      if (nowEl) nowEl.textContent = '$' + fmtPx(last);
+    }
+  }
   // Note: TradingView widget handles its own real-time feed, no manual update needed
 }
 
@@ -2588,8 +3001,9 @@ function renderMasterCard() {
   // Render position sizer
   renderPositionSizer();
 
-  // Track discipline: signal shown
-  trackSignalShown(ST.verdict);
+  // Discipline tracking
+  trackVerdictForDiscipline();
+  renderDisciplineScoreboard();
 }
 
 function renderScanner(sortedResults) {
@@ -2600,16 +3014,21 @@ function renderScanner(sortedResults) {
     body.innerHTML = '<div class="scan-loading">Taranıyor…</div>';
     return;
   }
+  // Find top-scoring pair for highlight
+  const topPair = sortedResults[0]?.pair;
+  // Display in volume order (PAIRS), not score order — score shown via color only
   let html = '';
-  sortedResults.forEach((r, i) => {
-    const px = ST.px[r.pair] || r.px || 0;
-    const chg = ST.px[r.pair+'_CHG'] || 0;
+  PAIRS.forEach(pair => {
+    const r = ST.pairScores[pair];
+    if (!r) return;
+    const px = ST.px[pair] || r.px || 0;
+    const chg = ST.px[pair+'_CHG'] || 0;
     const scCls = r.score >= 70 ? 'g' : r.score >= 50 ? 'y' : 'r';
     const vCls = r.verdict === 'go' ? 'go' : r.verdict === 'wait' ? 'wait' : 'no';
     const vTxt = r.verdict === 'go' ? 'AÇ' : r.verdict === 'wait' ? 'BEKLE' : r.verdict === 'nodata' ? '—' : 'AÇMA';
-    const topCls = i === 0 ? 'top' : '';
-    html += `<div class="scan-row ${topCls}" onclick="Panel.selectPair('${r.pair}')">
-      <div class="scan-pair">${r.pair}</div>
+    const topCls = pair === topPair && r.score > 0 ? 'top' : '';
+    html += `<div class="scan-row ${topCls}" onclick="Panel.selectPair('${pair}')">
+      <div class="scan-pair">${pair}</div>
       <div class="scan-px">${fmtPx(px)}</div>
       <div class="scan-chg ${chg>=0?'p':'n'}">${fmtChg(chg)}</div>
       <div class="scan-verd ${vCls}">${vTxt}</div>
@@ -3016,7 +3435,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.8 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.9 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
