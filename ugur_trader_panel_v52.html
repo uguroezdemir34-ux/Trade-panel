@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.11</title>
+<title>Uğur — Trader Panel v52.12</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1597,7 +1597,7 @@ body{
     <button class="foot-btn" onclick="Panel.exportData()"><span class="ic">📤</span>Yedek Al</button>
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.11 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.12 · 2026</div>
   </div>
 
 </main>
@@ -2549,20 +2549,27 @@ function loadTVChart() {
   if (sym) sym.textContent = pair;
   if (selEl) selEl.textContent = pair;
 
-  // Wait for TradingView library to be available
-  if (typeof TradingView === 'undefined') {
-    setTimeout(loadTVChart, 400);
-    return;
-  }
-
   const container = document.getElementById('tvchartWidget');
   const loading = document.getElementById('tvchartLoading');
   if (!container) return;
   container.innerHTML = '';
   if (loading) {
     loading.style.display = 'flex';
-    loading.textContent = 'TradingView · ' + pair + '/USDT yükleniyor…';
+    loading.textContent = 'Grafik yükleniyor · ' + pair + '/USDT';
   }
+
+  // Wait for TradingView library, max 4 seconds then fallback to iframe
+  if (typeof TradingView === 'undefined') {
+    if (!ST._tvWaitStart) ST._tvWaitStart = Date.now();
+    if (Date.now() - ST._tvWaitStart < 4000) {
+      setTimeout(loadTVChart, 300);
+      return;
+    }
+    // tv.js didn't load (ad blocker, network, mobile limits) — use direct iframe fallback
+    loadTVChartIframeFallback(pair);
+    return;
+  }
+  ST._tvWaitStart = 0;
 
   try {
     ST._tvWidget = new TradingView.widget({
@@ -2592,24 +2599,38 @@ function loadTVChart() {
       calendar: false,
     });
     // Watch for the iframe to appear, then hide loading
+    let attempts = 0;
     const checkIframe = setInterval(() => {
+      attempts++;
       const iframe = container.querySelector('iframe');
       if (iframe) {
         clearInterval(checkIframe);
-        // Give iframe a moment to actually render content
         setTimeout(() => {
           if (loading) loading.style.display = 'none';
-        }, 800);
+        }, 600);
+      } else if (attempts > 50) {
+        // 10 seconds passed, no iframe → fallback
+        clearInterval(checkIframe);
+        loadTVChartIframeFallback(pair);
       }
-    }, 100);
-    // Fallback: hide loading after 6 seconds no matter what
-    setTimeout(() => {
-      if (loading) loading.style.display = 'none';
-      clearInterval(checkIframe);
-    }, 6000);
+    }, 200);
   } catch (e) {
-    if (loading) loading.textContent = '⚠️ Grafik yüklenemedi';
     console.error('TV chart error:', e);
+    loadTVChartIframeFallback(pair);
+  }
+}
+
+// Fallback: direct iframe embedding for cases where tv.js fails
+function loadTVChartIframeFallback(pair) {
+  const container = document.getElementById('tvchartWidget');
+  const loading = document.getElementById('tvchartLoading');
+  if (!container) return;
+  const tvSymbol = encodeURIComponent('OKX:' + pair + 'USDT.P');
+  const interval = ST.tvInterval || '60';
+  const iframeSrc = `https://www.tradingview.com/widgetembed/?symbol=${tvSymbol}&interval=${interval}&theme=dark&style=1&locale=tr&timezone=Europe%2FIstanbul&withdateranges=0&hideideas=1&studies=%5B%5D`;
+  container.innerHTML = `<iframe src="${iframeSrc}" style="width:100%;height:100%;border:0;display:block" frameborder="0" allowfullscreen></iframe>`;
+  if (loading) {
+    setTimeout(() => { loading.style.display = 'none'; }, 1200);
   }
 }
 
@@ -3479,7 +3500,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.11 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.12 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
