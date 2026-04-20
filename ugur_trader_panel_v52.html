@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.13</title>
+<title>Uğur — Trader Panel v52.14</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1611,7 +1611,7 @@ body{
     <button class="foot-btn" onclick="Panel.exportData()"><span class="ic">📤</span>Yedek Al</button>
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.13 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.14 · 2026</div>
   </div>
 
 </main>
@@ -2610,26 +2610,49 @@ function loadTVChartIframeFallback(pair) {
 
 // ═══════════════ INITIAL PRICE SNAPSHOT (before WS connects) ═══════════════
 async function fetchInitialPrices() {
-  try {
-    const r = await fetch('https://www.okx.com/api/v5/market/tickers?instType=SWAP');
-    const d = await r.json();
-    if (d.code !== '0') return false;
-    const wantedIds = PAIRS.map(p => p + '-USDT-SWAP');
-    let found = 0;
-    for (const t of d.data) {
-      if (wantedIds.includes(t.instId)) {
-        const sym = t.instId.split('-')[0];
-        const last = parseFloat(t.last);
-        const open24 = parseFloat(t.open24h || last);
-        const chg = open24 > 0 ? ((last - open24) / open24) * 100 : 0;
-        ST.px[sym] = last;
-        ST.px[sym+'_CHG'] = chg;
-        updatePriceDisplay(sym, last, chg, 0);
-        found++;
+  // Try main OKX endpoint first with timeout
+  const endpoints = [
+    'https://www.okx.com/api/v5/market/tickers?instType=SWAP',
+    'https://aws.okx.com/api/v5/market/tickers?instType=SWAP', // AWS mirror
+  ];
+  for (const url of endpoints) {
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 5000);
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(tid);
+      const d = await r.json();
+      if (d.code !== '0') continue;
+      const wantedIds = PAIRS.map(p => p + '-USDT-SWAP');
+      let found = 0;
+      for (const t of d.data) {
+        if (wantedIds.includes(t.instId)) {
+          const sym = t.instId.split('-')[0];
+          const last = parseFloat(t.last);
+          const open24 = parseFloat(t.open24h || last);
+          const chg = open24 > 0 ? ((last - open24) / open24) * 100 : 0;
+          ST.px[sym] = last;
+          ST.px[sym+'_CHG'] = chg;
+          updatePriceDisplay(sym, last, chg, 0);
+          found++;
+        }
       }
+      if (found === PAIRS.length) return true;
+    } catch (e) {
+      console.warn('Price fetch failed:', url, e.message);
     }
-    return found === PAIRS.length;
-  } catch { return false; }
+  }
+  return false;
+}
+
+// Aggressive retry — try up to 5 times with increasing delays
+async function fetchInitialPricesWithRetry() {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const ok = await fetchInitialPrices();
+    if (ok) return true;
+    await new Promise(r => setTimeout(r, 1500 * (attempt + 1)));
+  }
+  return false;
 }
 
 // ═══════════════ WEBSOCKET (OKX public) ═══════════════
@@ -2752,24 +2775,32 @@ async function getKlines(pair, interval, limit=100) {
   const barMap = { '4h':'4H', '1h':'1H', '15m':'15m', '1d':'1D' };
   const bar = barMap[interval] || '1H';
   const instId = pair + '-USDT-SWAP';
-  try {
-    const r = await fetch(`https://www.okx.com/api/v5/market/candles?instId=${instId}&bar=${bar}&limit=${limit}`);
-    const data = await r.json();
-    if (data.code !== '0' || !Array.isArray(data.data)) return [];
-    // OKX format: [ts, o, h, l, c, vol, volCcy, volCcyQuote, confirm]
-    // Returned in reverse chronological order — reverse to oldest first
-    return data.data.slice().reverse().map(k => ({
-      t: parseInt(k[0]),
-      o: parseFloat(k[1]),
-      h: parseFloat(k[2]),
-      l: parseFloat(k[3]),
-      c: parseFloat(k[4]),
-      v: parseFloat(k[5])
-    }));
-  } catch (e) {
-    console.warn('getKlines failed:', pair, interval, e.message);
-    return [];
+  const endpoints = [
+    `https://www.okx.com/api/v5/market/candles?instId=${instId}&bar=${bar}&limit=${limit}`,
+    `https://aws.okx.com/api/v5/market/candles?instId=${instId}&bar=${bar}&limit=${limit}`,
+  ];
+  for (const url of endpoints) {
+    try {
+      const ctrl = new AbortController();
+      const tid = setTimeout(() => ctrl.abort(), 6000);
+      const r = await fetch(url, { signal: ctrl.signal });
+      clearTimeout(tid);
+      const data = await r.json();
+      if (data.code !== '0' || !Array.isArray(data.data)) continue;
+      // OKX format: [ts, o, h, l, c, vol, volCcy, volCcyQuote, confirm]
+      return data.data.slice().reverse().map(k => ({
+        t: parseInt(k[0]),
+        o: parseFloat(k[1]),
+        h: parseFloat(k[2]),
+        l: parseFloat(k[3]),
+        c: parseFloat(k[4]),
+        v: parseFloat(k[5])
+      }));
+    } catch (e) {
+      console.warn('getKlines failed:', pair, interval, url, e.message);
+    }
   }
+  return [];
 }
 
 // ═══════════════ INDICATORS (silent background) ═══════════════
@@ -2846,8 +2877,8 @@ async function fetchBtcDom() {
 async function computeScoreForPair(pair) {
   // Fetch multi-timeframe klines from OKX in parallel
   const [k4h, k1h, k15m] = await Promise.all([
-    getKlines(pair, '4h', 60),
-    getKlines(pair, '1h', 100),
+    getKlines(pair, '4h', 100),
+    getKlines(pair, '1h', 250),
     getKlines(pair, '15m', 100)
   ]);
   if (!k1h.length || !k4h.length) {
@@ -2883,6 +2914,16 @@ async function computeScoreForPair(pair) {
     else if (!aboveE50 && !aboveE200 && !e50AboveE200) { trendS = 0; reasons.trend = 'Güçlü Düşüş'; }
     else if (!aboveE50 && !aboveE200) { trendS = 5; reasons.trend = 'Düşüş'; }
     else { trendS = 12; reasons.trend = 'Kararsız'; }
+  } else if (ema50 && px) {
+    // Fallback: insufficient data for EMA200, use EMA50 only
+    const aboveE50 = px > ema50;
+    // Check short-term trend slope via first/last EMA comparison
+    const ema50Prev = EMA(closes1h.slice(0, -5), 50);
+    const trending = ema50Prev ? (ema50 > ema50Prev) : aboveE50;
+    if (aboveE50 && trending) { trendS = 22; reasons.trend = 'Yükseliş'; }
+    else if (aboveE50) { trendS = 15; reasons.trend = 'Yatay+'; }
+    else if (!aboveE50 && !trending) { trendS = 3; reasons.trend = 'Düşüş'; }
+    else { trendS = 10; reasons.trend = 'Yatay−'; }
   }
 
   // MOMENTUM (25 pts)
@@ -2938,9 +2979,14 @@ async function computeAllScores() {
   // Save all results
   results.forEach(r => {
     ST.pairScores[r.pair] = r;
-    // Sync price into ST.px so scanner always has data even before WS arrives
-    if (r.px && !ST.px[r.pair]) {
+    // Sync price into ST.px and update UI if WS hasn't arrived yet
+    if (r.px) {
+      const hadPrice = ST.px[r.pair] > 0;
       ST.px[r.pair] = r.px;
+      if (!hadPrice) {
+        // First time we have this price — push to UI so BTC/ETH cards fill
+        updatePriceDisplay(r.pair, r.px, ST.px[r.pair+'_CHG'] || 0, 0);
+      }
     }
   });
 
@@ -3474,7 +3520,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.13 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.14 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
@@ -3549,12 +3595,12 @@ async function init() {
 
   // Start websocket
   initWS();
-  // Fetch initial prices immediately (WS takes 1-3s), await so scanner has data
-  const pricesOk = await fetchInitialPrices();
-  // If prices didn't all come through, retry once after a short delay
-  if (!pricesOk) {
-    setTimeout(() => fetchInitialPrices(), 2000);
-  }
+  // Fetch initial prices with aggressive retry (critical for mobile where OKX REST can be slow)
+  fetchInitialPricesWithRetry();
+  // Also refresh periodically as insurance (in case WS drops silently)
+  setInterval(() => {
+    if (!ST.wsConnected) fetchInitialPrices();
+  }, 30000);
 
   // Initial data fetch
   await Promise.all([fetchFG(), fetchBtcDom()]);
