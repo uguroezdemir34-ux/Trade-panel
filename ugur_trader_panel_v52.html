@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.23</title>
+<title>Uğur — Trader Panel v52.24</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1406,7 +1406,7 @@ body{
   .dt-grid{gap:12px}
 }
 /* ═══════════════════════════════════════════════════════════════════
-   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.23)
+   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.24)
    Philosophy: dense information, sharp corners, minimum decoration,
    monospace everywhere, professional terminal feel.
    ═══════════════════════════════════════════════════════════════════ */
@@ -1658,7 +1658,7 @@ body{
     <div class="tb-sub">v52 · ISTANBUL</div>
   </div>
   <div class="tb-right">
-    <div id="tbDbg" class="tb-pill" style="font-size:9px" title="Son veri alımı">—</div>
+    <div id="tbDbg" class="tb-pill" style="font-size:9px" title="WS tick sayısı">—</div>
     <div id="tbClock" class="tb-pill">--:--</div>
     <div id="tbWs" class="tb-pill off">WS</div>
     <button class="tb-btn" onclick="Panel.refresh()" title="Yenile">↻</button>
@@ -2020,7 +2020,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.23 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.24 · 2026</div>
   </div>
 
 </main>
@@ -3202,15 +3202,8 @@ function initWS() {
           const prev = ST.px[sym];
           ST.px[sym] = last;
           ST.px[sym+'_CHG'] = chg;
-          // Visible debug pill in topbar (so user doesn't need F12)
-          const dbg = document.getElementById('tbDbg');
-          if (dbg) {
-            const now = new Date();
-            const hhmmss = now.toTimeString().slice(0,8);
-            dbg.textContent = sym + ' ' + hhmmss;
-            dbg.className = 'tb-pill live';
-          }
-          // Console trace (first few ticks)
+          // Track tick stats for clock diagnostic
+          ST._wsLastTickTime = Date.now();
           if (!ST._wsTickCount) ST._wsTickCount = {};
           ST._wsTickCount[sym] = (ST._wsTickCount[sym] || 0) + 1;
           if (ST._wsTickCount[sym] <= 3) {
@@ -4226,7 +4219,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.23 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.24 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
@@ -4275,6 +4268,26 @@ function updateTgStatus() {
 function updateClock() {
   const d = new Date();
   $('tbClock').textContent = d.toLocaleTimeString('tr',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  // Live WS diagnostic — show total WS tick count so user can see if data is flowing
+  const dbg = document.getElementById('tbDbg');
+  if (dbg) {
+    const totalTicks = Object.values(ST._wsTickCount || {}).reduce((a,b)=>a+b, 0);
+    const lastSec = ST._wsLastTickTime ? Math.floor((Date.now() - ST._wsLastTickTime)/1000) : 999;
+    if (totalTicks === 0) {
+      dbg.textContent = 'WS: 0 tick';
+      dbg.style.color = 'var(--red)';
+      dbg.style.borderColor = 'var(--red)';
+    } else if (lastSec > 10) {
+      // No WS data for 10+ seconds → WS is stuck even if "connected"
+      dbg.textContent = 'WS dondu ' + lastSec + 's';
+      dbg.style.color = 'var(--amber)';
+      dbg.style.borderColor = 'var(--amber)';
+    } else {
+      dbg.textContent = 'WS ' + totalTicks + ' · ' + lastSec + 's';
+      dbg.style.color = 'var(--green)';
+      dbg.style.borderColor = 'var(--green)';
+    }
+  }
 }
 
 // ═══════════════ INIT ═══════════════
