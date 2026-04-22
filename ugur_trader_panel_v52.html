@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.21</title>
+<title>Uğur — Trader Panel v52.22</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1405,6 +1405,248 @@ body{
   .bal-big{font-size:26px}
   .dt-grid{gap:12px}
 }
+/* ═══════════════════════════════════════════════════════════════════
+   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.22)
+   Philosophy: dense information, sharp corners, minimum decoration,
+   monospace everywhere, professional terminal feel.
+   ═══════════════════════════════════════════════════════════════════ */
+@media (min-width:1024px){
+  body{
+    font-family:var(--mono);
+    font-size:11px;
+    line-height:1.35;
+    background:#050505;
+    background-image:linear-gradient(rgba(255,255,255,.012) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.012) 1px, transparent 1px);
+    background-size:40px 40px;
+  }
+
+  /* KILL rounded corners everywhere — terminal has sharp edges */
+  .app, .card, .master, .sizer, .pos-okx, .pos, .px-card, .bal-stat,
+  .scanner, .scan-row, .ptrack, .tb-pill, .tb-btn, .sec, .modal-bd,
+  .tv-wrap, .pos-okx-px, .pos-okx-sltp-cell, .mb-item, .sizer-price,
+  .sizer-main-item, .bal-main, .bal-sub{
+    border-radius:0 !important;
+  }
+
+  /* Tighter app padding */
+  .app{padding:8px 10px 14px;max-width:100%}
+
+  /* ─── TOPBAR: tighter, more Bloomberg ─── */
+  .topbar{
+    padding:4px 10px;border-bottom:1px solid var(--orange);
+    background:linear-gradient(180deg, #0a0a0a 0%, #050505 100%);
+  }
+  .tb-brand{gap:10px}
+  .tb-logo{font-size:12px;letter-spacing:.1em;color:var(--orange)}
+  .tb-sub{font-size:9px;opacity:.6}
+  .tb-pill{
+    font-size:9px;padding:3px 7px;letter-spacing:.05em;
+    border:1px solid var(--bd);background:#0a0a0a;
+  }
+  .tb-pill.live{border-color:var(--green);color:var(--green);background:rgba(34,197,94,.08)}
+  .tb-pill.off{border-color:var(--red);color:var(--red)}
+  .tb-btn{
+    font-size:12px;padding:3px 8px;border:1px solid var(--bd);
+    background:#0a0a0a;color:var(--orange);
+  }
+  .tb-btn:hover{background:var(--orange);color:#000}
+
+  /* ─── SECTION HEADERS: Bloomberg style with orange accent ─── */
+  .sec-hd{
+    font-size:9px;
+    color:var(--orange);
+    letter-spacing:.15em;
+    text-transform:uppercase;
+    padding:3px 0 3px 0;
+    margin:0 0 2px 0;
+    border-bottom:1px solid #222;
+    display:flex;align-items:center;gap:6px;
+    font-family:var(--mono);
+    font-weight:700;
+  }
+  .sec-num{
+    background:var(--orange);color:#000;
+    padding:1px 4px;font-size:8px;font-weight:900;
+    letter-spacing:0;
+  }
+
+  /* ─── CARDS: no bg color, just thin borders ─── */
+  .card{
+    background:#0a0a0a;
+    border:1px solid var(--bd);
+    margin:0;
+  }
+  .card-hd{
+    background:linear-gradient(180deg, #111 0%, #0a0a0a 100%);
+    padding:4px 8px;
+    font-size:9px;
+    color:var(--t2);
+    border-bottom:1px solid var(--bd);
+    letter-spacing:.1em;
+    text-transform:uppercase;
+  }
+  .card-hd .tag{
+    font-size:8px;padding:1px 5px;border-radius:0;
+    border:1px solid var(--bd);background:#0a0a0a;color:var(--orange);
+  }
+  .card-bd{padding:7px 9px}
+
+  /* ─── MASTER DECISION: ultra compact horizontal strip ─── */
+  .master{
+    background:linear-gradient(180deg,#0d0d0d,#080808);
+    border:1px solid var(--orange);
+    padding:5px 10px !important;
+    margin:4px 0 0 !important;
+    display:grid !important;
+    grid-template-columns:auto 1fr auto auto !important;
+    gap:14px !important;
+    align-items:center !important;
+  }
+  .master.verd-go{border-color:var(--green)}
+  .master.verd-no{border-color:var(--red)}
+  .master.verd-lock{border-color:var(--red)}
+  .master-top{margin:0 !important}
+  .master-label{font-size:8px;color:var(--t3);letter-spacing:.1em}
+  .master-verdict{font-size:13px !important;margin:0 !important;letter-spacing:.05em}
+  .master-verdict .icon{font-size:12px !important}
+  .master-sub{font-size:9px !important;color:var(--t2);opacity:1}
+  .master-score-row{
+    margin:0 !important;padding:0 !important;border:0 !important;
+    display:flex !important;align-items:center !important;gap:8px !important;
+  }
+  .master-score-ring{width:26px !important;height:26px !important}
+  .master-score-num{font-size:9px !important}
+  .master-breakdown{display:none !important}
+  .pair-btn{padding:2px 7px;font-size:9px;border-radius:0;font-family:var(--mono)}
+  .master + div[style*="border-top"]{display:none !important}
+
+  /* ─── SIZER: ultra compact ─── */
+  .sizer{
+    background:#0a0a0a;border:1px solid var(--bd);
+    padding:5px 10px !important;margin:3px 0 0 !important;
+  }
+  .sizer-hd{font-size:8px !important;color:var(--orange);margin-bottom:3px !important}
+  .sizer-price{padding:3px 5px !important;border-radius:0}
+  .sizer-price-v{font-size:10px !important}
+  .sizer-price-l{font-size:7px !important;color:var(--t3)}
+  .sizer-main-v{font-size:10px !important}
+  .sizer-main-l{font-size:7px !important}
+
+  /* ─── BALANCE: Bloomberg ticker style ─── */
+  .bal-main{
+    border-bottom:1px solid var(--bd);padding-bottom:5px;margin-bottom:5px;
+    display:flex;align-items:baseline;justify-content:space-between;
+  }
+  .bal-big{
+    font-size:20px !important;font-weight:700;letter-spacing:-.02em;
+    color:var(--orange);font-family:var(--mono);
+  }
+  .bal-big .cur{font-size:13px;opacity:.7;margin-right:2px}
+  .bal-chg{font-size:10px;padding:1px 5px;border:1px solid}
+  .bal-chg.p{color:var(--green);border-color:var(--green);background:var(--gbg)}
+  .bal-chg.n{color:var(--red);border-color:var(--red);background:var(--rbg)}
+  .bal-sub{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1px;background:var(--bd)}
+  .bal-stat{background:#0a0a0a;padding:4px 6px;text-align:left}
+  .bal-stat-l{font-size:7px;color:var(--t3);letter-spacing:.1em}
+  .bal-stat-v{font-size:10px;color:var(--t1);font-weight:700;margin-top:1px}
+
+  /* ─── LIVE PRICE CARDS: terminal ticker ─── */
+  .px-grid{grid-template-columns:1fr 1fr;gap:1px;background:var(--bd)}
+  .px-card{
+    padding:6px 8px !important;background:#0a0a0a;
+  }
+  .px-card::after{display:none}
+  .px-sym{font-size:9px;color:var(--t3);letter-spacing:.1em}
+  .px-val{
+    font-size:16px !important;color:var(--t1);
+    font-weight:700;letter-spacing:-.02em;
+  }
+  .px-chg{font-size:10px;padding:1px 5px;border:1px solid}
+  .px-chg.p{color:var(--green);border-color:var(--green);background:var(--gbg)}
+  .px-chg.n{color:var(--red);border-color:var(--red);background:var(--rbg)}
+  .px-sub{font-size:8px;color:var(--t3);margin-top:2px}
+
+  /* ─── SCANNER: tight terminal table ─── */
+  .scanner{
+    background:#0a0a0a;border:1px solid var(--bd);margin-top:6px;
+  }
+  .scanner-hd{
+    padding:3px 8px;font-size:8px;background:#111;
+    border-bottom:1px solid var(--bd);color:var(--orange);
+    letter-spacing:.15em;
+  }
+  .scanner-upd{font-size:8px;color:var(--t3);letter-spacing:.05em}
+  .scan-row{
+    padding:3px 8px !important;border-bottom:1px solid #1a1a1a;
+    display:grid !important;grid-template-columns:50px 1fr 60px 45px !important;
+    gap:6px;align-items:center;font-size:10px;
+  }
+  .scan-row:last-child{border-bottom:0}
+  .scan-row:hover{background:rgba(255,107,26,.05)}
+  .scan-sym{font-weight:700;color:var(--orange);font-size:10px}
+  .scan-px{font-size:10px;color:var(--t1);text-align:right}
+  .scan-chg{font-size:9px;text-align:right;font-weight:700}
+  .scan-chg.p{color:var(--green)}
+  .scan-chg.n{color:var(--red)}
+  .scan-score{
+    font-size:9px;padding:1px 4px;text-align:center;
+    border:1px solid;font-weight:700;
+  }
+
+  /* ─── POSITION CARD: denser ─── */
+  .pos-okx{
+    padding:8px 10px !important;margin-bottom:5px !important;
+    background:#0a0a0a;border:1px solid var(--bd);
+  }
+  .pos-okx.long{border-left:3px solid var(--green)}
+  .pos-okx.short{border-left:3px solid var(--red)}
+  .pos-okx::before{display:none}
+  .pos-okx-hd{padding-bottom:6px;margin-bottom:6px}
+  .pos-okx-pair{font-size:12px}
+  .pos-okx-side{font-size:8px;padding:1px 5px}
+  .pos-okx-lev{font-size:8px;padding:1px 5px}
+  .pos-okx-pnl{font-size:18px !important}
+  .pos-okx-pnl-pct{font-size:9px !important}
+  .pos-okx-prices{gap:1px !important;background:var(--bd);margin-bottom:6px}
+  .pos-okx-px{background:#0a0a0a;padding:5px 4px !important;border:0}
+  .pos-okx-px-l{font-size:7px}
+  .pos-okx-px-v{font-size:12px}
+  .pos-okx-px-sub{font-size:7px}
+  .pos-okx-sltp{gap:1px !important;background:var(--bd);margin-bottom:6px}
+  .pos-okx-sltp-cell{background:#0a0a0a;border:0;padding:5px 7px}
+  .pos-okx-sltp-l{font-size:8px}
+  .pos-okx-sltp-v{font-size:11px}
+  .pos-okx-info{font-size:9px;padding-top:5px}
+  .pos-okx-warn{font-size:9px;padding:5px 7px;margin-top:5px}
+
+  /* ─── RISK / PNL dashboards ─── */
+  .risk-stat, .pnl-stat{
+    background:#0a0a0a;border:1px solid var(--bd);padding:6px 8px;
+    border-radius:0;
+  }
+
+  /* ─── SCROLLBAR: Bloomberg thin ─── */
+  ::-webkit-scrollbar{width:6px;height:6px}
+  ::-webkit-scrollbar-track{background:#0a0a0a}
+  ::-webkit-scrollbar-thumb{background:var(--bd)}
+  ::-webkit-scrollbar-thumb:hover{background:var(--orange)}
+
+  /* ─── GLOBAL: no gradients, sharp text ─── */
+  h1,h2,h3,h4{font-family:var(--mono);letter-spacing:.02em}
+
+  /* Debug pill colored nicely */
+  #tbDbg{
+    font-family:var(--mono);background:#0a0a0a;
+    border:1px solid var(--green);color:var(--green);
+  }
+
+  /* TradingView wrap tighter */
+  .tv-wrap{
+    border:1px solid var(--bd);
+    box-shadow:inset 0 0 0 1px #0a0a0a;
+  }
+}
+
 </style>
 </head>
 <body>
@@ -1778,7 +2020,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.21 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.22 · 2026</div>
   </div>
 
 </main>
@@ -3977,7 +4219,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.21 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.22 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
