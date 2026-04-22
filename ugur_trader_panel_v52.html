@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.18</title>
+<title>Uğur — Trader Panel v52.19</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -490,11 +490,21 @@ body{
 }
 
 @media (min-width:1024px){
-  .pos-okx{padding:10px 12px;margin-bottom:8px}
-  .pos-okx-pair{font-size:13px}
-  .pos-okx-pnl{font-size:15px}
-  .pos-okx-px-v{font-size:12px}
-  .pos-okx-sltp-v{font-size:12px}
+  /* On desktop Açık Pozisyon is spanning 2 columns (see dt-grid order rules),
+     so we can afford to make it bigger and more prominent */
+  .pos-okx{padding:12px 14px;margin-bottom:8px}
+  .pos-okx-pair{font-size:15px}
+  .pos-okx-pnl{font-size:20px}
+  .pos-okx-pnl-pct{font-size:11px}
+  .pos-okx-px-v{font-size:14px}
+  .pos-okx-px-l{font-size:8px}
+  .pos-okx-sltp-v{font-size:14px}
+  .pos-okx-sltp-l{font-size:9px}
+  .pos-okx-info{font-size:11px}
+  .pos-okx-warn{font-size:11px;padding:8px 10px}
+  /* Show prices + SL/TP in one row on wide desktop for density */
+  .pos-okx-prices{grid-template-columns:repeat(3, 1fr)}
+  .pos-okx-sltp{grid-template-columns:1fr 1fr}
 }
 
 /* ── PRICE CARDS ──────────────────────────────────────── */
@@ -1241,34 +1251,40 @@ body{
 
   /* Master: compact horizontal layout */
   .master{
-    margin:6px 0 0;
-    padding:10px 14px;
-    border-radius:10px;
+    margin:4px 0 0;
+    padding:7px 11px;
+    border-radius:8px;
   }
-  .master-top{margin-bottom:4px}
-  .master-label{font-size:9px}
-  .master-verdict{font-size:22px;margin:2px 0}
-  .master-verdict .icon{font-size:18px;margin-right:5px}
-  .master-sub{font-size:11px;max-width:100%}
-  .master-score-row{margin-top:7px;padding-top:7px;gap:14px;border-top-width:1px}
-  .master-score-ring{width:42px;height:42px}
-  .master-score-num{font-size:12px}
-  .master-breakdown{font-size:9px;gap:4px}
-  .mb-item{padding:4px 6px}
-  .mb-item > span:first-child{font-size:7px;margin-bottom:1px}
-  .mb-item .v{font-size:10px}
-  .pair-btn{padding:3px 8px;font-size:9px}
+  .master-top{margin-bottom:2px}
+  .master-label{font-size:8px;letter-spacing:.1em}
+  .master-verdict{font-size:16px;margin:1px 0;line-height:1.1}
+  .master-verdict .icon{font-size:14px;margin-right:4px}
+  .master-sub{font-size:9px;max-width:100%;line-height:1.2}
+  .master-score-row{margin-top:5px;padding-top:5px;gap:10px;border-top-width:1px}
+  .master-score-ring{width:32px;height:32px}
+  .master-score-num{font-size:10px}
+  .master-breakdown{font-size:8px;gap:3px}
+  .mb-item{padding:3px 5px}
+  .mb-item > span:first-child{font-size:6px;margin-bottom:0}
+  .mb-item .v{font-size:9px}
+  .pair-btn{padding:2px 6px;font-size:8px}
+  /* Hide the system-info strip under master on desktop (saves vertical space) */
+  .master + div[style*="border-top"]{display:none !important}
 
-  /* Sizer: compact */
-  .sizer{margin:6px 0 0;padding:9px 13px;border-radius:10px}
-  .sizer-hd{margin-bottom:5px;font-size:9px}
-  .sizer-prices{gap:6px;margin-bottom:5px}
-  .sizer-price{padding:5px 7px}
-  .sizer-price-v{font-size:11px}
-  .sizer-price-l{font-size:7px}
-  .sizer-divider{margin:5px 0}
-  .sizer-main-v{font-size:12px}
-  .sizer-main-l{font-size:7px}
+  /* Sizer: ULTRA compact on desktop (user rarely opens trades from here) */
+  .sizer{margin:4px 0 0;padding:7px 11px;border-radius:8px}
+  .sizer-hd{margin-bottom:3px;font-size:8px}
+  .sizer-prices{gap:4px;margin-bottom:3px}
+  .sizer-price{padding:3px 5px}
+  .sizer-price-v{font-size:10px}
+  .sizer-price-l{font-size:6px}
+  .sizer-price-sub{font-size:7px}
+  .sizer-divider{margin:3px 0}
+  .sizer-main{gap:4px}
+  .sizer-main-item{padding:3px 5px}
+  .sizer-main-v{font-size:10px}
+  .sizer-main-l{font-size:6px}
+  .sizer-dir{font-size:9px;padding:1px 5px}
 
   /* 3-column grid - tight */
   .dt-grid{
@@ -1281,6 +1297,17 @@ body{
   .dt-grid > .sec{padding:0;min-width:0}
   .dt-grid > .sec-full{grid-column:1 / -1}
   .dt-grid > .sec-wide{grid-column:span 2}
+
+  /* REORDERED priority: Positions first (most important when trading),
+     then Balance + Live Prices, then the rest.
+     Uses CSS order so HTML stays unchanged. */
+  .dt-grid > .sec:nth-child(1){order:2} /* Bakiye → middle */
+  .dt-grid > .sec:nth-child(2){order:1;grid-column:span 2} /* Açık Pozisyonlar → top, 2 cols wide */
+  .dt-grid > .sec:nth-child(3){order:3} /* Canlı Fiyatlar */
+  .dt-grid > .sec:nth-child(4){order:4} /* Grafik (sec-full already) */
+  .dt-grid > .sec:nth-child(5){order:5} /* Risk */
+  .dt-grid > .sec:nth-child(6){order:6} /* P&L */
+  .dt-grid > .sec:nth-child(7){order:7} /* Telegram */
 
   /* Section headers tighter */
   .sec-hd{font-size:8px;margin-bottom:4px}
@@ -1744,7 +1771,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.18 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.19 · 2026</div>
   </div>
 
 </main>
@@ -3921,7 +3948,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.18 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.19 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
