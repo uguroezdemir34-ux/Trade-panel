@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.17</title>
+<title>Uğur — Trader Panel v52.18</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1744,7 +1744,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.17 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.18 · 2026</div>
   </div>
 
 </main>
@@ -2960,21 +2960,71 @@ function updatePriceDisplay(sym, last, chg, prev) {
   }
   // Update scanner row inline (without full re-render)
   updateScannerRow(sym, last, chg);
-  // Update live position tracker if this is the position's pair
+  // LIVE position card update — recalc PnL + Liq. distance + Now price on every tick
   if (ST.positions.length > 0) {
     const posPair = ST.positions[0].instId.split('-')[0];
     if (posPair === sym) {
       const nowEl = document.getElementById('ptrackNow');
       if (nowEl) nowEl.textContent = '$' + fmtPx(last);
-      // Also update the OKX-style position card's "Now" price in-place
-      const okxCards = document.querySelectorAll('.pos-okx');
-      okxCards.forEach(c => {
-        const nowPxEl = c.querySelector('.pos-okx-px-v.hl');
-        if (nowPxEl) nowPxEl.textContent = '$' + fmtPx(last);
-      });
+      updateLivePositionCard(last);
     }
   }
   // Note: TradingView widget handles its own real-time feed, no manual update needed
+}
+
+// Recalculate PnL + Liq. distance + Now price in the open-position card (OKX style) without re-rendering
+function updateLivePositionCard(currentPrice) {
+  if (!ST.positions.length) return;
+  const p = ST.positions[0];
+  const side = getPosSide(p);
+  const isLong = side === 'LONG';
+  const entryPx = parseFloat(p.avgPx || 0);
+  const liqPx = parseFloat(p.liqPx || 0);
+  const lev = parseFloat(p.lever || 1);
+  const posSize = Math.abs(parseFloat(p.pos || 0));
+  const notional = parseFloat(p.notionalUsd || (posSize * entryPx));
+  const margin = parseFloat(p.margin || p.imr || 0);
+
+  // Calculate live PnL from current price (more up-to-date than OKX's upl snapshot)
+  // For SWAP: PnL = size × (currentPrice - entryPx) for long, inverted for short
+  const priceDiff = isLong ? (currentPrice - entryPx) : (entryPx - currentPrice);
+  const livePnl = posSize * priceDiff;
+  const livePnlPct = margin > 0 ? (livePnl / margin) * 100 : 0;
+
+  // Liquidation distance
+  let liqDistPct = 0;
+  if (liqPx > 0 && currentPrice > 0) {
+    liqDistPct = Math.abs((currentPrice - liqPx) / currentPrice) * 100;
+  }
+
+  // Find the card and update in-place
+  const card = document.querySelector('.pos-okx');
+  if (!card) return;
+
+  // "Şimdi" price
+  const nowPxEl = card.querySelector('.pos-okx-px-v.hl');
+  if (nowPxEl) nowPxEl.textContent = '$' + fmtPx(currentPrice);
+
+  // Liq. distance sub-label
+  const liqSubEls = card.querySelectorAll('.pos-okx-px-sub');
+  liqSubEls.forEach(el => {
+    if (liqDistPct > 0) {
+      el.textContent = '%' + liqDistPct.toFixed(2) + ' uzak';
+      el.classList.toggle('danger', liqDistPct < 5);
+    }
+  });
+
+  // PnL main number + percentage
+  const pnlEl = card.querySelector('.pos-okx-pnl');
+  if (pnlEl) {
+    pnlEl.className = 'pos-okx-pnl ' + (livePnl >= 0 ? 'p' : 'n');
+    pnlEl.innerHTML = `${livePnl >= 0 ? '+' : '-'}$${fmt(Math.abs(livePnl), 2)}
+      <span class="pos-okx-pnl-pct">(${livePnlPct >= 0 ? '+' : ''}${livePnlPct.toFixed(2)}%)</span>`;
+  }
+
+  // Update internal position data too (so next re-render uses latest)
+  p._livePnl = livePnl;
+  p._livePnlPct = livePnlPct;
 }
 
 // Update a single scanner row's price/change without full re-render
@@ -3871,7 +3921,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.17 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.18 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
@@ -3970,11 +4020,21 @@ async function init() {
   // Weekly summary check — once per load, if Sunday eve / Monday
   setTimeout(maybeShowWeeklySummary, 2500);
 
-  // Auto-refresh intervals
+  // Auto-refresh intervals — adaptive: fast when position is open, slow when idle
   setInterval(async () => {
     await fetchBalance();
-    await fetchPositions();
-  }, 30000); // 30s
+  }, 30000); // Balance: 30s always
+
+  // Adaptive position refresh: 10s when position open, 30s when idle
+  let posTickCount = 0;
+  setInterval(async () => {
+    posTickCount++;
+    const hasOpen = ST.positions.length > 0;
+    // Every tick = 10s. If no open position, only fetch every 3rd tick (30s)
+    if (hasOpen || posTickCount % 3 === 0) {
+      await fetchPositions();
+    }
+  }, 10000); // 10s base tick
 
   setInterval(async () => {
     await fetchFG();
