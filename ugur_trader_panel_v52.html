@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.22</title>
+<title>Uğur — Trader Panel v52.23</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1406,7 +1406,7 @@ body{
   .dt-grid{gap:12px}
 }
 /* ═══════════════════════════════════════════════════════════════════
-   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.22)
+   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.23)
    Philosophy: dense information, sharp corners, minimum decoration,
    monospace everywhere, professional terminal feel.
    ═══════════════════════════════════════════════════════════════════ */
@@ -2020,7 +2020,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.22 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.23 · 2026</div>
   </div>
 
 </main>
@@ -2268,6 +2268,13 @@ async function fetchBalance() {
   // Save daily balance snapshot + re-render equity curve
   saveBalanceSnapshot();
   renderEquityCurve();
+  // Update "last refresh" timestamp on balance tag
+  const balTag = document.getElementById('balTag');
+  if (balTag) {
+    const t = new Date();
+    balTag.textContent = 'Güncel ' + t.toTimeString().slice(0,8);
+    balTag.style.color = 'var(--green)';
+  }
   return true;
 }
 
@@ -4219,7 +4226,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.22 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.23 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
@@ -4326,21 +4333,28 @@ async function init() {
   // Weekly summary check — once per load, if Sunday eve / Monday
   setTimeout(maybeShowWeeklySummary, 2500);
 
-  // Auto-refresh intervals — adaptive: fast when position is open, slow when idle
+  // Auto-refresh intervals — FAST real-time updates
   setInterval(async () => {
     await fetchBalance();
-  }, 30000); // Balance: 30s always
+    // Visual flash on balance big number to show live update
+    const balEl = document.getElementById('balBig');
+    if (balEl) {
+      balEl.classList.remove('flash-up');
+      void balEl.offsetWidth;
+      balEl.classList.add('flash-up');
+    }
+  }, 5000); // Balance: 5s (was 30s)
 
-  // Adaptive position refresh: 10s when position open, 30s when idle
+  // Adaptive position refresh: 3s when position open, 15s when idle
   let posTickCount = 0;
   setInterval(async () => {
     posTickCount++;
     const hasOpen = ST.positions.length > 0;
-    // Every tick = 10s. If no open position, only fetch every 3rd tick (30s)
-    if (hasOpen || posTickCount % 3 === 0) {
+    // Every tick = 3s. If no open position, only fetch every 5th tick (15s)
+    if (hasOpen || posTickCount % 5 === 0) {
       await fetchPositions();
     }
-  }, 10000); // 10s base tick
+  }, 3000); // 3s base tick (was 10s)
 
   setInterval(async () => {
     await fetchFG();
