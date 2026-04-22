@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.16</title>
+<title>Uğur — Trader Panel v52.17</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -364,6 +364,138 @@ body{
 }
 .pos-field-v{font-size:12px;font-weight:600;color:var(--t2);margin-top:2px}
 .pos-field-v.rd{color:var(--red)}
+
+/* ── POSITION CARD (OKX-STYLE, comprehensive) ─────── */
+.pos-okx{
+  background:var(--card2);
+  border:1px solid var(--bd);
+  border-radius:12px;
+  padding:12px 14px;
+  margin-bottom:10px;
+  position:relative;
+  overflow:hidden;
+}
+.pos-okx::before{
+  content:'';position:absolute;left:0;top:0;bottom:0;width:4px;
+}
+.pos-okx.long::before{background:linear-gradient(180deg,var(--green),#10b981)}
+.pos-okx.short::before{background:linear-gradient(180deg,var(--red),#dc2626)}
+
+.pos-okx-hd{
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding-bottom:10px;
+  border-bottom:1px solid var(--bd);
+  margin-bottom:10px;
+}
+.pos-okx-ttl{display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.pos-okx-pair{
+  font-family:var(--mono);font-weight:700;font-size:14px;
+  color:var(--t1);letter-spacing:-.01em;
+}
+.pos-okx-side{
+  font-family:var(--mono);font-size:9px;font-weight:700;
+  padding:2px 7px;border-radius:4px;letter-spacing:.12em;
+}
+.pos-okx-side.long{background:var(--gbg);color:var(--green);border:1px solid var(--green)}
+.pos-okx-side.short{background:var(--rbg);color:var(--red);border:1px solid var(--red)}
+.pos-okx-lev{
+  font-family:var(--mono);font-size:9px;font-weight:700;
+  padding:2px 6px;border-radius:4px;letter-spacing:.05em;
+  background:rgba(255,255,255,.04);color:var(--t2);
+  border:1px solid var(--bd);
+}
+.pos-okx-lev.warn{
+  background:var(--abg);color:var(--amber);border-color:var(--amber);
+}
+.pos-okx-pnl{
+  font-family:var(--mono);font-weight:700;font-size:17px;
+  text-align:right;line-height:1.1;
+}
+.pos-okx-pnl.p{color:var(--green)}
+.pos-okx-pnl.n{color:var(--red)}
+.pos-okx-pnl-pct{
+  display:block;font-size:10px;font-weight:600;opacity:.8;
+  margin-top:2px;
+}
+
+.pos-okx-prices{
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;
+  margin-bottom:10px;
+}
+.pos-okx-px{
+  text-align:center;padding:7px 4px;
+  background:var(--card);border:1px solid var(--bd);
+  border-radius:7px;
+}
+.pos-okx-px-l{
+  font-family:var(--mono);font-size:8px;
+  color:var(--t3);letter-spacing:.1em;
+  text-transform:uppercase;margin-bottom:3px;
+}
+.pos-okx-px-v{
+  font-family:var(--mono);font-size:13px;font-weight:700;
+  color:var(--t1);
+}
+.pos-okx-px-v.hl{color:var(--orange)}
+.pos-okx-px-v.rd{color:var(--red)}
+.pos-okx-px-v.rd.danger{color:var(--red);text-shadow:0 0 8px rgba(239,68,68,.4)}
+.pos-okx-px-sub{
+  font-family:var(--mono);font-size:8px;
+  color:var(--t4);margin-top:2px;
+}
+.pos-okx-px-sub.danger{color:var(--red);font-weight:700}
+
+.pos-okx-sltp{
+  display:grid;grid-template-columns:1fr 1fr;gap:8px;
+  margin-bottom:10px;
+}
+.pos-okx-sltp-cell{
+  padding:8px 10px;
+  background:var(--card);border:1px dashed var(--bd);
+  border-radius:7px;
+}
+.pos-okx-sltp-cell.active{border-style:solid}
+.pos-okx-sltp-l{
+  font-family:var(--mono);font-size:9px;
+  color:var(--t3);letter-spacing:.08em;
+  text-transform:uppercase;margin-bottom:3px;
+}
+.pos-okx-sltp-v{
+  font-family:var(--mono);font-size:13px;font-weight:700;
+}
+.pos-okx-sltp-v.sl{color:var(--red)}
+.pos-okx-sltp-v.tp{color:var(--green)}
+.pos-okx-sltp-cell:not(.active) .pos-okx-sltp-v{
+  color:var(--t4);font-size:11px;font-weight:500;font-style:italic;
+}
+
+.pos-okx-info{
+  display:flex;justify-content:space-between;
+  padding-top:8px;border-top:1px solid var(--bd);
+  font-family:var(--mono);font-size:10px;
+}
+.pos-okx-info-l{color:var(--t3);margin-right:4px}
+.pos-okx-info-v{color:var(--t1);font-weight:700}
+
+.pos-okx-warn{
+  margin-top:8px;padding:7px 9px;
+  background:var(--abg);border-left:2px solid var(--amber);
+  border-radius:0 5px 5px 0;
+  font-family:var(--mono);font-size:10px;
+  color:var(--amber);line-height:1.4;
+}
+.pos-okx-warn.danger{
+  background:var(--rbg);border-left-color:var(--red);color:var(--red);
+  font-weight:700;
+}
+
+@media (min-width:1024px){
+  .pos-okx{padding:10px 12px;margin-bottom:8px}
+  .pos-okx-pair{font-size:13px}
+  .pos-okx-pnl{font-size:15px}
+  .pos-okx-px-v{font-size:12px}
+  .pos-okx-sltp-v{font-size:12px}
+}
 
 /* ── PRICE CARDS ──────────────────────────────────────── */
 .px-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
@@ -1612,7 +1744,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.16 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.17 · 2026</div>
   </div>
 
 </main>
@@ -1868,19 +2000,53 @@ async function fetchPositions() {
   if (!r.ok) return false;
   // Only positions with actual size
   ST.positions = (r.data || []).filter(p => parseFloat(p.pos || 0) !== 0);
+
+  // If we have open positions, also fetch pending algo orders (SL/TP placed as separate orders)
+  if (ST.positions.length > 0) {
+    await mergeAlgoOrdersIntoPositions();
+  }
+
   renderPositions();
   // If there's an active position, force TV chart to follow it
   if (ST.positions.length > 0) {
     const posPair = ST.positions[0].instId.split('-')[0]; // "BTC-USDT-SWAP" → "BTC"
     if (PAIRS.includes(posPair) && ST.pair !== posPair) {
-      // Switch TV chart to the position's pair
       ST.pair = posPair;
-      ST.autoPair = false; // lock to position while it's open
+      ST.autoPair = false;
       if (ST.pairScores[posPair]) renderMasterCard();
       loadTVChart();
     }
   }
   return true;
+}
+
+// Fetch pending algo orders (SL/TP placed separately via "Strategy Order" in OKX)
+// and merge their trigger prices into our positions so the panel shows the user's SL/TP
+async function mergeAlgoOrdersIntoPositions() {
+  try {
+    // Try conditional (SL/TP), oco (OCO), trigger (stop) order types
+    const ordTypes = ['conditional', 'oco', 'trigger'];
+    for (const ordType of ordTypes) {
+      const r = await okxFetch('/api/v5/trade/orders-algo-pending?ordType=' + ordType);
+      if (!r.ok || !r.data) continue;
+      for (const algo of r.data) {
+        // Match to a position by instId
+        const pos = ST.positions.find(p => p.instId === algo.instId);
+        if (!pos) continue;
+        // Fill SL/TP trigger prices from the algo order if not already set
+        const slPx = parseFloat(algo.slTriggerPx || 0);
+        const tpPx = parseFloat(algo.tpTriggerPx || 0);
+        if (slPx > 0 && !parseFloat(pos.slTriggerPx || 0)) {
+          pos.slTriggerPx = algo.slTriggerPx;
+        }
+        if (tpPx > 0 && !parseFloat(pos.tpTriggerPx || 0)) {
+          pos.tpTriggerPx = algo.tpTriggerPx;
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('Algo order merge failed:', e.message);
+  }
 }
 
 // ═══════════════ POSITION RENDER (BUG-FIXED: net mode) ═══════════════
@@ -1905,35 +2071,89 @@ function renderPositions() {
   let html = '';
   ST.positions.forEach(p => {
     const side = getPosSide(p);
+    const sideLo = side.toLowerCase();
     const pnl = parseFloat(p.upl || p.unrealizedPnl || 0);
     const pnlRatio = parseFloat(p.uplRatio || 0) * 100;
     const entryPx = parseFloat(p.avgPx || 0);
     const liqPx = parseFloat(p.liqPx || 0);
+    const markPx = parseFloat(p.markPx || 0);
+    const pair = p.instId.split('-')[0];
+    const nowPx = ST.px[pair] || markPx || entryPx;
     const margin = parseFloat(p.margin || p.imr || 0);
     const lev = p.lever || '—';
-    const size = Math.abs(parseFloat(p.pos || 0));
+    const notional = parseFloat(p.notionalUsd || 0);
+    const sl = parseFloat(p.slTriggerPx || 0);
+    const tp = parseFloat(p.tpTriggerPx || 0);
+
+    // Distance to liquidation (safety indicator)
+    let liqDistPct = 0;
+    if (liqPx > 0 && nowPx > 0) {
+      liqDistPct = Math.abs((nowPx - liqPx) / nowPx) * 100;
+    }
+    const liqDangerous = liqDistPct > 0 && liqDistPct < 5;
+
+    // Leverage warning
+    const levNum = parseFloat(lev) || 0;
+    const levWarn = levNum > 10;
+
     html += `
-    <div class="pos ${side.toLowerCase()} fade-in">
-      <div class="pos-top">
-        <div>
-          <span class="pos-pair">${p.instId}</span>
-          <span class="pos-side ${side.toLowerCase()}">${side}</span>
+    <div class="pos-okx ${sideLo} fade-in">
+      <!-- Header: pair + side + PnL -->
+      <div class="pos-okx-hd">
+        <div class="pos-okx-ttl">
+          <span class="pos-okx-pair">${p.instId}</span>
+          <span class="pos-okx-side ${sideLo}">${side}</span>
+          <span class="pos-okx-lev ${levWarn?'warn':''}">${lev}x</span>
         </div>
-        <div class="pos-pnl ${pnl>=0?'p':'n'}">
-          ${pnl>=0?'+':'-'}$${fmt(Math.abs(pnl),2)} <span style="font-size:10px;opacity:.7">(${pnlRatio>=0?'+':''}${pnlRatio.toFixed(2)}%)</span>
+        <div class="pos-okx-pnl ${pnl>=0?'p':'n'}">
+          ${pnl>=0?'+':'-'}$${fmt(Math.abs(pnl),2)}
+          <span class="pos-okx-pnl-pct">(${pnlRatio>=0?'+':''}${pnlRatio.toFixed(2)}%)</span>
         </div>
       </div>
-      <div class="pos-grid">
-        <div><div class="pos-field-l">Boyut</div><div class="pos-field-v">${size}</div></div>
-        <div><div class="pos-field-l">Giriş</div><div class="pos-field-v">$${fmtPx(entryPx)}</div></div>
-        <div><div class="pos-field-l">Liq.</div><div class="pos-field-v rd">${liqPx?'$'+fmtPx(liqPx):'—'}</div></div>
-        <div><div class="pos-field-l">Kaldıraç</div><div class="pos-field-v">${lev}x</div></div>
+
+      <!-- Price row: Entry · Now · Liq -->
+      <div class="pos-okx-prices">
+        <div class="pos-okx-px">
+          <div class="pos-okx-px-l">Giriş</div>
+          <div class="pos-okx-px-v">$${fmtPx(entryPx)}</div>
+        </div>
+        <div class="pos-okx-px">
+          <div class="pos-okx-px-l">Şimdi</div>
+          <div class="pos-okx-px-v hl">$${fmtPx(nowPx)}</div>
+        </div>
+        <div class="pos-okx-px">
+          <div class="pos-okx-px-l">Liq.</div>
+          <div class="pos-okx-px-v rd ${liqDangerous?'danger':''}">${liqPx?'$'+fmtPx(liqPx):'—'}</div>
+          ${liqDistPct>0?`<div class="pos-okx-px-sub ${liqDangerous?'danger':''}">%${liqDistPct.toFixed(2)} uzak</div>`:''}
+        </div>
       </div>
+
+      <!-- SL/TP row -->
+      <div class="pos-okx-sltp">
+        <div class="pos-okx-sltp-cell ${sl?'active':''}">
+          <div class="pos-okx-sltp-l">🛑 Stop</div>
+          <div class="pos-okx-sltp-v sl">${sl?'$'+fmtPx(sl):'— yok —'}</div>
+        </div>
+        <div class="pos-okx-sltp-cell ${tp?'active':''}">
+          <div class="pos-okx-sltp-l">🎯 TP</div>
+          <div class="pos-okx-sltp-v tp">${tp?'$'+fmtPx(tp):'— yok —'}</div>
+        </div>
+      </div>
+
+      <!-- Size row -->
+      <div class="pos-okx-info">
+        <div><span class="pos-okx-info-l">Boyut:</span> <span class="pos-okx-info-v">$${fmt(notional, 2)}</span></div>
+        <div><span class="pos-okx-info-l">Margin:</span> <span class="pos-okx-info-v">$${fmt(margin, 2)}</span></div>
+      </div>
+
+      ${(!sl || !tp) ? `<div class="pos-okx-warn">⚠️ ${!sl && !tp ? 'SL/TP yok — OKX\'te ekle' : (!sl ? 'Stop yok — acil ekle' : 'TP yok — kâr hedefi belirle')}</div>` : ''}
+      ${liqDangerous ? `<div class="pos-okx-warn danger">🚨 Liquidation çok yakın (%${liqDistPct.toFixed(2)}) — kâr al veya margin ekle</div>` : ''}
+      ${levWarn ? `<div class="pos-okx-warn">⚠️ Kaldıraç ${lev}x — panel önerisi maks 10x</div>` : ''}
     </div>`;
   });
   list.innerHTML = html;
-  // Also update the live tracker card under TV chart
-  renderPositionTracker(ST.positions[0]);
+  // Hide the legacy tracker under TV chart (position card above is comprehensive)
+  renderPositionTracker(null);
 }
 
 // Live position tracker — shown under TV chart when position is open
@@ -2746,6 +2966,12 @@ function updatePriceDisplay(sym, last, chg, prev) {
     if (posPair === sym) {
       const nowEl = document.getElementById('ptrackNow');
       if (nowEl) nowEl.textContent = '$' + fmtPx(last);
+      // Also update the OKX-style position card's "Now" price in-place
+      const okxCards = document.querySelectorAll('.pos-okx');
+      okxCards.forEach(c => {
+        const nowPxEl = c.querySelector('.pos-okx-px-v.hl');
+        if (nowPxEl) nowPxEl.textContent = '$' + fmtPx(last);
+      });
     }
   }
   // Note: TradingView widget handles its own real-time feed, no manual update needed
@@ -3645,7 +3871,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.16 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.17 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
