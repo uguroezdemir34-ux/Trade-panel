@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.19</title>
+<title>Uğur — Trader Panel v52.20</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1771,7 +1771,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.19 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.20 · 2026</div>
   </div>
 
 </main>
@@ -2938,7 +2938,6 @@ function initWS() {
         const msg = JSON.parse(ev.data);
         if (msg.arg?.channel === 'tickers' && msg.data?.[0]) {
           const t = msg.data[0];
-          // instId format: "ETH-USDT-SWAP" → take first part
           const sym = t.instId.split('-')[0];
           if (!PAIRS.includes(sym)) return;
           const last = parseFloat(t.last);
@@ -2947,9 +2946,17 @@ function initWS() {
           const prev = ST.px[sym];
           ST.px[sym] = last;
           ST.px[sym+'_CHG'] = chg;
+          // Debug trace (first few ticks only)
+          if (!ST._wsTickCount) ST._wsTickCount = {};
+          ST._wsTickCount[sym] = (ST._wsTickCount[sym] || 0) + 1;
+          if (ST._wsTickCount[sym] <= 3) {
+            console.log(`[WS] ${sym}: $${last} chg=${chg.toFixed(2)}% (tick #${ST._wsTickCount[sym]})`);
+          }
           updatePriceDisplay(sym, last, chg, prev);
         }
-      } catch {}
+      } catch (err) {
+        console.error('[WS] parse error:', err, ev.data?.slice(0, 200));
+      }
     };
     ws.onerror = () => {
       ST.wsConnected = false;
@@ -2983,6 +2990,13 @@ function updatePriceDisplay(sym, last, chg, prev) {
       pxEl.classList.remove('flash-up','flash-dn');
       void pxEl.offsetWidth;
       pxEl.classList.add(last > prev ? 'flash-up' : 'flash-dn');
+    }
+  } else if ((sym === 'BTC' || sym === 'ETH')) {
+    // Critical: BTC/ETH cards should always exist — log if missing
+    if (!ST._missingElLogged) ST._missingElLogged = {};
+    if (!ST._missingElLogged[sym]) {
+      console.warn(`[price] ${sym} card elements missing: pxEl=${!!pxEl} chgEl=${!!chgEl}`);
+      ST._missingElLogged[sym] = true;
     }
   }
   // Update scanner row inline (without full re-render)
@@ -3948,7 +3962,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.19 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.20 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
