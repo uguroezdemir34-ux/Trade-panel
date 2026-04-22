@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.20</title>
+<title>Uğur — Trader Panel v52.21</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1252,27 +1252,33 @@ body{
   /* Master: compact horizontal layout */
   .master{
     margin:4px 0 0;
-    padding:7px 11px;
+    padding:6px 11px;
     border-radius:8px;
+    /* SINGLE ROW LAYOUT on laptop — verdict + score in one horizontal strip */
+    display:grid;
+    grid-template-columns:auto 1fr auto;
+    gap:12px;
+    align-items:center;
   }
-  .master-top{margin-bottom:2px}
-  .master-label{font-size:8px;letter-spacing:.1em}
-  .master-verdict{font-size:16px;margin:1px 0;line-height:1.1}
+  .master-top{margin-bottom:0;display:flex;gap:8px;align-items:center}
+  .master-label{font-size:8px;letter-spacing:.1em;opacity:.7}
+  .master-verdict{font-size:14px;margin:0;line-height:1;font-weight:700}
   .master-verdict .icon{font-size:14px;margin-right:4px}
-  .master-sub{font-size:9px;max-width:100%;line-height:1.2}
-  .master-score-row{margin-top:5px;padding-top:5px;gap:10px;border-top-width:1px}
-  .master-score-ring{width:32px;height:32px}
+  .master-sub{font-size:9px;max-width:100%;line-height:1.2;opacity:.85}
+  .master-score-row{
+    margin-top:0;padding-top:0;gap:8px;border-top:0;
+    display:flex;align-items:center;
+  }
+  .master-score-ring{width:30px;height:30px;flex-shrink:0}
   .master-score-num{font-size:10px}
-  .master-breakdown{font-size:8px;gap:3px}
-  .mb-item{padding:3px 5px}
-  .mb-item > span:first-child{font-size:6px;margin-bottom:0}
-  .mb-item .v{font-size:9px}
+  /* Hide the 4-breakdown cards on desktop — too much clutter. User sees summary via verdict */
+  .master-breakdown{display:none !important}
   .pair-btn{padding:2px 6px;font-size:8px}
   /* Hide the system-info strip under master on desktop (saves vertical space) */
   .master + div[style*="border-top"]{display:none !important}
 
-  /* Sizer: ULTRA compact on desktop (user rarely opens trades from here) */
-  .sizer{margin:4px 0 0;padding:7px 11px;border-radius:8px}
+  /* Sizer: ULTRA compact single-row strip on laptop */
+  .sizer{margin:4px 0 0;padding:6px 11px;border-radius:8px}
   .sizer-hd{margin-bottom:3px;font-size:8px}
   .sizer-prices{gap:4px;margin-bottom:3px}
   .sizer-price{padding:3px 5px}
@@ -1410,6 +1416,7 @@ body{
     <div class="tb-sub">v52 · ISTANBUL</div>
   </div>
   <div class="tb-right">
+    <div id="tbDbg" class="tb-pill" style="font-size:9px" title="Son veri alımı">—</div>
     <div id="tbClock" class="tb-pill">--:--</div>
     <div id="tbWs" class="tb-pill off">WS</div>
     <button class="tb-btn" onclick="Panel.refresh()" title="Yenile">↻</button>
@@ -1771,7 +1778,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.20 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.21 · 2026</div>
   </div>
 
 </main>
@@ -2858,39 +2865,39 @@ function loadTVChartIframeFallback(pair) {
 
 // ═══════════════ INITIAL PRICE SNAPSHOT (before WS connects) ═══════════════
 async function fetchInitialPrices() {
-  // Try main OKX endpoint first with timeout
-  const endpoints = [
-    'https://www.okx.com/api/v5/market/tickers?instType=SWAP',
-    'https://aws.okx.com/api/v5/market/tickers?instType=SWAP', // AWS mirror
-  ];
-  for (const url of endpoints) {
-    try {
-      const ctrl = new AbortController();
-      const tid = setTimeout(() => ctrl.abort(), 5000);
-      const r = await fetch(url, { signal: ctrl.signal });
-      clearTimeout(tid);
-      const d = await r.json();
-      if (d.code !== '0') continue;
-      const wantedIds = PAIRS.map(p => p + '-USDT-SWAP');
-      let found = 0;
-      for (const t of d.data) {
-        if (wantedIds.includes(t.instId)) {
-          const sym = t.instId.split('-')[0];
-          const last = parseFloat(t.last);
-          const open24 = parseFloat(t.open24h || last);
-          const chg = open24 > 0 ? ((last - open24) / open24) * 100 : 0;
-          ST.px[sym] = last;
-          ST.px[sym+'_CHG'] = chg;
-          updatePriceDisplay(sym, last, chg, 0);
-          found++;
-        }
+  // Strategy A: fetch each pair individually (instId param) — ~5x faster, no timeouts
+  const hosts = ['https://www.okx.com', 'https://aws.okx.com'];
+  let foundTotal = 0;
+  for (const host of hosts) {
+    foundTotal = 0;
+    for (const sym of PAIRS) {
+      try {
+        const ctrl = new AbortController();
+        const tid = setTimeout(() => ctrl.abort(), 4000);
+        const url = host + '/api/v5/market/ticker?instId=' + sym + '-USDT-SWAP';
+        const r = await fetch(url, { signal: ctrl.signal });
+        clearTimeout(tid);
+        const d = await r.json();
+        if (d.code !== '0' || !d.data?.[0]) continue;
+        const t = d.data[0];
+        const last = parseFloat(t.last);
+        const open24 = parseFloat(t.open24h || last);
+        const chg = open24 > 0 ? ((last - open24) / open24) * 100 : 0;
+        ST.px[sym] = last;
+        ST.px[sym+'_CHG'] = chg;
+        updatePriceDisplay(sym, last, chg, 0);
+        foundTotal++;
+      } catch (e) {
+        console.warn('[initPx] ' + sym + ' failed on ' + host + ':', e.message);
       }
-      if (found === PAIRS.length) return true;
-    } catch (e) {
-      console.warn('Price fetch failed:', url, e.message);
+    }
+    if (foundTotal === PAIRS.length) {
+      console.log('[initPx] OK — all ' + PAIRS.length + ' pairs loaded from ' + host);
+      return true;
     }
   }
-  return false;
+  console.warn('[initPx] Partial load: ' + foundTotal + '/' + PAIRS.length);
+  return foundTotal > 0;
 }
 
 // Aggressive retry — try up to 5 times with increasing delays
@@ -2946,7 +2953,15 @@ function initWS() {
           const prev = ST.px[sym];
           ST.px[sym] = last;
           ST.px[sym+'_CHG'] = chg;
-          // Debug trace (first few ticks only)
+          // Visible debug pill in topbar (so user doesn't need F12)
+          const dbg = document.getElementById('tbDbg');
+          if (dbg) {
+            const now = new Date();
+            const hhmmss = now.toTimeString().slice(0,8);
+            dbg.textContent = sym + ' ' + hhmmss;
+            dbg.className = 'tb-pill live';
+          }
+          // Console trace (first few ticks)
           if (!ST._wsTickCount) ST._wsTickCount = {};
           ST._wsTickCount[sym] = (ST._wsTickCount[sym] || 0) + 1;
           if (ST._wsTickCount[sym] <= 3) {
@@ -3962,7 +3977,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.20 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.21 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
@@ -4039,10 +4054,18 @@ async function init() {
   initWS();
   // Fetch initial prices with aggressive retry (critical for mobile where OKX REST can be slow)
   fetchInitialPricesWithRetry();
-  // Also refresh periodically as insurance (in case WS drops silently)
+  // REST polling fallback: if WS is not connected, poll every 5s (keeps prices fresh even if WS blocked)
   setInterval(() => {
-    if (!ST.wsConnected) fetchInitialPrices();
-  }, 30000);
+    if (!ST.wsConnected) {
+      fetchInitialPrices();
+      const dbg = document.getElementById('tbDbg');
+      if (dbg) {
+        dbg.textContent = 'REST ' + new Date().toTimeString().slice(0,8);
+        dbg.className = 'tb-pill';
+        dbg.style.color = 'var(--amber)';
+      }
+    }
+  }, 5000);
 
   // Initial data fetch
   await Promise.all([fetchFG(), fetchBtcDom()]);
