@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.25</title>
+<title>Uğur — Trader Panel v52.26</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1406,7 +1406,7 @@ body{
   .dt-grid{gap:12px}
 }
 /* ═══════════════════════════════════════════════════════════════════
-   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.25)
+   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.26)
    Philosophy: dense information, sharp corners, minimum decoration,
    monospace everywhere, professional terminal feel.
    ═══════════════════════════════════════════════════════════════════ */
@@ -2020,7 +2020,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.25 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.26 · 2026</div>
   </div>
 
 </main>
@@ -3164,11 +3164,22 @@ function initWS() {
   if (ST.ws) { try { ST.ws.close(); } catch {} }
   if (ST._wsPingTimer) { clearInterval(ST._wsPingTimer); ST._wsPingTimer = null; }
 
-  // Try URLs in order: main → alternative. OKX has multiple WS endpoints.
-  const wsUrls = [
-    'wss://ws.okx.com:8443/ws/v5/public',
-    'wss://wsaws.okx.com:8443/ws/v5/public', // AWS mirror — often works when main is slow
+  // Try URLs in order: multiple endpoints + port fallback.
+  // Port 8443 is blocked by some mobile carriers (Turkcell, Vodafone TR) and routers.
+  // Port 443 is HTTPS and always open — critical fallback.
+  let wsUrls = [
+    'wss://ws.okx.com:8443/ws/v5/public',      // Main (may be blocked)
+    'wss://wsaws.okx.com:8443/ws/v5/public',   // AWS mirror
+    'wss://ws.okx.com/ws/v5/public',           // Port 443 (HTTPS) — always open
+    'wss://wsaws.okx.com/ws/v5/public',        // AWS mirror on 443
   ];
+  // If we have a known working URL from previous session, try it first
+  try {
+    const savedUrl = localStorage.getItem('ug52_ws_url');
+    if (savedUrl && wsUrls.includes(savedUrl)) {
+      wsUrls = [savedUrl, ...wsUrls.filter(u => u !== savedUrl)];
+    }
+  } catch {}
   const urlIdx = (ST.wsUrlIdx || 0) % wsUrls.length;
   const wsUrl = wsUrls[urlIdx];
   ST.wsUrlIdx = urlIdx + 1;
@@ -3181,7 +3192,9 @@ function initWS() {
       ST.wsRetries = 0;
       $('tbWs').className = 'tb-pill live';
       $('tbWs').textContent = 'WS';
-      console.log('[WS] connected to', wsUrl);
+      console.log('[WS] ✓ connected to', wsUrl);
+      // Remember which URL worked — use it first next time (skip blocked ports)
+      try { localStorage.setItem('ug52_ws_url', wsUrl); } catch {}
       // Subscribe to BOTH tickers (for 24h stats) AND trades (for real-time tick flow)
       // trades channel pushes on EVERY executed trade → much denser data stream
       ws.send(JSON.stringify({
@@ -3255,15 +3268,18 @@ function initWS() {
     ws.onerror = () => {
       ST.wsConnected = false;
       $('tbWs').className = 'tb-pill off';
+      console.warn('[WS] error on', wsUrl);
     };
     ws.onclose = () => {
       ST.wsConnected = false;
       $('tbWs').className = 'tb-pill off';
       if (ST._wsPingTimer) { clearInterval(ST._wsPingTimer); ST._wsPingTimer = null; }
-      // Exponential backoff (3s → 30s max)
+      // Fast cycling through URLs. If all 4 fail once, backoff longer.
       clearTimeout(ST.wsReconnectTimer);
       ST.wsRetries = (ST.wsRetries || 0) + 1;
-      const delay = Math.min(30000, 3000 * Math.pow(1.5, Math.min(ST.wsRetries, 8)));
+      // First 4 retries: 2s (try each URL quickly), after that exponential backoff
+      const delay = ST.wsRetries <= 4 ? 2000 : Math.min(30000, 3000 * Math.pow(1.5, Math.min(ST.wsRetries - 4, 6)));
+      console.log('[WS] reconnecting in', delay, 'ms (attempt', ST.wsRetries + ')');
       ST.wsReconnectTimer = setTimeout(initWS, delay);
     };
   } catch (e) {
@@ -4256,7 +4272,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.25 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.26 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
