@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.29</title>
+<title>Uğur — Trader Panel v52.30</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1406,7 +1406,7 @@ body{
   .dt-grid{gap:12px}
 }
 /* ═══════════════════════════════════════════════════════════════════
-   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.29)
+   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.30)
    Philosophy: dense information, sharp corners, minimum decoration,
    monospace everywhere, professional terminal feel.
    ═══════════════════════════════════════════════════════════════════ */
@@ -2020,7 +2020,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.29 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.30 · 2026</div>
   </div>
 
 </main>
@@ -4302,7 +4302,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.29 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.30 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
@@ -4399,19 +4399,24 @@ async function init() {
   initWS();
   // Fetch initial prices with aggressive retry (critical for mobile where OKX REST can be slow)
   fetchInitialPricesWithRetry();
-  // REST polling fallback: when WS is blocked (mobile carriers in TR often block WebSocket),
-  // poll every 2 seconds. This is HTTPS port 443 — always open, can't be blocked.
-  // 2s is fast enough to feel real-time without overloading the API.
-  setInterval(() => {
-    if (!ST.wsConnected) {
-      fetchInitialPrices();
-      const dbg = document.getElementById('tbDbg');
-      if (dbg) {
-        dbg.textContent = 'REST ' + new Date().toTimeString().slice(0,8);
-        dbg.className = 'tb-pill';
-        dbg.style.color = 'var(--amber)';
-        dbg.style.borderColor = 'var(--amber)';
-      }
+  // REST polling: ALWAYS run, regardless of WebSocket state.
+  // This ensures prices update every 2 seconds even if WS is silently broken
+  // or returns "connected" but doesn't deliver data. Belt and suspenders.
+  setInterval(async () => {
+    await fetchInitialPrices();
+    // Update visible UI markers so user can SEE that polling is alive
+    const dbg = document.getElementById('tbDbg');
+    const now = new Date();
+    if (dbg) {
+      dbg.textContent = 'REST ' + now.toTimeString().slice(3,8);
+      dbg.className = 'tb-pill';
+      dbg.style.color = 'var(--amber)';
+      dbg.style.borderColor = 'var(--amber)';
+    }
+    // Also refresh the scanner timestamp so user sees it updating
+    const scannerUpd = document.getElementById('scannerUpd');
+    if (scannerUpd) {
+      scannerUpd.textContent = now.toLocaleTimeString('tr', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     }
   }, 2000);
 
