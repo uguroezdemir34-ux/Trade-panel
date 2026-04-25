@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="theme-color" content="#0A0A0A">
-<title>Uğur — Trader Panel v52.26</title>
+<title>Uğur — Trader Panel v52.27</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -1406,7 +1406,7 @@ body{
   .dt-grid{gap:12px}
 }
 /* ═══════════════════════════════════════════════════════════════════
-   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.26)
+   BLOOMBERG TERMINAL OVERRIDE — LAPTOP/DESKTOP ONLY (v52.27)
    Philosophy: dense information, sharp corners, minimum decoration,
    monospace everywhere, professional terminal feel.
    ═══════════════════════════════════════════════════════════════════ */
@@ -2020,7 +2020,7 @@ body{
     <button class="foot-btn" onclick="Panel.importData()"><span class="ic">📥</span>Geri Yükle</button>
     <button class="foot-btn" onclick="Panel.resetData()" style="border-color:var(--red);color:var(--red)"><span class="ic">🗑️</span>Sıfırla</button>
     <button class="foot-btn" onclick="Panel.showDebug()"><span class="ic">🔍</span>Teşhis</button>
-    <div class="foot-version">UĞUR TRADER PANEL · v52.26 · 2026</div>
+    <div class="foot-version">UĞUR TRADER PANEL · v52.27 · 2026</div>
   </div>
 
 </main>
@@ -3164,25 +3164,28 @@ function initWS() {
   if (ST.ws) { try { ST.ws.close(); } catch {} }
   if (ST._wsPingTimer) { clearInterval(ST._wsPingTimer); ST._wsPingTimer = null; }
 
-  // Try URLs in order: multiple endpoints + port fallback.
-  // Port 8443 is blocked by some mobile carriers (Turkcell, Vodafone TR) and routers.
-  // Port 443 is HTTPS and always open — critical fallback.
+  // URL list: Binance first (more reliable globally), OKX fallback.
+  // OKX WS is often blocked on Turkish mobile carriers (port 8443).
   let wsUrls = [
-    'wss://ws.okx.com:8443/ws/v5/public',      // Main (may be blocked)
-    'wss://wsaws.okx.com:8443/ws/v5/public',   // AWS mirror
-    'wss://ws.okx.com/ws/v5/public',           // Port 443 (HTTPS) — always open
-    'wss://wsaws.okx.com/ws/v5/public',        // AWS mirror on 443
+    { url: 'wss://fstream.binance.com/stream?streams=btcusdt@ticker/ethusdt@ticker/solusdt@ticker/bnbusdt@ticker/xrpusdt@ticker', type: 'binance' },
+    { url: 'wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker/solusdt@ticker/bnbusdt@ticker/xrpusdt@ticker', type: 'binance' },
+    { url: 'wss://ws.okx.com/ws/v5/public', type: 'okx' },
+    { url: 'wss://wsaws.okx.com/ws/v5/public', type: 'okx' },
+    { url: 'wss://ws.okx.com:8443/ws/v5/public', type: 'okx' },
   ];
-  // If we have a known working URL from previous session, try it first
   try {
     const savedUrl = localStorage.getItem('ug52_ws_url');
-    if (savedUrl && wsUrls.includes(savedUrl)) {
-      wsUrls = [savedUrl, ...wsUrls.filter(u => u !== savedUrl)];
+    if (savedUrl) {
+      const match = wsUrls.find(x => x.url === savedUrl);
+      if (match) wsUrls = [match, ...wsUrls.filter(x => x.url !== savedUrl)];
     }
   } catch {}
   const urlIdx = (ST.wsUrlIdx || 0) % wsUrls.length;
-  const wsUrl = wsUrls[urlIdx];
+  const cfg = wsUrls[urlIdx];
+  const wsUrl = cfg.url;
+  const wsType = cfg.type;
   ST.wsUrlIdx = urlIdx + 1;
+  ST.currentWsType = wsType;
 
   try {
     const ws = new WebSocket(wsUrl);
@@ -3191,41 +3194,59 @@ function initWS() {
       ST.wsConnected = true;
       ST.wsRetries = 0;
       $('tbWs').className = 'tb-pill live';
-      $('tbWs').textContent = 'WS';
-      console.log('[WS] ✓ connected to', wsUrl);
-      // Remember which URL worked — use it first next time (skip blocked ports)
+      $('tbWs').textContent = wsType === 'binance' ? 'BN' : 'OKX';
+      console.log('[WS] ✓ connected to', wsUrl, '(' + wsType + ')');
       try { localStorage.setItem('ug52_ws_url', wsUrl); } catch {}
-      // Subscribe to BOTH tickers (for 24h stats) AND trades (for real-time tick flow)
-      // trades channel pushes on EVERY executed trade → much denser data stream
-      ws.send(JSON.stringify({
-        op: 'subscribe',
-        args: [
-          // Tickers — 24h change, used for %
-          { channel: 'tickers', instId: 'ETH-USDT-SWAP' },
-          { channel: 'tickers', instId: 'BTC-USDT-SWAP' },
-          { channel: 'tickers', instId: 'SOL-USDT-SWAP' },
-          { channel: 'tickers', instId: 'BNB-USDT-SWAP' },
-          { channel: 'tickers', instId: 'XRP-USDT-SWAP' },
-          // Trades — every executed trade, flowing data like TradingView
-          { channel: 'trades', instId: 'ETH-USDT-SWAP' },
-          { channel: 'trades', instId: 'BTC-USDT-SWAP' },
-          { channel: 'trades', instId: 'SOL-USDT-SWAP' },
-          { channel: 'trades', instId: 'BNB-USDT-SWAP' },
-          { channel: 'trades', instId: 'XRP-USDT-SWAP' },
-        ]
-      }));
-      // OKX WS requires ping every 30s or it disconnects
-      ST._wsPingTimer = setInterval(() => {
-        if (ws.readyState === 1) {
-          try { ws.send('ping'); } catch {}
-        }
-      }, 25000);
+      // Binance: streams are auto-subscribed via URL — nothing to send.
+      // OKX: requires explicit subscribe message.
+      if (wsType === 'okx') {
+        ws.send(JSON.stringify({
+          op: 'subscribe',
+          args: [
+            { channel: 'tickers', instId: 'ETH-USDT-SWAP' },
+            { channel: 'tickers', instId: 'BTC-USDT-SWAP' },
+            { channel: 'tickers', instId: 'SOL-USDT-SWAP' },
+            { channel: 'tickers', instId: 'BNB-USDT-SWAP' },
+            { channel: 'tickers', instId: 'XRP-USDT-SWAP' },
+            { channel: 'trades', instId: 'ETH-USDT-SWAP' },
+            { channel: 'trades', instId: 'BTC-USDT-SWAP' },
+            { channel: 'trades', instId: 'SOL-USDT-SWAP' },
+            { channel: 'trades', instId: 'BNB-USDT-SWAP' },
+            { channel: 'trades', instId: 'XRP-USDT-SWAP' },
+          ]
+        }));
+        ST._wsPingTimer = setInterval(() => {
+          if (ws.readyState === 1) try { ws.send('ping'); } catch {}
+        }, 25000);
+      }
+      // Binance auto-pings from server side, no manual ping needed.
     };
     ws.onmessage = (ev) => {
       if (ev.data === 'pong') return;
       try {
         const msg = JSON.parse(ev.data);
-        // TICKERS channel: delivers 24h open, last, etc. Used for % change calc.
+
+        // ═══ BINANCE format ═══
+        // { stream: 'btcusdt@ticker', data: { s: 'BTCUSDT', c: '67500.0', o: '66000.0', ... } }
+        if (msg.stream && msg.data) {
+          const d = msg.data;
+          const instPair = (d.s || '').replace('USDT', '');
+          if (!PAIRS.includes(instPair)) return;
+          const last = parseFloat(d.c); // close price
+          const open = parseFloat(d.o || last); // open price 24h
+          const chg = open > 0 ? ((last - open) / open) * 100 : 0;
+          const prev = ST.px[instPair];
+          ST.px[instPair] = last;
+          ST.px[instPair + '_CHG'] = chg;
+          ST.px[instPair + '_OPEN24'] = open;
+          ST._wsLastTickTime = Date.now();
+          if (!ST._wsTickCount) ST._wsTickCount = {};
+          ST._wsTickCount[instPair] = (ST._wsTickCount[instPair] || 0) + 1;
+          updatePriceDisplay(instPair, last, chg, prev);
+          return;
+        }
+
+        // ═══ OKX format ═══
         if (msg.arg?.channel === 'tickers' && msg.data?.[0]) {
           const t = msg.data[0];
           const sym = t.instId.split('-')[0];
@@ -3236,20 +3257,17 @@ function initWS() {
           const prev = ST.px[sym];
           ST.px[sym] = last;
           ST.px[sym+'_CHG'] = chg;
-          ST.px[sym+'_OPEN24'] = open24; // store for trades channel
+          ST.px[sym+'_OPEN24'] = open24;
           ST._wsLastTickTime = Date.now();
           if (!ST._wsTickCount) ST._wsTickCount = {};
           ST._wsTickCount[sym] = (ST._wsTickCount[sym] || 0) + 1;
           updatePriceDisplay(sym, last, chg, prev);
         }
-        // TRADES channel: EVERY executed trade → real-time tick flow like TradingView
-        // Much denser than tickers (which may throttle)
         else if (msg.arg?.channel === 'trades' && msg.data?.[0]) {
           for (const tr of msg.data) {
             const sym = tr.instId.split('-')[0];
             if (!PAIRS.includes(sym)) continue;
             const last = parseFloat(tr.px);
-            // Use stored open24h from tickers to compute %
             const open24 = ST.px[sym+'_OPEN24'] || last;
             const chg = open24 > 0 ? ((last - open24) / open24) * 100 : 0;
             const prev = ST.px[sym];
@@ -4272,7 +4290,7 @@ const Panel = {
   showDebug() {
     const c = $('dbgContent');
     const lines = [
-      `<b style="color:var(--orange)">v52.26 · ${new Date().toLocaleString('tr')}</b>`,
+      `<b style="color:var(--orange)">v52.27 · ${new Date().toLocaleString('tr')}</b>`,
       '',
       `<b>OKX:</b> ${ST.okx.key ? '✓ ' + ST.okx.key.slice(0,6)+'...' : '✗ Anahtar yok'}`,
       `<b>Bakiye:</b> $${fmt(ST.balance.total,2)} (serbest: $${fmt(ST.balance.free,2)})`,
