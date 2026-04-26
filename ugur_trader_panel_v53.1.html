@@ -3996,17 +3996,28 @@ async function computeScoreForPair(pair) {
 async function computeAllScores() {
   const results = await Promise.all(PAIRS.map(p => computeScoreForPair(p)));
   // Save all results
+  // v53.1 FIX: Per past learning (22 Apr session) — kline data is the most reliable
+  // price source when REST tickers fail or WS is blocked. Always push prices to UI,
+  // not just on first arrival. Scanner uses ST.px directly, but BTC/ETH big cards
+  // require updatePriceDisplay() to be called.
   results.forEach(r => {
     ST.pairScores[r.pair] = r;
-    // Sync price into ST.px and update UI if WS hasn't arrived yet
     if (r.px) {
-      const hadPrice = ST.px[r.pair] > 0;
+      const prevPx = ST.px[r.pair] || 0;
       ST.px[r.pair] = r.px;
-      if (!hadPrice) {
-        // First time we have this price — push to UI so BTC/ETH cards fill
-        updatePriceDisplay(r.pair, r.px, ST.px[r.pair+'_CHG'] || 0, 0);
+      // Compute 24h change from kline data if available (last close vs ~24h ago close)
+      const ind = ST.indicators[r.pair];
+      if (ind && ind.px && !ST.px[r.pair+'_CHG']) {
+        // We don't have open24h here, leave existing CHG (from fetchInitialPrices)
+        // or 0 if never fetched. This is OK because score doesn't depend on it.
       }
+      const chg = ST.px[r.pair+'_CHG'] || 0;
+      // CRITICAL: Always update price display (BTC/ETH big cards + scanner row)
+      // Previously this only ran on first arrival, leaving cards frozen.
+      updatePriceDisplay(r.pair, r.px, chg, prevPx);
     }
+    // Mark as live data for heartbeat
+    ST.lastDataAt = Date.now();
   });
 
   // Sort by score desc
@@ -4956,6 +4967,9 @@ async function init() {
 
   // v53.1: Heartbeat indicator — shows when data was last refreshed
   // Updates every second to show "Son: 12sn önce" / "Son: 2dk önce"
+  // ALSO acts as a watchdog: if data goes stale (>30sn), force a refresh.
+  // This catches cases where mobile Chrome has throttled setInterval in the background.
+  let _watchdogBusy = false;
   function updateHeartbeat() {
     const hb = document.getElementById('heartbeat');
     if (!hb) return;
@@ -4968,6 +4982,14 @@ async function init() {
     else { txt = 'eski'; cls = 'hb-stale'; }
     hb.textContent = txt;
     hb.className = 'hb ' + cls;
+
+    // Watchdog: data older than 30sn AND page is visible → force refresh
+    if (ageSec > 30 && !document.hidden && !_watchdogBusy) {
+      _watchdogBusy = true;
+      fetchInitialPrices()
+        .then(() => { _watchdogBusy = false; })
+        .catch(() => { _watchdogBusy = false; });
+    }
   }
   setInterval(updateHeartbeat, 1000);
 }
