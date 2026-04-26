@@ -3229,21 +3229,19 @@ function initWS() {
   if (ST.ws) { try { ST.ws.close(); } catch {} }
   if (ST._wsPingTimer) { clearInterval(ST._wsPingTimer); ST._wsPingTimer = null; }
 
-  // URL list: Binance first (more reliable globally), OKX fallback.
-  // OKX WS is often blocked on Turkish mobile carriers (port 8443).
+  // URL list: OKX first (worked perfectly on 20-Apr — kıpır kıpır), Binance fallback.
+  // Order changed in v53.1 update: previously Binance was first but TR carriers may
+  // accept the connection silently without delivering messages. OKX 8443 worked 20-Apr.
   let wsUrls = [
+    { url: 'wss://ws.okx.com:8443/ws/v5/public', type: 'okx' },
+    { url: 'wss://wsaws.okx.com:8443/ws/v5/public', type: 'okx' },
+    { url: 'wss://ws.okx.com/ws/v5/public', type: 'okx' },
     { url: 'wss://fstream.binance.com/stream?streams=btcusdt@ticker/ethusdt@ticker/solusdt@ticker/bnbusdt@ticker/xrpusdt@ticker', type: 'binance' },
     { url: 'wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker/solusdt@ticker/bnbusdt@ticker/xrpusdt@ticker', type: 'binance' },
-    { url: 'wss://ws.okx.com/ws/v5/public', type: 'okx' },
-    { url: 'wss://wsaws.okx.com/ws/v5/public', type: 'okx' },
-    { url: 'wss://ws.okx.com:8443/ws/v5/public', type: 'okx' },
   ];
   try {
-    const savedUrl = localStorage.getItem('ug52_ws_url');
-    if (savedUrl) {
-      const match = wsUrls.find(x => x.url === savedUrl);
-      if (match) wsUrls = [match, ...wsUrls.filter(x => x.url !== savedUrl)];
-    }
+    // v53.1: clear stale ws_url save — order changed, force re-test from new top
+    localStorage.removeItem('ug52_ws_url');
   } catch {}
   const urlIdx = (ST.wsUrlIdx || 0) % wsUrls.length;
   const cfg = wsUrls[urlIdx];
@@ -3285,6 +3283,21 @@ function initWS() {
         }, 25000);
       }
       // Binance auto-pings from server side, no manual ping needed.
+
+      // v53.1 SILENCE WATCHDOG: if no message arrives within 5 seconds of opening,
+      // assume the carrier is silently dropping data. Close the socket and let
+      // onclose pick the next URL. This catches the bug where Binance/OKX accepts
+      // the connection but no ticks come through (TR mobile carrier scenario).
+      ST._wsOpenAt = Date.now();
+      setTimeout(() => {
+        const ageSec = (Date.now() - ST._wsOpenAt) / 1000;
+        const lastTick = ST._wsLastTickTime || 0;
+        const tickAgeSec = (Date.now() - lastTick) / 1000;
+        if (ws.readyState === 1 && (lastTick === 0 || tickAgeSec > 4)) {
+          console.warn('[WS] silent connection — no ticks in', ageSec.toFixed(1), 's. Closing to try next URL.');
+          try { ws.close(); } catch {}
+        }
+      }, 5000);
     };
     ws.onmessage = (ev) => {
       if (ev.data === 'pong') return;
