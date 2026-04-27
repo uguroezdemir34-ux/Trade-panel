@@ -3259,6 +3259,10 @@ function initWS() {
       try { localStorage.setItem('ug52_ws_url', wsUrl); } catch {}
       // Binance: streams are auto-subscribed via URL — nothing to send.
       // OKX: requires explicit subscribe message.
+      // v53.1 fix: ONLY tickers channel (test panel proved this works on user's network).
+      // Removed `trades` channels — 10 subscriptions (5 tickers + 5 trades) was likely
+      // exceeding what TR mobile carrier allows in a single connection, causing it to
+      // accept the WS but then go silent. 5 ticker subscriptions = matches test panel pattern.
       if (wsType === 'okx') {
         ws.send(JSON.stringify({
           op: 'subscribe',
@@ -3268,11 +3272,6 @@ function initWS() {
             { channel: 'tickers', instId: 'SOL-USDT-SWAP' },
             { channel: 'tickers', instId: 'BNB-USDT-SWAP' },
             { channel: 'tickers', instId: 'XRP-USDT-SWAP' },
-            { channel: 'trades', instId: 'ETH-USDT-SWAP' },
-            { channel: 'trades', instId: 'BTC-USDT-SWAP' },
-            { channel: 'trades', instId: 'SOL-USDT-SWAP' },
-            { channel: 'trades', instId: 'BNB-USDT-SWAP' },
-            { channel: 'trades', instId: 'XRP-USDT-SWAP' },
           ]
         }));
         ST._wsPingTimer = setInterval(() => {
