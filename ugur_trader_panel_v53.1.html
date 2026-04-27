@@ -3257,21 +3257,16 @@ function initWS() {
       $('tbWs').textContent = wsType === 'binance' ? 'BN' : 'OKX';
       console.log('[WS] ✓ connected to', wsUrl, '(' + wsType + ')');
       try { localStorage.setItem('ug52_ws_url', wsUrl); } catch {}
-      // Binance: streams are auto-subscribed via URL — nothing to send.
-      // OKX: requires explicit subscribe message.
-      // v53.1 fix: ONLY tickers channel (test panel proved this works on user's network).
-      // Removed `trades` channels — 10 subscriptions (5 tickers + 5 trades) was likely
-      // exceeding what TR mobile carrier allows in a single connection, causing it to
-      // accept the WS but then go silent. 5 ticker subscriptions = matches test panel pattern.
+      // v53.1 fix #2: Reduced to 2 subscriptions (BTC + ETH ticker) to match the
+      // diagnostic test panel exactly. Test panel proved this works on user's network.
+      // SOL/BNB/XRP prices will come from REST polling (every 2 sec via fetchInitialPrices).
+      // Big BTC/ETH cards need real-time, scanner table can tolerate 2-sec REST updates.
       if (wsType === 'okx') {
         ws.send(JSON.stringify({
           op: 'subscribe',
           args: [
-            { channel: 'tickers', instId: 'ETH-USDT-SWAP' },
             { channel: 'tickers', instId: 'BTC-USDT-SWAP' },
-            { channel: 'tickers', instId: 'SOL-USDT-SWAP' },
-            { channel: 'tickers', instId: 'BNB-USDT-SWAP' },
-            { channel: 'tickers', instId: 'XRP-USDT-SWAP' },
+            { channel: 'tickers', instId: 'ETH-USDT-SWAP' },
           ]
         }));
         ST._wsPingTimer = setInterval(() => {
