@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>WS Test</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'IBM Plex Mono',ui-monospace,monospace}
+body{background:#0A0A0A;color:#F5F5F5;padding:20px;font-size:14px}
+.box{background:#141414;border:1px solid #2A2A2A;border-radius:10px;padding:15px;margin-bottom:10px}
+h1{color:#FF6B1A;font-size:18px;margin-bottom:10px}
+h2{color:#FF6B1A;font-size:13px;margin-bottom:8px;letter-spacing:.1em}
+.px{font-size:32px;font-weight:700;color:#22C55E;margin:5px 0}
+.label{color:#707070;font-size:11px;letter-spacing:.1em}
+.log{background:#000;color:#22C55E;padding:8px;border-radius:6px;height:200px;overflow-y:auto;font-size:10px;line-height:1.4}
+.log .err{color:#EF4444}
+.log .warn{color:#F59E0B}
+.log .info{color:#3B82F6}
+.btn{background:#FF6B1A;color:#000;border:none;padding:8px 14px;border-radius:6px;font-weight:700;cursor:pointer;margin-right:6px;margin-bottom:6px}
+.urls{font-size:10px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<h1>🔬 WebSocket Canlı Veri Testi</h1>
+<p style="color:#707070;font-size:11px;margin-bottom:15px">Tek amaç: hangi WS sunucusu telefonunda çalışıyor öğrenmek.</p>
+
+<div class="box">
+  <h2>BTC/USDT</h2>
+  <div class="px" id="btcPx">---.--</div>
+  <div class="label">Tick: <span id="btcTick">0</span> · Son: <span id="btcAge">--</span></div>
+</div>
+
+<div class="box">
+  <h2>ETH/USDT</h2>
+  <div class="px" id="ethPx">---.--</div>
+  <div class="label">Tick: <span id="ethTick">0</span> · Son: <span id="ethAge">--</span></div>
+</div>
+
+<div class="box">
+  <h2>Test URL'leri (sırayla dene)</h2>
+  <div class="urls">
+    <button class="btn" onclick="testUrl(0)">1. OKX :8443</button>
+    <button class="btn" onclick="testUrl(1)">2. OKX (default port)</button>
+    <button class="btn" onclick="testUrl(2)">3. OKX AWS</button>
+    <button class="btn" onclick="testUrl(3)">4. Binance Futures</button>
+    <button class="btn" onclick="testUrl(4)">5. Binance Spot</button>
+    <button class="btn" style="background:#EF4444" onclick="stop()">DURDUR</button>
+  </div>
+</div>
+
+<div class="box">
+  <h2>Log</h2>
+  <div class="log" id="log"></div>
+</div>
+
+<script>
+const URLS = [
+  { url: 'wss://ws.okx.com:8443/ws/v5/public', type: 'okx' },
+  { url: 'wss://ws.okx.com/ws/v5/public', type: 'okx' },
+  { url: 'wss://wsaws.okx.com/ws/v5/public', type: 'okx' },
+  { url: 'wss://fstream.binance.com/stream?streams=btcusdt@ticker/ethusdt@ticker', type: 'binance' },
+  { url: 'wss://stream.binance.com:9443/stream?streams=btcusdt@ticker/ethusdt@ticker', type: 'binance' },
+];
+
+let ws = null;
+let pingTimer = null;
+let lastTick = { BTC: 0, ETH: 0 };
+let tickCount = { BTC: 0, ETH: 0 };
+
+function log(msg, cls='') {
+  const el = document.getElementById('log');
+  const time = new Date().toLocaleTimeString('tr');
+  el.innerHTML = `<div class="${cls}">[${time}] ${msg}</div>` + el.innerHTML;
+}
+
+function fmtPx(n) {
+  if (n >= 1000) return n.toFixed(1).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return n.toFixed(3);
+}
+
+function stop() {
+  if (ws) { try { ws.close(); } catch {} ws = null; }
+  if (pingTimer) { clearInterval(pingTimer); pingTimer = null; }
+  log('Durduruldu', 'warn');
+}
+
+function testUrl(idx) {
+  stop();
+  const cfg = URLS[idx];
+  log('Bağlanılıyor: ' + cfg.url, 'info');
+
+  try {
+    ws = new WebSocket(cfg.url);
+  } catch (e) {
+    log('Hata: ' + e.message, 'err');
+    return;
+  }
+
+  ws.onopen = () => {
+    log('✓ AÇILDI: ' + cfg.type, 'info');
+    if (cfg.type === 'okx') {
+      ws.send(JSON.stringify({
+        op: 'subscribe',
+        args: [
+          { channel: 'tickers', instId: 'BTC-USDT-SWAP' },
+          { channel: 'tickers', instId: 'ETH-USDT-SWAP' }
+        ]
+      }));
+      log('OKX: subscribe gönderildi', 'info');
+      pingTimer = setInterval(() => {
+        if (ws && ws.readyState === 1) ws.send('ping');
+      }, 25000);
+    }
+  };
+
+  ws.onmessage = (ev) => {
+    if (ev.data === 'pong') { log('pong', 'info'); return; }
+    try {
+      const msg = JSON.parse(ev.data);
+
+      // Binance
+      if (msg.stream && msg.data) {
+        const d = msg.data;
+        const sym = (d.s || '').replace('USDT', '');
+        if (sym === 'BTC' || sym === 'ETH') {
+          const last = parseFloat(d.c);
+          document.getElementById(sym.toLowerCase() + 'Px').textContent = fmtPx(last);
+          tickCount[sym]++;
+          lastTick[sym] = Date.now();
+          document.getElementById(sym.toLowerCase() + 'Tick').textContent = tickCount[sym];
+        }
+        return;
+      }
+
+      // OKX
+      if (msg.arg?.channel === 'tickers' && msg.data?.[0]) {
+        const t = msg.data[0];
+        const sym = t.instId.split('-')[0];
+        if (sym === 'BTC' || sym === 'ETH') {
+          const last = parseFloat(t.last);
+          document.getElementById(sym.toLowerCase() + 'Px').textContent = fmtPx(last);
+          tickCount[sym]++;
+          lastTick[sym] = Date.now();
+          document.getElementById(sym.toLowerCase() + 'Tick').textContent = tickCount[sym];
+        }
+        return;
+      }
+
+      // OKX subscribe response
+      if (msg.event === 'subscribe') {
+        log('OKX subscribed: ' + msg.arg.instId, 'info');
+        return;
+      }
+
+      log('Bilinmeyen mesaj: ' + JSON.stringify(msg).slice(0,80), 'warn');
+    } catch (e) {
+      log('Parse hatası: ' + e.message, 'err');
+    }
+  };
+
+  ws.onerror = (e) => log('✗ HATA', 'err');
+  ws.onclose = (e) => {
+    log('Kapandı: code=' + e.code + ' reason=' + (e.reason || 'yok'), 'warn');
+    if (pingTimer) { clearInterval(pingTimer); pingTimer = null; }
+  };
+}
+
+// Update age every second
+setInterval(() => {
+  ['BTC', 'ETH'].forEach(sym => {
+    const el = document.getElementById(sym.toLowerCase() + 'Age');
+    if (lastTick[sym]) {
+      const age = Math.round((Date.now() - lastTick[sym]) / 1000);
+      el.textContent = age + 'sn önce';
+      el.style.color = age < 3 ? '#22C55E' : age < 30 ? '#F59E0B' : '#EF4444';
+    } else {
+      el.textContent = 'henüz veri yok';
+    }
+  });
+}, 1000);
+
+// Auto-start: try URL 1
+setTimeout(() => testUrl(0), 500);
+</script>
+</body>
+</html>
