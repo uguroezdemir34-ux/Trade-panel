@@ -4805,31 +4805,37 @@ async function init() {
   updateClock();
   setInterval(updateClock, 1000);
 
-  // Start websocket
+  // v53.1 FIX: WebSocket FIRST (alone, no other fetches competing for okx.com bandwidth).
+  // Mobile Chrome limits concurrent connections to same domain — when REST polling
+  // hammers okx.com simultaneously, WebSocket connects but receives no data.
+  // Test panel proved WS works when alone. Solution: 5-sec delay before REST starts.
   initWS();
-  // Fetch initial prices with aggressive retry (critical for mobile where OKX REST can be slow)
-  fetchInitialPricesWithRetry();
-  // REST polling: ALWAYS run, regardless of WebSocket state.
-  // This ensures prices update every 2 seconds even if WS is silently broken
-  // or returns "connected" but doesn't deliver data. Belt and suspenders.
-  setInterval(async () => {
-    await fetchInitialPrices();
-    ST.lastDataAt = Date.now(); // v53.1: heartbeat marker
-    // Update visible UI markers so user can SEE that polling is alive
-    const dbg = document.getElementById('tbDbg');
-    const now = new Date();
-    if (dbg) {
-      dbg.textContent = 'REST ' + now.toTimeString().slice(3,8);
-      dbg.className = 'tb-pill';
-      dbg.style.color = 'var(--amber)';
-      dbg.style.borderColor = 'var(--amber)';
-    }
-    // Also refresh the scanner timestamp so user sees it updating
-    const scannerUpd = document.getElementById('scannerUpd');
-    if (scannerUpd) {
-      scannerUpd.textContent = now.toLocaleTimeString('tr', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+
+  // Wait 5 seconds before starting REST polling so WS can establish data flow first
+  setTimeout(() => {
+    fetchInitialPricesWithRetry();
+    // REST polling: ALWAYS run, regardless of WebSocket state.
+    // This ensures prices update every 2 seconds even if WS is silently broken
+    // or returns "connected" but doesn't deliver data. Belt and suspenders.
+    setInterval(async () => {
+      await fetchInitialPrices();
+      ST.lastDataAt = Date.now(); // v53.1: heartbeat marker
+      // Update visible UI markers so user can SEE that polling is alive
+      const dbg = document.getElementById('tbDbg');
+      const now = new Date();
+      if (dbg) {
+        dbg.textContent = 'REST ' + now.toTimeString().slice(3,8);
+        dbg.className = 'tb-pill';
+        dbg.style.color = 'var(--amber)';
+        dbg.style.borderColor = 'var(--amber)';
+      }
+      // Also refresh the scanner timestamp so user sees it updating
+      const scannerUpd = document.getElementById('scannerUpd');
+      if (scannerUpd) {
+        scannerUpd.textContent = now.toLocaleTimeString('tr', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
     }
   }, 2000);
+  }, 5000); // end of setTimeout — REST polling starts 5sec after WS init
 
   // Initial data fetch
   await Promise.all([fetchFG(), fetchBtcDom()]);
