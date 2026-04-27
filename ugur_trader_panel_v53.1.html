@@ -1945,9 +1945,25 @@ body{
     </div>
   </div>
 
-  <!-- ═══════════════ 6. P&L TAKİBİ ═══════════════ -->
+  <!-- ═══════════════ 6. PAPER-TRADE SİNYAL TAKİBİ (v53.1) ═══════════════ -->
   <div class="sec">
-    <div class="sec-hd"><span class="sec-num">06</span>P&L TAKİBİ</div>
+    <div class="sec-hd"><span class="sec-num">06</span>SİSTEM SİNYALLERİ <span style="margin-left:8px;color:var(--amber);font-size:9px;letter-spacing:.05em">PAPER-TRADE</span></div>
+    <div class="card">
+      <div class="card-hd">
+        <span>PANELİN "AÇ" KARARLARI · Son 7 gün</span>
+        <span class="tag" id="paperUpd">—</span>
+      </div>
+      <div class="card-bd" style="padding-top:12px">
+        <div id="paperStats">
+          <div style="color:var(--t3);font-size:11px;text-align:center;padding:14px">Henüz sinyal yok. Panel "AÇ" dediği anda otomatik kaydedilir.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════ 7. P&L TAKİBİ ═══════════════ -->
+  <div class="sec">
+    <div class="sec-hd"><span class="sec-num">07</span>P&L TAKİBİ</div>
     <div class="card">
       <div class="card-hd">
         <span>PERFORMANS · Son 30 gün</span>
@@ -2099,7 +2115,27 @@ body{
       <button class="modal-x" onclick="Panel.closeModal('weekModal')">×</button>
     </div>
     <div id="weekContent"></div>
+
+    <!-- v53.1: Haftalık İnceleme Şablonu -->
+    <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--bd)">
+      <div style="font-family:var(--mono);font-size:12px;font-weight:700;color:var(--orange);letter-spacing:.08em;margin-bottom:14px">📝 HAFTALIK İNCELEME · 3 SORU</div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;color:var(--t2);margin-bottom:6px;font-weight:600">1. Bu hafta ne işe yaradı?</label>
+        <textarea id="reflWorked" rows="2" placeholder="Disiplin, sabır, plan… veya bir kurulum işe yaradıysa yaz." style="width:100%;background:var(--bg2);border:1px solid var(--bd);border-radius:6px;color:var(--t1);padding:8px;font-family:var(--mono);font-size:12px;resize:vertical"></textarea>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;color:var(--t2);margin-bottom:6px;font-weight:600">2. Ne işe yaramadı / hata neydi?</label>
+        <textarea id="reflMistakes" rows="2" placeholder="FOMO, revenge, panel AÇMA derken giriş yapma, geç çıkış…" style="width:100%;background:var(--bg2);border:1px solid var(--bd);border-radius:6px;color:var(--t1);padding:8px;font-family:var(--mono);font-size:12px;resize:vertical"></textarea>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:block;font-size:11px;color:var(--t2);margin-bottom:6px;font-weight:600">3. Gelecek hafta TEK odak noktan?</label>
+        <textarea id="reflFocus" rows="2" placeholder='Tek bir cümle. Örn: "Sadece skor 75+ olduğunda gir" veya "Günde 1 trade limit"' style="width:100%;background:var(--bg2);border:1px solid var(--bd);border-radius:6px;color:var(--t1);padding:8px;font-family:var(--mono);font-size:12px;resize:vertical"></textarea>
+      </div>
+      <div id="reflStatus" style="font-size:11px;color:var(--t3);min-height:14px"></div>
+    </div>
+
     <div class="mod-actions">
+      <button class="mod-btn" onclick="Panel.saveReflection()">💾 Kaydet</button>
       <button class="mod-btn pri" onclick="Panel.closeModal('weekModal')">Haftaya Başla</button>
     </div>
   </div>
@@ -2367,7 +2403,39 @@ function renderPositions() {
     renderPositionTracker(null);
     return;
   }
-  let html = '';
+
+  // v53.1: CORRELATION WARNING — BTC+ETH same direction = doubled risk
+  // BTC and ETH have ~0.85 correlation. Same direction = effectively one big position.
+  const dirs = {};
+  ST.positions.forEach(p => {
+    const pair = p.instId.split('-')[0];
+    const side = getPosSide(p);
+    dirs[pair] = side;
+  });
+  let corrWarning = '';
+  const correlatedPairs = [
+    ['BTC', 'ETH'],   // Highest correlation
+    ['BTC', 'SOL'],   // Strong correlation
+    ['ETH', 'SOL'],   // Strong correlation
+  ];
+  for (const [a, b] of correlatedPairs) {
+    if (dirs[a] && dirs[b] && dirs[a] === dirs[b]) {
+      corrWarning = `
+        <div style="background:rgba(239,68,68,.12);border:1px solid var(--red);border-radius:8px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:flex-start;gap:8px">
+          <span style="font-size:18px;flex-shrink:0">⚠️</span>
+          <div style="flex:1">
+            <div style="font-family:var(--mono);font-size:11px;font-weight:700;color:var(--red);letter-spacing:.05em;margin-bottom:3px">KORELASYON UYARISI</div>
+            <div style="font-size:11px;color:var(--t2);line-height:1.4">
+              <b>${a}</b> ve <b>${b}</b> aynı yönde açık (<b>${dirs[a]}</b>). Bu coinler ~%85 korelasyonlu — efektif riskin <b>ikiye katlandı</b>. Birini kapatıp risk yarıya indir.
+            </div>
+          </div>
+        </div>
+      `;
+      break;
+    }
+  }
+
+  let html = corrWarning;
   ST.positions.forEach(p => {
     const side = getPosSide(p);
     const sideLo = side.toLowerCase();
@@ -2662,6 +2730,7 @@ function maybeShowWeeklySummary() {
 
   renderWeeklySummary();
   $('weekModal').classList.add('on');
+  Panel.loadReflection();
 }
 
 function renderWeeklySummary() {
@@ -4175,6 +4244,10 @@ function maybeFireSignal(pair, scoreData) {
   ST.lastSignalFp = fp;
   ST.signalCooldownUntil = Date.now() + 2*60*60*1000; // v53: 2 hour cooldown (was 30 min)
 
+  // v53.1 NEW: Record signal to paper-trade journal (regardless of Telegram)
+  // Each "AÇ" decision gets logged with current price; 4hr later we evaluate the outcome.
+  recordPaperSignal(pair, scoreData);
+
   if (ST.tg.token && ST.tg.chat) {
     const msg = buildTelegramSignalMsg(pair, scoreData);
     sendTelegram(msg);
@@ -4182,6 +4255,121 @@ function maybeFireSignal(pair, scoreData) {
     $('tgLast').textContent = `[${new Date().toLocaleTimeString('tr',{hour:'2-digit',minute:'2-digit'})}] ${pair} ${direction} · ${scoreData.score}/100 (${ST.tgDayCount}/2 bugün)`;
     $('tgLast').className = 'tg-last';
   }
+}
+
+// ═══════════════ PAPER-TRADE SIGNAL RECORDER (v53.1) ═══════════════
+// Records every "AÇ" signal and evaluates outcome 4 hours later.
+// Goal: build real win-rate data from system signals (vs from real trades).
+
+function loadPaperSignals() {
+  try { return JSON.parse(localStorage.getItem('ug52_paper_signals') || '[]'); }
+  catch { return []; }
+}
+function savePaperSignals(arr) {
+  try { localStorage.setItem('ug52_paper_signals', JSON.stringify(arr)); } catch {}
+}
+
+function recordPaperSignal(pair, scoreData) {
+  const signals = loadPaperSignals();
+  const px = ST.px[pair] || 0;
+  if (!px) return;
+  signals.push({
+    id: Date.now() + '_' + pair,
+    at: Date.now(),
+    pair: pair,
+    direction: scoreData.direction,
+    score: scoreData.score,
+    entryPx: px,
+    // outcome filled in 4 hours later
+    outcomeAt: null,
+    exitPx: null,
+    pnlPct: null,
+    result: null, // 'WIN' / 'LOSS' / 'FLAT'
+  });
+  savePaperSignals(signals);
+  console.log('[paper] Sinyal kaydedildi:', pair, scoreData.direction, scoreData.score, '@', px);
+}
+
+// Run every 60 seconds — check signals that are 4hr+ old and not yet evaluated
+async function evaluatePendingSignals() {
+  const signals = loadPaperSignals();
+  const now = Date.now();
+  const FOUR_HOURS = 4 * 60 * 60 * 1000;
+  let changed = false;
+
+  for (const s of signals) {
+    if (s.outcomeAt) continue; // already evaluated
+    if (now - s.at < FOUR_HOURS) continue; // too early
+
+    // Get current price for that pair
+    const exitPx = ST.px[s.pair] || 0;
+    if (!exitPx) continue;
+
+    const pnlPct = s.direction === 'LONG'
+      ? ((exitPx - s.entryPx) / s.entryPx) * 100
+      : ((s.entryPx - exitPx) / s.entryPx) * 100;
+
+    // Threshold: ±0.3% counts as flat (noise), beyond is win/loss
+    let result = 'FLAT';
+    if (pnlPct > 0.3) result = 'WIN';
+    else if (pnlPct < -0.3) result = 'LOSS';
+
+    s.outcomeAt = now;
+    s.exitPx = exitPx;
+    s.pnlPct = parseFloat(pnlPct.toFixed(3));
+    s.result = result;
+    changed = true;
+    console.log('[paper] Sonuç:', s.pair, s.direction, result, pnlPct.toFixed(2) + '%');
+  }
+
+  if (changed) {
+    savePaperSignals(signals);
+    renderPaperStats();
+  }
+}
+
+function renderPaperStats() {
+  const all = loadPaperSignals();
+  // Show only last 7 days for the dashboard
+  const weekAgo = Date.now() - 7 * 86400000;
+  const signals = all.filter(s => s.at >= weekAgo);
+  const total = signals.length;
+  const evaluated = signals.filter(s => s.result);
+  const wins = evaluated.filter(s => s.result === 'WIN').length;
+  const losses = evaluated.filter(s => s.result === 'LOSS').length;
+  const flats = evaluated.filter(s => s.result === 'FLAT').length;
+  const pending = total - evaluated.length;
+  const wr = (wins + losses) > 0 ? Math.round((wins / (wins + losses)) * 100) : null;
+  const avgPnl = evaluated.length > 0
+    ? (evaluated.reduce((a, s) => a + s.pnlPct, 0) / evaluated.length).toFixed(2)
+    : 0;
+
+  // Update timestamp tag
+  const upd = document.getElementById('paperUpd');
+  if (upd) upd.textContent = total > 0 ? `${total} sinyal` : '—';
+
+  const el = document.getElementById('paperStats');
+  if (!el) return;
+
+  if (total === 0) {
+    el.innerHTML = `<div style="color:var(--t3);font-size:11px;text-align:center;padding:14px">Henüz sinyal yok. Panel "AÇ" dediği anda otomatik kaydedilir.</div>`;
+    return;
+  }
+
+  el.innerHTML = `
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:10px">
+      <div class="pnl-kpi"><div class="pnl-kpi-l">SİNYAL</div><div class="pnl-kpi-v">${total}</div></div>
+      <div class="pnl-kpi"><div class="pnl-kpi-l">KAZANAN</div><div class="pnl-kpi-v g">${wins}</div></div>
+      <div class="pnl-kpi"><div class="pnl-kpi-l">KAYBEDEN</div><div class="pnl-kpi-v r">${losses}</div></div>
+      <div class="pnl-kpi"><div class="pnl-kpi-l">WR %</div><div class="pnl-kpi-v ${wr>=55?'g':wr!==null?'r':''}">${wr === null ? '—' : wr + '%'}</div></div>
+    </div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--t3);line-height:1.6">
+      Ortalama getiri: <b style="color:${avgPnl>=0?'var(--green)':'var(--red)'}">${avgPnl >= 0 ? '+' : ''}${avgPnl}%</b> · Flat: ${flats} · Beklemede: ${pending}
+    </div>
+    <div style="font-family:var(--mono);font-size:10px;color:var(--t4);margin-top:8px;padding-top:8px;border-top:1px solid var(--bd)">
+      ⚠️ 4 saat sonra her sinyalin sonucu otomatik hesaplanır. Bu paper-trade — gerçek para değil.
+    </div>
+  `;
 }
 
 // v53: Build rich Telegram message with new data structure (direction + 8 reasons + TP1/TP2)
@@ -4588,6 +4776,58 @@ const Panel = {
 
   closeModal(id) { $(id).classList.remove('on'); },
 
+  // v53.1: Haftalık inceleme — kullanıcının cevaplarını kaydet
+  saveReflection() {
+    const worked = ($('reflWorked').value || '').trim();
+    const mistakes = ($('reflMistakes').value || '').trim();
+    const focus = ($('reflFocus').value || '').trim();
+    if (!worked && !mistakes && !focus) {
+      const s = $('reflStatus');
+      if (s) { s.textContent = 'Boş bırakma — en az bir alan doldur.'; s.style.color = 'var(--red)'; }
+      return;
+    }
+    const entry = {
+      weekId: getWeekId(),
+      at: Date.now(),
+      worked, mistakes, focus,
+    };
+    try {
+      const all = JSON.parse(localStorage.getItem('ug52_reflections') || '[]');
+      // Replace if same week, otherwise append
+      const existing = all.findIndex(x => x.weekId === entry.weekId);
+      if (existing >= 0) all[existing] = entry;
+      else all.push(entry);
+      localStorage.setItem('ug52_reflections', JSON.stringify(all));
+      const s = $('reflStatus');
+      if (s) {
+        s.textContent = '✓ Kaydedildi · ' + new Date().toLocaleTimeString('tr',{hour:'2-digit',minute:'2-digit'});
+        s.style.color = 'var(--green)';
+      }
+    } catch (e) {
+      const s = $('reflStatus');
+      if (s) { s.textContent = 'Kayıt hatası: ' + e.message; s.style.color = 'var(--red)'; }
+    }
+  },
+
+  // Load this week's existing reflection (if any) into the textareas
+  loadReflection() {
+    try {
+      const all = JSON.parse(localStorage.getItem('ug52_reflections') || '[]');
+      const weekId = getWeekId();
+      const entry = all.find(x => x.weekId === weekId);
+      if (entry) {
+        if ($('reflWorked')) $('reflWorked').value = entry.worked || '';
+        if ($('reflMistakes')) $('reflMistakes').value = entry.mistakes || '';
+        if ($('reflFocus')) $('reflFocus').value = entry.focus || '';
+        const s = $('reflStatus');
+        if (s) {
+          s.textContent = 'Bu haftanın notları yüklendi · ' + new Date(entry.at).toLocaleString('tr');
+          s.style.color = 'var(--t3)';
+        }
+      }
+    } catch {}
+  },
+
   resetLock() {
     if (!confirm('Kilidi açmak istediğine emin misin? Bu bir psikoloji kuralı.')) return;
     ST.locked = false;
@@ -4741,6 +4981,7 @@ const Panel = {
   showWeekly() {
     renderWeeklySummary();
     $('weekModal').classList.add('on');
+    this.loadReflection();
   }
 };
 window.Panel = Panel;
@@ -4886,6 +5127,13 @@ async function init() {
   setInterval(syncTradeHistory, 120000); // 2min
   setInterval(checkImplicitSkip, 60000); // 1min — implicit skip detection
   setInterval(checkDisciplineDayRollover, 60000); // 1min — midnight reset
+
+  // v53.1: Paper-trade signal evaluation (every 60sec, checks signals 4hr+ old)
+  renderPaperStats(); // initial render
+  setInterval(() => {
+    evaluatePendingSignals();
+    renderPaperStats();
+  }, 60000);
   // TradingView chart has its own real-time feed — no periodic reload needed
 
   // Modal close on backdrop click
