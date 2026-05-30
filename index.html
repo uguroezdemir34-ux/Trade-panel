@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Uğur — Trader Panel</title>
+<script>window._ug_lang = localStorage.getItem('ug_lang') || 'en';</script>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
 <style>
@@ -1292,7 +1293,7 @@ body.dark .md49-sub{color:var(--t3)}
 <div class="topbar">
   <div class="tb-brand">
     <div class="tb-name">Uğur Özdemir</div>
-    <div class="tb-sub" id="headerSub">? · ✅ Hazırlık modu</div>
+    <div class="tb-sub" id="headerSub">? · ✅ Pre-Market</div>
   </div>
   <div class="tb-right">
     <div class="pill streak-pill" id="streakPill" title="İhlalsiz seri">🔥 0g</div>
@@ -6082,7 +6083,9 @@ function setMode(mode) {
     if (el) el.classList.toggle('mode-active', k === mode);
   });
   // Topbar güncelle
-  const modeLbls = { pre:'✅ Hazırlık', trade:'🚀 Trade', manage:'🛬 Yönet', stats:'📊 İstatistik', cockpit:'🎛️ Kokpit', pil:'🧠 PIL' };
+  const _ml_en = { pre:'✅ Pre-Market', trade:'🚀 Trade', manage:'🛬 Manage', stats:'📊 Stats', cockpit:'🎛️ Cockpit', pil:'🧠 PIL', intel:'🌐 Intel' };
+  const _ml_tr = { pre:'✅ Hazırlık', trade:'🚀 Trade', manage:'🛬 Yönet', stats:'📊 İstatistik', cockpit:'🎛️ Kokpit', pil:'🧠 PIL', intel:'🌐 İstihbarat' };
+  const modeLbls = (window._ug_lang === 'tr') ? _ml_tr : _ml_en;
   const subEl = document.getElementById('headerSub');
   if (subEl) {
     const bal = getTotalBal ? getTotalBal() : 0;
@@ -9361,7 +9364,9 @@ function renderAll() {
   const subEl = document.getElementById('headerSub');
   if (subEl && bal) {
     const mode = localStorage.getItem('ug_mode') || 'cockpit';
-    const modeLbls = { pre:'✅ Hazırlık', trade:'🚀 Trade', manage:'🛬 Yönet', stats:'📊 İstatistik' };
+    const _ml2_en = { pre:'✅ Pre-Market', trade:'🚀 Trade', manage:'🛬 Manage', stats:'📊 Stats', cockpit:'🎛️ Cockpit', pil:'🧠 PIL', intel:'🌐 Intel' };
+    const _ml2_tr = { pre:'✅ Hazırlık', trade:'🚀 Trade', manage:'🛬 Yönet', stats:'📊 İstatistik', cockpit:'🎛️ Kokpit', pil:'🧠 PIL', intel:'🌐 İstihbarat' };
+    const modeLbls = (window._ug_lang === 'tr') ? _ml2_tr : _ml2_en;
     subEl.textContent = '$' + bal.toFixed(0) + ' · ' + (modeLbls[mode] || '');
   }
 }
@@ -14374,6 +14379,7 @@ let _currentLang = localStorage.getItem('ug_lang') || 'en';
 
 function applyLang(lang) {
   _currentLang = lang;
+  window._ug_lang = lang;
   localStorage.setItem('ug_lang', lang);
   document.documentElement.lang = lang;
   const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
