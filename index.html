@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Uğur — Trader Panel v50</title>
+<title>Uğur — Trader Panel</title>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
 <style>
@@ -1302,14 +1302,15 @@ body.dark .md49-sub{color:var(--t3)}
       <span id="tcTxt">0/2</span>
     </div>
     <div class="pill" id="datePill"></div>
-    <div class="pill live"><div class="live-dot"></div>CANLI</div>
-    <button onclick="toggleSound()" id="soundToggleBtn" style="background:none;border:none;cursor:pointer;font-size:13px;padding:1px 3px;flex-shrink:0" title="Ses">🔔</button>
-    <button onclick="requestPushPermission()" id="pushNotifBtn" style="background:none;border:1px solid var(--bd);border-radius:20px;cursor:pointer;font-size:9px;padding:2px 6px;color:var(--t4);font-family:var(--font);flex-shrink:0" title="Push Bildirim">📳</button>
-    <button onclick="showCustomizeModal()" style="background:none;border:none;cursor:pointer;font-size:13px;padding:1px 3px;flex-shrink:0" title="Özelleştir">⚙️</button>
+    <div class="pill live"><div class="live-dot"></div><span data-i18n="live">LIVE</span></div>
+    <button onclick="toggleSound()" id="soundToggleBtn" style="background:none;border:none;cursor:pointer;font-size:13px;padding:1px 3px;flex-shrink:0" title="Sound">🔔</button>
+    <button onclick="requestPushPermission()" id="pushNotifBtn" style="background:none;border:1px solid var(--bd);border-radius:20px;cursor:pointer;font-size:9px;padding:2px 6px;color:var(--t4);font-family:var(--font);flex-shrink:0" title="Push Notifications">📳</button>
+    <button onclick="showCustomizeModal()" style="background:none;border:none;cursor:pointer;font-size:13px;padding:1px 3px;flex-shrink:0" title="Customize">⚙️</button>
     <button onclick="document.getElementById('okxModal').classList.add('open')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:1px 3px;flex-shrink:0" title="OKX API Key">🔑</button>
-    <button onclick="syncOKXBalance()" style="background:#FF6600;border:none;border-radius:4px;cursor:pointer;font-size:9px;font-weight:700;padding:3px 6px;color:#000;font-family:monospace;flex-shrink:0" title="OKX Bakiye Çek">↻$</button>
-    <button onclick="localStorage.removeItem('ug7_bal');localStorage.removeItem('ug7_start');syncOKXBalance()" style="background:#00CC44;border:none;border-radius:4px;cursor:pointer;font-size:9px;font-weight:700;padding:3px 6px;color:#000;font-family:monospace;flex-shrink:0" title="Bakiyeyi Sıfırla">🔄$</button>
-    <button class="dm-btn" id="dmBtn" onclick="toggleDark()" title="Karanlık Mod" style="flex-shrink:0">🌙</button>
+    <button onclick="syncOKXBalance()" style="background:#FF6600;border:none;border-radius:4px;cursor:pointer;font-size:9px;font-weight:700;padding:3px 6px;color:#000;font-family:monospace;flex-shrink:0" title="Sync OKX Balance">↻$</button>
+    <button onclick="localStorage.removeItem('ug7_bal');localStorage.removeItem('ug7_start');syncOKXBalance()" style="background:#00CC44;border:none;border-radius:4px;cursor:pointer;font-size:9px;font-weight:700;padding:3px 6px;color:#000;font-family:monospace;flex-shrink:0" title="Reset Balance">🔄$</button>
+    <button id="langToggleBtn" onclick="toggleLang()" style="background:none;border:1px solid var(--bd);border-radius:20px;cursor:pointer;font-size:9px;font-weight:700;padding:2px 6px;color:var(--t3);font-family:var(--font);flex-shrink:0" title="Language">🌐 EN</button>
+    <button class="dm-btn" id="dmBtn" onclick="toggleDark()" title="Dark Mode" style="flex-shrink:0">🌙</button>
   </div>
 </div>
 
@@ -1354,25 +1355,25 @@ body.dark .md49-sub{color:var(--t3)}
 @media(min-width:1100px){#quickNav{max-width:1200px}}
 </style>
   <button onclick="setMode('pre')" id="modePre" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid var(--bd)">
-    <span style="font-size:16px">✅</span><span>Hazırlık</span>
+    <span style="font-size:16px">✅</span><span data-i18n="nav_pre">Pre-Market</span>
   </button>
   <button onclick="setMode('trade')" id="modeTrade" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid var(--bd)">
-    <span style="font-size:16px">🚀</span><span>Trade</span>
+    <span style="font-size:16px">🚀</span><span data-i18n="nav_trade">Trade</span>
   </button>
   <button onclick="setMode('manage')" id="modeManage" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid var(--bd)">
-    <span style="font-size:16px">🛬</span><span>Yönet</span>
+    <span style="font-size:16px">🛬</span><span data-i18n="nav_manage">Manage</span>
   </button>
   <button onclick="setMode('stats')" id="modeStats" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid var(--bd)">
-    <span style="font-size:16px">📊</span><span>İstatistik</span>
+    <span style="font-size:16px">📊</span><span data-i18n="nav_stats">Stats</span>
   </button>
   <button onclick="setMode('cockpit')" id="modeCockpit" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid var(--bd)">
-    <span style="font-size:16px">🎛️</span><span>Kokpit</span>
+    <span style="font-size:16px">🎛️</span><span data-i18n="nav_cockpit">Cockpit</span>
   </button>
   <button onclick="setMode('pil')" id="modePil" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px">
-    <span style="font-size:16px">🧠</span><span>PIL</span>
+    <span style="font-size:16px">🧠</span><span data-i18n="nav_pil">PIL</span>
   </button>
   <button onclick="setMode('intel')" id="modeIntel" style="flex:1;padding:8px 4px 10px;font-size:8px;font-weight:700;color:var(--t4);background:transparent;border:none;cursor:pointer;font-family:var(--font);display:flex;flex-direction:column;align-items:center;gap:2px;border-left:1px solid var(--bd)">
-    <span style="font-size:16px">🌐</span><span>İstihbarat</span>
+    <span style="font-size:16px">🌐</span><span data-i18n="nav_intel">Intel</span>
   </button>
 </div>
 <style>
@@ -4588,10 +4589,12 @@ body[data-active-mode="cockpit"] #quickNav{background:rgba(10,10,10,.97) !import
     <div style="font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--t4);margin-bottom:4px">Trade Passphrase</div>
     <input class="ak-inp" type="password" id="okxTradePass" placeholder="Trade Passphrase…" autocomplete="off">
 
+    <div id="okxDualCheckResult" style="margin-bottom:10px;border:1px solid var(--bd);border-radius:var(--rsm);padding:8px 10px;background:var(--s2);min-height:28px;display:none"></div>
     <div class="ak-btns">
-      <button class="ak-save" onclick="okxKeySave()">Kaydet & Bağlan</button>
-      <button class="ak-cancel" onclick="okxKeyClose()">İptal</button>
+      <button class="ak-save" onclick="okxKeySave()">Save &amp; Connect</button>
+      <button class="ak-cancel" onclick="okxKeyClose()">Cancel</button>
     </div>
+    <button onclick="if(document.getElementById('okxDualCheckResult')){document.getElementById('okxDualCheckResult').style.display='block';okxDualCheck();}" style="width:100%;margin-top:6px;padding:6px;border:1px solid var(--bbd);border-radius:var(--rsm);background:var(--bbg);color:var(--blue);font-size:9px;font-weight:700;cursor:pointer;font-family:var(--font)">🔍 Dual-Layer Connection Check</button>
   </div>
 </div>
 
@@ -14302,6 +14305,156 @@ window.setMode = function(mode){
 
 })(); // end IIFE
 </script>
+
+<!-- ══════════════════════════════════════════════════
+     i18n — Language System (EN default / TR secondary)
+     ══════════════════════════════════════════════════ -->
+<script>
+(function(){
+const TRANSLATIONS = {
+  en: {
+    nav_pre:      'Pre-Market',
+    nav_trade:    'Trade',
+    nav_manage:   'Manage',
+    nav_stats:    'Stats',
+    nav_cockpit:  'Cockpit',
+    nav_pil:      'PIL',
+    nav_intel:    'Intel',
+    live:         'LIVE',
+    // OKX modal
+    okx_read_title:  '📊 Read-Only Key (Balance & Positions)',
+    okx_read_sub:    'Permission: Read only — this key cannot place orders.',
+    okx_trade_title: '⚡ Trade Key (Automated Trading)',
+    okx_trade_sub:   'Create a separate API in OKX → select Trade permission. Add IP restriction for security.',
+    okx_save:        'Save & Connect',
+    okx_cancel:      'Cancel',
+    // Connection status
+    okx_layer1_ok:   '✓ Layer 1: API key present',
+    okx_layer1_fail: '✗ Layer 1: API key missing',
+    okx_layer2_ok:   '✓ Layer 2: Connection verified',
+    okx_layer2_fail: '✗ Layer 2: Connection failed',
+    okx_checking:    '⟳ Checking connection…',
+    // Balance
+    bal_sync:   'Syncing…',
+    bal_reset:  'Reset Balance',
+    // Misc
+    dark_mode:  'Dark Mode',
+    customize:  'Customize',
+    sound:      'Sound',
+  },
+  tr: {
+    nav_pre:      'Hazırlık',
+    nav_trade:    'Trade',
+    nav_manage:   'Yönet',
+    nav_stats:    'İstatistik',
+    nav_cockpit:  'Kokpit',
+    nav_pil:      'PIL',
+    nav_intel:    'İstihbarat',
+    live:         'CANLI',
+    okx_read_title:  '📊 Okuma Anahtarı (Bakiye & Pozisyon)',
+    okx_read_sub:    'İzin: sadece Okuma (Read) — bu key işlem açmaz.',
+    okx_trade_title: '⚡ İşlem Anahtarı (Otomatik Trade)',
+    okx_trade_sub:   'OKX\'te ayrı API oluştur → İzin: Trade seç. IP kısıtlaması ekle (güvenlik için).',
+    okx_save:        'Kaydet & Bağlan',
+    okx_cancel:      'İptal',
+    okx_layer1_ok:   '✓ Katman 1: API key mevcut',
+    okx_layer1_fail: '✗ Katman 1: API key eksik',
+    okx_layer2_ok:   '✓ Katman 2: Bağlantı doğrulandı',
+    okx_layer2_fail: '✗ Katman 2: Bağlantı başarısız',
+    okx_checking:    '⟳ Bağlantı kontrol ediliyor…',
+    bal_sync:   'Çekiliyor…',
+    bal_reset:  'Bakiyeyi Sıfırla',
+    dark_mode:  'Karanlık Mod',
+    customize:  'Özelleştir',
+    sound:      'Ses',
+  }
+};
+
+let _currentLang = localStorage.getItem('ug_lang') || 'en';
+
+function applyLang(lang) {
+  _currentLang = lang;
+  localStorage.setItem('ug_lang', lang);
+  document.documentElement.lang = lang;
+  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  const btn = document.getElementById('langToggleBtn');
+  if (btn) btn.textContent = '🌐 ' + lang.toUpperCase();
+  // update mode label button in modeLbls
+  if (typeof window._refreshModeLbl === 'function') window._refreshModeLbl();
+}
+
+window.toggleLang = function() {
+  applyLang(_currentLang === 'en' ? 'tr' : 'en');
+};
+
+window.getCurrentLang = function() { return _currentLang; };
+
+// Apply on load (default EN)
+document.addEventListener('DOMContentLoaded', () => applyLang(_currentLang));
+// Fallback if DOM already ready
+if (document.readyState !== 'loading') applyLang(_currentLang);
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     OKX Dual-Layer Connection Check
+     ══════════════════════════════════════════════════ -->
+<script>
+(function(){
+window.okxDualCheck = async function() {
+  const resultEl = document.getElementById('okxDualCheckResult');
+  if (!resultEl) return;
+
+  // Layer 1 — key presence
+  const ak = typeof secureGetKey === 'function' ? secureGetKey('okx_api_key') : null;
+  const sk = typeof secureGetKey === 'function' ? secureGetKey('okx_secret_key') : null;
+  const pp = typeof secureGetKey === 'function' ? secureGetKey('okx_passphrase') : null;
+  const layer1ok = !!(ak && sk && pp);
+
+  resultEl.innerHTML = '';
+  const l1 = document.createElement('div');
+  l1.style.cssText = 'font-size:10px;font-family:monospace;padding:4px 0;color:' + (layer1ok ? 'var(--green)' : 'var(--red)');
+  l1.textContent = layer1ok
+    ? '✓ Layer 1: API key present'
+    : '✗ Layer 1: API key missing — click 🔑 to enter your keys';
+  resultEl.appendChild(l1);
+
+  if (!layer1ok) return;
+
+  // Layer 2 — live connection test
+  const l2 = document.createElement('div');
+  l2.style.cssText = 'font-size:10px;font-family:monospace;padding:4px 0;color:var(--t3)';
+  l2.textContent = '⟳ Layer 2: Testing connection…';
+  resultEl.appendChild(l2);
+
+  try {
+    await okxGet('/api/v5/account/balance');
+    l2.style.color = 'var(--green)';
+    l2.textContent = '✓ Layer 2: OKX connection verified — balance fetched';
+  } catch(e) {
+    l2.style.color = 'var(--red)';
+    l2.textContent = '✗ Layer 2: ' + e.message;
+  }
+};
+
+// Auto-run dual check after saving keys
+document.addEventListener('DOMContentLoaded', () => {
+  const _orig = window.okxKeySave;
+  if (typeof _orig === 'function') {
+    window.okxKeySave = function() {
+      _orig.apply(this, arguments);
+      const el = document.getElementById('okxDualCheckResult');
+      if (el) { el.style.display = 'block'; setTimeout(okxDualCheck, 800); }
+    };
+  }
+});
+})();
+</script>
+
 <script defer src="https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516" integrity="sha512-8DS7rgIrAmghBFwoOTujcf6D9rXvH8xm8JQ1Ja01h9QX8EzXldiszufYa4IFfKdLUKTTrnSFXLDkUEOTrZQ8Qg==" data-cf-beacon='{"version":"2024.11.0","token":"4edd5f8ec12a48cfa682ab8261b80a79","server_timing":{"name":{"cfCacheStatus":true,"cfEdge":true,"cfExtPri":true,"cfL4":true,"cfOrigin":true,"cfSpeedBrain":true},"location_startswith":null}}' crossorigin="anonymous"></script>
 </body>
 </html>
