@@ -1310,7 +1310,7 @@ body.dark .md49-sub{color:var(--t3)}
     <button onclick="document.getElementById('okxModal').classList.add('open')" style="background:none;border:none;cursor:pointer;font-size:12px;padding:1px 3px;flex-shrink:0" title="OKX API Key">🔑</button>
     <button onclick="syncOKXBalance()" style="background:#FF6600;border:none;border-radius:4px;cursor:pointer;font-size:9px;font-weight:700;padding:3px 6px;color:#000;font-family:monospace;flex-shrink:0" title="Sync OKX Balance">↻$</button>
     <button onclick="localStorage.removeItem('ug7_bal');localStorage.removeItem('ug7_start');syncOKXBalance()" style="background:#00CC44;border:none;border-radius:4px;cursor:pointer;font-size:9px;font-weight:700;padding:3px 6px;color:#000;font-family:monospace;flex-shrink:0" title="Reset Balance">🔄$</button>
-    <button id="langToggleBtn" onclick="toggleLang()" style="background:none;border:1px solid var(--bd);border-radius:20px;cursor:pointer;font-size:9px;font-weight:700;padding:2px 6px;color:var(--t3);font-family:var(--font);flex-shrink:0" title="Language">🌐 EN</button>
+    <button id="langToggleBtn" onclick="openLangMenu()" style="background:none;border:1px solid var(--bd);border-radius:20px;cursor:pointer;font-size:9px;font-weight:700;padding:2px 7px;color:var(--t3);font-family:var(--font);flex-shrink:0;position:relative" title="Language">🌐 EN</button>
     <button class="dm-btn" id="dmBtn" onclick="toggleDark()" title="Dark Mode" style="flex-shrink:0">🌙</button>
   </div>
 </div>
@@ -14312,96 +14312,297 @@ window.setMode = function(mode){
 </script>
 
 <!-- ══════════════════════════════════════════════════
-     i18n — Language System (EN default / TR secondary)
+     i18n — Global Language System (12 languages)
+     Default: English | Secondary: all others
      ══════════════════════════════════════════════════ -->
+<style>
+#langMenu{display:none;position:fixed;z-index:9999;background:var(--card);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:6px;min-width:160px;max-height:360px;overflow-y:auto}
+#langMenu.open{display:block}
+.lm-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--t2);font-family:var(--font);border:none;background:none;width:100%;text-align:left}
+.lm-item:hover{background:var(--s2)}
+.lm-item.active{background:var(--t1);color:#fff}
+.lm-item .lm-flag{font-size:14px;line-height:1}
+.lm-item .lm-name{flex:1}
+.lm-item .lm-code{font-size:9px;color:inherit;opacity:.6;font-family:monospace}
+body[dir="rtl"] .topbar,.body-rtl .topbar{flex-direction:row-reverse}
+body[dir="rtl"] #quickNav{direction:rtl}
+</style>
+<!-- Language picker dropdown -->
+<div id="langMenu">
+  <div class="lm-item" data-lang="en"><span class="lm-flag">🇬🇧</span><span class="lm-name">English</span><span class="lm-code">EN</span></div>
+  <div class="lm-item" data-lang="de"><span class="lm-flag">🇩🇪</span><span class="lm-name">Deutsch</span><span class="lm-code">DE</span></div>
+  <div class="lm-item" data-lang="fr"><span class="lm-flag">🇫🇷</span><span class="lm-name">Français</span><span class="lm-code">FR</span></div>
+  <div class="lm-item" data-lang="pt"><span class="lm-flag">🇧🇷</span><span class="lm-name">Português</span><span class="lm-code">PT</span></div>
+  <div class="lm-item" data-lang="es"><span class="lm-flag">🇪🇸</span><span class="lm-name">Español</span><span class="lm-code">ES</span></div>
+  <div class="lm-item" data-lang="zh"><span class="lm-flag">🇨🇳</span><span class="lm-name">中文</span><span class="lm-code">ZH</span></div>
+  <div class="lm-item" data-lang="hi"><span class="lm-flag">🇮🇳</span><span class="lm-name">हिन्दी</span><span class="lm-code">HI</span></div>
+  <div class="lm-item" data-lang="ar"><span class="lm-flag">🇸🇦</span><span class="lm-name">العربية</span><span class="lm-code">AR</span></div>
+  <div class="lm-item" data-lang="ru"><span class="lm-flag">🇷🇺</span><span class="lm-name">Русский</span><span class="lm-code">RU</span></div>
+  <div class="lm-item" data-lang="ja"><span class="lm-flag">🇯🇵</span><span class="lm-name">日本語</span><span class="lm-code">JA</span></div>
+  <div class="lm-item" data-lang="ko"><span class="lm-flag">🇰🇷</span><span class="lm-name">한국어</span><span class="lm-code">KO</span></div>
+  <div class="lm-item" data-lang="tr"><span class="lm-flag">🇹🇷</span><span class="lm-name">Türkçe</span><span class="lm-code">TR</span></div>
+</div>
 <script>
 (function(){
+const FLAGS = { en:'🇬🇧', de:'🇩🇪', fr:'🇫🇷', pt:'🇧🇷', es:'🇪🇸', zh:'🇨🇳', hi:'🇮🇳', ar:'🇸🇦', ru:'🇷🇺', ja:'🇯🇵', ko:'🇰🇷', tr:'🇹🇷' };
+const CODES = { en:'EN', de:'DE', fr:'FR', pt:'PT', es:'ES', zh:'ZH', hi:'HI', ar:'AR', ru:'RU', ja:'JA', ko:'KO', tr:'TR' };
+const RTL_LANGS = ['ar'];
+const CJK_LANGS = ['zh','ja','ko'];
+
 const TRANSLATIONS = {
   en: {
-    nav_pre:      'Pre-Market',
-    nav_trade:    'Trade',
-    nav_manage:   'Manage',
-    nav_stats:    'Stats',
-    nav_cockpit:  'Cockpit',
-    nav_pil:      'PIL',
-    nav_intel:    'Intel',
-    live:         'LIVE',
-    // OKX modal
-    okx_read_title:  '📊 Read-Only Key (Balance & Positions)',
-    okx_read_sub:    'Permission: Read only — this key cannot place orders.',
-    okx_trade_title: '⚡ Trade Key (Automated Trading)',
-    okx_trade_sub:   'Create a separate API in OKX → select Trade permission. Add IP restriction for security.',
-    okx_save:        'Save & Connect',
-    okx_cancel:      'Cancel',
-    // Connection status
-    okx_layer1_ok:   '✓ Layer 1: API key present',
-    okx_layer1_fail: '✗ Layer 1: API key missing',
-    okx_layer2_ok:   '✓ Layer 2: Connection verified',
-    okx_layer2_fail: '✗ Layer 2: Connection failed',
-    okx_checking:    '⟳ Checking connection…',
-    // Balance
-    bal_sync:   'Syncing…',
-    bal_reset:  'Reset Balance',
-    // Misc
-    dark_mode:  'Dark Mode',
-    customize:  'Customize',
-    sound:      'Sound',
+    nav_pre:'Pre-Market', nav_trade:'Trade', nav_manage:'Manage', nav_stats:'Stats',
+    nav_cockpit:'Cockpit', nav_pil:'PIL', nav_intel:'Intel', live:'LIVE',
+    okx_read_title:'📊 Read-Only Key (Balance & Positions)',
+    okx_read_sub:'Permission: Read only — this key cannot place orders.',
+    okx_trade_title:'⚡ Trade Key (Automated Trading)',
+    okx_trade_sub:'Create a separate API in OKX → select Trade permission. Add IP restriction for security.',
+    okx_save:'Save & Connect', okx_cancel:'Cancel',
+    okx_layer1_ok:'✓ Layer 1: API key present', okx_layer1_fail:'✗ Layer 1: API key missing',
+    okx_layer2_ok:'✓ Layer 2: Connection verified', okx_layer2_fail:'✗ Layer 2: Connection failed',
+    okx_checking:'⟳ Checking connection…',
+    bal_sync:'Syncing…', bal_reset:'Reset Balance',
+    dark_mode:'Dark Mode', customize:'Customize', sound:'Sound',
+  },
+  de: {
+    nav_pre:'Vorbörse', nav_trade:'Trade', nav_manage:'Verwalten', nav_stats:'Statistik',
+    nav_cockpit:'Cockpit', nav_pil:'PIL', nav_intel:'Nachrichten', live:'LIVE',
+    okx_read_title:'📊 Nur-Lesen-Key (Guthaben & Positionen)',
+    okx_read_sub:'Berechtigung: Nur Lesen — dieser Key platziert keine Orders.',
+    okx_trade_title:'⚡ Trade-Key (Automatisierter Handel)',
+    okx_trade_sub:'Separate API in OKX erstellen → Trade-Berechtigung wählen. IP-Einschränkung hinzufügen.',
+    okx_save:'Speichern & Verbinden', okx_cancel:'Abbrechen',
+    okx_layer1_ok:'✓ Ebene 1: API-Key vorhanden', okx_layer1_fail:'✗ Ebene 1: API-Key fehlt',
+    okx_layer2_ok:'✓ Ebene 2: Verbindung bestätigt', okx_layer2_fail:'✗ Ebene 2: Verbindung fehlgeschlagen',
+    okx_checking:'⟳ Verbindung wird geprüft…',
+    bal_sync:'Wird geladen…', bal_reset:'Guthaben zurücksetzen',
+    dark_mode:'Dunkelmodus', customize:'Anpassen', sound:'Ton',
+  },
+  fr: {
+    nav_pre:'Pré-marché', nav_trade:'Trade', nav_manage:'Gérer', nav_stats:'Stats',
+    nav_cockpit:'Cockpit', nav_pil:'PIL', nav_intel:'Renseignement', live:'EN DIRECT',
+    okx_read_title:'📊 Clé Lecture Seule (Solde & Positions)',
+    okx_read_sub:'Permission : Lecture seule — cette clé ne passe pas d\'ordres.',
+    okx_trade_title:'⚡ Clé Trade (Trading Automatisé)',
+    okx_trade_sub:'Créer une API séparée dans OKX → sélectionner permission Trade. Ajouter restriction IP.',
+    okx_save:'Enregistrer & Connecter', okx_cancel:'Annuler',
+    okx_layer1_ok:'✓ Couche 1 : Clé API présente', okx_layer1_fail:'✗ Couche 1 : Clé API manquante',
+    okx_layer2_ok:'✓ Couche 2 : Connexion vérifiée', okx_layer2_fail:'✗ Couche 2 : Connexion échouée',
+    okx_checking:'⟳ Vérification de la connexion…',
+    bal_sync:'Synchronisation…', bal_reset:'Réinitialiser le solde',
+    dark_mode:'Mode sombre', customize:'Personnaliser', sound:'Son',
+  },
+  pt: {
+    nav_pre:'Pré-mercado', nav_trade:'Trade', nav_manage:'Gerenciar', nav_stats:'Estatísticas',
+    nav_cockpit:'Cockpit', nav_pil:'PIL', nav_intel:'Inteligência', live:'AO VIVO',
+    okx_read_title:'📊 Chave Somente Leitura (Saldo & Posições)',
+    okx_read_sub:'Permissão: Somente leitura — esta chave não coloca ordens.',
+    okx_trade_title:'⚡ Chave de Trade (Trading Automatizado)',
+    okx_trade_sub:'Crie uma API separada na OKX → selecione permissão Trade. Adicione restrição de IP.',
+    okx_save:'Salvar & Conectar', okx_cancel:'Cancelar',
+    okx_layer1_ok:'✓ Camada 1: Chave API presente', okx_layer1_fail:'✗ Camada 1: Chave API ausente',
+    okx_layer2_ok:'✓ Camada 2: Conexão verificada', okx_layer2_fail:'✗ Camada 2: Conexão falhou',
+    okx_checking:'⟳ Verificando conexão…',
+    bal_sync:'Sincronizando…', bal_reset:'Redefinir Saldo',
+    dark_mode:'Modo Escuro', customize:'Personalizar', sound:'Som',
+  },
+  es: {
+    nav_pre:'Pre-mercado', nav_trade:'Trade', nav_manage:'Gestionar', nav_stats:'Estadísticas',
+    nav_cockpit:'Cabina', nav_pil:'PIL', nav_intel:'Inteligencia', live:'EN VIVO',
+    okx_read_title:'📊 Clave Solo Lectura (Saldo & Posiciones)',
+    okx_read_sub:'Permiso: Solo lectura — esta clave no coloca órdenes.',
+    okx_trade_title:'⚡ Clave de Trade (Trading Automatizado)',
+    okx_trade_sub:'Crear API separada en OKX → seleccionar permiso Trade. Agregar restricción de IP.',
+    okx_save:'Guardar & Conectar', okx_cancel:'Cancelar',
+    okx_layer1_ok:'✓ Capa 1: Clave API presente', okx_layer1_fail:'✗ Capa 1: Clave API faltante',
+    okx_layer2_ok:'✓ Capa 2: Conexión verificada', okx_layer2_fail:'✗ Capa 2: Conexión fallida',
+    okx_checking:'⟳ Verificando conexión…',
+    bal_sync:'Sincronizando…', bal_reset:'Restablecer Saldo',
+    dark_mode:'Modo Oscuro', customize:'Personalizar', sound:'Sonido',
+  },
+  zh: {
+    nav_pre:'盘前', nav_trade:'交易', nav_manage:'管理', nav_stats:'统计',
+    nav_cockpit:'驾驶舱', nav_pil:'PIL', nav_intel:'情报', live:'直播',
+    okx_read_title:'📊 只读密钥（余额和持仓）',
+    okx_read_sub:'权限：仅读取 — 此密钥不能下单。',
+    okx_trade_title:'⚡ 交易密钥（自动交易）',
+    okx_trade_sub:'在OKX中创建单独的API → 选择交易权限。添加IP限制以提高安全性。',
+    okx_save:'保存并连接', okx_cancel:'取消',
+    okx_layer1_ok:'✓ 第1层：API密钥存在', okx_layer1_fail:'✗ 第1层：API密钥缺失',
+    okx_layer2_ok:'✓ 第2层：连接已验证', okx_layer2_fail:'✗ 第2层：连接失败',
+    okx_checking:'⟳ 正在检查连接…',
+    bal_sync:'同步中…', bal_reset:'重置余额',
+    dark_mode:'深色模式', customize:'自定义', sound:'声音',
+  },
+  hi: {
+    nav_pre:'प्री-मार्केट', nav_trade:'ट्रेड', nav_manage:'प्रबंधन', nav_stats:'आँकड़े',
+    nav_cockpit:'कॉकपिट', nav_pil:'PIL', nav_intel:'खुफिया', live:'लाइव',
+    okx_read_title:'📊 रीड-ओनली की (बैलेंस और पोजीशन)',
+    okx_read_sub:'अनुमति: केवल पढ़ना — यह की ऑर्डर नहीं दे सकती।',
+    okx_trade_title:'⚡ ट्रेड की (स्वचालित ट्रेडिंग)',
+    okx_trade_sub:'OKX में अलग API बनाएं → Trade अनुमति चुनें। सुरक्षा के लिए IP प्रतिबंध जोड़ें।',
+    okx_save:'सहेजें और कनेक्ट करें', okx_cancel:'रद्द करें',
+    okx_layer1_ok:'✓ परत 1: API की मौजूद', okx_layer1_fail:'✗ परत 1: API की गायब',
+    okx_layer2_ok:'✓ परत 2: कनेक्शन सत्यापित', okx_layer2_fail:'✗ परत 2: कनेक्शन विफल',
+    okx_checking:'⟳ कनेक्शन जाँच रहे हैं…',
+    bal_sync:'सिंक हो रहा है…', bal_reset:'बैलेंस रीसेट करें',
+    dark_mode:'डार्क मोड', customize:'कस्टमाइज़', sound:'ध्वनि',
+  },
+  ar: {
+    nav_pre:'ما قبل السوق', nav_trade:'تداول', nav_manage:'إدارة', nav_stats:'إحصائيات',
+    nav_cockpit:'قمرة القيادة', nav_pil:'PIL', nav_intel:'استخبارات', live:'مباشر',
+    okx_read_title:'📊 مفتاح للقراءة فقط (الرصيد والمراكز)',
+    okx_read_sub:'الصلاحية: قراءة فقط — هذا المفتاح لا يضع أوامر.',
+    okx_trade_title:'⚡ مفتاح التداول (التداول الآلي)',
+    okx_trade_sub:'أنشئ API منفصلاً في OKX → اختر صلاحية Trade. أضف قيود IP للأمان.',
+    okx_save:'حفظ واتصال', okx_cancel:'إلغاء',
+    okx_layer1_ok:'✓ الطبقة 1: مفتاح API موجود', okx_layer1_fail:'✗ الطبقة 1: مفتاح API مفقود',
+    okx_layer2_ok:'✓ الطبقة 2: تم التحقق من الاتصال', okx_layer2_fail:'✗ الطبقة 2: فشل الاتصال',
+    okx_checking:'⟳ جارٍ فحص الاتصال…',
+    bal_sync:'جارٍ المزامنة…', bal_reset:'إعادة تعيين الرصيد',
+    dark_mode:'الوضع المظلم', customize:'تخصيص', sound:'الصوت',
+  },
+  ru: {
+    nav_pre:'Пре-маркет', nav_trade:'Торговля', nav_manage:'Управление', nav_stats:'Статистика',
+    nav_cockpit:'Кабина', nav_pil:'PIL', nav_intel:'Разведка', live:'ПРЯМОЙ ЭФИР',
+    okx_read_title:'📊 Ключ только для чтения (Баланс и позиции)',
+    okx_read_sub:'Разрешение: только чтение — этот ключ не может размещать ордера.',
+    okx_trade_title:'⚡ Торговый ключ (Автоматическая торговля)',
+    okx_trade_sub:'Создайте отдельный API в OKX → выберите разрешение Trade. Добавьте ограничение IP.',
+    okx_save:'Сохранить и подключить', okx_cancel:'Отмена',
+    okx_layer1_ok:'✓ Уровень 1: API-ключ присутствует', okx_layer1_fail:'✗ Уровень 1: API-ключ отсутствует',
+    okx_layer2_ok:'✓ Уровень 2: Соединение подтверждено', okx_layer2_fail:'✗ Уровень 2: Сбой соединения',
+    okx_checking:'⟳ Проверка соединения…',
+    bal_sync:'Синхронизация…', bal_reset:'Сбросить баланс',
+    dark_mode:'Тёмный режим', customize:'Настроить', sound:'Звук',
+  },
+  ja: {
+    nav_pre:'市場前', nav_trade:'取引', nav_manage:'管理', nav_stats:'統計',
+    nav_cockpit:'コックピット', nav_pil:'PIL', nav_intel:'インテリジェンス', live:'ライブ',
+    okx_read_title:'📊 読み取り専用キー（残高・ポジション）',
+    okx_read_sub:'権限：読み取りのみ — このキーは注文できません。',
+    okx_trade_title:'⚡ 取引キー（自動取引）',
+    okx_trade_sub:'OKXで別のAPIを作成 → 取引権限を選択。セキュリティのためIP制限を追加。',
+    okx_save:'保存して接続', okx_cancel:'キャンセル',
+    okx_layer1_ok:'✓ 層1：APIキーあり', okx_layer1_fail:'✗ 層1：APIキーなし',
+    okx_layer2_ok:'✓ 層2：接続確認済み', okx_layer2_fail:'✗ 層2：接続失敗',
+    okx_checking:'⟳ 接続確認中…',
+    bal_sync:'同期中…', bal_reset:'残高をリセット',
+    dark_mode:'ダークモード', customize:'カスタマイズ', sound:'サウンド',
+  },
+  ko: {
+    nav_pre:'장전', nav_trade:'트레이드', nav_manage:'관리', nav_stats:'통계',
+    nav_cockpit:'조종석', nav_pil:'PIL', nav_intel:'인텔리전스', live:'라이브',
+    okx_read_title:'📊 읽기 전용 키 (잔액 & 포지션)',
+    okx_read_sub:'권한: 읽기 전용 — 이 키는 주문을 실행할 수 없습니다.',
+    okx_trade_title:'⚡ 트레이드 키 (자동 거래)',
+    okx_trade_sub:'OKX에서 별도 API 생성 → 거래 권한 선택. 보안을 위해 IP 제한 추가.',
+    okx_save:'저장 & 연결', okx_cancel:'취소',
+    okx_layer1_ok:'✓ 레이어 1: API 키 있음', okx_layer1_fail:'✗ 레이어 1: API 키 없음',
+    okx_layer2_ok:'✓ 레이어 2: 연결 확인됨', okx_layer2_fail:'✗ 레이어 2: 연결 실패',
+    okx_checking:'⟳ 연결 확인 중…',
+    bal_sync:'동기화 중…', bal_reset:'잔액 초기화',
+    dark_mode:'다크 모드', customize:'커스터마이즈', sound:'사운드',
   },
   tr: {
-    nav_pre:      'Hazırlık',
-    nav_trade:    'Trade',
-    nav_manage:   'Yönet',
-    nav_stats:    'İstatistik',
-    nav_cockpit:  'Kokpit',
-    nav_pil:      'PIL',
-    nav_intel:    'İstihbarat',
-    live:         'CANLI',
-    okx_read_title:  '📊 Okuma Anahtarı (Bakiye & Pozisyon)',
-    okx_read_sub:    'İzin: sadece Okuma (Read) — bu key işlem açmaz.',
-    okx_trade_title: '⚡ İşlem Anahtarı (Otomatik Trade)',
-    okx_trade_sub:   'OKX\'te ayrı API oluştur → İzin: Trade seç. IP kısıtlaması ekle (güvenlik için).',
-    okx_save:        'Kaydet & Bağlan',
-    okx_cancel:      'İptal',
-    okx_layer1_ok:   '✓ Katman 1: API key mevcut',
-    okx_layer1_fail: '✗ Katman 1: API key eksik',
-    okx_layer2_ok:   '✓ Katman 2: Bağlantı doğrulandı',
-    okx_layer2_fail: '✗ Katman 2: Bağlantı başarısız',
-    okx_checking:    '⟳ Bağlantı kontrol ediliyor…',
-    bal_sync:   'Çekiliyor…',
-    bal_reset:  'Bakiyeyi Sıfırla',
-    dark_mode:  'Karanlık Mod',
-    customize:  'Özelleştir',
-    sound:      'Ses',
+    nav_pre:'Hazırlık', nav_trade:'Trade', nav_manage:'Yönet', nav_stats:'İstatistik',
+    nav_cockpit:'Kokpit', nav_pil:'PIL', nav_intel:'İstihbarat', live:'CANLI',
+    okx_read_title:'📊 Okuma Anahtarı (Bakiye & Pozisyon)',
+    okx_read_sub:'İzin: sadece Okuma — bu key işlem açmaz.',
+    okx_trade_title:'⚡ İşlem Anahtarı (Otomatik Trade)',
+    okx_trade_sub:'OKX\'te ayrı API oluştur → Trade izni seç. IP kısıtlaması ekle.',
+    okx_save:'Kaydet & Bağlan', okx_cancel:'İptal',
+    okx_layer1_ok:'✓ Katman 1: API key mevcut', okx_layer1_fail:'✗ Katman 1: API key eksik',
+    okx_layer2_ok:'✓ Katman 2: Bağlantı doğrulandı', okx_layer2_fail:'✗ Katman 2: Bağlantı başarısız',
+    okx_checking:'⟳ Bağlantı kontrol ediliyor…',
+    bal_sync:'Çekiliyor…', bal_reset:'Bakiyeyi Sıfırla',
+    dark_mode:'Karanlık Mod', customize:'Özelleştir', sound:'Ses',
   }
 };
+
+// CJK font loader (on demand)
+const _loadedFonts = {};
+function _loadCJKFont(lang) {
+  if (_loadedFonts[lang]) return;
+  _loadedFonts[lang] = true;
+  const fontMap = {
+    zh: 'Noto+Sans+SC:wght@400;700',
+    ja: 'Noto+Sans+JP:wght@400;700',
+    ko: 'Noto+Sans+KR:wght@400;700',
+    hi: 'Noto+Sans+Devanagari:wght@400;700',
+    ar: 'Noto+Sans+Arabic:wght@400;700'
+  };
+  if (fontMap[lang]) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://fonts.googleapis.com/css2?family=' + fontMap[lang] + '&display=swap';
+    document.head.appendChild(link);
+  }
+}
 
 let _currentLang = localStorage.getItem('ug_lang') || 'en';
 
 function applyLang(lang) {
+  if (!TRANSLATIONS[lang]) lang = 'en';
   _currentLang = lang;
   window._ug_lang = lang;
   localStorage.setItem('ug_lang', lang);
   document.documentElement.lang = lang;
-  const t = TRANSLATIONS[lang] || TRANSLATIONS.en;
+  // RTL support
+  const isRTL = RTL_LANGS.includes(lang);
+  document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+  // Load special fonts on demand
+  if ([...CJK_LANGS, 'hi', 'ar'].includes(lang)) _loadCJKFont(lang);
+  // Apply translations
+  const t = TRANSLATIONS[lang];
   document.querySelectorAll('[data-i18n]').forEach(el => {
     const key = el.getAttribute('data-i18n');
     if (t[key] !== undefined) el.textContent = t[key];
   });
+  // Update language button
   const btn = document.getElementById('langToggleBtn');
-  if (btn) btn.textContent = '🌐 ' + lang.toUpperCase();
-  // update mode label button in modeLbls
-  if (typeof window._refreshModeLbl === 'function') window._refreshModeLbl();
+  if (btn) btn.textContent = (FLAGS[lang] || '🌐') + ' ' + CODES[lang];
+  // Update active item in menu
+  document.querySelectorAll('#langMenu .lm-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.lang === lang);
+  });
 }
 
-window.toggleLang = function() {
-  applyLang(_currentLang === 'en' ? 'tr' : 'en');
+window.setLang = function(lang) {
+  applyLang(lang);
+  closeLangMenu();
+  // Refresh headerSub label via setMode
+  const m = localStorage.getItem('ug_mode') || 'pre';
+  if (typeof setMode === 'function') setMode(m);
 };
-
+window.toggleLang = function() { window.setLang(_currentLang === 'en' ? 'tr' : 'en'); };
 window.getCurrentLang = function() { return _currentLang; };
 
-// Apply on load (default EN)
+// Language menu open/close
+window.openLangMenu = function() {
+  const menu = document.getElementById('langMenu');
+  const btn  = document.getElementById('langToggleBtn');
+  if (!menu || !btn) return;
+  const rect = btn.getBoundingClientRect();
+  menu.style.top  = (rect.bottom + 6) + 'px';
+  menu.style.right = (window.innerWidth - rect.right) + 'px';
+  menu.style.left  = 'auto';
+  menu.classList.toggle('open');
+};
+window.closeLangMenu = function() {
+  const menu = document.getElementById('langMenu');
+  if (menu) menu.classList.remove('open');
+};
+document.addEventListener('click', function(e) {
+  if (!e.target.closest('#langMenu') && !e.target.closest('#langToggleBtn')) closeLangMenu();
+});
+// Wire menu items
+document.querySelectorAll('#langMenu .lm-item').forEach(el => {
+  el.addEventListener('click', () => window.setLang(el.dataset.lang));
+});
+
+// Apply on load
 document.addEventListener('DOMContentLoaded', () => applyLang(_currentLang));
-// Fallback if DOM already ready
 if (document.readyState !== 'loading') applyLang(_currentLang);
 })();
 </script>
