@@ -1,0 +1,34 @@
+{
+  "version": 2,
+  "buildCommand": null,
+  "outputDirectory": ".",
+  "public": true,
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://s3.tradingview.com https://www.tradingview.com https://cdn.tradingview.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://www.okx.com https://aws.okx.com https://api.binance.com https://fstream.binance.com https://stream.binance.com https://api.alternative.me https://api.coingecko.com https://api.telegram.org wss://ws.okx.com:8443 wss://wsaws.okx.com:8443 wss://ws.okx.com wss://fstream.binance.com wss://stream.binance.com:9443; frame-src https://www.tradingview.com; img-src 'self' data: https:;"
+        }
+      ]
+    }
+  ],
+  "routes": [
+    {
+      "src": "/",
+      "dest": "/index.html"
+    },
+    {
+      "src": "/panel/(.*)",
+      "dest": "/$1"
+    },
+    {
+      "src": "/(.*\\.html)",
+      "dest": "/$1"
+    }
+  ]
+}
