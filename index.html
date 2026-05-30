@@ -1300,42 +1300,82 @@ body.dark .md49-sub{color:var(--t3)}
 /* ── SPLASH SCREEN ── */
 #qxSplash{
   position:fixed;inset:0;z-index:9999;
-  background:#080808;
+  background:#030303;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  transition:opacity .75s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+  transition:opacity .9s cubic-bezier(.4,0,.2,1);
+  user-select:none;
 }
 #qxSplash.qx-out{opacity:0;pointer-events:none}
+/* ambient brand glow */
+#qxSplash::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse 60% 50% at 28% 50%,rgba(255,100,0,.08) 0%,transparent 65%),
+    radial-gradient(ellipse 60% 50% at 72% 50%,rgba(0,160,255,.07) 0%,transparent 65%),
+    radial-gradient(ellipse 40% 35% at 50% 48%,rgba(255,180,0,.04) 0%,transparent 55%);
+  animation:qxGlowPulse 3.5s ease-in-out infinite alternate;
+}
+@keyframes qxGlowPulse{from{opacity:.45}to{opacity:1}}
+
+/* logo */
 .qx-splash-logo{
-  max-width:min(88vw,720px);width:100%;
+  max-width:min(78vw,580px);width:100%;
   border-radius:14px;
-  animation:qxIn .9s cubic-bezier(.16,1,.3,1) forwards;
-  filter:
-    drop-shadow(0 0 32px rgba(255,140,0,.30))
-    drop-shadow(0 0 80px rgba(0,180,255,.18))
-    drop-shadow(0 2px 24px rgba(0,0,0,.8));
+  opacity:0;
+  animation:qxLogoIn 1s cubic-bezier(.16,1,.3,1) .05s forwards;
+  position:relative;z-index:1;
 }
-@keyframes qxIn{
-  from{opacity:0;transform:scale(.88) translateY(18px)}
-  to{opacity:1;transform:scale(1) translateY(0)}
+@keyframes qxLogoIn{
+  from{opacity:0;transform:scale(.88)}
+  to{opacity:1;transform:scale(1)}
 }
-.qx-splash-bar-wrap{
-  margin-top:36px;
-  width:min(340px,80vw);height:2px;
-  background:rgba(255,255,255,.07);
-  border-radius:2px;overflow:hidden;
+
+/* brand name — Samsung style big text */
+.qx-splash-brand{
+  margin-top:26px;
+  font-family:'Instrument Sans',sans-serif;
+  font-weight:700;
+  font-size:clamp(15px,5vw,22px);
+  letter-spacing:7px;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.93);
+  opacity:0;
+  animation:qxRise .7s cubic-bezier(.2,.8,.3,1) .8s forwards;
+  position:relative;z-index:1;
 }
-.qx-splash-bar{
-  height:100%;
-  background:linear-gradient(90deg,#FF6600 0%,#FFB800 50%,#00AAFF 100%);
-  border-radius:2px;
-  animation:qxLoad 2.1s cubic-bezier(.4,0,.2,1) forwards;
+.qx-splash-sub2{
+  margin-top:7px;
+  font-family:'Fira Code',monospace;
+  font-size:clamp(8px,2.5vw,10px);
+  letter-spacing:3.5px;
+  text-transform:uppercase;
+  color:rgba(255,255,255,.3);
+  opacity:0;
+  animation:qxRise .6s ease 1.05s forwards;
+  position:relative;z-index:1;
 }
-@keyframes qxLoad{from{width:0}to{width:100%}}
-.qx-splash-tag{
-  margin-top:14px;
-  font-family:'Fira Code',monospace;font-size:9px;
-  letter-spacing:3.5px;text-transform:uppercase;
-  color:rgba(255,255,255,.22);
+@keyframes qxRise{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* 3-dot loader — Samsung Galaxy style */
+.qx-splash-dots{
+  position:absolute;bottom:clamp(22px,5vh,42px);
+  display:flex;gap:8px;align-items:center;
+}
+.qx-sd{
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,.18);
+  animation:qxDot 1.3s ease-in-out infinite;
+}
+.qx-sd:nth-child(1){animation-delay:0s}
+.qx-sd:nth-child(2){animation-delay:.22s}
+.qx-sd:nth-child(3){animation-delay:.44s}
+@keyframes qxDot{
+  0%,100%{background:rgba(255,255,255,.15);transform:scale(1)}
+  45%{background:rgba(255,255,255,.75);transform:scale(1.5)}
 }
 
 /* ── TOPBAR BANNER LOGO ── */
@@ -1359,8 +1399,13 @@ body.dark #topbarLogo{
 <!-- ── SPLASH SCREEN ── -->
 <div id="qxSplash">
   <img src="logo-header.png" alt="QUANTIX OS" class="qx-splash-logo">
-  <div class="qx-splash-bar-wrap"><div class="qx-splash-bar"></div></div>
-  <div class="qx-splash-tag">Initializing Trading OS</div>
+  <div class="qx-splash-brand">Finexa Global</div>
+  <div class="qx-splash-sub2">Advanced AI Trading OS</div>
+  <div class="qx-splash-dots">
+    <div class="qx-sd"></div>
+    <div class="qx-sd"></div>
+    <div class="qx-sd"></div>
+  </div>
 </div>
 
 <div class="app">
@@ -14788,19 +14833,102 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <script>
 (function(){
+  /* ─── QUANTIX OS Brand Jingle ───
+     E-major arpeggio: E3→E4→G#4→B4→E5 + final chord
+     Feel: confident, ascending, premium fintech
+  ─────────────────────────────────── */
+  function playQxJingle(){
+    try{
+      var AC=window.AudioContext||window.webkitAudioContext;
+      if(!AC)return null;
+      var ctx=new AC();
+
+      /* master + soft reverb via delay feedback */
+      var master=ctx.createGain();
+      master.gain.value=0.42;
+      master.connect(ctx.destination);
+
+      var dly=ctx.createDelay(.28);
+      var dlyGain=ctx.createGain();
+      dlyGain.gain.value=.22;
+      dly.connect(dlyGain);
+      dlyGain.connect(dly);      /* feedback loop */
+      dlyGain.connect(ctx.destination);
+      master.connect(dly);
+
+      /* note sequence: [freq Hz, startSec, durSec, vol] */
+      var seq=[
+        [164.81, .00, .40, .28],   /* E3  bass root */
+        [329.63, .08, .30, .55],   /* E4 */
+        [415.30, .20, .28, .55],   /* G#4 */
+        [493.88, .32, .26, .55],   /* B4 */
+        [659.25, .44, .85, .65],   /* E5  climax — held */
+        [493.88, .46, .72, .22],   /* B4 chord undertone */
+        [415.30, .46, .72, .16],   /* G#4 chord undertone */
+      ];
+
+      seq.forEach(function(n){
+        var osc=ctx.createOscillator();
+        var g=ctx.createGain();
+        osc.type='sine';
+        osc.frequency.value=n[0];
+        var t0=ctx.currentTime+n[1];
+        g.gain.setValueAtTime(0,t0);
+        g.gain.linearRampToValueAtTime(n[3],t0+.018);
+        g.gain.exponentialRampToValueAtTime(.0001,t0+n[2]+.45);
+        osc.connect(g);
+        g.connect(master);
+        osc.start(t0);
+        osc.stop(t0+n[2]+.6);
+      });
+
+      /* short digital sweep before arpeggio — "system boot" */
+      var sw=ctx.createOscillator();
+      var swg=ctx.createGain();
+      sw.type='sine';
+      sw.frequency.setValueAtTime(70,ctx.currentTime);
+      sw.frequency.exponentialRampToValueAtTime(200,ctx.currentTime+.07);
+      swg.gain.setValueAtTime(.18,ctx.currentTime);
+      swg.gain.exponentialRampToValueAtTime(.0001,ctx.currentTime+.1);
+      sw.connect(swg);swg.connect(master);
+      sw.start(ctx.currentTime);sw.stop(ctx.currentTime+.12);
+
+      return ctx;
+    }catch(e){return null;}
+  }
+
+  /* ─── Splash dismiss ─── */
   function qxDismiss(){
     var s=document.getElementById('qxSplash');
     if(!s)return;
     s.classList.add('qx-out');
-    setTimeout(function(){s.style.display='none'},800);
+    setTimeout(function(){s.style.display='none'},950);
   }
-  // Dismiss after 2.4s or when page fully loads — whichever is later
+
+  /* ─── Boot logic ─── */
   var loaded=false,timerDone=false;
   function tryDismiss(){if(loaded&&timerDone)qxDismiss();}
   window.addEventListener('load',function(){loaded=true;tryDismiss();});
-  setTimeout(function(){timerDone=true;tryDismiss();},2400);
-  // Fallback: always dismiss by 3.5s
-  setTimeout(qxDismiss,3500);
+  setTimeout(function(){timerDone=true;tryDismiss();},2600);
+  setTimeout(qxDismiss,3800); /* hard fallback */
+
+  /* Play jingle after short delay (allows AudioContext warm-up) */
+  var _jCtx=null;
+  function tryPlay(){
+    _jCtx=playQxJingle();
+    /* Mobile: AudioContext starts suspended — resume on first touch */
+    if(_jCtx&&_jCtx.state==='suspended'){
+      var resume=function(){
+        _jCtx.resume();
+        document.removeEventListener('touchstart',resume,true);
+        document.removeEventListener('click',resume,true);
+      };
+      document.addEventListener('touchstart',resume,{once:true,capture:true});
+      document.addEventListener('click',resume,{once:true,capture:true});
+    }
+  }
+  if(document.readyState==='complete'){setTimeout(tryPlay,120);}
+  else{window.addEventListener('load',function(){setTimeout(tryPlay,120);});}
 })();
 </script>
 
