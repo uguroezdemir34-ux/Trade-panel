@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Uğur — Trader Panel</title>
 <script>window._ug_lang = localStorage.getItem('ug_lang') || 'en';</script>
+<!-- Preconnect: DNS/TLS hazır, font gelince anında yüklenir -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
 <style>
@@ -14316,16 +14319,30 @@ window.setMode = function(mode){
      Default: English | Secondary: all others
      ══════════════════════════════════════════════════ -->
 <style>
-#langMenu{display:none;position:fixed;z-index:9999;background:var(--card);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:6px;min-width:160px;max-height:360px;overflow-y:auto}
+/* ── Language menu ── */
+#langMenu{display:none;position:fixed;z-index:9999;background:var(--card);border:1px solid var(--bd);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:6px;min-width:160px;max-height:360px;overflow-y:auto;animation:langMenuIn .15s ease}
+@keyframes langMenuIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:translateY(0)}}
 #langMenu.open{display:block}
-.lm-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--t2);font-family:var(--font);border:none;background:none;width:100%;text-align:left}
+.lm-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:11px;font-weight:600;color:var(--t2);font-family:var(--font);border:none;background:none;width:100%;text-align:left;transition:background .1s}
 .lm-item:hover{background:var(--s2)}
 .lm-item.active{background:var(--t1);color:#fff}
 .lm-item .lm-flag{font-size:14px;line-height:1}
 .lm-item .lm-name{flex:1}
 .lm-item .lm-code{font-size:9px;color:inherit;opacity:.6;font-family:monospace}
-body[dir="rtl"] .topbar,.body-rtl .topbar{flex-direction:row-reverse}
+/* ── Font geçiş animasyonu — CJK/AR/HI yüklenirken smooth ── */
+body.lang-loading [data-i18n],
+body.lang-loading #quickNav span[data-i18n]{opacity:0;transition:opacity .25s ease}
+body.lang-ready [data-i18n],
+body.lang-ready #quickNav span[data-i18n]{opacity:1;transition:opacity .3s ease}
+/* ── RTL (Arapça) ── */
+body[dir="rtl"] .topbar{flex-direction:row-reverse}
+body[dir="rtl"] .tb-brand{text-align:right}
 body[dir="rtl"] #quickNav{direction:rtl}
+body[dir="rtl"] .lm-item{text-align:right;flex-direction:row-reverse}
+/* ── Lang button loading spin ── */
+@keyframes langSpin{to{transform:rotate(360deg)}}
+#langToggleBtn.loading{pointer-events:none;opacity:.6}
+#langToggleBtn.loading::after{content:'⟳';display:inline-block;margin-left:3px;animation:langSpin .7s linear infinite}
 </style>
 <!-- Language picker dropdown -->
 <div id="langMenu">
@@ -14520,52 +14537,86 @@ const TRANSLATIONS = {
   }
 };
 
-// CJK font loader (on demand)
+// CJK / special font loader — with smooth loading state
 const _loadedFonts = {};
-function _loadCJKFont(lang) {
-  if (_loadedFonts[lang]) return;
-  _loadedFonts[lang] = true;
-  const fontMap = {
-    zh: 'Noto+Sans+SC:wght@400;700',
-    ja: 'Noto+Sans+JP:wght@400;700',
-    ko: 'Noto+Sans+KR:wght@400;700',
-    hi: 'Noto+Sans+Devanagari:wght@400;700',
-    ar: 'Noto+Sans+Arabic:wght@400;700'
+const FONT_MAP = {
+  zh: { family: 'Noto Sans SC', query: 'Noto+Sans+SC:wght@400;700' },
+  ja: { family: 'Noto Sans JP', query: 'Noto+Sans+JP:wght@400;700' },
+  ko: { family: 'Noto Sans KR', query: 'Noto+Sans+KR:wght@400;700' },
+  hi: { family: 'Noto Sans Devanagari', query: 'Noto+Sans+Devanagari:wght@400;700' },
+  ar: { family: 'Noto Sans Arabic', query: 'Noto+Sans+Arabic:wght@400;700' }
+};
+
+function _loadSpecialFont(lang, onReady) {
+  const btn = document.getElementById('langToggleBtn');
+  if (_loadedFonts[lang]) { onReady && onReady(); return; }
+
+  const cfg = FONT_MAP[lang];
+  if (!cfg) { onReady && onReady(); return; }
+
+  // Show loading state
+  document.body.classList.add('lang-loading');
+  document.body.classList.remove('lang-ready');
+  if (btn) btn.classList.add('loading');
+
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = 'https://fonts.googleapis.com/css2?family=' + cfg.query + '&display=swap';
+  link.onload = function() {
+    // Wait for font to actually render
+    document.fonts.load('700 14px "' + cfg.family + '"').then(() => {
+      _loadedFonts[lang] = true;
+      document.body.classList.remove('lang-loading');
+      document.body.classList.add('lang-ready');
+      if (btn) btn.classList.remove('loading');
+      onReady && onReady();
+    }).catch(() => {
+      _loadedFonts[lang] = true;
+      document.body.classList.remove('lang-loading');
+      document.body.classList.add('lang-ready');
+      if (btn) btn.classList.remove('loading');
+      onReady && onReady();
+    });
   };
-  if (fontMap[lang]) {
-    const link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://fonts.googleapis.com/css2?family=' + fontMap[lang] + '&display=swap';
-    document.head.appendChild(link);
-  }
+  link.onerror = function() {
+    document.body.classList.remove('lang-loading');
+    document.body.classList.add('lang-ready');
+    if (btn) btn.classList.remove('loading');
+    onReady && onReady();
+  };
+  document.head.appendChild(link);
 }
 
 let _currentLang = localStorage.getItem('ug_lang') || 'en';
+
+function _doApply(lang) {
+  const t = TRANSLATIONS[lang];
+  const isRTL = RTL_LANGS.includes(lang);
+  document.documentElement.lang = lang;
+  document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (t[key] !== undefined) el.textContent = t[key];
+  });
+  const btn = document.getElementById('langToggleBtn');
+  if (btn) btn.textContent = (FLAGS[lang] || '🌐') + ' ' + CODES[lang];
+  document.querySelectorAll('#langMenu .lm-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.lang === lang);
+  });
+  document.body.classList.add('lang-ready');
+}
 
 function applyLang(lang) {
   if (!TRANSLATIONS[lang]) lang = 'en';
   _currentLang = lang;
   window._ug_lang = lang;
   localStorage.setItem('ug_lang', lang);
-  document.documentElement.lang = lang;
-  // RTL support
-  const isRTL = RTL_LANGS.includes(lang);
-  document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
-  // Load special fonts on demand
-  if ([...CJK_LANGS, 'hi', 'ar'].includes(lang)) _loadCJKFont(lang);
-  // Apply translations
-  const t = TRANSLATIONS[lang];
-  document.querySelectorAll('[data-i18n]').forEach(el => {
-    const key = el.getAttribute('data-i18n');
-    if (t[key] !== undefined) el.textContent = t[key];
-  });
-  // Update language button
-  const btn = document.getElementById('langToggleBtn');
-  if (btn) btn.textContent = (FLAGS[lang] || '🌐') + ' ' + CODES[lang];
-  // Update active item in menu
-  document.querySelectorAll('#langMenu .lm-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.lang === lang);
-  });
+  const needsSpecialFont = [...CJK_LANGS, 'hi', 'ar'].includes(lang);
+  if (needsSpecialFont && !_loadedFonts[lang]) {
+    _loadSpecialFont(lang, () => _doApply(lang));
+  } else {
+    _doApply(lang);
+  }
 }
 
 window.setLang = function(lang) {
