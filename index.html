@@ -3,8 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>Uğur — Trader Panel</title>
+<title>QUANTIX OS — Advanced AI Trading</title>
 <script>window._ug_lang = localStorage.getItem('ug_lang') || 'en';</script>
+<!-- Favicon -->
+<link rel="icon" type="image/png" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<!-- OG / Social preview -->
+<meta property="og:title" content="QUANTIX OS — Advanced AI Trading">
+<meta property="og:description" content="Advanced AI Trading OS by Finexa Global">
+<meta property="og:image" content="logo-banner.png">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="logo-banner.png">
 <!-- Preconnect: DNS/TLS hazır, font gelince anında yüklenir -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1294,9 +1304,13 @@ body.dark .md49-sub{color:var(--t3)}
 
 <!-- ── TOPBAR ── -->
 <div class="topbar">
-  <div class="tb-brand">
-    <div class="tb-name">Uğur Özdemir</div>
-    <div class="tb-sub" id="headerSub">? · ✅ Pre-Market</div>
+  <div class="tb-brand" style="display:flex;align-items:center;gap:8px;min-width:0">
+    <img src="logo.png" alt="QUANTIX OS" id="topbarLogo"
+         style="height:36px;width:36px;border-radius:50%;object-fit:cover;flex-shrink:0;box-shadow:0 1px 4px rgba(0,0,0,.18)">
+    <div style="min-width:0">
+      <div class="tb-name" style="font-size:12px;letter-spacing:.02em">QUANTIX OS</div>
+      <div class="tb-sub" id="headerSub">? · ✅ Pre-Market</div>
+    </div>
   </div>
   <div class="tb-right">
     <div class="pill streak-pill" id="streakPill" title="İhlalsiz seri">🔥 0g</div>
