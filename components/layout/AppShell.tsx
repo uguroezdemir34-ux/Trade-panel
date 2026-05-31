@@ -39,6 +39,7 @@ import { useBalancePoller } from "@/lib/hooks/useBalancePoller";
 import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
+import { useSignalFirehose } from "@/lib/hooks/useSignalFirehose";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 
 const SPLASH_DATE_KEY = "qx_splash_date";
@@ -94,6 +95,8 @@ export function AppShell({
   useDailyPnlTracker();
   // Order flow trade feed → tradeFeedStore (CVD/VPIN/SMC için)
   useTradeFeed();
+  // Telegram sinyal firehose — verdict go geçişlerini izler
+  useSignalFirehose();
 
   useEffect(() => {
     rehydrateSettings();
