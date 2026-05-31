@@ -3,12 +3,35 @@
  */
 
 import type { Dictionary, Locale } from "./types";
+import { SUPPORTED_LOCALES } from "./types";
 import { en } from "./en";
 import { tr } from "./tr";
+import { de } from "./de";
+import { fr } from "./fr";
+import { es } from "./es";
+import { pt } from "./pt";
+import { zh } from "./zh";
+import { ja } from "./ja";
+import { ko } from "./ko";
+import { ru } from "./ru";
+import { ar } from "./ar";
+import { hi } from "./hi";
+
+export { SUPPORTED_LOCALES };
 
 export const DICTIONARIES: Record<Locale, Dictionary> = {
   en,
   tr,
+  de,
+  fr,
+  es,
+  pt,
+  zh,
+  ja,
+  ko,
+  ru,
+  ar,
+  hi,
 };
 
 /**
@@ -60,17 +83,32 @@ export function translate(
 }
 
 /**
- * Locale getir (localStorage'tan, yoksa DEFAULT_LOCALE=en).
- * Browser language is intentionally ignored — app defaults to English globally.
+ * Dual-layer locale detection:
+ * Layer 1: User's explicit saved preference (localStorage)
+ * Layer 2: Browser language → mapped to supported locale
+ * Fallback: "en"
  */
 export function detectLocale(): Locale {
   if (typeof window === "undefined") return "en";
+
+  // Layer 1: explicit stored preference
   try {
     const stored = window.localStorage.getItem("ug52_locale");
-    if (stored === "en" || stored === "tr") return stored;
-  } catch {
-    // ignore
+    if (stored && SUPPORTED_LOCALES.includes(stored as Locale)) return stored as Locale;
+  } catch { /* ignore */ }
+
+  // Layer 2: browser language detection
+  if (typeof navigator !== "undefined") {
+    const lang = navigator.language.toLowerCase();
+    const browserMap: Record<string, Locale> = {
+      tr: "tr", de: "de", fr: "fr", es: "es", pt: "pt",
+      zh: "zh", ja: "ja", ko: "ko", ru: "ru", ar: "ar", hi: "hi",
+    };
+    for (const [prefix, locale] of Object.entries(browserMap)) {
+      if (lang.startsWith(prefix)) return locale;
+    }
   }
+
   return "en";
 }
 
