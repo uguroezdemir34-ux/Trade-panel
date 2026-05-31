@@ -27,6 +27,12 @@ import {
   fetchOpenInterest,
   type OpenInterestResult,
 } from "@/lib/market/openInterest";
+import {
+  computeOiVelocityWindow,
+  type OiSnapshot,
+  type OiVelocityResult,
+} from "@/lib/market/oi-velocity";
+import { useMarketStore } from "@/lib/store/marketStore";
 import type {
   FgInfo,
   DominanceInfo,
@@ -35,6 +41,20 @@ import type {
 
 const FUNDING_TTL_MS = 5 * 60_000;
 const OI_TTL_MS = 5 * 60_000;
+const MAX_OI_HISTORY = 10;
+
+function appendOiSnapshot(
+  history: OiSnapshot[],
+  oi: OpenInterestResult,
+  price: number,
+  ts: number,
+): OiSnapshot[] {
+  if (price <= 0) return history;
+  const oiVal = oi.oiCcy > 0 ? oi.oiCcy : oi.oi;
+  if (oiVal <= 0) return history;
+  const snap: OiSnapshot = { timestamp: ts, openInterest: oiVal, price };
+  return [...history.slice(-(MAX_OI_HISTORY - 1)), snap];
+}
 
 interface MacroStoreState {
   // F&G (raw value + computed info)
@@ -61,6 +81,12 @@ interface MacroStoreState {
   oiEth: OpenInterestResult | null;
   oiFetchedAt: number;
   oiLoading: boolean;
+  // OI snapshot history for velocity computation (up to MAX_OI_HISTORY per pair)
+  oiSnapshotsBtc: OiSnapshot[];
+  oiSnapshotsEth: OiSnapshot[];
+  // Computed OI velocity results (ready for score engine + UI)
+  oiVelocityBtc: OiVelocityResult | null;
+  oiVelocityEth: OiVelocityResult | null;
 
   // Computed: market summary
   marketSummary: MarketSummary | null;
@@ -103,6 +129,10 @@ const initialState = {
   oiEth: null,
   oiFetchedAt: 0,
   oiLoading: false,
+  oiSnapshotsBtc: [],
+  oiSnapshotsEth: [],
+  oiVelocityBtc: null,
+  oiVelocityEth: null,
   marketSummary: null,
 };
 
@@ -183,11 +213,28 @@ export const useMacroStore = create<MacroStoreState>((set, get) => ({
         fetchOpenInterest("BTC", fetchFn),
         fetchOpenInterest("ETH", fetchFn),
       ]);
+
+      // Append to snapshot history (needs live price for velocity computation)
+      const prices = useMarketStore.getState().prices;
+      const btcPrice = prices["BTC"]?.last ?? 0;
+      const ethPrice = prices["ETH"]?.last ?? 0;
+
+      const newBtcSnaps = appendOiSnapshot(get().oiSnapshotsBtc, btc, btcPrice, now);
+      const newEthSnaps = appendOiSnapshot(get().oiSnapshotsEth, eth, ethPrice, now);
+
+      // Recompute velocity from updated history
+      const oiVelocityBtc = computeOiVelocityWindow(newBtcSnaps, "BTC", 5);
+      const oiVelocityEth = computeOiVelocityWindow(newEthSnaps, "ETH", 5);
+
       set({
         oiBtc: btc,
         oiEth: eth,
         oiFetchedAt: now,
         oiLoading: false,
+        oiSnapshotsBtc: newBtcSnaps,
+        oiSnapshotsEth: newEthSnaps,
+        oiVelocityBtc,
+        oiVelocityEth,
       });
     } catch {
       set({ oiLoading: false });

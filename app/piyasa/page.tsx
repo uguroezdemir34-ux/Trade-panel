@@ -8,6 +8,7 @@ import { FearGreedGauge } from "@/components/piyasa/FearGreedGauge";
 import { DominanceCard } from "@/components/piyasa/DominanceCard";
 import { MtfTrendGrid } from "@/components/piyasa/MtfTrendGrid";
 import { FundingRateRow } from "@/components/piyasa/FundingRateRow";
+import { OiVelocityCard } from "@/components/piyasa/OiVelocityCard";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
 
 export default function PiyasaPage() {
@@ -19,6 +20,9 @@ export default function PiyasaPage() {
   const fundingBtc = useMacroStore((s) => s.fundingBtc);
   const fundingEth = useMacroStore((s) => s.fundingEth);
   const fundingLoading = useMacroStore((s) => s.fundingLoading);
+  const oiVelocityBtc = useMacroStore((s) => s.oiVelocityBtc);
+  const oiVelocityEth = useMacroStore((s) => s.oiVelocityEth);
+  const oiLoading = useMacroStore((s) => s.oiLoading);
 
   const btc1hRaw = useCandleStore((s) => s.candles["BTC_1h"]);
   const btc4hRaw = useCandleStore((s) => s.candles["BTC_4h"]);
@@ -59,6 +63,11 @@ export default function PiyasaPage() {
         btc={fundingBtc}
         eth={fundingEth}
         loading={fundingLoading}
+      />
+      <OiVelocityCard
+        btc={oiVelocityBtc}
+        eth={oiVelocityEth}
+        loading={oiLoading}
       />
     </div>
   );

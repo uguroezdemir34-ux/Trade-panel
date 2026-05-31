@@ -21,6 +21,7 @@ import { useTradesStore } from "@/lib/store/tradesStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
+import { oiVelocityScoreOrZero } from "@/lib/market/oi-velocity";
 import type { Pair } from "@/lib/constants/pairs";
 
 export function useScoreEngine(): void {
@@ -49,6 +50,10 @@ export function useScoreEngine(): void {
       const fundingResult =
         pair === "BTC" ? macroStore.fundingBtc : macroStore.fundingEth;
       const fundingRate = fundingResult?.fundingRate ?? null;
+
+      const oiVelocityResult =
+        pair === "BTC" ? macroStore.oiVelocityBtc : macroStore.oiVelocityEth;
+      const oiVelocityScore = oiVelocityScoreOrZero(oiVelocityResult);
 
       const openPositions = positionStore.positions.map((p) => ({
         pair: p.pair,
@@ -97,6 +102,7 @@ export function useScoreEngine(): void {
         drawdownProtocol,
         trades,
         fundingRate,
+        oiVelocityScore,
         srModifier: 0,
         sweep15m: { type: null, strength: 0 },
         timeQuality: { quality: 1, reason: "" },
