@@ -66,6 +66,8 @@ export interface OkxProxyRequest {
   path: string; // /api/v5/... ile başlayan
   body?: unknown; // POST için JSON gövdesi (object)
   isDemo: boolean;
+  /** Layer 2: browser-stored credentials (fallback when server env vars absent) */
+  clientCreds?: OkxCredentials | null;
 }
 
 /**
@@ -99,6 +101,10 @@ export async function handleOkxProxy(
   let creds: OkxCredentials | null = null;
   if (!isPublic) {
     creds = req.isDemo ? config.demoCreds : config.prodCreds;
+    // Layer 2 fallback: use client-provided creds if server-side not configured
+    if ((!creds || !creds.key || !creds.secret || !creds.pass) && req.clientCreds?.key) {
+      creds = req.clientCreds;
+    }
     if (!creds || !creds.key || !creds.secret || !creds.pass) {
       return {
         ok: false,

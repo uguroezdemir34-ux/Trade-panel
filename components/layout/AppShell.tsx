@@ -37,6 +37,7 @@ import { useBalancePoller } from "@/lib/hooks/useBalancePoller";
 import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
+import { useCredentialStore } from "@/lib/store/credentialStore";
 
 export function AppShell({
   children,
@@ -47,6 +48,7 @@ export function AppShell({
   const rehydrateAccount = useAccountStore((s) => s.rehydrate);
   const rehydrateRisk = useRiskStore((s) => s.rehydrate);
   const rehydrateTrades = useTradesStore((s) => s.rehydrate);
+  const loadCredentials = useCredentialStore((s) => s.load);
 
   // Real-time market data stream (BTC + ETH WS bağlantısı)
   useMarketStream();
@@ -72,7 +74,8 @@ export function AppShell({
     rehydrateAccount();
     rehydrateRisk();
     rehydrateTrades();
-  }, [rehydrateSettings, rehydrateAccount, rehydrateRisk, rehydrateTrades]);
+    void loadCredentials();
+  }, [rehydrateSettings, rehydrateAccount, rehydrateRisk, rehydrateTrades, loadCredentials]);
 
   return (
     <div className="bg-bg text-text-t1 min-h-screen">

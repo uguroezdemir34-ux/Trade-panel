@@ -29,12 +29,21 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
   const isDemo = req.headers.get("X-OKX-Mode") === "demo";
   const config = loadServerConfigFromEnv(process.env);
 
-  const result = await handleOkxProxy({ method: "GET", path, isDemo }, config);
+  // Layer 2: optional client creds from custom headers
+  const clientKey = req.headers.get("X-OKX-Client-Key");
+  const clientSecret = req.headers.get("X-OKX-Client-Secret");
+  const clientPass = req.headers.get("X-OKX-Client-Pass");
+  const clientCreds =
+    clientKey && clientSecret && clientPass
+      ? { key: clientKey, secret: clientSecret, pass: clientPass }
+      : null;
+
+  const result = await handleOkxProxy({ method: "GET", path, isDemo, clientCreds }, config);
   return NextResponse.json(result);
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  let parsed: { isDemo?: boolean; body?: unknown };
+  let parsed: { isDemo?: boolean; body?: unknown; clientCreds?: { key: string; secret: string; pass: string } | null };
   try {
     parsed = await req.json();
   } catch {
@@ -44,8 +53,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const path = buildOkxPath(req);
   const config = loadServerConfigFromEnv(process.env);
 
+  // Layer 2: optional client creds from request body
+  const clientCreds = parsed.clientCreds?.key ? parsed.clientCreds : null;
+
   const result = await handleOkxProxy(
-    { method: "POST", path, body: parsed.body, isDemo: !!parsed.isDemo },
+    { method: "POST", path, body: parsed.body, isDemo: !!parsed.isDemo, clientCreds },
     config,
   );
   return NextResponse.json(result);

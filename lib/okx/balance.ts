@@ -12,11 +12,20 @@ export interface BalanceResult {
 
 export async function fetchBalance(
   isDemo: boolean,
+  clientCreds?: { key: string; secret: string; pass: string } | null,
 ): Promise<BalanceResult | null> {
   try {
+    const headers: Record<string, string> = {
+      "X-OKX-Mode": isDemo ? "demo" : "prod",
+    };
+    if (clientCreds?.key) {
+      headers["X-OKX-Client-Key"] = clientCreds.key;
+      headers["X-OKX-Client-Secret"] = clientCreds.secret;
+      headers["X-OKX-Client-Pass"] = clientCreds.pass;
+    }
     const res = await fetch("/api/okx/api/v5/account/balance", {
       method: "GET",
-      headers: { "X-OKX-Mode": isDemo ? "demo" : "prod" },
+      headers,
     });
     if (!res.ok) return null;
 
