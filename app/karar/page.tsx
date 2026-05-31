@@ -50,6 +50,7 @@ export default function KararPage() {
   const drawdownProtocol = useAccountStore((s) => s.drawdownProtocol);
   const maxTradesPerDay = useSettingsStore((s) => s.maxTradesPerDay);
   const demoMode = useSettingsStore((s) => s.demoMode);
+  const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
   const btcCooldownUntil = useRiskStore((s) => s.btcCooldownUntil);
   const btcSelfCooldownUntil = useRiskStore((s) => s.btcSelfCooldownUntil);
   const logEvent = useRiskStore((s) => s.logEvent);
@@ -158,6 +159,40 @@ export default function KararPage() {
     const fundingResult =
       activePair === "BTC" ? fundingBtc : fundingEth;
 
+    // ── Forward Test Mode: bypass exchange, record paper trade directly ──
+    if (forwardTestMode) {
+      openPending({
+        pair: activePair,
+        direction: result.direction,
+        entryPrice: livePrice,
+        qty: sizerResult.qty,
+        leverage: sizerResult.leverage,
+        stopPrice: sizerResult.stop.stopPrice,
+        takeProfit1: sizerResult.tp.tp1Price,
+        takeProfit2: sizerResult.tp.tp2Price,
+        riskAmountUsd: sizerResult.risk.riskUsd,
+        isPaper: true,
+        entryContext: {
+          score: result.score,
+          verdict: result.verdict,
+          fgValue: fgValue ?? undefined,
+          fundingRate: fundingResult?.fundingRate ?? undefined,
+          drawdownTier: drawdownProtocol.tier,
+        },
+      });
+      logEvent("trade_open", {
+        pair: activePair,
+        direction: result.direction,
+        score: result.score,
+        decision: "go",
+        source: "manual",
+        reason: "forward_test",
+      });
+      setShowConfirm(false);
+      setIsExecuting(false);
+      return;
+    }
+
     try {
       const output = await orchestrate(
         {
@@ -207,7 +242,7 @@ export default function KararPage() {
           takeProfit1: sizerResult.tp.tp1Price,
           takeProfit2: sizerResult.tp.tp2Price,
           riskAmountUsd: sizerResult.risk.riskUsd,
-          isPaper: settings.demoMode,
+          isPaper: demoMode,
           entryContext: {
             score: result.score,
             verdict: result.verdict,
@@ -230,6 +265,18 @@ export default function KararPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Forward Test Mode banner */}
+      {forwardTestMode && (
+        <div className="flex items-center gap-2 rounded-lg border border-[#22C55E]/30 bg-[#22C55E]/8 px-3 py-2">
+          <span className="font-mono text-xs font-bold tracking-widest text-[#22C55E]">
+            FWD TEST
+          </span>
+          <span className="text-text-t2 font-mono text-xs">
+            Aktif — emirler simüle edilir, gerçek pozisyon açılmaz
+          </span>
+        </div>
+      )}
+
       {/* Pair seçici */}
       <div className="flex gap-2">
         {PAIRS.map((p) => (
