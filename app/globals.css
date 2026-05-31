@@ -51,3 +51,25 @@ textarea {
   direction: ltr;
   unicode-bidi: embed;
 }
+
+/* ── Splash Screen Animations ─────────────────────────────────── */
+
+@keyframes splash-scale-in {
+  from { opacity: 0; transform: scale(0.82); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes splash-fade-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes splash-bar-fill {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+
+.splash-logo    { animation: splash-scale-in  520ms cubic-bezier(0.34,1.56,0.64,1) both; }
+.splash-name    { animation: splash-fade-up   400ms ease-out 160ms both; }
+.splash-tagline { animation: splash-fade-up   400ms ease-out 280ms both; }
+.splash-bar     { animation: splash-bar-fill 1500ms linear   200ms both; }

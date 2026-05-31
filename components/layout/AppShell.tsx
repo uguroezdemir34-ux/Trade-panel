@@ -21,9 +21,10 @@
  *   - useMarketStream() — WS bağlantısı + tick stream
  */
 
-import { useEffect } from "react";
+import { useEffect, useCallback, useState } from "react";
 import { AppHeader } from "./AppHeader";
 import { BottomNav } from "./BottomNav";
+import { SplashScreen } from "./SplashScreen";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useAccountStore } from "@/lib/store/accountStore";
 import { useRiskStore } from "@/lib/store/riskStore";
@@ -39,6 +40,8 @@ import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 
+const SPLASH_KEY = "qx_splash_v1";
+
 export function AppShell({
   children,
 }: {
@@ -49,6 +52,14 @@ export function AppShell({
   const rehydrateRisk = useRiskStore((s) => s.rehydrate);
   const rehydrateTrades = useTradesStore((s) => s.rehydrate);
   const loadCredentials = useCredentialStore((s) => s.load);
+
+  // Splash: session başında bir kez göster
+  const [showSplash, setShowSplash] = useState(false);
+
+  const handleSplashDone = useCallback(() => {
+    try { sessionStorage.setItem(SPLASH_KEY, "1"); } catch { /* ignore */ }
+    setShowSplash(false);
+  }, []);
 
   // Real-time market data stream (BTC + ETH WS bağlantısı)
   useMarketStream();
@@ -75,10 +86,18 @@ export function AppShell({
     rehydrateRisk();
     rehydrateTrades();
     void loadCredentials();
+
+    // Splash: bu session'da daha gösterilmediyse aç
+    try {
+      if (!sessionStorage.getItem(SPLASH_KEY)) {
+        setShowSplash(true);
+      }
+    } catch { /* ignore */ }
   }, [rehydrateSettings, rehydrateAccount, rehydrateRisk, rehydrateTrades, loadCredentials]);
 
   return (
     <div className="bg-bg text-text-t1 min-h-screen">
+      {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />
       <main
         className="mx-auto max-w-2xl px-4 pb-24 pt-4"
