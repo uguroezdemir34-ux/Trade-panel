@@ -20,7 +20,7 @@ export const tr: Dictionary = {
     chart: "Grafik",
     market: "Piyasa",
     risk: "Risk",
-    pnl: "K/Z",
+    pnl: "P&L",
     settings: "Ayarlar",
     settingsShort: "Ayr.",
     ariaLabel: "Ana navigasyon",
@@ -311,7 +311,7 @@ export const tr: Dictionary = {
   },
 
   pnl: {
-    title: "💰 K/Z",
+    title: "💰 P&L",
     subtitle: "Kar ve zarar · Günlük takvim · İleri test istatistikleri",
     empty: {
       title: "Henüz işlem yok",

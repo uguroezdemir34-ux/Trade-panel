@@ -98,7 +98,7 @@ export const ja: Dictionary = {
     leverageHint: "{n}倍レバレッジ",
     riskMultipliers: "リスク乗数",
     base: "ベース",
-    bucket: "バケット",
+    bucket: "レベル",
     drawdown: "ドローダウン",
     rr: "R:R",
     longOpen: "▶ ロングポジション開設",

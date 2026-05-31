@@ -98,7 +98,7 @@ export const de: Dictionary = {
     leverageHint: "{n}x Hebel",
     riskMultipliers: "RISIKO-MULTIPLIKATOREN",
     base: "Basis",
-    bucket: "Bucket",
+    bucket: "Stufe",
     drawdown: "Drawdown",
     rr: "R:R",
     longOpen: "▶ LONG-POSITION ERÖFFNEN",
