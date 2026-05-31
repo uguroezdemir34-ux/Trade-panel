@@ -19,6 +19,7 @@
 
 import { ema } from "@/lib/indicators/ema";
 import type { Candle } from "@/lib/okx/candles";
+import type { Pair } from "@/lib/constants/pairs";
 
 export type TrendDirection = "up" | "flat" | "down";
 
@@ -44,7 +45,7 @@ export type MtfClass =
   | "no_data";
 
 export interface MtfTrendResult {
-  pair: "BTC" | "ETH";
+  pair: Pair;
   trends: TimeframeTrend[];
   /** Toplu yön sınıfı */
   cls: MtfClass;
@@ -102,7 +103,7 @@ export function computeTimeframeTrend(
  * 3 timeframe'i toplu özetle.
  */
 export function computeMtfTrend(
-  pair: "BTC" | "ETH",
+  pair: Pair,
   candles1h: readonly Candle[],
   candles4h: readonly Candle[],
   candles1d: readonly Candle[],

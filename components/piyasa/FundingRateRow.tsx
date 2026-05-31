@@ -61,7 +61,7 @@ function FundingCell({
 }: {
   pair: Pair;
   data: FundingRateResult | null;
-  t: (k: string) => string;
+  t: (path: string, params?: Record<string, string | number>) => string;
 }) {
   if (!data) {
     return (
