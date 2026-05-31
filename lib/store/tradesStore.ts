@@ -13,6 +13,7 @@
 import { create } from "zustand";
 import { z } from "zod";
 import { loadFromStorage, saveToStorage } from "./persist";
+import { PAIRS } from "@/lib/constants/pairs";
 import type {
   TradeSnapshot,
   OpenTradeInput,
@@ -66,7 +67,7 @@ const entryContextSchema = z.object({
 const tradeSnapshotSchema = z.object({
   id: z.string(),
   orderId: z.string().optional(),
-  pair: z.enum(["BTC", "ETH"]),
+  pair: z.enum(PAIRS as unknown as [string, ...string[]]),
   direction: z.enum(["LONG", "SHORT"]),
   status: z.enum(["pending", "open", "closed"]),
   openedAt: z.number(),

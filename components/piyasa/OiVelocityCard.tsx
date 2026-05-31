@@ -1,147 +1,110 @@
 "use client";
 
 /**
- * OI VELOCITY CARD — Open Interest ivme analizi (BTC + ETH).
+ * OI VELOCITY CARD — Open Interest ivme analizi (tüm pair'ler).
  *
- * Gösterir:
- *  - Rejim etiketi (aggressive_long, short_squeeze_risk, vb.)
- *  - OI ivme skoru [-10, +10] (renk kodlu)
- *  - Büyüklük (weak/moderate/strong/extreme)
- *  - OI % değişim + fiyat % değişim
- *  - Snapshot sayısı (kaç ölçüm birikti)
+ * 15 pair desteği: velocity map'ten dinamik olarak render eder.
+ * Kompakt liste: pair | rejim | skor | OI% | fiyat%
  */
 
 import type { OiVelocityResult } from "@/lib/market/oi-velocity";
+import { PAIRS, type Pair } from "@/lib/constants/pairs";
 
 interface Props {
-  btc: OiVelocityResult | null;
-  eth: OiVelocityResult | null;
+  velocity: Partial<Record<Pair, OiVelocityResult>>;
   loading: boolean;
 }
 
 const REGIME_META: Record<
   string,
-  { label: string; emoji: string; color: string; tone: "bull" | "bear" | "neutral" }
+  { label: string; color: string }
 > = {
-  aggressive_long:    { label: "Agresif Long", emoji: "🟢", color: "#22C55E", tone: "bull" },
-  short_squeeze_risk: { label: "Short Squeeze Riski", emoji: "🔴", color: "#EF4444", tone: "bear" },
-  long_unwind:        { label: "Long Kapanıyor", emoji: "🟡", color: "#F59E0B", tone: "neutral" },
-  bear_exhaustion:    { label: "Bear Yorgunluğu", emoji: "🔵", color: "#3B82F6", tone: "neutral" },
-  neutral:            { label: "Nötr", emoji: "⚪", color: "rgb(var(--text-t3))", tone: "neutral" },
+  aggressive_long:    { label: "Agresif Long",    color: "#22C55E" },
+  short_squeeze_risk: { label: "Squeeze Riski",   color: "#EF4444" },
+  long_unwind:        { label: "Long Kapanıyor",  color: "#F59E0B" },
+  bear_exhaustion:    { label: "Bear Yorgunluğu", color: "#3B82F6" },
+  neutral:            { label: "Nötr",            color: "rgb(var(--text-t3))" },
 };
 
-const MAG_META: Record<string, string> = {
-  weak:    "Zayıf",
-  moderate:"Orta",
-  strong:  "Güçlü",
-  extreme: "Aşırı",
-};
-
-function scoreColor(score: number): string {
-  if (score >= 3) return "#22C55E";
-  if (score >= 1) return "#86EFAC";
-  if (score <= -3) return "#EF4444";
-  if (score <= -1) return "#FCA5A5";
+function scoreColor(s: number): string {
+  if (s >= 3) return "#22C55E";
+  if (s >= 1) return "#86EFAC";
+  if (s <= -3) return "#EF4444";
+  if (s <= -1) return "#FCA5A5";
   return "rgb(var(--text-t3))";
 }
 
-function PairRow({
-  pair,
-  result,
-}: {
-  pair: string;
-  result: OiVelocityResult | null;
-}) {
-  if (!result) {
-    return (
-      <div className="flex items-center justify-between py-1.5">
-        <span className="text-text-t2 w-10 font-mono text-xs font-semibold">{pair}</span>
-        <span className="text-text-t4 font-mono text-2xs">Veri bekleniyor...</span>
-      </div>
-    );
-  }
-
-  const regime = REGIME_META[result.regime] ?? REGIME_META.neutral;
+export function OiVelocityCard({ velocity, loading }: Props): React.ReactElement {
+  const hasData = Object.keys(velocity).length > 0;
 
   return (
-    <div className="py-1.5">
-      {/* Top row: pair name + regime + score */}
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-text-t2 w-10 shrink-0 font-mono text-xs font-semibold">
-          {pair}
-        </span>
-        <div className="flex min-w-0 flex-1 items-center gap-1">
-          <span className="text-[10px]">{regime.emoji}</span>
-          <span
-            className="truncate font-mono text-[10px] font-medium"
-            style={{ color: regime.color }}
-          >
-            {regime.label}
-          </span>
-        </div>
-        <span
-          className="shrink-0 font-mono text-xs font-bold tabular-nums"
-          style={{ color: scoreColor(result.oiVelocityScore) }}
-        >
-          {result.oiVelocityScore >= 0 ? "+" : ""}
-          {result.oiVelocityScore.toFixed(1)}
-        </span>
-      </div>
-
-      {/* Bottom row: magnitude + deltas + sample count */}
-      <div className="mt-0.5 flex items-center gap-3">
-        <span className="text-text-t4 font-mono text-[9px]">
-          {MAG_META[result.magnitude] ?? result.magnitude}
-        </span>
-        <span className="text-text-t3 font-mono text-[9px] tabular-nums">
-          OI {result.oiChangePct >= 0 ? "+" : ""}
-          {result.oiChangePct.toFixed(2)}%
-        </span>
-        <span className="text-text-t3 font-mono text-[9px] tabular-nums">
-          Fiyat {result.priceChangePct >= 0 ? "+" : ""}
-          {result.priceChangePct.toFixed(2)}%
-        </span>
-        <span className="text-text-t4 ml-auto font-mono text-[9px]">
-          n={result.periodCount}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-export function OiVelocityCard({ btc, eth, loading }: Props): React.ReactElement {
-  const hasData = btc !== null || eth !== null;
-
-  return (
-    <div className="bg-bg-card border-border rounded-lg border p-3">
-      {/* Header */}
+    <div className="border-border bg-bg-card rounded-lg border p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
           OI Velocity
         </span>
-        {loading && (
-          <span className="text-text-t4 font-mono text-2xs animate-pulse">
-            güncelleniyor...
-          </span>
-        )}
-        {!loading && !hasData && (
-          <span className="text-text-t4 font-mono text-2xs">
-            ~5dk sonra
-          </span>
+        {loading && !hasData && (
+          <span className="text-text-t4 animate-pulse font-mono text-2xs">~5dk</span>
         )}
       </div>
 
-      <div className="divide-border divide-y">
-        <PairRow pair="BTC" result={btc} />
-        <PairRow pair="ETH" result={eth} />
+      {/* Header */}
+      <div className="mb-0.5 grid grid-cols-[44px_1fr_40px_48px_48px] gap-x-2 px-1">
+        {["", "Rejim", "Skor", "OI%", "Fiyat%"].map((h) => (
+          <span key={h} className="text-text-t4 font-mono text-[9px] uppercase tracking-wider">
+            {h}
+          </span>
+        ))}
       </div>
 
-      {/* Note: 2+ snapshots needed */}
-      {!hasData && !loading && (
-        <p className="text-text-t4 mt-2 font-mono text-[9px] leading-relaxed">
-          İlk ölçüm tamamlandı, ivme hesabı için 2+ OI snapshot gerekli (~10dk).
-        </p>
-      )}
+      <div className="divide-border/30 flex flex-col divide-y">
+        {PAIRS.map((pair) => {
+          const result = velocity[pair];
+          const regime = result ? (REGIME_META[result.regime] ?? REGIME_META.neutral) : null;
+
+          return (
+            <div
+              key={pair}
+              className="grid grid-cols-[44px_1fr_40px_48px_48px] items-center gap-x-2 py-0.5 px-1"
+            >
+              <span className="text-text-t2 font-mono text-xs font-semibold">{pair}</span>
+
+              {result && regime ? (
+                <>
+                  <span
+                    className="truncate font-mono text-[9px] font-medium"
+                    style={{ color: regime.color }}
+                  >
+                    {regime.label}
+                  </span>
+                  <span
+                    className="text-right font-mono text-xs font-bold tabular-nums"
+                    style={{ color: scoreColor(result.oiVelocityScore) }}
+                  >
+                    {result.oiVelocityScore >= 0 ? "+" : ""}
+                    {result.oiVelocityScore.toFixed(1)}
+                  </span>
+                  <span className="text-text-t3 text-right font-mono text-[9px] tabular-nums">
+                    {result.oiChangePct >= 0 ? "+" : ""}
+                    {result.oiChangePct.toFixed(2)}%
+                  </span>
+                  <span className="text-text-t3 text-right font-mono text-[9px] tabular-nums">
+                    {result.priceChangePct >= 0 ? "+" : ""}
+                    {result.priceChangePct.toFixed(2)}%
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="text-text-t4 font-mono text-[9px]">—</span>
+                  <span className="text-text-t4 font-mono text-xs text-right">—</span>
+                  <span />
+                  <span />
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

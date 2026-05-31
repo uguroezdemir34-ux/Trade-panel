@@ -56,8 +56,7 @@ export default function KararPage() {
   const logEvent = useRiskStore((s) => s.logEvent);
   const trades = useTradesStore((s) => s.trades);
   const openPending = useTradesStore((s) => s.openPending);
-  const fundingBtc = useMacroStore((s) => s.fundingBtc);
-  const fundingEth = useMacroStore((s) => s.fundingEth);
+  const funding = useMacroStore((s) => s.funding);
   const fgValue = useMacroStore((s) => s.fgValue);
 
   // Bucket istatistikleri — geçmiş trade'lerden score bazlı performans
@@ -156,8 +155,7 @@ export default function KararPage() {
       );
     });
 
-    const fundingResult =
-      activePair === "BTC" ? fundingBtc : fundingEth;
+    const fundingResult = funding[activePair] ?? null;
 
     // ── Forward Test Mode: bypass exchange, record paper trade directly ──
     if (forwardTestMode) {
@@ -277,13 +275,13 @@ export default function KararPage() {
         </div>
       )}
 
-      {/* Pair seçici */}
-      <div className="flex gap-2">
+      {/* Pair seçici — 5 sütun grid */}
+      <div className="grid grid-cols-5 gap-1.5">
         {PAIRS.map((p) => (
           <button
             key={p}
             onClick={() => setActivePair(p)}
-            className={`flex-1 rounded-md py-2 font-mono text-sm font-semibold tracking-wider transition-colors ${
+            className={`rounded py-1.5 font-mono text-xs font-semibold tracking-wide transition-colors ${
               activePair === p
                 ? "bg-surface-s2 text-text-t1"
                 : "text-text-t3 hover:text-text-t2"

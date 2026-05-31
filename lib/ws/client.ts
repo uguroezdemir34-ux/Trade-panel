@@ -26,7 +26,7 @@ import { WS_CONSTANTS } from "./types";
 import { parseAnyMessage } from "./messages";
 import { getFirstEndpoint, getNextEndpoint } from "./urls";
 import { getReconnectDelay } from "./backoff";
-import type { Pair } from "@/lib/constants/pairs";
+import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { OkxTradeRaw } from "@/lib/orderflow/types";
 
 type TickListener = (tick: Tick) => void;
@@ -356,11 +356,9 @@ export class OkxWsClient {
     const p = parsed as { arg?: { channel?: string; instId?: string }; data?: unknown[] };
     if (p.arg?.channel !== "trades") return;
     const instId = p.arg?.instId ?? "";
-    // instId → pair (BTC-USDT-SWAP → BTC, ETH-USDT-SWAP → ETH)
-    const pair: Pair | null = instId.startsWith("BTC")
-      ? "BTC"
-      : instId.startsWith("ETH")
-      ? "ETH"
+    const pairStr = instId.split("-")[0]; // "BTC-USDT-SWAP" → "BTC"
+    const pair: Pair | null = (PAIRS as readonly string[]).includes(pairStr)
+      ? (pairStr as Pair)
       : null;
     if (!pair || !Array.isArray(p.data)) return;
     const raws: OkxTradeRaw[] = [];

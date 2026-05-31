@@ -47,12 +47,10 @@ export function useScoreEngine(): void {
 
       const livePrice = marketStore.prices[pair]?.last ?? null;
       const fg = macroStore.fgValue ?? 50;
-      const fundingResult =
-        pair === "BTC" ? macroStore.fundingBtc : macroStore.fundingEth;
+      const fundingResult = macroStore.funding[pair as Pair] ?? null;
       const fundingRate = fundingResult?.fundingRate ?? null;
 
-      const oiVelocityResult =
-        pair === "BTC" ? macroStore.oiVelocityBtc : macroStore.oiVelocityEth;
+      const oiVelocityResult = macroStore.oiVelocity[pair as Pair] ?? null;
       const oiVelocityScore = oiVelocityScoreOrZero(oiVelocityResult);
 
       const openPositions = positionStore.positions.map((p) => ({

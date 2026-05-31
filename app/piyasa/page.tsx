@@ -10,6 +10,8 @@ import { MtfTrendGrid } from "@/components/piyasa/MtfTrendGrid";
 import { FundingRateRow } from "@/components/piyasa/FundingRateRow";
 import { OiVelocityCard } from "@/components/piyasa/OiVelocityCard";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
+import { PAIRS, type Pair } from "@/lib/constants/pairs";
+import type { MtfTrendResult } from "@/lib/market/mtfTrend";
 
 export default function PiyasaPage() {
   const marketSummary = useMacroStore((s) => s.marketSummary);
@@ -17,58 +19,41 @@ export default function PiyasaPage() {
   const fgLoading = useMacroStore((s) => s.fgLoading);
   const dominance = useMacroStore((s) => s.dominance);
   const domLoading = useMacroStore((s) => s.domLoading);
-  const fundingBtc = useMacroStore((s) => s.fundingBtc);
-  const fundingEth = useMacroStore((s) => s.fundingEth);
+  const funding = useMacroStore((s) => s.funding);
   const fundingLoading = useMacroStore((s) => s.fundingLoading);
-  const oiVelocityBtc = useMacroStore((s) => s.oiVelocityBtc);
-  const oiVelocityEth = useMacroStore((s) => s.oiVelocityEth);
+  const oiVelocity = useMacroStore((s) => s.oiVelocity);
   const oiLoading = useMacroStore((s) => s.oiLoading);
 
-  const btc1hRaw = useCandleStore((s) => s.candles["BTC_1h"]);
-  const btc4hRaw = useCandleStore((s) => s.candles["BTC_4h"]);
-  const btc1dRaw = useCandleStore((s) => s.candles["BTC_1d"]);
-  const eth1hRaw = useCandleStore((s) => s.candles["ETH_1h"]);
-  const eth4hRaw = useCandleStore((s) => s.candles["ETH_4h"]);
-  const eth1dRaw = useCandleStore((s) => s.candles["ETH_1d"]);
-  const btc1h = btc1hRaw ?? EMPTY_CANDLES;
-  const btc4h = btc4hRaw ?? EMPTY_CANDLES;
-  const btc1d = btc1dRaw ?? EMPTY_CANDLES;
-  const eth1h = eth1hRaw ?? EMPTY_CANDLES;
-  const eth4h = eth4hRaw ?? EMPTY_CANDLES;
-  const eth1d = eth1dRaw ?? EMPTY_CANDLES;
+  // All candles — single subscription, recalculates on each poll (~30s)
+  const allCandles = useCandleStore((s) => s.candles);
 
-  const btcMtf = useMemo(
-    () =>
-      btc1h.length >= 20
-        ? computeMtfTrend("BTC", btc1h, btc4h, btc1d)
-        : null,
-    [btc1h, btc4h, btc1d],
-  );
-
-  const ethMtf = useMemo(
-    () =>
-      eth1h.length >= 20
-        ? computeMtfTrend("ETH", eth1h, eth4h, eth1d)
-        : null,
-    [eth1h, eth4h, eth1d],
-  );
+  const mtfResults = useMemo(() => {
+    const out: Partial<Record<Pair, MtfTrendResult>> = {};
+    for (const pair of PAIRS) {
+      const c1h = allCandles[`${pair}_1h`] ?? EMPTY_CANDLES;
+      const c4h = allCandles[`${pair}_4h`] ?? EMPTY_CANDLES;
+      const c1d = allCandles[`${pair}_1d`] ?? EMPTY_CANDLES;
+      if (c1h.length >= 20) {
+        out[pair] = computeMtfTrend(
+          pair,
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          c1h as any,
+          c4h as any,
+          c1d as any,
+        );
+      }
+    }
+    return out;
+  }, [allCandles]);
 
   return (
     <div className="flex flex-col gap-4 p-4">
       <MarketSummaryBanner summary={marketSummary} />
       <FearGreedGauge info={fgInfo} loading={fgLoading} />
       <DominanceCard info={dominance} loading={domLoading} />
-      <MtfTrendGrid btc={btcMtf} eth={ethMtf} />
-      <FundingRateRow
-        btc={fundingBtc}
-        eth={fundingEth}
-        loading={fundingLoading}
-      />
-      <OiVelocityCard
-        btc={oiVelocityBtc}
-        eth={oiVelocityEth}
-        loading={oiLoading}
-      />
+      <MtfTrendGrid results={mtfResults} />
+      <FundingRateRow funding={funding} loading={fundingLoading} />
+      <OiVelocityCard velocity={oiVelocity} loading={oiLoading} />
     </div>
   );
 }
