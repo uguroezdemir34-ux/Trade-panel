@@ -16,7 +16,7 @@ import { fetchBalance } from "@/lib/okx/balance";
 
 const POLL_INTERVAL_MS = 60_000;
 
-export function useBalancePoller(): void {
+export function useBalancePoller(delayMs = 0): void {
   const setBalance = useAccountStore((s) => s.setBalance);
   const setBalanceFetchError = useAccountStore((s) => s.setBalanceFetchError);
   const demoMode = useSettingsStore((s) => s.demoMode);
@@ -24,6 +24,7 @@ export function useBalancePoller(): void {
   const okxDemo = useCredentialStore((s) => s.okxDemo);
   const credsLoaded = useCredentialStore((s) => s._loaded);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function poll(): Promise<void> {
     const clientCreds = demoMode ? okxDemo : okxProd;
@@ -36,14 +37,16 @@ export function useBalancePoller(): void {
   }
 
   useEffect(() => {
-    // Wait for credentials to load from localStorage before first poll.
-    // Restarts automatically when creds change (e.g. user saves new keys).
     if (!credsLoaded) return;
 
-    poll();
-    timerRef.current = setInterval(poll, POLL_INTERVAL_MS);
+    startTimerRef.current = setTimeout(() => {
+      poll();
+      timerRef.current = setInterval(poll, POLL_INTERVAL_MS);
+    }, delayMs);
     return () => {
+      if (startTimerRef.current) clearTimeout(startTimerRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demoMode, okxProd, okxDemo, credsLoaded]);
 }

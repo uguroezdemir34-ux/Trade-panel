@@ -24,8 +24,27 @@ export default function PiyasaPage() {
   const oiVelocity = useMacroStore((s) => s.oiVelocity);
   const oiLoading = useMacroStore((s) => s.oiLoading);
 
-  // All candles — single subscription, recalculates on each poll (~30s)
-  const allCandles = useCandleStore((s) => s.candles);
+  // Granular candle subscription — only re-renders when 1h/4h/1d last candle
+  // timestamps or confirm flags change (not on 15m polls or live price ticks).
+  const allCandles = useCandleStore(
+    (s) => s.candles,
+    (prev, next) => {
+      for (const pair of PAIRS) {
+        for (const tf of ["1h", "4h", "1d"] as const) {
+          const key = `${pair}_${tf}` as const;
+          const p = prev[key];
+          const n = next[key];
+          if (p === n) continue;
+          if (!p || !n || p.length !== n.length) return false;
+          const pLast = p[p.length - 1];
+          const nLast = n[n.length - 1];
+          if (!pLast || !nLast) return false;
+          if (pLast.ts !== nLast.ts || pLast.confirm !== nLast.confirm) return false;
+        }
+      }
+      return true; // no MTF candle closed → skip re-render
+    },
+  );
 
   const mtfResults = useMemo(() => {
     const out: Partial<Record<Pair, MtfTrendResult>> = {};

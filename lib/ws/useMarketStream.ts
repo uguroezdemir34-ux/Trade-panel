@@ -32,28 +32,82 @@ import { fetchRestTicker } from "@/lib/okx/ticker";
 let activeClient: OkxWsClient | null = null;
 let activeSubscriberCount = 0;
 
-// REST fallback poller
-const REST_FALLBACK_INTERVAL_MS = 3_000;
-let restFallbackTimer: ReturnType<typeof setInterval> | null = null;
+// REST fallback — circuit breaker + exponential backoff
+// Prevents 300 req/min hammer when WS is down for extended periods.
+const REST_FALLBACK_BASE_MS = 3_000;
+const REST_FALLBACK_MAX_MS = 30_000;
+const REST_CIRCUIT_BREAK_AFTER = 5; // consecutive all-failed rounds
+const REST_CIRCUIT_BREAK_PAUSE_MS = 60_000;
+// After 2 min without WS, drop to BTC+ETH only to conserve API quota
+const REST_REDUCED_MODE_AFTER_MS = 2 * 60_000;
+
+let restFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+let restConsecutiveFailures = 0;
+let restBackoffMs = REST_FALLBACK_BASE_MS;
+let restFallbackStartedAt = 0;
+let circuitOpenUntil = 0;
+
+function scheduleNextFallback(): void {
+  if (restFallbackTimer !== null || restFallbackStartedAt === 0) return;
+  const delay = Date.now() < circuitOpenUntil ? REST_CIRCUIT_BREAK_PAUSE_MS : restBackoffMs;
+  restFallbackTimer = setTimeout(runFallbackTick, delay);
+}
+
+async function runFallbackTick(): Promise<void> {
+  restFallbackTimer = null;
+  if (restFallbackStartedAt === 0) return; // stopped while tick was pending
+
+  if (Date.now() < circuitOpenUntil) {
+    scheduleNextFallback();
+    return;
+  }
+
+  const { pushTick } = useMarketStore.getState();
+  const now = Date.now();
+  const elapsed = now - restFallbackStartedAt;
+  // Reduced mode: WS down >2min → BTC+ETH only to preserve quota
+  const activePairs = elapsed > REST_REDUCED_MODE_AFTER_MS ? [PAIRS[0], PAIRS[1]] : PAIRS;
+
+  const results = await Promise.allSettled(
+    activePairs.map(async (pair) => {
+      const tick = await fetchRestTicker(pair, now);
+      if (tick) pushTick(tick);
+      return tick;
+    }),
+  );
+
+  const anySuccess = results.some((r) => r.status === "fulfilled" && r.value !== null);
+  if (anySuccess) {
+    restConsecutiveFailures = 0;
+    restBackoffMs = REST_FALLBACK_BASE_MS;
+  } else {
+    restConsecutiveFailures++;
+    restBackoffMs = Math.min(restBackoffMs * 2, REST_FALLBACK_MAX_MS);
+    if (restConsecutiveFailures >= REST_CIRCUIT_BREAK_AFTER) {
+      circuitOpenUntil = now + REST_CIRCUIT_BREAK_PAUSE_MS;
+      restConsecutiveFailures = 0;
+    }
+  }
+
+  scheduleNextFallback();
+}
 
 function startRestFallback(): void {
-  if (restFallbackTimer !== null) return; // zaten çalışıyor
-  restFallbackTimer = setInterval(async () => {
-    const { pushTick } = useMarketStore.getState();
-    const now = Date.now();
-    await Promise.all(
-      PAIRS.map(async (pair) => {
-        const tick = await fetchRestTicker(pair, now);
-        if (tick) pushTick(tick);
-      }),
-    );
-  }, REST_FALLBACK_INTERVAL_MS);
+  if (restFallbackStartedAt !== 0) return; // already running
+  restFallbackStartedAt = Date.now();
+  restBackoffMs = REST_FALLBACK_BASE_MS;
+  restConsecutiveFailures = 0;
+  scheduleNextFallback();
 }
 
 function stopRestFallback(): void {
-  if (restFallbackTimer === null) return;
-  clearInterval(restFallbackTimer);
-  restFallbackTimer = null;
+  restFallbackStartedAt = 0;
+  if (restFallbackTimer !== null) {
+    clearTimeout(restFallbackTimer);
+    restFallbackTimer = null;
+  }
+  restConsecutiveFailures = 0;
+  restBackoffMs = REST_FALLBACK_BASE_MS;
 }
 
 function handleStatusChange(state: ConnectionState): void {

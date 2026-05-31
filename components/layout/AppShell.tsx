@@ -77,20 +77,16 @@ export function AppShell({
     setShowSplash(false);
   }, []);
 
-  // Real-time market data stream (BTC + ETH WS bağlantısı)
-  useMarketStream();
-  // Candle polling (30s)
-  useCandlePoller();
-  // Position polling (10s)
-  usePositionPoller();
-  // Score engine (candle değişince tetiklenir)
-  useScoreEngine();
-  // Trailing stop manager (30s tick, demoMode değişiminde yeniden başlar)
-  useTrailingManager();
-  // Balance poller (60s)
-  useBalancePoller();
-  // Macro poller: F&G + dominans + funding (5dk)
-  useMacroPoller();
+  // Critical path — start immediately
+  useMarketStream();    // WS bağlantısı — gecikme yok
+  useCandlePoller();    // Cache'den anında veri, sonra fetch
+  useScoreEngine();     // Candle'a bağlı, candle hazır olunca çalışır
+
+  // Secondary — staggered to avoid startup thundering herd
+  usePositionPoller(1_000); // t+1s
+  useTrailingManager();     // candle-triggered, etkisiz erken çalışsa da
+  useBalancePoller(2_000);  // t+2s
+  useMacroPoller(3_000);    // t+3s — en yavaş değişen veri, en son
   // Günlük P&L takip → drawdown protokol tier güncelle (güvenlik kritik)
   useDailyPnlTracker();
   // Order flow trade feed → tradeFeedStore (CVD/VPIN/SMC için)

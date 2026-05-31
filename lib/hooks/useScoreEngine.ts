@@ -25,8 +25,27 @@ import { oiVelocityScoreOrZero } from "@/lib/market/oi-velocity";
 import type { Pair } from "@/lib/constants/pairs";
 
 export function useScoreEngine(): void {
-  // Tek trigger: mum verisi değişimi (~30s). Diğer store'lar getState() ile okunur.
-  const candles = useCandleStore((s) => s.candles);
+  // Trigger: only when 15m/1h/4h last candle timestamps/confirm flags change.
+  // Prevents score recomputation on 1d-only polls or identity-equal updates.
+  const candles = useCandleStore(
+    (s) => s.candles,
+    (prev, next) => {
+      for (const pair of PAIRS) {
+        for (const tf of ["15m", "1h", "4h"] as const) {
+          const key = `${pair}_${tf}` as const;
+          const p = prev[key];
+          const n = next[key];
+          if (p === n) continue;
+          if (!p || !n || p.length !== n.length) return false;
+          const pL = p[p.length - 1];
+          const nL = n[n.length - 1];
+          if (!pL || !nL) return false;
+          if (pL.ts !== nL.ts || pL.confirm !== nL.confirm) return false;
+        }
+      }
+      return true;
+    },
+  );
   const setResult = useScoreStore((s) => s.setResult);
 
   useEffect(() => {
