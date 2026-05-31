@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { AppShell } from "@/components/layout/AppShell";
 import { I18nProvider } from "@/lib/i18n/context";
+import { LocaleHtmlSync } from "@/components/layout/LocaleHtmlSync";
 import { BRAND_META } from "@/lib/brand";
 
 export const metadata: Metadata = {
@@ -40,14 +41,11 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-/**
- * IBM Plex Sans + Mono — v55.51 panel ile birebir aynı yükleme yöntemi (<link>).
- */
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
+    <html lang="en" dir="ltr">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
@@ -55,13 +53,15 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin=""
         />
+        {/* IBM Plex (Latin/Cyrillic) + Noto Sans families for CJK, Arabic, Devanagari */}
         <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap"
+          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;700&display=swap"
           rel="stylesheet"
         />
       </head>
       <body className="bg-bg text-text-t1 font-sans antialiased">
         <I18nProvider>
+          <LocaleHtmlSync />
           <AppShell>{children}</AppShell>
         </I18nProvider>
       </body>

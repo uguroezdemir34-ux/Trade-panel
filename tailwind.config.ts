@@ -48,8 +48,26 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ['"IBM Plex Sans"', "system-ui", "sans-serif"],
-        mono: ['"IBM Plex Mono"', "ui-monospace", "monospace"],
+        sans: [
+          '"IBM Plex Sans"',
+          '"Noto Sans SC"',
+          '"Noto Sans JP"',
+          '"Noto Sans KR"',
+          '"Noto Sans Arabic"',
+          '"Noto Sans Devanagari"',
+          "system-ui",
+          "sans-serif",
+        ],
+        mono: [
+          '"IBM Plex Mono"',
+          '"Noto Sans SC"',
+          '"Noto Sans JP"',
+          '"Noto Sans KR"',
+          '"Noto Sans Arabic"',
+          '"Noto Sans Devanagari"',
+          "ui-monospace",
+          "monospace",
+        ],
       },
       fontSize: {
         base: ["14px", "1.5"],
