@@ -40,7 +40,21 @@ import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 
-const SPLASH_KEY = "qx_splash_v1";
+const SPLASH_DATE_KEY = "qx_splash_date";
+
+function splashShownToday(): boolean {
+  try {
+    return localStorage.getItem(SPLASH_DATE_KEY) === new Date().toISOString().slice(0, 10);
+  } catch {
+    return false;
+  }
+}
+
+function markSplashShown(): void {
+  try {
+    localStorage.setItem(SPLASH_DATE_KEY, new Date().toISOString().slice(0, 10));
+  } catch { /* ignore */ }
+}
 
 export function AppShell({
   children,
@@ -53,11 +67,11 @@ export function AppShell({
   const rehydrateTrades = useTradesStore((s) => s.rehydrate);
   const loadCredentials = useCredentialStore((s) => s.load);
 
-  // Splash: session başında bir kez göster
+  // Splash: günde bir kez göster (localStorage tarih kontrolü)
   const [showSplash, setShowSplash] = useState(false);
 
   const handleSplashDone = useCallback(() => {
-    try { sessionStorage.setItem(SPLASH_KEY, "1"); } catch { /* ignore */ }
+    markSplashShown();
     setShowSplash(false);
   }, []);
 
@@ -87,12 +101,10 @@ export function AppShell({
     rehydrateTrades();
     void loadCredentials();
 
-    // Splash: bu session'da daha gösterilmediyse aç
-    try {
-      if (!sessionStorage.getItem(SPLASH_KEY)) {
-        setShowSplash(true);
-      }
-    } catch { /* ignore */ }
+    // Splash: bugün henüz gösterilmediyse aç
+    if (!splashShownToday()) {
+      setShowSplash(true);
+    }
   }, [rehydrateSettings, rehydrateAccount, rehydrateRisk, rehydrateTrades, loadCredentials]);
 
   return (

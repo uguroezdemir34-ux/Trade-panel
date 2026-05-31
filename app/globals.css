@@ -52,15 +52,44 @@ textarea {
   unicode-bidi: embed;
 }
 
-/* ── Splash Screen Animations ─────────────────────────────────── */
+/* ── Splash Screen ────────────────────────────────────────────── */
+
+/* Theme tokens — dark (default) */
+.splash-root {
+  --splash-bg:      #0A0A0A;
+  --splash-fg:      #F5F5F5;
+  --splash-muted:   #707070;
+  --splash-border:  #2A2A2A;
+  --splash-accent:  #FF6B1A;
+  --splash-glow-a:  rgba(255, 107, 26, 0.55);
+  --splash-glow-b:  rgba(255, 107, 26, 0.25);
+  --splash-glow-c:  rgba(255, 107, 26, 0.10);
+  background: var(--splash-bg);
+}
+
+/* Theme tokens — light override */
+@media (prefers-color-scheme: light) {
+  .splash-root {
+    --splash-bg:      #F8F8F6;
+    --splash-fg:      #1A1A1A;
+    --splash-muted:   #888888;
+    --splash-border:  #E0E0E0;
+    --splash-accent:  #E05A00;
+    --splash-glow-a:  rgba(224, 90, 0, 0.40);
+    --splash-glow-b:  rgba(224, 90, 0, 0.18);
+    --splash-glow-c:  rgba(224, 90, 0, 0.06);
+  }
+}
+
+/* ── Keyframes ── */
 
 @keyframes splash-scale-in {
-  from { opacity: 0; transform: scale(0.82); }
+  from { opacity: 0; transform: scale(0.76); }
   to   { opacity: 1; transform: scale(1); }
 }
 
 @keyframes splash-fade-up {
-  from { opacity: 0; transform: translateY(10px); }
+  from { opacity: 0; transform: translateY(12px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
@@ -69,7 +98,41 @@ textarea {
   to   { width: 100%; }
 }
 
-.splash-logo    { animation: splash-scale-in  520ms cubic-bezier(0.34,1.56,0.64,1) both; }
-.splash-name    { animation: splash-fade-up   400ms ease-out 160ms both; }
-.splash-tagline { animation: splash-fade-up   400ms ease-out 280ms both; }
-.splash-bar     { animation: splash-bar-fill 1500ms linear   200ms both; }
+@keyframes splash-neon {
+  0%, 100% {
+    text-shadow:
+      0 0  6px var(--splash-glow-a),
+      0 0 14px var(--splash-glow-b);
+  }
+  50% {
+    text-shadow:
+      0 0 10px var(--splash-glow-a),
+      0 0 24px var(--splash-glow-b),
+      0 0 48px var(--splash-glow-c);
+  }
+}
+
+@keyframes splash-scan {
+  from { top: -20%; }
+  to   { top: 120%; }
+}
+
+@keyframes splash-exit {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.015); }
+}
+
+/* ── Element classes ── */
+
+.splash-logo    { animation: splash-scale-in  560ms cubic-bezier(0.34, 1.56, 0.64, 1) both; }
+.splash-name    { animation: splash-fade-up   420ms ease-out 180ms both; }
+.splash-tagline { animation: splash-fade-up   420ms ease-out 320ms both; }
+.splash-bar     { animation: splash-bar-fill 1600ms linear   240ms both; }
+.splash-neon    { animation: splash-neon       2.2s ease-in-out 700ms infinite both; }
+.splash-scanline {
+  animation: splash-scan 1800ms cubic-bezier(0.4, 0, 0.2, 1) 400ms infinite;
+  pointer-events: none;
+}
+.splash-fade-out {
+  animation: splash-exit 550ms ease-in forwards;
+}
