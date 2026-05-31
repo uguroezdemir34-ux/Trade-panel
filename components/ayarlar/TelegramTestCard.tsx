@@ -98,7 +98,7 @@ export function TelegramTestCard(): React.ReactElement {
       {_loaded && (
         <div className="mb-3">
           <div className="text-text-t3 font-mono text-2xs tracking-widest uppercase mb-1.5">
-            {t("settings.okx.layer2Label")}
+            {t("settings.telegram.layer2Label")}
           </div>
           <div className="flex items-center gap-1.5">
             <span
@@ -109,7 +109,7 @@ export function TelegramTestCard(): React.ReactElement {
             </span>
             {telegram && (
               <span className="text-signal-green font-mono text-2xs font-bold tracking-widest uppercase">
-                {t("settings.okx.keyActive")}
+                {t("settings.telegram.keyActive")}
               </span>
             )}
           </div>
@@ -129,7 +129,7 @@ export function TelegramTestCard(): React.ReactElement {
           <div className="flex items-center gap-2">
             {telegram && (
               <span className="text-signal-green font-mono text-2xs font-bold tracking-widest uppercase">
-                {t("settings.okx.keyActive")}
+                {t("settings.telegram.keyActive")}
               </span>
             )}
             <span className="text-text-t3 font-mono text-2xs">
@@ -173,7 +173,7 @@ export function TelegramTestCard(): React.ReactElement {
                 disabled={!botToken.trim() || !chatId.trim()}
                 className="border-border hover:bg-bg-page disabled:opacity-40 rounded border px-2 py-1 font-mono text-2xs tracking-widest uppercase transition-colors"
               >
-                {t("settings.okx.saveKeys")}
+                {t("settings.telegram.saveKeys")}
               </button>
               {telegram && (
                 <button
@@ -181,13 +181,13 @@ export function TelegramTestCard(): React.ReactElement {
                   onClick={handleClear}
                   className="border-border hover:bg-bg-page rounded border px-2 py-1 font-mono text-2xs tracking-widest uppercase transition-colors text-signal-red"
                 >
-                  {t("settings.okx.clearKeys")}
+                  {t("settings.telegram.clearKeys")}
                 </button>
               )}
             </div>
             {saved && (
               <div className="text-signal-green font-mono text-2xs tracking-wider">
-                ✓ {t("settings.okx.keySaved")}
+                ✓ {t("settings.telegram.keySaved")}
               </div>
             )}
           </div>

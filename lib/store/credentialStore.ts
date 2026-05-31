@@ -79,6 +79,9 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
   },
 
   load: async () => {
+    // Guard: skip if already loaded (idempotent — safe for StrictMode double-invocation)
+    if (useCredentialStore.getState()._loaded) return;
+
     const [okxProd, okxDemo, telegram] = await Promise.all([
       loadSecure(K.okxProd, null, { schema: okxSchema }),
       loadSecure(K.okxDemo, null, { schema: okxSchema }),

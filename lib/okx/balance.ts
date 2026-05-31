@@ -15,18 +15,21 @@ export async function fetchBalance(
   clientCreds?: { key: string; secret: string; pass: string } | null,
 ): Promise<BalanceResult | null> {
   try {
-    const headers: Record<string, string> = {
-      "X-OKX-Mode": isDemo ? "demo" : "prod",
-    };
+    // Use POST when client creds are present — avoids custom header stripping
+    // by proxies/Vercel Edge. GET is used only when relying on server-side env vars.
+    let res: Response;
     if (clientCreds?.key) {
-      headers["X-OKX-Client-Key"] = clientCreds.key;
-      headers["X-OKX-Client-Secret"] = clientCreds.secret;
-      headers["X-OKX-Client-Pass"] = clientCreds.pass;
+      res = await fetch("/api/okx/api/v5/account/balance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDemo, clientCreds }),
+      });
+    } else {
+      res = await fetch("/api/okx/api/v5/account/balance", {
+        method: "GET",
+        headers: { "X-OKX-Mode": isDemo ? "demo" : "prod" },
+      });
     }
-    const res = await fetch("/api/okx/api/v5/account/balance", {
-      method: "GET",
-      headers,
-    });
     if (!res.ok) return null;
 
     const raw = (await res.json()) as Record<string, unknown>;

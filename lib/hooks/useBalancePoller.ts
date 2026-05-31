@@ -22,6 +22,7 @@ export function useBalancePoller(): void {
   const demoMode = useSettingsStore((s) => s.demoMode);
   const okxProd = useCredentialStore((s) => s.okxProd);
   const okxDemo = useCredentialStore((s) => s.okxDemo);
+  const credsLoaded = useCredentialStore((s) => s._loaded);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   async function poll(): Promise<void> {
@@ -35,10 +36,14 @@ export function useBalancePoller(): void {
   }
 
   useEffect(() => {
+    // Wait for credentials to load from localStorage before first poll.
+    // Restarts automatically when creds change (e.g. user saves new keys).
+    if (!credsLoaded) return;
+
     poll();
     timerRef.current = setInterval(poll, POLL_INTERVAL_MS);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [demoMode, okxProd, okxDemo]);
+  }, [demoMode, okxProd, okxDemo, credsLoaded]);
 }
