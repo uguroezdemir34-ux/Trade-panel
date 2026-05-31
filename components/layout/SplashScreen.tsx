@@ -132,7 +132,7 @@ export function SplashScreen({ onDone }: Props): React.ReactElement {
           />
           {/* Logo */}
           <div className="sp-logo">
-            <QuantixLogo size="lg" />
+            <QuantixLogo size="lg" blend />
           </div>
         </div>
 
