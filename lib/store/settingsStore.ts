@@ -35,6 +35,9 @@ export type TabId = (typeof TAB_IDS)[number];
 
 const tabIdSchema = z.enum(TAB_IDS);
 
+const themeSchema = z.enum(["dark", "light"]);
+export type Theme = z.infer<typeof themeSchema>;
+
 const settingsSchema = z.object({
   lastTab: tabIdSchema,
   demoMode: z.boolean(),
@@ -43,6 +46,7 @@ const settingsSchema = z.object({
   maxTradesPerDay: z.number().int().min(1).max(20),
   defaultLeverage: z.number().int().min(1).max(125),
   drawdownProtocolEnabled: z.boolean(),
+  theme: themeSchema,
 });
 
 export type SettingsData = z.infer<typeof settingsSchema>;
@@ -59,6 +63,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   maxTradesPerDay: 2,
   defaultLeverage: 10,
   drawdownProtocolEnabled: true,
+  theme: "dark",
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -73,6 +78,7 @@ const KEYS = {
   maxTradesPerDay: "max_trades_per_day",
   defaultLeverage: "default_leverage",
   drawdownProtocolEnabled: "dd_protocol_enabled",
+  theme: "theme",
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -88,6 +94,7 @@ interface SettingsStoreState extends SettingsData {
   setMaxTradesPerDay: (n: number) => void;
   setDefaultLeverage: (n: number) => void;
   setDrawdownProtocolEnabled: (on: boolean) => void;
+  setTheme: (theme: Theme) => void;
   /** Tüm ayarları varsayılana sıfırla */
   reset: () => void;
   /** localStorage'tan tekrar yükle (SSR sonrası hydrate için) */
@@ -135,6 +142,7 @@ export function loadSettings(): SettingsData {
       DEFAULT_SETTINGS.drawdownProtocolEnabled,
       z.boolean(),
     ),
+    theme: loadFromStorage<Theme>(KEYS.theme, DEFAULT_SETTINGS.theme, themeSchema),
   };
 }
 
@@ -185,6 +193,11 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ drawdownProtocolEnabled: on });
   },
 
+  setTheme: (theme) => {
+    saveToStorage(KEYS.theme, theme);
+    set({ theme });
+  },
+
   reset: () => {
     // Sadece state'i sıfırla, localStorage'a yaz
     saveToStorage(KEYS.lastTab, DEFAULT_SETTINGS.lastTab);
@@ -197,6 +210,7 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
       KEYS.drawdownProtocolEnabled,
       DEFAULT_SETTINGS.drawdownProtocolEnabled,
     );
+    saveToStorage(KEYS.theme, DEFAULT_SETTINGS.theme);
     set({ ...DEFAULT_SETTINGS });
   },
 

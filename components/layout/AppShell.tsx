@@ -25,6 +25,7 @@ import { useEffect, useCallback, useState } from "react";
 import { AppHeader } from "./AppHeader";
 import { BottomNav } from "./BottomNav";
 import { SplashScreen } from "./SplashScreen";
+import { ThemeSync } from "./ThemeSync";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useAccountStore } from "@/lib/store/accountStore";
 import { useRiskStore } from "@/lib/store/riskStore";
@@ -109,10 +110,11 @@ export function AppShell({
 
   return (
     <div className="bg-bg text-text-t1 min-h-screen">
+      <ThemeSync />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />
       <main
-        className="mx-auto max-w-2xl px-4 pb-24 pt-4"
+        className="mx-auto max-w-screen-2xl px-4 pb-24 pt-4 lg:px-6 lg:pb-6"
         style={{
           paddingBottom: "calc(64px + env(safe-area-inset-bottom) + 16px)",
         }}

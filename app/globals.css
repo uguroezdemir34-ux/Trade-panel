@@ -4,6 +4,37 @@
 
 :root {
   color-scheme: dark;
+
+  /* ── Theme tokens (dark default) — space-separated RGB for Tailwind opacity modifiers */
+  --bg: 10 10 10;
+  --bg-card: 20 20 20;
+  --bg-card2: 28 28 28;
+  --border: 42 42 42;
+  --border-strong: 58 58 58;
+  --text-t1: 245 245 245;
+  --text-t2: 184 184 184;
+  --text-t3: 112 112 112;
+  --text-t4: 74 74 74;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: 247 248 250;
+  --bg-card: 255 255 255;
+  --bg-card2: 240 241 243;
+  --border: 220 220 224;
+  --border-strong: 196 196 204;
+  --text-t1: 10 10 10;
+  --text-t2: 56 56 64;
+  --text-t3: 112 112 120;
+  --text-t4: 168 168 176;
+}
+
+/* Smooth transitions — enabled after initial paint to avoid FOUC */
+.theme-ready,
+.theme-ready * {
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease !important;
 }
 
 html,

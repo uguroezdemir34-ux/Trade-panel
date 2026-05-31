@@ -15,19 +15,19 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          DEFAULT: "#0A0A0A",
-          card: "#141414",
-          card2: "#1C1C1C",
+          DEFAULT: "rgb(var(--bg) / <alpha-value>)",
+          card: "rgb(var(--bg-card) / <alpha-value>)",
+          card2: "rgb(var(--bg-card2) / <alpha-value>)",
         },
         border: {
-          DEFAULT: "#2A2A2A",
-          strong: "#3A3A3A",
+          DEFAULT: "rgb(var(--border) / <alpha-value>)",
+          strong: "rgb(var(--border-strong) / <alpha-value>)",
         },
         text: {
-          t1: "#F5F5F5", // primary
-          t2: "#B8B8B8", // secondary
-          t3: "#707070", // muted
-          t4: "#4A4A4A", // disabled
+          t1: "rgb(var(--text-t1) / <alpha-value>)",
+          t2: "rgb(var(--text-t2) / <alpha-value>)",
+          t3: "rgb(var(--text-t3) / <alpha-value>)",
+          t4: "rgb(var(--text-t4) / <alpha-value>)",
         },
         // Marka turuncu — Uğur Panel kimliği (OKX yeşili DEĞİL)
         brand: {
