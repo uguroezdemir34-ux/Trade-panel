@@ -10,158 +10,185 @@ interface Props {
 
 type Phase = "enter" | "active" | "exit";
 
-const ENTER_DURATION  = 700;   // enter animations settle
-const ACTIVE_DURATION = 1600;  // active display (bar fills in 1600ms)
-const EXIT_DURATION   = 550;   // fade-out
+// Total visible time after enter animations settle
+const ACTIVE_MS = 2000;
+const EXIT_MS   = 600;
 
-function playStartupChime(): void {
+// ── Web Audio: premium startup chime ─────────────────────────────
+function playChime(): void {
   try {
-    const ctx = new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+    const Ctx = window.AudioContext ?? (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    const ctx = new Ctx();
 
     const master = ctx.createGain();
-    master.gain.setValueAtTime(0.18, ctx.currentTime);
+    master.gain.setValueAtTime(0.14, ctx.currentTime);
     master.connect(ctx.destination);
 
-    // Sweep: 880 → 440 Hz over 400ms
-    const sweep = ctx.createOscillator();
+    // Sweep: high → low (power-on feel)
+    const sweep     = ctx.createOscillator();
     const sweepGain = ctx.createGain();
     sweep.type = "sine";
-    sweep.frequency.setValueAtTime(880, ctx.currentTime);
-    sweep.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.4);
-    sweepGain.gain.setValueAtTime(0.6, ctx.currentTime);
-    sweepGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    sweep.frequency.setValueAtTime(1200, ctx.currentTime);
+    sweep.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.35);
+    sweepGain.gain.setValueAtTime(0.5, ctx.currentTime);
+    sweepGain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
     sweep.connect(sweepGain);
     sweepGain.connect(master);
     sweep.start(ctx.currentTime);
-    sweep.stop(ctx.currentTime + 0.5);
+    sweep.stop(ctx.currentTime + 0.45);
 
-    // A-major chord: A4 (440) + C#5 (554) + E5 (659), staggered
+    // A-major chord — A4 C#5 E5, staggered for prestige feel
     const chord = [440, 554.37, 659.26];
     chord.forEach((freq, i) => {
       const osc  = ctx.createOscillator();
       const gain = ctx.createGain();
-      const t0 = ctx.currentTime + 0.12 + i * 0.07;
+      const t0   = ctx.currentTime + 0.18 + i * 0.08;
       osc.type = "sine";
       osc.frequency.setValueAtTime(freq, t0);
       gain.gain.setValueAtTime(0, t0);
-      gain.gain.linearRampToValueAtTime(0.45, t0 + 0.06);
-      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.7);
+      gain.gain.linearRampToValueAtTime(0.42, t0 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.8);
       osc.connect(gain);
       gain.connect(master);
       osc.start(t0);
-      osc.stop(t0 + 0.75);
+      osc.stop(t0 + 0.85);
     });
 
-    // Auto-close context after all sounds finish
-    setTimeout(() => { void ctx.close(); }, 1200);
+    setTimeout(() => void ctx.close(), 1500);
   } catch {
-    // Browser blocked autoplay or Web Audio unavailable — fail silently
+    /* autoplay blocked or Web Audio unavailable — silent */
   }
 }
 
+// ── Letter-by-letter brand name ───────────────────────────────────
+const LETTERS = ["Q", "U", "A", "N", "T", "I", "X"];
+
 export function SplashScreen({ onDone }: Props): React.ReactElement {
   const t = useT();
-  const [phase, setPhase] = useState<Phase>("enter");
+  const [phase, setPhase]           = useState<Phase>("enter");
   const [skipVisible, setSkipVisible] = useState(false);
-  const onDoneRef = useRef(onDone);
-  onDoneRef.current = onDone;
+  const onDoneRef                   = useRef(onDone);
+  onDoneRef.current                 = onDone;
 
   const triggerExit = useCallback(() => {
     setPhase("exit");
-    setTimeout(() => onDoneRef.current(), EXIT_DURATION);
+    setTimeout(() => onDoneRef.current(), EXIT_MS);
   }, []);
 
   useEffect(() => {
-    playStartupChime();
+    playChime();
 
+    // After all enter animations settle (~1.3s) → active phase + skip
     const t1 = setTimeout(() => {
       setPhase("active");
       setSkipVisible(true);
-    }, ENTER_DURATION);
+    }, 1350);
 
+    // Auto-exit after active duration
     const t2 = setTimeout(() => {
       triggerExit();
-    }, ENTER_DURATION + ACTIVE_DURATION);
+    }, 1350 + ACTIVE_MS);
 
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    return () => { clearTimeout(t1); clearTimeout(t2); };
   }, [triggerExit]);
+
+  const isExiting = phase === "exit";
 
   return (
     <div
       aria-hidden="true"
-      className={`splash-root fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden${phase === "exit" ? " splash-fade-out" : ""}`}
-      style={{ color: "var(--splash-fg)" }}
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center overflow-hidden${isExiting ? " sp-exit" : ""}`}
+      style={{ background: "#000000" }}
     >
-      {/* Scanline sweep */}
+      {/* Power-on flash overlay */}
       <div
-        className="splash-scanline absolute left-0 right-0 h-[15%]"
+        className="sp-poweron pointer-events-none absolute inset-0"
+        style={{ background: "#FFFFFF", zIndex: 1 }}
+      />
+
+      {/* Horizontal scan line */}
+      <div
+        className="sp-scan absolute left-0 right-0 h-[2px] pointer-events-none"
         style={{
-          background: "linear-gradient(to bottom, transparent, var(--splash-accent), transparent)",
-          opacity: 0.06,
+          background: "linear-gradient(90deg, transparent 0%, #FF6B1A 50%, transparent 100%)",
+          zIndex: 2,
         }}
       />
 
-      {/* Logo */}
-      <div className="splash-logo relative z-10">
-        <QuantixLogo size="lg" />
-      </div>
+      {/* ── Main content ── */}
+      <div className="relative z-10 flex flex-col items-center">
 
-      {/* Brand name + neon glow + OS badge */}
-      <div className="splash-name relative z-10 mt-6 flex items-center gap-2.5">
-        <span
-          className="splash-neon font-mono text-[28px] font-bold tracking-[0.14em]"
-          style={{ color: "var(--splash-fg)" }}
-        >
-          QUANTIX
-        </span>
-        <span
-          className="rounded px-1.5 py-0.5 font-mono text-[10px] font-bold tracking-widest text-white"
-          style={{ background: "var(--splash-accent)" }}
-        >
-          OS
-        </span>
-      </div>
-
-      {/* Tagline */}
-      <p
-        className="splash-tagline relative z-10 mt-2 font-mono text-[11px] tracking-[0.12em]"
-        style={{ color: "var(--splash-muted)" }}
-      >
-        {t("app.tagline")}
-      </p>
-
-      {/* Progress bar */}
-      <div
-        className="absolute bottom-16 left-1/2 h-px w-28 -translate-x-1/2 overflow-hidden"
-        style={{ background: "var(--splash-border)" }}
-      >
-        {phase !== "enter" && (
+        {/* Logo with glow ring */}
+        <div className="relative flex items-center justify-center">
+          {/* Glow ring */}
           <div
-            className="splash-bar h-full"
-            style={{ background: "var(--splash-accent)" }}
+            className="sp-ring absolute rounded-full"
+            style={{
+              width: 148,
+              height: 148,
+              borderRadius: "50%",
+              border: "1.5px solid rgba(255, 107, 26, 0.6)",
+            }}
           />
-        )}
+          {/* Logo */}
+          <div className="sp-logo">
+            <QuantixLogo size="lg" />
+          </div>
+        </div>
+
+        {/* Brand name — harf harf */}
+        <div className="mt-8 flex items-center gap-[2px]">
+          {LETTERS.map((letter, i) => (
+            <span
+              key={letter + i}
+              className={`sp-l${i} sp-glow inline-block font-mono text-[32px] font-bold tracking-[0.18em] text-white`}
+            >
+              {letter}
+            </span>
+          ))}
+          {/* OS badge */}
+          <span
+            className="sp-badge ml-2.5 self-start mt-1 rounded px-1.5 py-[3px] font-mono text-[10px] font-bold tracking-widest text-white"
+            style={{ background: "#FF6B1A" }}
+          >
+            OS
+          </span>
+        </div>
+
+        {/* Tagline */}
+        <p
+          className="sp-tagline mt-2.5 font-mono text-[11px] tracking-[0.16em] uppercase"
+          style={{ color: "#4A4A4A" }}
+        >
+          {t("app.tagline")}
+        </p>
+
+        {/* Progress bar */}
+        <div
+          className="mt-10 h-[1px] w-32 overflow-hidden"
+          style={{ background: "#1A1A1A" }}
+        >
+          <div
+            className="sp-bar h-full"
+            style={{ background: "linear-gradient(90deg, #FF6B1A, #FFB300)" }}
+          />
+        </div>
       </div>
 
-      {/* Skip button */}
-      {skipVisible && phase !== "exit" && (
+      {/* Skip button — bottom right */}
+      {skipVisible && !isExiting && (
         <button
           type="button"
           onClick={triggerExit}
-          className="absolute bottom-8 right-6 font-mono text-[11px] tracking-widest transition-opacity"
+          className="absolute bottom-8 right-6 font-mono text-[10px] tracking-[0.2em] uppercase transition-opacity duration-200 hover:opacity-100"
           style={{
-            color: "var(--splash-muted)",
+            color: "#3A3A3A",
             background: "transparent",
             border: "none",
             cursor: "pointer",
-            opacity: 0.7,
-            padding: "6px 10px",
+            opacity: 0.55,
+            padding: "8px 12px",
           }}
-          onMouseEnter={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "1"; }}
-          onMouseLeave={(e) => { (e.currentTarget as HTMLButtonElement).style.opacity = "0.7"; }}
         >
           SKIP ›
         </button>
