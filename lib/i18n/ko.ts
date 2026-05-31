@@ -161,7 +161,7 @@ export const ko: Dictionary = {
       demoKeys: "데모 키",
       apiKey: "API 키",
       apiSecret: "API 시크릿",
-      passphrase: "비밀번호구",
+      passphrase: "패스프레이즈",
       saveKeys: "키 저장",
       clearKeys: "삭제",
       keySaved: "키 저장됨 (암호화됨)",

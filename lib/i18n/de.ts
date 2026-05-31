@@ -20,7 +20,7 @@ export const de: Dictionary = {
     chart: "Chart",
     market: "Markt",
     risk: "Risiko",
-    pnl: "G&V",
+    pnl: "P&L",
     settings: "Einstellungen",
     settingsShort: "Ein.",
     ariaLabel: "Hauptnavigation",
@@ -61,7 +61,7 @@ export const de: Dictionary = {
       vol: "Volumen",
       bb: "BB",
       vwap: "VWAP",
-      funding: "Finanzierung",
+      funding: "Funding",
       macro: "Makro",
     },
   },
@@ -160,7 +160,7 @@ export const de: Dictionary = {
       prodKeys: "Produktions-Schlüssel",
       demoKeys: "Demo-Schlüssel",
       apiKey: "API-Schlüssel",
-      apiSecret: "API-Geheimnis",
+      apiSecret: "API-Secret",
       passphrase: "Passphrase",
       saveKeys: "Schlüssel speichern",
       clearKeys: "Löschen",
@@ -201,7 +201,7 @@ export const de: Dictionary = {
       total: "Gesamtkapital",
       free: "Verfügbare Margin",
       used: "Verwendete Margin",
-      dailyPnl: "Heutiger G&V",
+      dailyPnl: "Heutiger P&L",
       tier: "Risikostufe",
       fetchError: "OKX-Guthaben nicht verfügbar — API-Zugangsdaten prüfen",
     },
@@ -217,7 +217,7 @@ export const de: Dictionary = {
 
   position: {
     title: "💼 OFFENE POSITIONEN",
-    subtitle: "Live G&V · automatische Aktualisierung alle 3s",
+    subtitle: "Live P&L · automatische Aktualisierung alle 3s",
     emptyTitle: "Keine offenen Positionen",
     emptyDescription: "Wenn Sie vom Entscheidungs-Tab einen Trade öffnen, wird er hier angezeigt.",
     loading: "Positionen werden geladen...",
@@ -264,7 +264,7 @@ export const de: Dictionary = {
     subtitle: "Drawdown-Schutz · Einhaltungsscore · Abkühlzeiten",
     drawdown: {
       title: "DRAWDOWN-PROTOKOLL",
-      dailyPnl: "Tages-G&V",
+      dailyPnl: "Tages-P&L",
       tier: "Stufe",
       multiplier: "Risiko-Multiplikator",
     },
@@ -311,16 +311,16 @@ export const de: Dictionary = {
   },
 
   pnl: {
-    title: "💰 G&V",
+    title: "💰 P&L",
     subtitle: "Gewinn & Verlust · Tageskalender · Vorwärtstest-Statistiken",
     empty: {
       title: "Noch keine Trades",
-      description: "Öffnen und schließen Sie einen Trade, um die G&V-Aufschlüsselung zu sehen.",
+      description: "Öffnen und schließen Sie einen Trade, um die P&L-Aufschlüsselung zu sehen.",
     },
     stats: {
       title: "STATISTIKEN",
       totalTrades: "Trades gesamt",
-      totalPnl: "Gesamt-G&V",
+      totalPnl: "Gesamt-P&L",
       winRate: "Gewinnrate",
       avgR: "Durchschn. R",
       profitFactor: "Gewinnfaktor",
@@ -337,7 +337,7 @@ export const de: Dictionary = {
       },
     },
     calendar: {
-      title: "TAGES-G&V-KALENDER",
+      title: "TAGES-P&L-KALENDER",
       lookback30d: "30 Tage",
       lookback7d: "7 Tage",
       noTrades: "Keine Trades",
@@ -347,14 +347,14 @@ export const de: Dictionary = {
       title: "PERIODEN-ZUSAMMENFASSUNG",
       thisWeek: "Diese Woche",
       thisMonth: "Diesen Monat",
-      allTime: "Gesamte Zeit",
+      allTime: "Gesamt",
     },
     forwardTestBadge: "Vorwärtstest (Paper)",
   },
 
   piyasa: {
     title: "📊 Markt",
-    subtitle: "Makro-Schnappschuss · Fear & Greed · BTC-Dominanz · Finanzierung",
+    subtitle: "Makro-Schnappschuss · Fear & Greed · BTC-Dominanz · Funding",
     refreshNow: "Aktualisieren",
     fg: {
       title: "FEAR & GREED",
@@ -379,7 +379,7 @@ export const de: Dictionary = {
       },
     },
     funding: {
-      title: "FINANZIERUNGSRATE",
+      title: "FUNDING RATE",
       btc: "BTC",
       eth: "ETH",
       annualized: "Annualisiert",

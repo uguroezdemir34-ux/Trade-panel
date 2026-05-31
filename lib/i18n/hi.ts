@@ -98,7 +98,7 @@ export const hi: Dictionary = {
     leverageHint: "{n}x लीवरेज",
     riskMultipliers: "जोखिम गुणक",
     base: "आधार",
-    bucket: "बकेट",
+    bucket: "स्तर",
     drawdown: "ड्रॉडाउन",
     rr: "R:R",
     longOpen: "▶ LONG पोजीशन खोलें",
