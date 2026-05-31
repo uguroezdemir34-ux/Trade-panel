@@ -113,12 +113,7 @@ export function AppShell({
       <ThemeSync />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />
-      <main
-        className="mx-auto max-w-screen-2xl px-4 pb-24 pt-4 lg:px-6 lg:pb-6"
-        style={{
-          paddingBottom: "calc(64px + env(safe-area-inset-bottom) + 16px)",
-        }}
-      >
+      <main className="app-main mx-auto max-w-screen-2xl px-4 pt-4 lg:px-6">
         {children}
       </main>
       <BottomNav />

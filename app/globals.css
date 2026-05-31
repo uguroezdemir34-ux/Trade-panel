@@ -15,6 +15,10 @@
   --text-t2: 184 184 184;
   --text-t3: 112 112 112;
   --text-t4: 74 74 74;
+  /* Surface elevation layers */
+  --surface-s1: 17 17 17;
+  --surface-s2: 24 24 24;
+  --surface-s3: 34 34 34;
 }
 
 [data-theme="light"] {
@@ -29,6 +33,10 @@
   --text-t2: 56 56 64;
   --text-t3: 112 112 120;
   --text-t4: 168 168 176;
+  /* Surface elevation layers — light mode */
+  --surface-s1: 240 241 243;
+  --surface-s2: 232 233 236;
+  --surface-s3: 220 221 224;
 }
 
 /* Smooth transitions — enabled after initial paint to avoid FOUC */
@@ -63,6 +71,17 @@ body {
 .font-mono {
   word-break: break-word;
   overflow-wrap: break-word;
+}
+
+/* Main content bottom padding: mobile = bottom nav height + safe area, desktop = standard */
+.app-main {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom) + 16px);
+}
+
+@media (min-width: 1024px) {
+  .app-main {
+    padding-bottom: 24px;
+  }
 }
 
 /* iOS input zoom koruması — 16px'in altındaki input'lar zoom tetikler */

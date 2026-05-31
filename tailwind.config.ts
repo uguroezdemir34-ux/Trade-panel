@@ -46,6 +46,16 @@ const config: Config = {
           amber: "rgba(245,158,11,0.08)",
           blue: "rgba(59,130,246,0.08)",
         },
+        // Surface layers — card elevations (theme-aware via CSS vars)
+        surface: {
+          s1: "rgb(var(--surface-s1) / <alpha-value>)",
+          s2: "rgb(var(--surface-s2) / <alpha-value>)",
+          s3: "rgb(var(--surface-s3) / <alpha-value>)",
+        },
+        // Warning (amber alias)
+        warning: "#F59E0B",
+        // Text on colored backgrounds (matches bg color for contrast)
+        "bg-page": "rgb(var(--bg) / <alpha-value>)",
       },
       fontFamily: {
         sans: [
