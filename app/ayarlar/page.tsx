@@ -8,6 +8,7 @@ import { LanguageCard } from "@/components/ayarlar/LanguageCard";
 import { DangerZoneCard } from "@/components/ayarlar/DangerZoneCard";
 import { GoAlertsCard } from "@/components/ayarlar/GoAlertsCard";
 import { PriceAlarmsCard } from "@/components/ayarlar/PriceAlarmsCard";
+import { TvWebhookCard } from "@/components/ayarlar/TvWebhookCard";
 
 export default function AyarlarPage() {
   return (
@@ -18,6 +19,7 @@ export default function AyarlarPage() {
       <TelegramTestCard />
       <GoAlertsCard />
       <PriceAlarmsCard />
+      <TvWebhookCard />
       <TradingLimitsCard />
       <DrawdownToggleCard />
       <LanguageCard />

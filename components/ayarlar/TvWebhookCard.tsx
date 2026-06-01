@@ -1,0 +1,104 @@
+"use client";
+
+/**
+ * TV WEBHOOK CARD — Shows TradingView webhook URL and setup instructions.
+ *
+ * Users configure TradingView to POST to their panel's /api/webhook/tv endpoint.
+ * Optional: set TV_WEBHOOK_SECRET env var for protection.
+ */
+
+import { useState } from "react";
+
+const TV_EXAMPLE = JSON.stringify(
+  {
+    ticker: "{{ticker}}",
+    action: "{{strategy.order.action}}",
+    close: "{{close}}",
+    high: "{{high}}",
+    low: "{{low}}",
+    volume: "{{volume}}",
+    time: "{{time}}",
+    message: "{{strategy.order.comment}}",
+  },
+  null,
+  2,
+);
+
+export function TvWebhookCard(): React.ReactElement {
+  const [copied, setCopied] = useState(false);
+
+  const origin =
+    typeof window !== "undefined"
+      ? window.location.origin
+      : "https://your-domain.vercel.app";
+
+  const webhookUrl = `${origin}/api/webhook/tv`;
+
+  function copyUrl() {
+    navigator.clipboard.writeText(webhookUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }
+
+  return (
+    <div className="border-border bg-bg-card rounded-lg border p-4">
+      <h3 className="text-text-t3 mb-1 font-mono text-2xs tracking-widest uppercase">
+        📡 TradingView Webhook
+      </h3>
+      <p className="text-text-t4 font-mono text-2xs mb-3 leading-relaxed">
+        TradingView alert'lerini Telegram'a yönlendir. Alert ayarlarında bu URL'yi kullan.
+      </p>
+
+      {/* Webhook URL */}
+      <div className="mb-3">
+        <div className="text-text-t4 font-mono text-2xs mb-1 tracking-wider">Webhook URL</div>
+        <div className="flex items-center gap-2">
+          <div className="flex-1 overflow-hidden rounded border border-border bg-surface-s1 px-2.5 py-1.5">
+            <span className="font-mono text-xs text-text-t2 break-all">{webhookUrl}</span>
+          </div>
+          <button
+            onClick={copyUrl}
+            className="shrink-0 rounded border border-border px-2.5 py-1.5 font-mono text-2xs text-text-t3 transition-colors hover:text-text-t1"
+          >
+            {copied ? "✓ Kopyalandı" : "Kopyala"}
+          </button>
+        </div>
+      </div>
+
+      {/* Optional secret */}
+      <div className="mb-3 rounded border border-border/50 bg-surface-s1/50 p-2.5">
+        <div className="text-text-t3 font-mono text-2xs font-semibold mb-1">
+          Güvenlik (opsiyonel)
+        </div>
+        <p className="text-text-t4 font-mono text-2xs leading-relaxed">
+          Vercel env var olarak <code className="text-text-t2">TV_WEBHOOK_SECRET=güçlü-şifre</code> ekle,
+          ardından URL'ye <code className="text-text-t2">?secret=güçlü-şifre</code> ekle.
+        </p>
+      </div>
+
+      {/* JSON template */}
+      <div>
+        <div className="text-text-t4 font-mono text-2xs mb-1 tracking-wider">Alert JSON Şablonu</div>
+        <pre className="overflow-x-auto rounded border border-border bg-surface-s1 p-2.5 font-mono text-2xs text-text-t3 leading-relaxed">
+          {TV_EXAMPLE}
+        </pre>
+      </div>
+
+      {/* Steps */}
+      <div className="mt-3 flex flex-col gap-1.5">
+        {[
+          "TradingView'de bir alert oluştur (Create Alert)",
+          "Notifications sekmesinde Webhook URL'yi yapıştır",
+          'Alert Message kutusuna yukardaki JSON şablonunu yaz',
+          "Telegram kanalında gelen alert'i gör",
+        ].map((step, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <span className="text-text-t4 font-mono text-2xs shrink-0 mt-0.5">{i + 1}.</span>
+            <span className="text-text-t4 font-mono text-2xs leading-relaxed">{step}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
