@@ -138,6 +138,29 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
     return { kelly: Math.max(0, kelly), ev, avgWin, avgLoss, payoff };
   }, [filteredTrades]);
 
+  // Direction-filtered score buckets
+  const filteredBuckets = useMemo(() => {
+    if (dirFilter === "ALL") return stats.byScoreBucket;
+    const BUCKETS = [
+      { label: "<80", min: 0, max: 79 },
+      { label: "80-84", min: 80, max: 84 },
+      { label: "85-89", min: 85, max: 89 },
+      { label: "90-94", min: 90, max: 94 },
+      { label: "95+", min: 95, max: 100 },
+    ];
+    return BUCKETS.map((b) => {
+      const bt = filteredTrades.filter((tr) => tr.score >= b.min && tr.score <= b.max);
+      const bw = bt.filter((tr) => tr.rMultiple > 0);
+      return {
+        ...b,
+        count: bt.length,
+        winCount: bw.length,
+        winRate: bt.length > 0 ? (bw.length / bt.length) * 100 : null,
+        avgR: bt.length > 0 ? bt.reduce((s, tr) => s + tr.rMultiple, 0) / bt.length : null,
+      };
+    });
+  }, [filteredTrades, dirFilter, stats.byScoreBucket]);
+
   // Direction-filtered quick stats
   const dirStats = useMemo(() => {
     if (dirFilter === "ALL") return null;
@@ -309,7 +332,8 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
       {/* ── Score Buckets ── */}
       <div className="border-border bg-surface rounded-lg border p-4">
         <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-3">
-          {t("backtest.scoreBuckets")}</h3>
+          {t("backtest.scoreBuckets")}{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
+        </h3>
         <table className="w-full font-mono text-xs">
           <thead>
             <tr className="text-text-t4 border-b border-border">
@@ -320,7 +344,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
             </tr>
           </thead>
           <tbody>
-            {stats.byScoreBucket.map((b) => (
+            {filteredBuckets.map((b) => (
               <tr key={b.label} className="border-b border-border/50">
                 <td className="text-text-t2 py-1">{b.label}</td>
                 <td className="text-text-t3 text-right py-1">{b.count}</td>

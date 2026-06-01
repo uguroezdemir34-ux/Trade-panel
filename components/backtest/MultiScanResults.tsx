@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n/context";
 import type { ScanRow, ScanConfig } from "@/lib/store/backtestStore";
 
@@ -42,8 +42,20 @@ interface Props {
   status: "scanning" | "done" | "error";
 }
 
-function ev(row: ScanRow): number {
-  return row.ev ?? -999;
+type SortKey = "ev" | "winRate" | "avgR" | "sharpe" | "profitFactor" | "totalTrades" | "longWinRate" | "shortWinRate";
+type SortDir = "desc" | "asc";
+
+function getValue(row: ScanRow, key: SortKey): number {
+  switch (key) {
+    case "ev":            return row.ev ?? -999;
+    case "winRate":       return row.winRate;
+    case "avgR":          return row.avgR ?? -999;
+    case "sharpe":        return row.sharpe ?? -999;
+    case "profitFactor":  return row.profitFactor ?? -999;
+    case "totalTrades":   return row.totalTrades;
+    case "longWinRate":   return row.longWinRate ?? -999;
+    case "shortWinRate":  return row.shortWinRate ?? -999;
+  }
 }
 
 export function MultiScanResults({
@@ -55,13 +67,40 @@ export function MultiScanResults({
   status,
 }: Props): React.ReactElement {
   const t = useT();
+  const [sortKey, setSortKey] = useState<SortKey>("ev");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
 
-  const sorted = useMemo(
-    () => [...rows].sort((a, b) => ev(b) - ev(a)),
-    [rows],
-  );
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortKey(key);
+      setSortDir("desc");
+    }
+  }
+
+  const sorted = useMemo(() => {
+    const arr = [...rows].sort((a, b) => {
+      const diff = getValue(b, sortKey) - getValue(a, sortKey);
+      return sortDir === "desc" ? diff : -diff;
+    });
+    return arr;
+  }, [rows, sortKey, sortDir]);
 
   const scanPct = scanTotal > 0 ? Math.round((scanDone / scanTotal) * 100) : 0;
+
+  function Th({ label, sk, right = true }: { label: string; sk: SortKey; right?: boolean }) {
+    const active = sortKey === sk;
+    const arrow = active ? (sortDir === "desc" ? " ↓" : " ↑") : "";
+    return (
+      <th
+        onClick={() => handleSort(sk)}
+        className={`cursor-pointer select-none py-1.5 pr-3 hover:text-text-t2 transition-colors ${right ? "text-right" : "text-left"} ${active ? "text-text-t2" : "text-text-t4"}`}
+      >
+        {label}{arrow}
+      </th>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -117,23 +156,23 @@ export function MultiScanResults({
           <div className="overflow-x-auto">
             <table className="w-full font-mono text-xs">
               <thead>
-                <tr className="text-text-t4 border-b border-border">
-                  <th className="text-left py-1.5 pr-3">#</th>
-                  <th className="text-left py-1.5 pr-3">{t("backtest.pair")}</th>
-                  <th className="text-right py-1.5 pr-3">{t("backtest.totalTrades")}</th>
-                  <th className="text-right py-1.5 pr-3">{t("backtest.winRate")}</th>
-                  <th className="text-right py-1.5 pr-3">{t("backtest.avgR")}</th>
-                  <th className="text-right py-1.5 pr-3">EV</th>
-                  <th className="text-right py-1.5 pr-3">Sharpe</th>
-                  <th className="text-right py-1.5 pr-3">PF</th>
-                  <th className="text-right py-1.5 pr-3">L%</th>
-                  <th className="text-right py-1.5">S%</th>
+                <tr className="border-b border-border">
+                  <th className="text-left py-1.5 pr-3 text-text-t4">#</th>
+                  <th className="text-left py-1.5 pr-3 text-text-t4">{t("backtest.pair")}</th>
+                  <Th label={t("backtest.totalTrades")} sk="totalTrades" />
+                  <Th label={t("backtest.winRate")} sk="winRate" />
+                  <Th label={t("backtest.avgR")} sk="avgR" />
+                  <Th label="EV" sk="ev" />
+                  <Th label="Sharpe" sk="sharpe" />
+                  <Th label="PF" sk="profitFactor" />
+                  <Th label="L%" sk="longWinRate" />
+                  <Th label="S%" sk="shortWinRate" right={false} />
                 </tr>
               </thead>
               <tbody>
                 {(sorted as ScanRow[]).map((row: ScanRow, idx: number) => {
                   const rank = idx + 1;
-                  const isTop3 = rank <= 3 && row.status === "done" && (row.ev ?? 0) > 0;
+                  const isTop3 = rank <= 3 && row.status === "done" && (row.ev ?? 0) > 0 && sortKey === "ev";
 
                   if (row.status === "error") {
                     return (
@@ -214,7 +253,7 @@ export function MultiScanResults({
 
           {/* EV explanation */}
           <p className="text-text-t4 font-mono text-2xs mt-3">
-            EV = WR% × AvgR · Sharpe = mean(R)/std(R) · L% = Long WR · S% = Short WR · {t("backtest.scanSortHint")}
+            EV = WR% × AvgR · Sharpe = mean(R)/std(R) · L% = Long WR · S% = Short WR · click column to sort
           </p>
         </div>
       )}
