@@ -129,6 +129,18 @@ export default function KararPage() {
     return PAIR_GROUPS[pairGroup] ?? PAIRS;
   }, [pairGroup, goPairs, watchlistPairs]);
 
+  // Skor momentumu — son 4 snapshot'taki net skor değişimi
+  const pairMomentum = useMemo<Partial<Record<Pair, number>>>(() => {
+    const out: Partial<Record<Pair, number>> = {};
+    for (const p of PAIRS) {
+      const snaps = scoreHistory[p];
+      if (!snaps || snaps.length < 4) continue;
+      const recent = snaps.slice(-4);
+      out[p] = recent[recent.length - 1].score - recent[0].score;
+    }
+    return out;
+  }, [scoreHistory]);
+
   // En son hesaplanan skor zamanı
   const latestScoreTime = useMemo(() => {
     const times = Object.values(computedAt).filter((v): v is number => v !== undefined);
@@ -448,6 +460,10 @@ export default function KararPage() {
           const dirArrow =
             dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
 
+          const momentum = pairMomentum[p];
+          const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
+          const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
+
           const isWatched = watchlistPairs.includes(p);
           return (
             <div key={p} className="relative group">
@@ -467,9 +483,16 @@ export default function KararPage() {
                     <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-amber-400" />
                   )}
                 </div>
-                <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
-                  {score !== undefined ? `${score}${dirArrow}` : "·"}
-                </span>
+                <div className="flex items-center gap-0.5">
+                  <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
+                    {score !== undefined ? `${score}${dirArrow}` : "·"}
+                  </span>
+                  {showMom && (
+                    <span className={`text-[8px] tabular-nums leading-none ${momColor}`}>
+                      {(momentum ?? 0) > 0 ? "▲" : "▼"}
+                    </span>
+                  )}
+                </div>
                 <div className="mt-0.5 h-[10px]">
                   <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
                 </div>
