@@ -49,6 +49,7 @@ import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
 import { GoSignalLog } from "@/components/karar/GoSignalLog";
 import { HistoricalEdge } from "@/components/karar/HistoricalEdge";
 import { FundingBadge } from "@/components/karar/FundingBadge";
+import { CorrelationWarning } from "@/components/karar/CorrelationWarning";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export default function KararPage() {
@@ -556,6 +557,10 @@ export default function KararPage() {
             softBlocks={result.softBlocks}
           />
           <ReasonsList reasons={result.reasons} />
+
+          {sizerResult && result.direction !== "NEUTRAL" && (
+            <CorrelationWarning pair={activePair} direction={result.direction} />
+          )}
 
           {sizerResult && (
             <PositionSizer
