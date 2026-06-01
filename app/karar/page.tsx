@@ -44,6 +44,7 @@ import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
 import { ScoreLeaderboard } from "@/components/karar/ScoreLeaderboard";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
+import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export default function KararPage() {
@@ -445,6 +446,7 @@ export default function KararPage() {
       {/* Sonuç */}
       {result && (
         <>
+          <LiveEdgeBadge pair={activePair} />
           <VerdictBadge
             verdict={result.verdict}
             signalType={result.pullbackActive ? "pullback" : "classic"}
