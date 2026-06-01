@@ -23,5 +23,6 @@ export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
   ema50?: LinePoint[];
+  ema200?: LinePoint[];
   markers?: ChartMarker[];
 }

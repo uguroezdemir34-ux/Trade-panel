@@ -39,6 +39,7 @@ export default function KararPage() {
   const [execError, setExecError] = useState<string | null>(null);
 
   const result = useScoreStore((s) => s.results[activePair]);
+  const allResults = useScoreStore((s) => s.results);
   const computing = useScoreStore((s) => s.computing);
   const candles1hRaw = useCandleStore((s) => s.candles[`${activePair}_1h`]);
   const candles4hRaw = useCandleStore((s) => s.candles[`${activePair}_4h`]);
@@ -58,6 +59,12 @@ export default function KararPage() {
   const openPending = useTradesStore((s) => s.openPending);
   const funding = useMacroStore((s) => s.funding);
   const fgValue = useMacroStore((s) => s.fgValue);
+
+  // GO sinyali olan pariteler (tümü için özet)
+  const goPairs = useMemo(
+    () => PAIRS.filter((p) => allResults[p]?.verdict === "go"),
+    [allResults],
+  );
 
   // Bucket istatistikleri — geçmiş trade'lerden score bazlı performans
   const bucketStats = useMemo(() => {
@@ -275,21 +282,73 @@ export default function KararPage() {
         </div>
       )}
 
-      {/* Pair seçici — 5 sütun grid */}
+      {/* GO sinyali özeti */}
+      {goPairs.length > 0 ? (
+        <div className="flex items-center gap-2 rounded-lg border border-green-400/30 bg-green-400/5 px-3 py-2">
+          <span className="font-mono text-xs font-bold text-green-400">
+            {goPairs.length} GO
+          </span>
+          <span className="text-text-t3 font-mono text-xs">
+            {goPairs.join(" · ")}
+          </span>
+        </div>
+      ) : (
+        Object.keys(allResults).length > 0 && (
+          <div className="flex items-center gap-2 rounded-lg border border-border/50 px-3 py-1.5">
+            <span className="text-text-t4 font-mono text-xs">
+              {Object.keys(allResults).length}/{PAIRS.length} hesaplandı · GO sinyal yok
+            </span>
+          </div>
+        )
+      )}
+
+      {/* Pair seçici — skor + verdict ile zenginleştirilmiş */}
       <div className="grid grid-cols-5 gap-1.5">
-        {PAIRS.map((p) => (
-          <button
-            key={p}
-            onClick={() => setActivePair(p)}
-            className={`rounded py-1.5 font-mono text-xs font-semibold tracking-wide transition-colors ${
-              activePair === p
-                ? "bg-surface-s2 text-text-t1"
-                : "text-text-t3 hover:text-text-t2"
-            }`}
-          >
-            {p}
-          </button>
-        ))}
+        {PAIRS.map((p) => {
+          const pr = allResults[p];
+          const v = pr?.verdict;
+          const score = pr?.score;
+          const dir = pr?.direction;
+          const isActive = activePair === p;
+
+          const verdictBorder =
+            v === "go"
+              ? "border-b-2 border-green-400"
+              : v === "wait"
+              ? "border-b-2 border-yellow-400"
+              : v === "no"
+              ? "border-b-2 border-red-400/50"
+              : "border-b-2 border-transparent";
+
+          const scoreColor =
+            v === "go"
+              ? "text-green-400"
+              : v === "wait"
+              ? "text-yellow-400"
+              : "text-text-t4";
+
+          const dirArrow =
+            dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
+
+          return (
+            <button
+              key={p}
+              onClick={() => setActivePair(p)}
+              className={[
+                "flex flex-col items-center rounded pt-1.5 pb-0.5 font-mono transition-colors",
+                verdictBorder,
+                isActive
+                  ? "bg-surface-s2 text-text-t1"
+                  : "text-text-t3 hover:text-text-t2",
+              ].join(" ")}
+            >
+              <span className="text-xs font-semibold tracking-wide">{p}</span>
+              <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
+                {score !== undefined ? `${score}${dirArrow}` : "·"}
+              </span>
+            </button>
+          );
+        })}
       </div>
 
       {/* Yükleniyor */}

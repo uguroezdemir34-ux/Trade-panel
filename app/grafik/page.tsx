@@ -21,6 +21,7 @@ export default function GrafikPage() {
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
   const [showEma20, setShowEma20] = useState(true);
   const [showEma50, setShowEma50] = useState(true);
+  const [showEma200, setShowEma200] = useState(true);
   const [showTrades, setShowTrades] = useState(false);
 
   const candlesRaw = useCandleStore((s) => s.candles[`${pair}_${timeframe}`]);
@@ -57,6 +58,14 @@ export default function GrafikPage() {
         .filter((p): p is LinePoint => p !== null);
     }
 
+    let ema200: LinePoint[] | undefined;
+    if (showEma200 && candles.length >= 200) {
+      const vals = emaSeries(closes, { period: 200 });
+      ema200 = vals
+        .map((v, i) => (v !== null ? { time: times[i], value: v } : null))
+        .filter((p): p is LinePoint => p !== null);
+    }
+
     // Trade markers — bu pair'in trade'leri
     let markers: ChartMarker[] | undefined;
     if (showTrades) {
@@ -70,8 +79,8 @@ export default function GrafikPage() {
       }));
     }
 
-    return { candles: candlePoints, ema20, ema50, markers };
-  }, [candles, trades, pair, showEma20, showEma50, showTrades]);
+    return { candles: candlePoints, ema20, ema50, ema200, markers };
+  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -80,16 +89,19 @@ export default function GrafikPage() {
         timeframe={timeframe}
         showEma20={showEma20}
         showEma50={showEma50}
+        showEma200={showEma200}
         showTrades={showTrades}
         onPairChange={setPair}
         onTimeframeChange={setTimeframe}
         onToggleEma20={() => setShowEma20((v) => !v)}
         onToggleEma50={() => setShowEma50((v) => !v)}
+        onToggleEma200={() => setShowEma200((v) => !v)}
         onToggleTrades={() => setShowTrades((v) => !v)}
       />
       <ChartLegend
         showEma20={showEma20}
         showEma50={showEma50}
+        showEma200={showEma200}
         showTrades={showTrades}
       />
       <PriceChart series={series} height={420} />

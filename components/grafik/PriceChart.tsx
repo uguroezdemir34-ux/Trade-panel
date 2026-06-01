@@ -28,6 +28,7 @@ const COLOR_UP = "#22c55e";
 const COLOR_DOWN = "#ef4444";
 const COLOR_EMA20 = "#3b82f6";
 const COLOR_EMA50 = "#f59e0b";
+const COLOR_EMA200 = "#a855f7";
 const COLOR_GRID = "#e5e5e5";
 const COLOR_TEXT = "#525252";
 
@@ -37,6 +38,7 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const ema20SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const ema200SeriesRef = useRef<ISeriesApi<"Line"> | null>(null);
 
   // ─── Mount ───
   useEffect(() => {
@@ -91,6 +93,7 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
       candleSeriesRef.current = null;
       ema20SeriesRef.current = null;
       ema50SeriesRef.current = null;
+      ema200SeriesRef.current = null;
     };
   }, [height]);
 
@@ -132,6 +135,23 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
     } else if (ema50SeriesRef.current) {
       chart.removeSeries(ema50SeriesRef.current);
       ema50SeriesRef.current = null;
+    }
+
+    // EMA200 — primary trend filter used by score engine
+    if (series.ema200 && series.ema200.length > 0) {
+      if (!ema200SeriesRef.current) {
+        ema200SeriesRef.current = chart.addLineSeries({
+          color: COLOR_EMA200,
+          lineWidth: 2,
+          lineStyle: 1, // dashed — distinguished from EMA20/50
+          priceLineVisible: false,
+          lastValueVisible: false,
+        });
+      }
+      ema200SeriesRef.current.setData(series.ema200 as LineData<Time>[]);
+    } else if (ema200SeriesRef.current) {
+      chart.removeSeries(ema200SeriesRef.current);
+      ema200SeriesRef.current = null;
     }
 
     // Markers (v4 API: series.setMarkers)

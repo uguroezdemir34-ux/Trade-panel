@@ -13,11 +13,13 @@ interface Props {
   timeframe: Timeframe;
   showEma20: boolean;
   showEma50: boolean;
+  showEma200: boolean;
   showTrades: boolean;
   onPairChange: (p: Pair) => void;
   onTimeframeChange: (tf: Timeframe) => void;
   onToggleEma20: () => void;
   onToggleEma50: () => void;
+  onToggleEma200: () => void;
   onToggleTrades: () => void;
 }
 
@@ -28,11 +30,13 @@ export function ChartControls({
   timeframe,
   showEma20,
   showEma50,
+  showEma200,
   showTrades,
   onPairChange,
   onTimeframeChange,
   onToggleEma20,
   onToggleEma50,
+  onToggleEma200,
   onToggleTrades,
 }: Props): React.ReactElement {
   const t = useT();
@@ -95,6 +99,9 @@ export function ChartControls({
           <Toggle active={showEma50} onClick={onToggleEma50}>
             {t("grafik.ema50")}
           </Toggle>
+          <Toggle active={showEma200} onClick={onToggleEma200} accent="#a855f7">
+            {t("grafik.ema200")}
+          </Toggle>
           <Toggle active={showTrades} onClick={onToggleTrades}>
             {t("grafik.showTrades")}
           </Toggle>
@@ -107,19 +114,28 @@ export function ChartControls({
 function Toggle({
   active,
   onClick,
+  accent,
   children,
 }: {
   active: boolean;
   onClick: () => void;
+  accent?: string;
   children: React.ReactNode;
 }) {
+  const activeStyle = accent
+    ? { borderColor: accent, backgroundColor: accent + "20", color: accent }
+    : undefined;
+
   return (
     <button
       onClick={onClick}
+      style={active && accent ? activeStyle : undefined}
       className={`rounded border px-2 py-1 font-mono text-2xs font-bold tracking-widest uppercase ${
-        active
+        active && !accent
           ? "border-text-t1 bg-text-t1 text-bg-page"
-          : "border-border text-text-t3 hover:bg-bg-page"
+          : !active
+          ? "border-border text-text-t3 hover:bg-bg-page"
+          : ""
       }`}
     >
       {children}

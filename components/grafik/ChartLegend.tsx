@@ -9,12 +9,14 @@ import { useT } from "@/lib/i18n/context";
 interface Props {
   showEma20: boolean;
   showEma50: boolean;
+  showEma200: boolean;
   showTrades: boolean;
 }
 
 export function ChartLegend({
   showEma20,
   showEma50,
+  showEma200,
   showTrades,
 }: Props): React.ReactElement {
   const t = useT();
@@ -25,6 +27,7 @@ export function ChartLegend({
       <LegendDot color="#ef4444" label={t("grafik.legend.candleDown")} />
       {showEma20 && <LegendDot color="#3b82f6" label={t("grafik.legend.ema20")} />}
       {showEma50 && <LegendDot color="#f59e0b" label={t("grafik.legend.ema50")} />}
+      {showEma200 && <LegendDot color="#a855f7" label={t("grafik.legend.ema200")} dashed />}
       {showTrades && (
         <>
           <LegendArrow up label={t("grafik.legend.tradeLong")} />
@@ -35,12 +38,14 @@ export function ChartLegend({
   );
 }
 
-function LegendDot({ color, label }: { color: string; label: string }) {
+function LegendDot({ color, label, dashed }: { color: string; label: string; dashed?: boolean }) {
   return (
     <div className="flex items-center gap-1.5">
       <div
-        className="h-2 w-4 rounded-sm"
-        style={{ backgroundColor: color }}
+        className="h-0 w-4"
+        style={{
+          borderTop: `2px ${dashed ? "dashed" : "solid"} ${color}`,
+        }}
       />
       <span className="text-text-t3">{label}</span>
     </div>
