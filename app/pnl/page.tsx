@@ -22,6 +22,7 @@ import { RMultipleChart } from "@/components/pnl/RMultipleChart";
 import { PairEvLeaderboard } from "@/components/pnl/PairEvLeaderboard";
 import { EntryQualityChart } from "@/components/pnl/EntryQualityChart";
 import { TradeInsightsCard } from "@/components/pnl/TradeInsightsCard";
+import { SessionBreakdownCard } from "@/components/pnl/SessionBreakdownCard";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
@@ -195,8 +196,11 @@ export default function PnlPage() {
         <DayOfWeekCard trades={trades} />
       </div>
 
-      {/* Time of day */}
-      <TimeOfDayCard trades={trades} />
+      {/* Time of day + session breakdown side by side on desktop */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <TimeOfDayCard trades={trades} />
+        <SessionBreakdownCard trades={trades} />
+      </div>
 
       {/* Entry quality + pair EV side by side on desktop */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
