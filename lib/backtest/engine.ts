@@ -85,6 +85,18 @@ function build4hPointers(
   return ptrs;
 }
 
+function computeRatios(trades: BacktestTrade[]): { sharpe: number | null; sortino: number | null } {
+  if (trades.length < 5) return { sharpe: null, sortino: null };
+  const rs = trades.map((t) => t.rMultiple);
+  const mean = rs.reduce((s, r) => s + r, 0) / rs.length;
+  const variance = rs.reduce((s, r) => s + (r - mean) ** 2, 0) / rs.length;
+  const std = Math.sqrt(variance);
+  const sharpe = std > 0 ? mean / std : null;
+  const downVar = rs.filter((r) => r < 0).reduce((s, r) => s + r ** 2, 0) / rs.length;
+  const sortino = downVar > 0 ? mean / Math.sqrt(downVar) : null;
+  return { sharpe, sortino };
+}
+
 function computeStats(trades: BacktestTrade[]): BacktestStats {
   const wins = trades.filter((t) => t.rMultiple > 0);
   const losses = trades.filter((t) => t.rMultiple <= 0);
@@ -167,6 +179,7 @@ function computeStats(trades: BacktestTrade[]): BacktestStats {
     maxDrawdownR: maxDd,
     maxWinStreak,
     maxLossStreak,
+    ...computeRatios(trades),
     byScoreBucket,
     byDirection: { LONG: dirStats("LONG"), SHORT: dirStats("SHORT") },
   };

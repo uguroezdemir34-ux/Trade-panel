@@ -61,6 +61,38 @@ function RCurve({ trades }: { trades: BacktestTrade[] }): React.ReactElement {
   );
 }
 
+// ── CSV export ────────────────────────────────────────────────────────────────
+
+function downloadCsv(trades: BacktestTrade[], pair: string): void {
+  const header = "pair,direction,entry_ts,entry_price,exit_ts,exit_price,exit_reason,score,r_multiple,pnl_pct,bars_held,tp1,tp2,stop";
+  const rows = trades.map((t) =>
+    [
+      t.pair,
+      t.direction,
+      new Date(t.entryTs).toISOString(),
+      t.entryPrice,
+      new Date(t.exitTs).toISOString(),
+      t.exitPrice,
+      t.exitReason,
+      t.score,
+      t.rMultiple.toFixed(4),
+      t.pnlPct.toFixed(4),
+      t.barsHeld,
+      t.tp1Price,
+      t.tp2Price,
+      t.stopPrice,
+    ].join(","),
+  );
+  const csv = [header, ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `backtest_${pair}_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 // ── Exit reason badge ─────────────────────────────────────────────────────────
 
 function exitColor(reason: BacktestTrade["exitReason"]): string {
@@ -82,17 +114,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
     return c;
   }, [trades]);
 
-  const riskRatios = useMemo(() => {
-    if (trades.length < 5) return null;
-    const rs = trades.map((t) => t.rMultiple);
-    const mean = rs.reduce((s, r) => s + r, 0) / rs.length;
-    const variance = rs.reduce((s, r) => s + (r - mean) ** 2, 0) / rs.length;
-    const std = Math.sqrt(variance);
-    const sharpe = std > 0 ? mean / std : null;
-    const downVar = rs.filter((r) => r < 0).reduce((s, r) => s + r ** 2, 0) / rs.length;
-    const sortino = downVar > 0 ? mean / Math.sqrt(downVar) : null;
-    return { sharpe, sortino };
-  }, [trades]);
+  const riskRatios = { sharpe: stats.sharpe, sortino: stats.sortino };
 
   return (
     <div className="flex flex-col gap-4">
@@ -215,9 +237,17 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
       {/* ── Trade List ── */}
       {trades.length > 0 && (
         <div className="border-border bg-surface rounded-lg border p-4">
-          <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-3">
-            {t("backtest.tradeList")} ({trades.length})
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase">
+              {t("backtest.tradeList")} ({trades.length})
+            </h3>
+            <button
+              onClick={() => downloadCsv(trades, pair)}
+              className="font-mono text-2xs border border-border text-text-t4 hover:text-text-t2 rounded px-2 py-0.5 transition-colors"
+            >
+              ↓ CSV
+            </button>
+          </div>
           <div className="flex flex-col gap-0.5 max-h-64 overflow-y-auto">
             {trades.map((tr, idx) => (
               <div key={idx}

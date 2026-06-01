@@ -85,6 +85,7 @@ export function MultiScanResults({
                   <th className="text-right py-1.5 pr-3">{t("backtest.winRate")}</th>
                   <th className="text-right py-1.5 pr-3">{t("backtest.avgR")}</th>
                   <th className="text-right py-1.5 pr-3">EV</th>
+                  <th className="text-right py-1.5 pr-3">Sharpe</th>
                   <th className="text-right py-1.5 pr-3">L%</th>
                   <th className="text-right py-1.5">S%</th>
                 </tr>
@@ -99,7 +100,7 @@ export function MultiScanResults({
                       <tr key={row.pair} className="border-b border-border/30">
                         <td className="text-text-t4 py-1.5 pr-3">{rank}</td>
                         <td className="text-text-t2 py-1.5 pr-3 font-semibold">{row.pair}</td>
-                        <td colSpan={6} className="text-red-400 text-right py-1.5 text-2xs">
+                        <td colSpan={7} className="text-red-400 text-right py-1.5 text-2xs">
                           {row.errorMsg ?? "Error"}
                         </td>
                       </tr>
@@ -144,6 +145,13 @@ export function MultiScanResults({
                           ? `${row.ev > 0 ? "+" : ""}${row.ev.toFixed(3)}`
                           : "—"}
                       </td>
+                      <td className={`text-right py-1.5 pr-3 tabular-nums ${
+                        row.sharpe !== null && row.sharpe > 0.5 ? "text-green-400" :
+                        row.sharpe !== null && row.sharpe > 0 ? "text-yellow-400" :
+                        row.sharpe !== null ? "text-red-400" : "text-text-t4"
+                      }`}>
+                        {row.sharpe !== null ? row.sharpe.toFixed(2) : "—"}
+                      </td>
                       <td className="text-text-t3 text-right py-1.5 pr-3 tabular-nums">
                         {row.longWinRate !== null ? `${row.longWinRate.toFixed(0)}%` : "—"}
                       </td>
@@ -159,7 +167,7 @@ export function MultiScanResults({
 
           {/* EV explanation */}
           <p className="text-text-t4 font-mono text-2xs mt-3">
-            EV = WR% × AvgR · L% = Long WR · S% = Short WR · {t("backtest.scanSortHint")}
+            EV = WR% × AvgR · Sharpe = mean(R)/std(R) · L% = Long WR · S% = Short WR · {t("backtest.scanSortHint")}
           </p>
         </div>
       )}
