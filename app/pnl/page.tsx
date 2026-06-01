@@ -23,6 +23,7 @@ import { PairEvLeaderboard } from "@/components/pnl/PairEvLeaderboard";
 import { EntryQualityChart } from "@/components/pnl/EntryQualityChart";
 import { TradeInsightsCard } from "@/components/pnl/TradeInsightsCard";
 import { SessionBreakdownCard } from "@/components/pnl/SessionBreakdownCard";
+import { StreakCard } from "@/components/pnl/StreakCard";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
@@ -159,7 +160,13 @@ export default function PnlPage() {
       </div>
 
       <PnlSummaryRow trades={trades} />
-      <PnlStatsCard stats={stats} />
+
+      {/* Stats + streak side by side on desktop */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
+        <PnlStatsCard stats={stats} />
+        <StreakCard trades={trades} />
+      </div>
+
       <TradeInsightsCard trades={trades} />
 
       {/* FT comparison — shown when paper trades exist (always uses allTrades for full picture) */}
