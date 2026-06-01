@@ -22,6 +22,7 @@ import {
   categorizeHoldingDuration,
 } from "@/lib/sizer/position-pnl";
 import { getActiveTrailingManager } from "@/lib/trailing/managerRef";
+import { useScoreStore } from "@/lib/store/scoreStore";
 import type { TrailUiDurum } from "@/lib/trailing/manager";
 import type { Position } from "@/lib/okx/positions";
 
@@ -37,6 +38,7 @@ export function PositionCard({
   const t = useT();
   const locale = useLocale();
   const tick = useMarketStore((s) => s.prices[position.pair]);
+  const scoreResult = useScoreStore((s) => s.results[position.pair]);
 
   // Trail stop durumu — 3 saniyede bir yenile (manager dışarıdan event yayınlamıyor)
   const [trailDurum, setTrailDurum] = useState<TrailUiDurum | null>(null);
@@ -98,6 +100,20 @@ export function PositionCard({
           <span className="text-text-t4 font-mono text-2xs tracking-wider">
             {position.leverage}x
           </span>
+          {scoreResult && (
+            <span
+              className={`rounded px-1.5 py-0.5 font-mono text-2xs tabular-nums ${
+                scoreResult.verdict === "go"
+                  ? "bg-green-500/10 text-green-400"
+                  : scoreResult.verdict === "wait"
+                  ? "bg-yellow-500/10 text-yellow-400"
+                  : "bg-red-500/10 text-red-400/70"
+              }`}
+              title={`Skor: ${scoreResult.score}`}
+            >
+              {scoreResult.score}
+            </span>
+          )}
         </div>
         <span className="text-text-t4 font-mono text-2xs tracking-wider">
           {holdingText}
