@@ -17,6 +17,7 @@ import { ExitBreakdownCard } from "@/components/pnl/ExitBreakdownCard";
 import { ScoreHeatmap } from "@/components/pnl/ScoreHeatmap";
 import { HoldingTimeCard } from "@/components/pnl/HoldingTimeCard";
 import { DayOfWeekCard } from "@/components/pnl/DayOfWeekCard";
+import { RMultipleChart } from "@/components/pnl/RMultipleChart";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
@@ -170,6 +171,8 @@ export default function PnlPage() {
         <MonthlyBreakdown months={monthlyAggs} />
         <PnlDistribution trades={trades} />
       </div>
+
+      <RMultipleChart trades={trades} />
 
       <TopTradesCard trades={trades} />
       <PairBreakdownCard trades={trades} />
