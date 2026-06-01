@@ -465,6 +465,7 @@ export const en: Dictionary = {
     showMacd: "MACD",
     showBb: "BB(20)",
     showVwap: "VWAP",
+    showSr: "S/R",
     legend: {
       candleUp: "Up candle",
       candleDown: "Down candle",
@@ -479,6 +480,8 @@ export const en: Dictionary = {
       macdSignal: "Signal",
       bb: "BB(20,2)",
       vwap: "VWAP",
+      srSupport: "Support",
+      srResistance: "Resistance",
     },
   },
 

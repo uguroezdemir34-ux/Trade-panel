@@ -81,6 +81,7 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
   const macdLineRef   = useRef<ISeriesApi<"Line"> | null>(null);
   const macdSignalRef = useRef<ISeriesApi<"Line"> | null>(null);
   const alarmLinesRef = useRef<IPriceLine[]>([]);
+  const srLinesRef = useRef<IPriceLine[]>([]);
   const bbUpperRef    = useRef<ISeriesApi<"Line"> | null>(null);
   const bbMiddleRef   = useRef<ISeriesApi<"Line"> | null>(null);
   const bbLowerRef    = useRef<ISeriesApi<"Line"> | null>(null);
@@ -382,7 +383,26 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
       }
     }
 
-    // 9. Trade markers
+    // 9. Swing S/R level lines
+    for (const line of srLinesRef.current) {
+      try { candle.removePriceLine(line); } catch { /* ignore */ }
+    }
+    srLinesRef.current = [];
+    if (series.srLevels?.length) {
+      for (const sr of series.srLevels) {
+        const line = candle.createPriceLine({
+          price: sr.price,
+          color: sr.type === "support" ? "#22c55e88" : "#ef444488",
+          lineWidth: 1,
+          lineStyle: 1, // dotted
+          axisLabelVisible: true,
+          title: sr.type === "support" ? "S" : "R",
+        });
+        srLinesRef.current.push(line);
+      }
+    }
+
+    // 10. Trade markers
     if (series.markers?.length) {
       const markers: SeriesMarker<Time>[] = series.markers.map((m) => ({
         time: m.time as Time,

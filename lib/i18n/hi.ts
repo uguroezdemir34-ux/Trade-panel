@@ -457,6 +457,7 @@ export const hi: Dictionary = {
     ema50: "EMA 50",
     showTrades: "ट्रेड दिखाएं",
     showVwap: "VWAP",
+    showSr: "S/R",
     legend: {
       candleUp: "बुलिश कैंडल",
       candleDown: "बेयरिश कैंडल",
@@ -464,6 +465,8 @@ export const hi: Dictionary = {
       ema50: "EMA 50",
       tradeLong: "LONG ट्रेड",
       tradeShort: "SHORT ट्रेड",
+      srSupport: "Support",
+      srResistance: "Resistance",
     },
   },
 

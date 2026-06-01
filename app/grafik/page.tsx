@@ -11,9 +11,11 @@ import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
 import { bbSeries } from "@/lib/indicators/bb";
 import { vwapSeries } from "@/lib/indicators/vwap";
+import { findAllSwingHighs, findAllSwingLows } from "@/lib/sr/swing";
+import { toIndicatorCandle } from "@/lib/okx/candles";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
-import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands } from "@/lib/chart/types";
+import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 const PriceChart = dynamic(
@@ -36,6 +38,7 @@ export default function GrafikPage() {
   const [showMacd, setShowMacd] = useState(false);
   const [showBb, setShowBb] = useState(false);
   const [showVwap, setShowVwap] = useState(false);
+  const [showSr, setShowSr] = useState(false);
 
   const candlesRaw = useCandleStore((s) => s.candles[`${pair}_${timeframe}`]);
   const candles = candlesRaw ?? EMPTY_CANDLES;
@@ -164,8 +167,20 @@ export default function GrafikPage() {
       }));
     }
 
-    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, bb: bbBands, vwap: vwapBands, alarmLevels, markers };
-  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd, showBb, showVwap, alarmLevels]);
+    // Swing S/R level overlays
+    let srLevels: SrLevel[] | undefined;
+    if (showSr && candles.length >= 7) {
+      const indCandles = candles.map(toIndicatorCandle);
+      const highs = findAllSwingHighs(indCandles, 60, 3, 8);
+      const lows = findAllSwingLows(indCandles, 60, 3, 8);
+      srLevels = [
+        ...highs.map((p) => ({ price: p.price, type: "resistance" as const })),
+        ...lows.map((p) => ({ price: p.price, type: "support" as const })),
+      ];
+    }
+
+    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, bb: bbBands, vwap: vwapBands, alarmLevels, markers, srLevels };
+  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd, showBb, showVwap, showSr, alarmLevels]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -181,6 +196,7 @@ export default function GrafikPage() {
         showMacd={showMacd}
         showBb={showBb}
         showVwap={showVwap}
+        showSr={showSr}
         onPairChange={setPair}
         onTimeframeChange={setTimeframe}
         onToggleEma20={() => setShowEma20((v) => !v)}
@@ -192,6 +208,7 @@ export default function GrafikPage() {
         onToggleMacd={() => setShowMacd((v) => !v)}
         onToggleBb={() => setShowBb((v) => !v)}
         onToggleVwap={() => setShowVwap((v) => !v)}
+        onToggleSr={() => setShowSr((v) => !v)}
       />
       <ChartLegend
         showEma20={showEma20}
@@ -203,6 +220,7 @@ export default function GrafikPage() {
         showMacd={showMacd}
         showBb={showBb}
         showVwap={showVwap}
+        showSr={showSr}
       />
       <PriceChart series={series} height={480} />
     </div>

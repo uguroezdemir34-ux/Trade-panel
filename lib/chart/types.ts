@@ -50,6 +50,11 @@ export interface VwapBands {
   lower: LinePoint[];
 }
 
+export interface SrLevel {
+  price: number;
+  type: "support" | "resistance";
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
@@ -62,4 +67,5 @@ export interface ChartSeries {
   vwap?: VwapBands;
   alarmLevels?: AlarmLevel[];
   markers?: ChartMarker[];
+  srLevels?: SrLevel[];
 }

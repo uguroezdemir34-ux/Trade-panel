@@ -457,6 +457,7 @@ export const es: Dictionary = {
     ema50: "EMA 50",
     showTrades: "Mostrar trades",
     showVwap: "VWAP",
+    showSr: "S/R",
     legend: {
       candleUp: "Vela alcista",
       candleDown: "Vela bajista",
@@ -464,6 +465,8 @@ export const es: Dictionary = {
       ema50: "EMA 50",
       tradeLong: "Trade LONG",
       tradeShort: "Trade SHORT",
+      srSupport: "Support",
+      srResistance: "Resistance",
     },
   },
 

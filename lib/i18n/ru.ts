@@ -457,6 +457,7 @@ export const ru: Dictionary = {
     ema50: "EMA 50",
     showTrades: "Показать сделки",
     showVwap: "VWAP",
+    showSr: "S/R",
     legend: {
       candleUp: "Бычья свеча",
       candleDown: "Медвежья свеча",
@@ -464,6 +465,8 @@ export const ru: Dictionary = {
       ema50: "EMA 50",
       tradeLong: "LONG сделка",
       tradeShort: "SHORT сделка",
+      srSupport: "Support",
+      srResistance: "Resistance",
     },
   },
 

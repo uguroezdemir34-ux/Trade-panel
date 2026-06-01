@@ -465,6 +465,7 @@ export const tr: Dictionary = {
     showMacd: "MACD",
     showBb: "BB(20)",
     showVwap: "VWAP",
+    showSr: "D/D",
     legend: {
       candleUp: "Yükseliş mumu",
       candleDown: "Düşüş mumu",
@@ -479,6 +480,8 @@ export const tr: Dictionary = {
       macdSignal: "Sinyal",
       bb: "BB(20,2)",
       vwap: "VWAP",
+      srSupport: "Destek",
+      srResistance: "Direnç",
     },
   },
 

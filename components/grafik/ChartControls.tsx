@@ -20,6 +20,7 @@ interface Props {
   showMacd: boolean;
   showBb: boolean;
   showVwap: boolean;
+  showSr: boolean;
   onPairChange: (p: Pair) => void;
   onTimeframeChange: (tf: Timeframe) => void;
   onToggleEma20: () => void;
@@ -31,6 +32,7 @@ interface Props {
   onToggleMacd: () => void;
   onToggleBb: () => void;
   onToggleVwap: () => void;
+  onToggleSr: () => void;
 }
 
 const TIMEFRAMES: Timeframe[] = ["5m", "15m", "1h", "4h", "1d"];
@@ -47,6 +49,7 @@ export function ChartControls({
   showMacd,
   showBb,
   showVwap,
+  showSr,
   onPairChange,
   onTimeframeChange,
   onToggleEma20,
@@ -58,6 +61,7 @@ export function ChartControls({
   onToggleMacd,
   onToggleBb,
   onToggleVwap,
+  onToggleSr,
 }: Props): React.ReactElement {
   const t = useT();
 
@@ -139,6 +143,9 @@ export function ChartControls({
           </Toggle>
           <Toggle active={showVwap} onClick={onToggleVwap} accent="#f97316">
             {t("grafik.showVwap")}
+          </Toggle>
+          <Toggle active={showSr} onClick={onToggleSr} accent="#a3e635">
+            {t("grafik.showSr")}
           </Toggle>
         </div>
       </div>

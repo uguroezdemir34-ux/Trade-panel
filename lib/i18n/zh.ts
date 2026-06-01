@@ -457,6 +457,7 @@ export const zh: Dictionary = {
     ema50: "EMA 50",
     showTrades: "显示交易",
     showVwap: "VWAP",
+    showSr: "S/R",
     legend: {
       candleUp: "阳线",
       candleDown: "阴线",
@@ -464,6 +465,8 @@ export const zh: Dictionary = {
       ema50: "EMA 50",
       tradeLong: "LONG交易",
       tradeShort: "SHORT交易",
+      srSupport: "Support",
+      srResistance: "Resistance",
     },
   },
 
