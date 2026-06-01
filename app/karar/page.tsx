@@ -43,6 +43,7 @@ import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
 import { ScoreLeaderboard } from "@/components/karar/ScoreLeaderboard";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
+import { StreakBanner } from "@/components/karar/StreakBanner";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export default function KararPage() {
@@ -316,6 +317,9 @@ export default function KararPage() {
           </span>
         </div>
       )}
+
+      {/* Streak alert */}
+      <StreakBanner />
 
       {/* Skor tazelik göstergesi */}
       <div className="flex items-center justify-between">
