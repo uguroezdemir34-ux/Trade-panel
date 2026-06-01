@@ -396,7 +396,6 @@ describe("detectOrderBlocks()", () => {
 
   it("bearish OB: green candle before 3 strong red candles with BOS", () => {
     // A green candle followed by 3 large red candles that break structure below green's low
-    const avgRange = 20;
     const candles: Candle[] = [
       makeCandle(1, 90, 100, 85, 95),  // background
       makeCandle(2, 90, 100, 85, 95),

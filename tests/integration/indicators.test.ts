@@ -8,7 +8,7 @@
 import { describe, it, expect } from "vitest";
 import { atr } from "@/lib/indicators/atr";
 import { ema, emaSeries } from "@/lib/indicators/ema";
-import { rsi, rsiSeries } from "@/lib/indicators/rsi";
+import { rsi } from "@/lib/indicators/rsi";
 import { adx } from "@/lib/indicators/adx";
 import { vwap } from "@/lib/indicators/vwap";
 import { bb } from "@/lib/indicators/bb";
@@ -16,7 +16,6 @@ import {
   computeCvdWindow,
   computeCvdMultiFrame,
   classifyMagnitude,
-  classifyDirection,
   formatCvd,
 } from "@/lib/orderflow/cvd";
 import type { Candle } from "@/types/candle";

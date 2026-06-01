@@ -86,8 +86,8 @@ describe("computeAdherenceScore()", () => {
     const against = (n: number) => Array.from({ length: n }, () => entry("system_against", DAY));
     const t0 = computeAdherenceScore([], NOW).tier;
     const t1 = computeAdherenceScore(against(1), NOW).tier;
-    const t2 = computeAdherenceScore(against(2), NOW).tier;
-    const t3 = computeAdherenceScore(against(3), NOW).tier;
+    void computeAdherenceScore(against(2), NOW);
+    void computeAdherenceScore(against(3), NOW);
 
     // Each against pushes score down: 50 → 25 → 0 → -25(=0)
     expect(["excellent", "good", "fair", "poor", "critical"]).toContain(t0);

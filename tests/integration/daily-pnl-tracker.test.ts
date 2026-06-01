@@ -5,7 +5,7 @@
  * Uses computeDrawdownProtocol directly (pure function, no React required).
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import { computeDrawdownProtocol } from "@/lib/store/accountStore";
 
 // ─────────────────────────────────────────────────────────────

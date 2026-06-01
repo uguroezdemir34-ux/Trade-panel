@@ -41,7 +41,7 @@ function makeVolumes1h(reviving = true): readonly number[] {
   return out;
 }
 
-const neutralSweep = { type: "none" as const, strength: 0, direction: "LONG" as const };
+const neutralSweep: import("@/lib/score/scorers").SweepInput = { type: null, strength: 0 };
 
 function makeFullPullbackInput(overrides: Partial<PullbackInput> = {}): PullbackInput {
   const ema50_1h = 50000;
@@ -293,7 +293,7 @@ describe("detectPullbackSetup() — şart eksikleri", () => {
 
   it("ters bearish sweep LONG → sweepAgainst=true, active=false", () => {
     const r = detectPullbackSetup(makeFullPullbackInput({
-      sweep15m: { type: "bearish_sweep", strength: 0.8, direction: "SHORT" as const },
+      sweep15m: { type: "bearish_sweep", strength: 0.8 },
     }));
     expect(r.active).toBe(false);
     expect(r.diagnostics?.sweepAgainst).toBe(true);
@@ -312,7 +312,7 @@ describe("detectPullbackSetup() — şart eksikleri", () => {
       volumes1h: makeVolumes1h(true),
       adx4h: 30,
       rsi1h: 55,
-      sweep15m: { type: "bullish_sweep", strength: 0.8, direction: "LONG" as const },
+      sweep15m: { type: "bullish_sweep", strength: 0.8 },
       fg: 50,
       baseScore: 70,
     });
