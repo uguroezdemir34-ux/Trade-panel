@@ -6,6 +6,7 @@ import { BacktestConfigPanel } from "@/components/backtest/BacktestConfig";
 import { BacktestResults } from "@/components/backtest/BacktestResults";
 import { BacktestCompare } from "@/components/backtest/BacktestCompare";
 import { MultiScanResults } from "@/components/backtest/MultiScanResults";
+import { BacktestTemporalCard } from "@/components/backtest/BacktestTemporalCard";
 import type { BacktestConfig } from "@/lib/backtest/types";
 import type { ScanConfig } from "@/lib/store/backtestStore";
 
@@ -154,11 +155,14 @@ export default function BacktestPage() {
           onClear={clearPin}
         />
       ) : showSingleResult ? (
-        <BacktestResults
-          result={result!}
-          onPin={pinForCompare}
-          isPinned={pinnedResult?.runAt === result?.runAt}
-        />
+        <>
+          <BacktestResults
+            result={result!}
+            onPin={pinForCompare}
+            isPinned={pinnedResult?.runAt === result?.runAt}
+          />
+          <BacktestTemporalCard trades={result!.trades} />
+        </>
       ) : null}
 
       {/* Multi-pair scan (can show alongside config) */}
