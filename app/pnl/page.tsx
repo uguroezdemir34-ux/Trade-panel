@@ -24,6 +24,7 @@ import { EntryQualityChart } from "@/components/pnl/EntryQualityChart";
 import { TradeInsightsCard } from "@/components/pnl/TradeInsightsCard";
 import { SessionBreakdownCard } from "@/components/pnl/SessionBreakdownCard";
 import { StreakCard } from "@/components/pnl/StreakCard";
+import { MonteCarloCard } from "@/components/pnl/MonteCarloCard";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
@@ -209,11 +210,13 @@ export default function PnlPage() {
         <SessionBreakdownCard trades={trades} />
       </div>
 
-      {/* Entry quality + pair EV side by side on desktop */}
+      {/* Monte Carlo + Entry quality side by side on desktop */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <MonteCarloCard trades={trades} />
         <EntryQualityChart trades={trades} />
-        <PairEvLeaderboard trades={trades} />
       </div>
+
+      <PairEvLeaderboard trades={trades} />
 
       <ParameterAudit stats={calibrationStats} />
     </div>
