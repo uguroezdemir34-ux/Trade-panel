@@ -87,7 +87,7 @@ export function useBacktest() {
   // ── Multi-pair scan ──────────────────────────────────────────────────────
   const runScan = useCallback(
     async (scanConfig: ScanConfig) => {
-      const { dataMonths, frozenFg } = scanConfig;
+      const { dataMonths, frozenFg, minScore } = scanConfig;
       const fromMs = Date.now() - dataMonths * 30 * 24 * 60 * 60 * 1000;
 
       store.startScan(scanConfig);
@@ -105,6 +105,7 @@ export function useBacktest() {
             pair,
             dataMonths,
             frozenFg,
+            minScore,
           });
 
           const { stats } = result;

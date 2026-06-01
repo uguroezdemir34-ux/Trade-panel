@@ -21,6 +21,7 @@ export function BacktestConfigPanel({ onRun, onScan, disabled }: Props): React.R
   const [pair, setPair] = useState<Pair>("BTC");
   const [dataMonths, setDataMonths] = useState<6 | 12>(6);
   const [frozenFg, setFrozenFg] = useState(50);
+  const [minScore, setMinScore] = useState(0);
 
   return (
     <div className="border-border bg-surface rounded-lg border p-4 flex flex-col gap-4">
@@ -123,12 +124,41 @@ export function BacktestConfigPanel({ onRun, onScan, disabled }: Props): React.R
         </div>
       </div>
 
+      {/* Min Score filter */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-between">
+          <label className="text-text-t3 font-mono text-xs tracking-wider">
+            Min Score Filter
+          </label>
+          <span className="text-text-t1 font-mono text-xs tabular-nums">
+            {minScore === 0 ? "Off" : `≥${minScore}`}
+          </span>
+        </div>
+        <div className="flex gap-1">
+          {([0, 80, 85, 90, 95] as const).map((v) => (
+            <button
+              key={v}
+              onClick={() => setMinScore(v)}
+              disabled={disabled}
+              className={[
+                "flex-1 rounded border font-mono text-2xs py-1 transition-colors",
+                minScore === v
+                  ? "border-brand text-brand bg-brand/10"
+                  : "border-border text-text-t4 hover:text-text-t2",
+              ].join(" ")}
+            >
+              {v === 0 ? "All" : `≥${v}`}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <button
         onClick={() => {
           if (mode === "scan") {
-            onScan({ dataMonths, frozenFg });
+            onScan({ dataMonths, frozenFg, minScore: minScore || undefined });
           } else {
-            onRun({ pair, dataMonths, frozenFg });
+            onRun({ pair, dataMonths, frozenFg, minScore: minScore || undefined });
           }
         }}
         disabled={disabled}

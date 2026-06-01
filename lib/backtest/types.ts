@@ -10,6 +10,8 @@ export interface BacktestConfig {
   dataMonths: 6 | 12;
   /** Dondurulmuş F&G değeri (tarihi F&G verisi yok) */
   frozenFg: number;
+  /** Minimum score filter — only enter if score >= this value (0 = no filter) */
+  minScore?: number;
 }
 
 export interface BacktestTrade {

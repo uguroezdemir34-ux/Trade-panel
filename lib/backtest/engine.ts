@@ -237,6 +237,7 @@ export async function runBacktest(
 
     const result = computeScore(composed);
     if (result.verdict !== "go") continue;
+    if (config.minScore && result.score < config.minScore) continue;
 
     // Entry: next bar's open price
     const nextBar = candles1h[i + 1];
