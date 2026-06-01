@@ -25,6 +25,7 @@ import { TradeInsightsCard } from "@/components/pnl/TradeInsightsCard";
 import { SessionBreakdownCard } from "@/components/pnl/SessionBreakdownCard";
 import { StreakCard } from "@/components/pnl/StreakCard";
 import { MonteCarloCard } from "@/components/pnl/MonteCarloCard";
+import { TradeJournalCard } from "@/components/pnl/TradeJournalCard";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
@@ -217,6 +218,8 @@ export default function PnlPage() {
       </div>
 
       <PairEvLeaderboard trades={trades} />
+
+      <TradeJournalCard />
 
       <ParameterAudit stats={calibrationStats} />
     </div>
