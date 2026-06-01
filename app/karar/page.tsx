@@ -31,6 +31,8 @@ import { getGlobalDedupeStore } from "@/lib/orchestrator/dedupe";
 import type { PositionSizerResult } from "@/lib/sizer/types";
 import { useFlowIntelligence } from "@/lib/hooks/useFlowIntelligence";
 import { getBucketStats } from "@/lib/bucket/stats";
+import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
+import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
 
 export default function KararPage() {
   const [activePair, setActivePair] = useState<Pair>("BTC");
@@ -42,6 +44,7 @@ export default function KararPage() {
   const allResults = useScoreStore((s) => s.results);
   const computedAt = useScoreStore((s) => s.computedAt);
   const computing = useScoreStore((s) => s.computing);
+  const scoreHistory = useScoreHistoryStore((s) => s.history);
   const candles1hRaw = useCandleStore((s) => s.candles[`${activePair}_1h`]);
   const candles4hRaw = useCandleStore((s) => s.candles[`${activePair}_4h`]);
   const candles1h = candles1hRaw ?? EMPTY_CANDLES;
@@ -365,6 +368,9 @@ export default function KararPage() {
               <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
                 {score !== undefined ? `${score}${dirArrow}` : "·"}
               </span>
+              <div className="mt-0.5 h-[10px]">
+                <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
+              </div>
             </button>
           );
         })}
@@ -393,6 +399,7 @@ export default function KararPage() {
             threshold={result.effectiveThreshold}
             goThreshold={result.goThreshold}
           />
+          <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} />
           <FlowAlignmentRow flow={flowResult} />
           <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
           <BlocksList
@@ -434,6 +441,66 @@ export default function KararPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ScoreHistoryChart({ snapshots }: { snapshots: import("@/lib/store/scoreHistoryStore").ScoreSnapshot[] }) {
+  const pts = snapshots.slice(-40);
+  if (pts.length < 2) return null;
+
+  const W = 320;
+  const H = 36;
+  const PAD = 2;
+  const n = pts.length;
+  const xStep = (W - PAD * 2) / (n - 1);
+
+  function xOf(i: number) { return PAD + i * xStep; }
+  function yOf(s: number) { return PAD + ((100 - s) / 100) * (H - PAD * 2); }
+
+  // Color segments by verdict
+  const segments: { d: string; color: string }[] = [];
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i];
+    const color = p.verdict === "go" ? "#22c55e" : p.verdict === "wait" ? "#f59e0b" : "#ef4444";
+    segments.push({
+      d: `M${xOf(i - 1).toFixed(1)},${yOf(pts[i-1].score).toFixed(1)}L${xOf(i).toFixed(1)},${yOf(p.score).toFixed(1)}`,
+      color,
+    });
+  }
+
+  // Threshold line at score 90 (approximate go threshold)
+  const yGo = yOf(90);
+
+  const latest = pts[pts.length - 1];
+
+  return (
+    <div className="border-border bg-bg-card rounded-lg border px-3 pt-2 pb-1">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">Score Trend</span>
+        <span className="text-text-t4 font-mono text-2xs">{pts.length} snapshots</span>
+      </div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+        {/* GO threshold line */}
+        <line x1={PAD} y1={yGo} x2={W - PAD} y2={yGo}
+          stroke="#22c55e" strokeWidth="0.5" strokeDasharray="3,3" strokeOpacity="0.35" />
+        {/* Score line — verdict-colored segments */}
+        {segments.map((seg, i) => (
+          <path key={i} d={seg.d} fill="none" stroke={seg.color} strokeWidth="1.5" strokeOpacity="0.8" />
+        ))}
+        {/* End dot */}
+        <circle
+          cx={xOf(n - 1)}
+          cy={yOf(latest.score)}
+          r="2.5"
+          fill={latest.verdict === "go" ? "#22c55e" : latest.verdict === "wait" ? "#f59e0b" : "#ef4444"}
+        />
+      </svg>
+      {/* Y-axis labels */}
+      <div className="flex justify-between mt-0.5">
+        <span className="text-text-t4 font-mono text-2xs">{pts[0].ts ? new Date(pts[0].ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
+        <span className="text-text-t4 font-mono text-2xs">{latest.ts ? new Date(latest.ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
+      </div>
     </div>
   );
 }
