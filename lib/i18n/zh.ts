@@ -198,6 +198,11 @@ export const zh: Dictionary = {
       label: "回撤协议",
       description: "在连续亏损时自动降低风险级别。达到阈值后锁定账户。",
     },
+    goAlerts: {
+      title: "GO Signal Alerts",
+      description: "Send a Telegram message when any pair flips to GO verdict. 30-minute cooldown per pair.",
+      noTelegram: "Telegram not configured — alerts won't send.",
+    },
     balance: {
       title: "账户余额",
       total: "总权益",

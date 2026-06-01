@@ -198,6 +198,11 @@ export const ko: Dictionary = {
       label: "드로다운 프로토콜",
       description: "연속 손실 시 리스크를 자동으로 단계적으로 낮춥니다. 임계값 이후 계정 잠금.",
     },
+    goAlerts: {
+      title: "GO Signal Alerts",
+      description: "Send a Telegram message when any pair flips to GO verdict. 30-minute cooldown per pair.",
+      noTelegram: "Telegram not configured — alerts won't send.",
+    },
     balance: {
       title: "계좌 잔고",
       total: "총 자산",

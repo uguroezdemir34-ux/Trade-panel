@@ -126,6 +126,9 @@ export const en: Dictionary = {
     scoreUnavailable: "⚠ Score unavailable (missing data or pipeline error)",
     showDetails: "▼ SHOW DETAILS",
     hideDetails: "▲ HIDE DETAILS",
+    scoresUpdated: "Scores updated",
+    scoresAgo: "ago",
+    scoresNever: "Not yet computed",
   },
 
   settings: {
@@ -197,6 +200,11 @@ export const en: Dictionary = {
     drawdownProtocol: {
       label: "Drawdown Protocol",
       description: "Auto-tier risk down on consecutive losses. Locks account after threshold.",
+    },
+    goAlerts: {
+      title: "GO Signal Alerts",
+      description: "Send a Telegram message when any pair flips to GO verdict. 30-minute cooldown per pair.",
+      noTelegram: "Telegram not configured — alerts won't send.",
     },
     balance: {
       title: "Account Balance",

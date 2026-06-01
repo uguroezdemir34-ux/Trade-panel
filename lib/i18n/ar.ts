@@ -198,6 +198,11 @@ export const ar: Dictionary = {
       label: "بروتوكول الانخفاض",
       description: "يخفض المخاطرة تلقائياً عند الخسائر المتتالية. يقفل الحساب بعد الحد.",
     },
+    goAlerts: {
+      title: "GO Signal Alerts",
+      description: "Send a Telegram message when any pair flips to GO verdict. 30-minute cooldown per pair.",
+      noTelegram: "Telegram not configured — alerts won't send.",
+    },
     balance: {
       title: "رصيد الحساب",
       total: "إجمالي حقوق الملكية",

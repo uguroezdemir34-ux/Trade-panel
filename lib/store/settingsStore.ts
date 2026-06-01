@@ -48,6 +48,7 @@ const settingsSchema = z.object({
   defaultLeverage: z.number().int().min(1).max(125),
   drawdownProtocolEnabled: z.boolean(),
   theme: themeSchema,
+  goAlertsEnabled: z.boolean(),
 });
 
 export type SettingsData = z.infer<typeof settingsSchema>;
@@ -65,6 +66,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   defaultLeverage: 10,
   drawdownProtocolEnabled: true,
   theme: "dark",
+  goAlertsEnabled: false,
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -80,6 +82,7 @@ const KEYS = {
   defaultLeverage: "default_leverage",
   drawdownProtocolEnabled: "dd_protocol_enabled",
   theme: "theme",
+  goAlertsEnabled: "go_alerts_enabled",
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -96,6 +99,7 @@ interface SettingsStoreState extends SettingsData {
   setDefaultLeverage: (n: number) => void;
   setDrawdownProtocolEnabled: (on: boolean) => void;
   setTheme: (theme: Theme) => void;
+  setGoAlertsEnabled: (on: boolean) => void;
   /** Tüm ayarları varsayılana sıfırla */
   reset: () => void;
   /** localStorage'tan tekrar yükle (SSR sonrası hydrate için) */
@@ -144,6 +148,11 @@ export function loadSettings(): SettingsData {
       z.boolean(),
     ),
     theme: loadFromStorage<Theme>(KEYS.theme, DEFAULT_SETTINGS.theme, themeSchema),
+    goAlertsEnabled: loadFromStorage<boolean>(
+      KEYS.goAlertsEnabled,
+      DEFAULT_SETTINGS.goAlertsEnabled,
+      z.boolean(),
+    ),
   };
 }
 
@@ -199,6 +208,11 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ theme });
   },
 
+  setGoAlertsEnabled: (on) => {
+    saveToStorage(KEYS.goAlertsEnabled, on);
+    set({ goAlertsEnabled: on });
+  },
+
   reset: () => {
     // Sadece state'i sıfırla, localStorage'a yaz
     saveToStorage(KEYS.lastTab, DEFAULT_SETTINGS.lastTab);
@@ -212,6 +226,7 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
       DEFAULT_SETTINGS.drawdownProtocolEnabled,
     );
     saveToStorage(KEYS.theme, DEFAULT_SETTINGS.theme);
+    saveToStorage(KEYS.goAlertsEnabled, DEFAULT_SETTINGS.goAlertsEnabled);
     set({ ...DEFAULT_SETTINGS });
   },
 

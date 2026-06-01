@@ -198,6 +198,11 @@ export const hi: Dictionary = {
       label: "ड्रॉडाउन प्रोटोकॉल",
       description: "लगातार नुकसान पर स्वचालित रूप से जोखिम कम करता है। सीमा के बाद खाता लॉक करता है।",
     },
+    goAlerts: {
+      title: "GO Signal Alerts",
+      description: "Send a Telegram message when any pair flips to GO verdict. 30-minute cooldown per pair.",
+      noTelegram: "Telegram not configured — alerts won't send.",
+    },
     balance: {
       title: "खाता शेष",
       total: "कुल इक्विटी",

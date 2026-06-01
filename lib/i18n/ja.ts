@@ -198,6 +198,11 @@ export const ja: Dictionary = {
       label: "ドローダウンプロトコル",
       description: "連続損失時にリスクを自動で段階的に下げます。しきい値でアカウントをロック。",
     },
+    goAlerts: {
+      title: "GO Signal Alerts",
+      description: "Send a Telegram message when any pair flips to GO verdict. 30-minute cooldown per pair.",
+      noTelegram: "Telegram not configured — alerts won't send.",
+    },
     balance: {
       title: "口座残高",
       total: "総資産",

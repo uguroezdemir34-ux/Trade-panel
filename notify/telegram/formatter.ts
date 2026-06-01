@@ -30,6 +30,8 @@ export function formatNotifyMessage(msg: NotifyMessage): string {
       return formatTpHit(msg);
     case "lock_triggered":
       return formatLockTriggered(msg);
+    case "go_signal":
+      return formatGoSignal(msg);
     case "test":
       return formatTest(msg);
     default: {
@@ -165,6 +167,24 @@ function formatLockTriggered(msg: NotifyMessage): string {
   lines.push("⛔ " + bold("DİSİPLİN KİLİDİ"));
   lines.push("");
   if (msg.reasonText) {
+    lines.push(escapeMarkdownV2(msg.reasonText));
+  }
+  return lines.join("\n");
+}
+
+// ═══════════════ GO SIGNAL ═══════════════
+
+function formatGoSignal(msg: NotifyMessage): string {
+  const lines: string[] = [];
+  lines.push("⚡ " + bold("QUANTIX GO SİNYALİ"));
+  lines.push("");
+  const dir = msg.direction === "LONG" ? "▲ LONG" : msg.direction === "SHORT" ? "▼ SHORT" : "";
+  lines.push(`${bold(msg.pair)}${dir ? " " + escapeMarkdownV2(dir) : ""}`);
+  if (msg.score !== undefined) {
+    lines.push(escapeMarkdownV2(`Skor: ${msg.score}`));
+  }
+  if (msg.reasonText) {
+    lines.push("");
     lines.push(escapeMarkdownV2(msg.reasonText));
   }
   return lines.join("\n");

@@ -30,6 +30,7 @@ export type NotifyKind =
   | "sl_hit"
   | "tp_hit"
   | "lock_triggered"
+  | "go_signal"
   | "test"; // health check
 
 /**

@@ -34,6 +34,7 @@ import { useMarketStream } from "@/lib/ws/useMarketStream";
 import { useCandlePoller } from "@/lib/hooks/useCandlePoller";
 import { usePositionPoller } from "@/lib/hooks/usePositionPoller";
 import { useScoreEngine } from "@/lib/hooks/useScoreEngine";
+import { useGoAlerts } from "@/lib/hooks/useGoAlerts";
 import { useTrailingManager } from "@/lib/hooks/useTrailingManager";
 import { useBalancePoller } from "@/lib/hooks/useBalancePoller";
 import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
@@ -81,6 +82,7 @@ export function AppShell({
   useMarketStream();    // WS bağlantısı — gecikme yok
   useCandlePoller();    // Cache'den anında veri, sonra fetch
   useScoreEngine();     // Candle'a bağlı, candle hazır olunca çalışır
+  useGoAlerts();        // GO verdict geçişlerini Telegram'a gönder
 
   // Secondary — staggered to avoid startup thundering herd
   usePositionPoller(1_000); // t+1s

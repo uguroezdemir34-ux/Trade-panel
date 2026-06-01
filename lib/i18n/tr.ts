@@ -126,6 +126,9 @@ export const tr: Dictionary = {
     scoreUnavailable: "⚠ Skor kullanılamıyor (eksik veri veya boru hattı hatası)",
     showDetails: "▼ DETAYLARI GÖSTER",
     hideDetails: "▲ DETAYLARI GİZLE",
+    scoresUpdated: "Skorlar güncellendi",
+    scoresAgo: "önce",
+    scoresNever: "Henüz hesaplanmadı",
   },
 
   settings: {
@@ -197,6 +200,11 @@ export const tr: Dictionary = {
     drawdownProtocol: {
       label: "Drawdown Protokolü",
       description: "Ardışık kayıplarda riski otomatik katmanlandırır. Eşikte hesabı kilitler.",
+    },
+    goAlerts: {
+      title: "GO Sinyal Uyarıları",
+      description: "Herhangi bir parite GO kararına geçince Telegram mesajı gönderir. Parite başına 30 dakika bekleme süresi.",
+      noTelegram: "Telegram yapılandırılmamış — uyarılar gönderilmeyecek.",
     },
     balance: {
       title: "Hesap Bakiyesi",

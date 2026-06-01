@@ -198,6 +198,11 @@ export const ru: Dictionary = {
       label: "Протокол просадки",
       description: "Автоматически снижает риск при последовательных убытках. Блокирует счёт по достижении порога.",
     },
+    goAlerts: {
+      title: "GO Signal Alerts",
+      description: "Send a Telegram message when any pair flips to GO verdict. 30-minute cooldown per pair.",
+      noTelegram: "Telegram not configured — alerts won't send.",
+    },
     balance: {
       title: "Баланс счёта",
       total: "Совокупный капитал",

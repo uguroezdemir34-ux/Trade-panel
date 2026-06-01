@@ -40,6 +40,7 @@ export default function KararPage() {
 
   const result = useScoreStore((s) => s.results[activePair]);
   const allResults = useScoreStore((s) => s.results);
+  const computedAt = useScoreStore((s) => s.computedAt);
   const computing = useScoreStore((s) => s.computing);
   const candles1hRaw = useCandleStore((s) => s.candles[`${activePair}_1h`]);
   const candles4hRaw = useCandleStore((s) => s.candles[`${activePair}_4h`]);
@@ -65,6 +66,12 @@ export default function KararPage() {
     () => PAIRS.filter((p) => allResults[p]?.verdict === "go"),
     [allResults],
   );
+
+  // En son hesaplanan skor zamanı
+  const latestScoreTime = useMemo(() => {
+    const times = Object.values(computedAt).filter((v): v is number => v !== undefined);
+    return times.length > 0 ? Math.max(...times) : null;
+  }, [computedAt]);
 
   // Bucket istatistikleri — geçmiş trade'lerden score bazlı performans
   const bucketStats = useMemo(() => {
@@ -282,6 +289,18 @@ export default function KararPage() {
         </div>
       )}
 
+      {/* Skor tazelik göstergesi */}
+      <div className="flex items-center justify-between">
+        <span className="text-text-t4 font-mono text-2xs tracking-wider">
+          {latestScoreTime !== null
+            ? `Skorlar güncellendi · ${scoreAge(latestScoreTime)} önce`
+            : "Henüz hesaplanmadı"}
+        </span>
+        {computing && (
+          <span className="text-brand font-mono text-2xs animate-pulse">⟳</span>
+        )}
+      </div>
+
       {/* GO sinyali özeti */}
       {goPairs.length > 0 ? (
         <div className="flex items-center gap-2 rounded-lg border border-green-400/30 bg-green-400/5 px-3 py-2">
@@ -417,4 +436,13 @@ export default function KararPage() {
       )}
     </div>
   );
+}
+
+function scoreAge(epochMs: number): string {
+  const diffMs = Date.now() - epochMs;
+  const secs = Math.floor(diffMs / 1000);
+  if (secs < 60) return `${secs}s`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h`;
 }

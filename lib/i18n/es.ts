@@ -198,6 +198,11 @@ export const es: Dictionary = {
       label: "Protocolo de Drawdown",
       description: "Reduce automáticamente el riesgo en pérdidas consecutivas. Bloquea la cuenta tras el umbral.",
     },
+    goAlerts: {
+      title: "GO Signal Alerts",
+      description: "Send a Telegram message when any pair flips to GO verdict. 30-minute cooldown per pair.",
+      noTelegram: "Telegram not configured — alerts won't send.",
+    },
     balance: {
       title: "Saldo de la cuenta",
       total: "Capital total",
