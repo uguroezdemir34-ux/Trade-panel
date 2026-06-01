@@ -17,6 +17,7 @@ import { ExitBreakdownCard } from "@/components/pnl/ExitBreakdownCard";
 import { ScoreHeatmap } from "@/components/pnl/ScoreHeatmap";
 import { HoldingTimeCard } from "@/components/pnl/HoldingTimeCard";
 import { DayOfWeekCard } from "@/components/pnl/DayOfWeekCard";
+import { TimeOfDayCard } from "@/components/pnl/TimeOfDayCard";
 import { RMultipleChart } from "@/components/pnl/RMultipleChart";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
@@ -188,6 +189,9 @@ export default function PnlPage() {
         <HoldingTimeCard trades={trades} />
         <DayOfWeekCard trades={trades} />
       </div>
+
+      {/* Time of day */}
+      <TimeOfDayCard trades={trades} />
 
       <ParameterAudit stats={calibrationStats} />
     </div>
