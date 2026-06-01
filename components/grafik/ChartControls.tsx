@@ -116,12 +116,11 @@ function Toggle({
   onClick,
   accent,
   children,
-}: {
+}: React.PropsWithChildren<{
   active: boolean;
   onClick: () => void;
   accent?: string;
-  children: React.ReactNode;
-}) {
+}>) {
   const activeStyle = accent
     ? { borderColor: accent, backgroundColor: accent + "20", color: accent }
     : undefined;
