@@ -32,6 +32,12 @@ export interface MacdPoint {
   signal: number;
 }
 
+export interface BbBands {
+  upper: LinePoint[];
+  middle: LinePoint[];
+  lower: LinePoint[];
+}
+
 export interface AlarmLevel {
   price: number;
   condition: "above" | "below";
@@ -46,6 +52,7 @@ export interface ChartSeries {
   volume?: VolumePoint[];
   rsi?: LinePoint[];
   macdData?: MacdPoint[];
+  bb?: BbBands;
   alarmLevels?: AlarmLevel[];
   markers?: ChartMarker[];
 }

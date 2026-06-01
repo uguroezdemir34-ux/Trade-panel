@@ -82,6 +82,18 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
     return c;
   }, [trades]);
 
+  const riskRatios = useMemo(() => {
+    if (trades.length < 5) return null;
+    const rs = trades.map((t) => t.rMultiple);
+    const mean = rs.reduce((s, r) => s + r, 0) / rs.length;
+    const variance = rs.reduce((s, r) => s + (r - mean) ** 2, 0) / rs.length;
+    const std = Math.sqrt(variance);
+    const sharpe = std > 0 ? mean / std : null;
+    const downVar = rs.filter((r) => r < 0).reduce((s, r) => s + r ** 2, 0) / rs.length;
+    const sortino = downVar > 0 ? mean / Math.sqrt(downVar) : null;
+    return { sharpe, sortino };
+  }, [trades]);
+
   return (
     <div className="flex flex-col gap-4">
       {/* ── Header ── */}
@@ -123,6 +135,16 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
           <Stat label={t("backtest.exits")}
             value={`${exitCounts.tp2}/${exitCounts.tp1}/${exitCounts.sl}/${exitCounts.timeout}`}
             hint="tp2/tp1/sl/to" />
+          {riskRatios?.sharpe !== null && riskRatios?.sharpe !== undefined && (
+            <Stat label="Sharpe"
+              value={riskRatios.sharpe.toFixed(2)}
+              color={riskRatios.sharpe > 0.5 ? "text-green-400" : riskRatios.sharpe > 0 ? "text-yellow-400" : "text-red-400"} />
+          )}
+          {riskRatios?.sortino !== null && riskRatios?.sortino !== undefined && (
+            <Stat label="Sortino"
+              value={riskRatios.sortino.toFixed(2)}
+              color={riskRatios.sortino > 1 ? "text-green-400" : riskRatios.sortino > 0 ? "text-yellow-400" : "text-red-400"} />
+          )}
         </div>
 
         {/* Direction stats */}

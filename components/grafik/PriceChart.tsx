@@ -36,6 +36,7 @@ const COLOR_EMA20    = "#3b82f6";
 const COLOR_EMA50    = "#f59e0b";
 const COLOR_EMA200   = "#a855f7";
 const COLOR_RSI      = "#ec4899";
+const COLOR_BB       = "#06b6d4"; // cyan-500
 const COLOR_MACD     = "#3b82f6";
 const COLOR_SIGNAL   = "#f59e0b";
 const COLOR_GRID     = "#e5e5e5";
@@ -79,6 +80,9 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
   const macdLineRef   = useRef<ISeriesApi<"Line"> | null>(null);
   const macdSignalRef = useRef<ISeriesApi<"Line"> | null>(null);
   const alarmLinesRef = useRef<IPriceLine[]>([]);
+  const bbUpperRef    = useRef<ISeriesApi<"Line"> | null>(null);
+  const bbMiddleRef   = useRef<ISeriesApi<"Line"> | null>(null);
+  const bbLowerRef    = useRef<ISeriesApi<"Line"> | null>(null);
 
   // ─── Mount ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -136,6 +140,9 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
       macdHistRef.current  = null;
       macdLineRef.current  = null;
       macdSignalRef.current = null;
+      bbUpperRef.current   = null;
+      bbMiddleRef.current  = null;
+      bbLowerRef.current   = null;
     };
   }, [height]);
 
@@ -201,6 +208,27 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
     } else if (ema200Ref.current) {
       chart.removeSeries(ema200Ref.current);
       ema200Ref.current = null;
+    }
+
+    // 5b. Bollinger Bands (overlay on main pane)
+    if (series.bb?.upper.length) {
+      const bbOpts = {
+        color: COLOR_BB,
+        lineWidth: 1 as const,
+        lineStyle: 0 as const,
+        priceLineVisible: false,
+        lastValueVisible: false,
+      };
+      if (!bbUpperRef.current)  bbUpperRef.current  = chart.addLineSeries({ ...bbOpts, lineStyle: 2 });
+      if (!bbMiddleRef.current) bbMiddleRef.current = chart.addLineSeries({ ...bbOpts, lineWidth: 1 });
+      if (!bbLowerRef.current)  bbLowerRef.current  = chart.addLineSeries({ ...bbOpts, lineStyle: 2 });
+      bbUpperRef.current.setData(series.bb.upper as LineData<Time>[]);
+      bbMiddleRef.current.setData(series.bb.middle as LineData<Time>[]);
+      bbLowerRef.current.setData(series.bb.lower as LineData<Time>[]);
+    } else {
+      if (bbUpperRef.current)  { chart.removeSeries(bbUpperRef.current);  bbUpperRef.current  = null; }
+      if (bbMiddleRef.current) { chart.removeSeries(bbMiddleRef.current); bbMiddleRef.current = null; }
+      if (bbLowerRef.current)  { chart.removeSeries(bbLowerRef.current);  bbLowerRef.current  = null; }
     }
 
     // 6. Volume histogram

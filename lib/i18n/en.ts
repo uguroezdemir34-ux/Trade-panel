@@ -463,6 +463,7 @@ export const en: Dictionary = {
     showVolume: "Volume",
     showRsi: "RSI",
     showMacd: "MACD",
+    showBb: "BB(20)",
     legend: {
       candleUp: "Up candle",
       candleDown: "Down candle",
@@ -475,6 +476,7 @@ export const en: Dictionary = {
       rsi14: "RSI 14",
       macdLine: "MACD",
       macdSignal: "Signal",
+      bb: "BB(20,2)",
     },
   },
 

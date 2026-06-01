@@ -23,6 +23,16 @@ export interface BbOptions {
   mult?: number;
 }
 
+export function bbSeries(
+  closes: readonly number[],
+  options: BbOptions = {},
+): (BbResult | null)[] {
+  return closes.map((_, i) => {
+    if (i < (options.period ?? 20) - 1) return null;
+    return bb(closes.slice(0, i + 1), options);
+  });
+}
+
 export function bb(
   closes: readonly number[],
   options: BbOptions = {},

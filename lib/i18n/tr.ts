@@ -463,6 +463,7 @@ export const tr: Dictionary = {
     showVolume: "Hacim",
     showRsi: "RSI",
     showMacd: "MACD",
+    showBb: "BB(20)",
     legend: {
       candleUp: "Yükseliş mumu",
       candleDown: "Düşüş mumu",
@@ -475,6 +476,7 @@ export const tr: Dictionary = {
       rsi14: "RSI 14",
       macdLine: "MACD",
       macdSignal: "Sinyal",
+      bb: "BB(20,2)",
     },
   },
 
