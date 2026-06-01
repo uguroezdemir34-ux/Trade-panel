@@ -4,6 +4,7 @@ import { useState, useMemo } from "react";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { PAIRS } from "@/lib/constants/pairs";
+import { useT } from "@/lib/i18n/context";
 
 type SortKey = "score" | "chg" | "pair";
 
@@ -46,6 +47,7 @@ function SortHeader({
 }
 
 export function PriceTable(): React.ReactElement {
+  const t = useT();
   const prices = useMarketStore((s) => s.prices);
   const results = useScoreStore((s) => s.results);
   const [sortKey, setSortKey] = useState<SortKey>("score");
@@ -87,7 +89,7 @@ export function PriceTable(): React.ReactElement {
   const anyData = rows.some((r) => !!r.tick);
 
   return (
-    <div className="border-border bg-bg-card rounded-lg border overflow-hidden">
+    <div className="border-border bg-bg-card rounded-lg border overflow-hidden overflow-x-auto">
       {/* Header */}
       <div
         className="grid items-center gap-x-2 px-3 py-1.5 border-b border-border/50"
@@ -103,7 +105,7 @@ export function PriceTable(): React.ReactElement {
       {/* Rows */}
       {!anyData ? (
         <div className="px-3 py-4 text-text-t4 font-mono text-xs text-center">
-          Bağlanıyor...
+          {t("app.connecting")}
         </div>
       ) : (
         <div className="divide-y divide-border/20">

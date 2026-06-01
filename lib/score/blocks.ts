@@ -394,7 +394,7 @@ export function checkCorrelationCluster(
     (p) => p.pair === corrPair && p.direction === direction,
   );
   if (otherOpen) {
-    return `🔗 ${corrPair} ${direction} açık — korelasyon ~%85, clustered risk`;
+    return `🔗 ${corrPair} ${direction} open — correlation ~85%, clustered risk`;
   }
   return null;
 }

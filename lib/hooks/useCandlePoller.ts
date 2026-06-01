@@ -3,6 +3,9 @@
  *
  * Stale-while-revalidate: mount'ta önce localStorage cache'den anında yükler,
  * sonra arka planda taze veri çeker. Böylece ~1dk bekleme → anlık görüntü.
+ *
+ * Rate-limit fix: OKX public endpoint limiti 10 req/2s.
+ * 60 eşzamanlı istek yerine max 5 eşzamanlı → sıralı batch → hız artışı.
  */
 
 "use client";
@@ -12,16 +15,19 @@ import { PAIRS } from "@/lib/constants/pairs";
 import { fetchCandles, type Candle, type Timeframe } from "@/lib/okx/candles";
 import { useCandleStore } from "@/lib/store/candleStore";
 
-/** 15m + 1h: signal-critical, poll frequently */
+/** 15m + 1h: sinyal kritik, sık poll */
 const TIMEFRAMES_SHORT: Timeframe[] = ["1h", "15m"];
-/** 4h + 1d: structural, a candle closes every 4-24h — no need for 30s polls */
+/** 4h + 1d: yapısal, mum 4-24 saatte kapanır */
 const TIMEFRAMES_LONG: Timeframe[] = ["4h", "1d"];
-const POLL_INTERVAL_SHORT_MS = 60_000; // was 30s — halves request count
-const POLL_INTERVAL_LONG_MS = 5 * 60_000; // 4h/1d candles change every 4-24h
+const POLL_INTERVAL_SHORT_MS = 60_000;
+const POLL_INTERVAL_LONG_MS = 5 * 60_000;
 const CANDLE_LIMIT = 210;
 const CANDLE_LIMIT_1D = 60;
-const CACHE_MAX_AGE_MS = 10 * 60 * 1000; // 10 minutes
+const CACHE_MAX_AGE_MS = 10 * 60 * 1000;
 const CACHE_PREFIX = "qx_c_";
+
+/** Max eşzamanlı OKX isteği — rate limit koruması (10 req/2s) */
+const MAX_CONCURRENT = 5;
 
 function cacheKey(pair: string, tf: string): string {
   return `${CACHE_PREFIX}${pair}_${tf}`;
@@ -47,6 +53,43 @@ function saveCache(pair: string, tf: string, data: Candle[]): void {
   }
 }
 
+/**
+ * Görevleri max N eşzamanlı çalıştır.
+ * OKX rate limit (10 req/2s) aşımını önler.
+ */
+async function runBatched(
+  tasks: Array<() => Promise<void>>,
+  concurrency: number,
+): Promise<void> {
+  const queue = [...tasks];
+  async function worker(): Promise<void> {
+    let task = queue.shift();
+    while (task) {
+      await task();
+      task = queue.shift();
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, tasks.length) }, worker));
+}
+
+function makeFetchTask(
+  pair: string,
+  tf: Timeframe,
+  limit: number,
+  setCandles: (p: string, tf: Timeframe, c: Candle[], ts: number) => void,
+  setError: (p: string, tf: Timeframe, e: string) => void,
+) {
+  return async () => {
+    const candles = await fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
+    if (candles) {
+      setCandles(pair as Parameters<typeof fetchCandles>[0], tf, candles, Date.now());
+      saveCache(pair, tf, candles);
+    } else {
+      setError(pair as Parameters<typeof fetchCandles>[0], tf, "fetch_failed");
+    }
+  };
+}
+
 export function useCandlePoller(): void {
   const setCandles = useCandleStore((s) => s.setCandles);
   const setError = useCandleStore((s) => s.setError);
@@ -55,58 +98,37 @@ export function useCandlePoller(): void {
   const initializedRef = useRef(false);
 
   async function fetchShort(): Promise<void> {
-    await Promise.all(
-      PAIRS.flatMap((pair) =>
-        TIMEFRAMES_SHORT.map(async (tf) => {
-          const candles = await fetchCandles(pair, tf, CANDLE_LIMIT);
-          if (candles) {
-            setCandles(pair, tf, candles, Date.now());
-            saveCache(pair, tf, candles);
-          } else {
-            setError(pair, tf, "fetch_failed");
-          }
-        }),
-      ),
+    const tasks = PAIRS.flatMap((pair) =>
+      TIMEFRAMES_SHORT.map((tf) => makeFetchTask(pair, tf, CANDLE_LIMIT, setCandles, setError)),
     );
+    await runBatched(tasks, MAX_CONCURRENT);
   }
 
   async function fetchLong(): Promise<void> {
-    const limit4h = CANDLE_LIMIT;
-    await Promise.all(
-      PAIRS.flatMap((pair) => [
-        (async () => {
-          const candles = await fetchCandles(pair, "4h", limit4h);
-          if (candles) { setCandles(pair, "4h", candles, Date.now()); saveCache(pair, "4h", candles); }
-          else setError(pair, "4h", "fetch_failed");
-        })(),
-        (async () => {
-          const candles = await fetchCandles(pair, "1d", CANDLE_LIMIT_1D);
-          if (candles) { setCandles(pair, "1d", candles, Date.now()); saveCache(pair, "1d", candles); }
-          else setError(pair, "1d", "fetch_failed");
-        })(),
-      ]),
-    );
+    const tasks = PAIRS.flatMap((pair) => [
+      makeFetchTask(pair, "4h", CANDLE_LIMIT, setCandles, setError),
+      makeFetchTask(pair, "1d", CANDLE_LIMIT_1D, setCandles, setError),
+    ]);
+    await runBatched(tasks, MAX_CONCURRENT);
   }
 
   useEffect(() => {
-    // Stale-while-revalidate: serve cache instantly on first render
+    // Stale-while-revalidate: cache'den anında yükle, sonra fetch
     if (!initializedRef.current) {
       initializedRef.current = true;
       PAIRS.forEach((pair) => {
         ([...TIMEFRAMES_SHORT, ...TIMEFRAMES_LONG] as Timeframe[]).forEach((tf) => {
           const cached = loadCache(pair, tf);
-          if (cached) setCandles(pair, tf, cached, Date.now() - 1000);
+          if (cached) setCandles(pair as Parameters<typeof setCandles>[0], tf, cached, Date.now() - 1000);
         });
       });
     }
 
-    // Initial fetch for all TFs
+    // Initial fetch — batched to avoid rate limiting
     fetchShort();
     fetchLong();
 
-    // 15m/1h: every 60s (was 30s — 2× reduction)
     shortTimerRef.current = setInterval(fetchShort, POLL_INTERVAL_SHORT_MS);
-    // 4h/1d: every 5min (was 30s — 10× reduction for structural TFs)
     longTimerRef.current = setInterval(fetchLong, POLL_INTERVAL_LONG_MS);
 
     return () => {

@@ -10,6 +10,10 @@ export const tr: Dictionary = {
     tagline: "Gelişmiş Yapay Zeka Ticaret Sistemi",
     demo: "DEMO",
     forwardTest: "ÖLÇÜM",
+    openPositions: "açık pozisyon",
+    dailyPnlTitle: "Bugünkü gerçekleşmiş P&L",
+    closeFailed: "Kapatma başarısız",
+    connecting: "Bağlanıyor...",
   },
 
   nav: {
@@ -150,6 +154,19 @@ export const tr: Dictionary = {
     flowNoDivergence: "Yok (uyumlu)",
     flowZonesNearby: "zone yakın",
     flowZonesFar: "Uzak",
+    correlationWarning: "Yüksek Korelasyon Uyarısı",
+    correlationWith: "{pair} ile {pct}% korelasyon ({dir}).",
+    correlationRisk: "İki işlem aynı yönde hareket ederek riski artırabilir.",
+    alarmAdded: "✓ Eklendi",
+    alarmCancel: "İptal",
+    alarmOpen: "Alarm Ekle",
+    alarmAddButton: "▶ Alarm Ekle",
+    alarmMaxReached: "⚠ Maks. 10 aktif alarm",
+    alarmAbove: "▲ Üstünde",
+    alarmBelow: "▼ Altında",
+    alarmTargetPrice: "Hedef fiyat",
+    alarmCurrent: "Şu an",
+    alarmLabel: "Etiket (isteğe bağlı)",
   },
 
   settings: {

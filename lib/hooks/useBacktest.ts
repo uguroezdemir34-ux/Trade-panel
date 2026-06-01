@@ -78,7 +78,7 @@ export function useBacktest() {
 
         store.setResult(result, config);
       } catch (err) {
-        store.setError(err instanceof Error ? err.message : "Bilinmeyen hata");
+        store.setError(err instanceof Error ? err.message : "Unknown error");
       }
     },
     [store],

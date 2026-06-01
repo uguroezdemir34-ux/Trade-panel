@@ -79,7 +79,7 @@ export function AppHeader(): React.ReactElement {
                       ? "bg-green-500/10 text-green-400"
                       : "bg-red-500/10 text-red-400"
                   }`}
-                  title={`${openCount} açık pozisyon`}
+                  title={`${openCount} ${t("app.openPositions")}`}
                 >
                   {openCount}P {openUpl >= 0 ? "+" : ""}{openUpl.toFixed(1)}$
                 </Link>
@@ -92,7 +92,7 @@ export function AppHeader(): React.ReactElement {
                       ? "bg-green-500/10 text-green-400"
                       : "bg-red-500/10 text-red-400"
                   }`}
-                  title="Bugünkü gerçekleşmiş P&L"
+                  title={t("app.dailyPnlTitle")}
                 >
                   {dailyPnlPct > 0 ? "+" : ""}{dailyPnlPct.toFixed(2)}%
                 </span>

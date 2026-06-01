@@ -10,9 +10,11 @@ import { TradeTimelineCard } from "@/components/pozisyon/TradeTimelineCard";
 import { CloseConfirmModal } from "@/components/pozisyon/CloseConfirmModal";
 import { PortfolioSummaryBanner } from "@/components/pozisyon/PortfolioSummaryBanner";
 import { getOkxAdapter } from "@/lib/exchange/okx-adapter";
+import { useT } from "@/lib/i18n/context";
 import type { Position } from "@/lib/okx/positions";
 
 export default function PozisyonPage() {
+  const t = useT();
   const positions = usePositionStore((s) => s.positions);
   const closingInstId = usePositionStore((s) => s.closingInstId);
   const setClosingInstId = usePositionStore((s) => s.setClosingInstId);
@@ -37,10 +39,10 @@ export default function PozisyonPage() {
         removePosition(pos.instId);
         setConfirmPosition(null);
       } else {
-        setCloseError(result.errorMessage ?? "Kapatma başarısız");
+        setCloseError(result.errorMessage ?? t("app.closeFailed"));
       }
     } catch (e) {
-      setCloseError(e instanceof Error ? e.message : "Bilinmeyen hata");
+      setCloseError(e instanceof Error ? e.message : t("karar.unknownError"));
     } finally {
       setClosingInstId(null);
     }

@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from "react";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
+import { useT } from "@/lib/i18n/context";
 import type { Pair } from "@/lib/constants/pairs";
 
 interface Props {
@@ -18,6 +19,7 @@ interface Props {
 }
 
 export function QuickAlarm({ pair, livePrice, direction }: Props): React.ReactElement {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [price, setPrice] = useState("");
   const [condition, setCondition] = useState<"above" | "below">(
@@ -72,12 +74,12 @@ export function QuickAlarm({ pair, livePrice, direction }: Props): React.ReactEl
           <span>🔔</span>
           <span>
             {flash
-              ? "✓ Eklendi"
+              ? t("karar.alarmAdded")
               : open
-              ? "İptal"
+              ? t("karar.alarmCancel")
               : pairAlarms.length > 0
               ? `Alarm (${pairAlarms.length})`
-              : "Alarm Ekle"}
+              : t("karar.alarmOpen")}
           </span>
         </button>
 
@@ -93,7 +95,7 @@ export function QuickAlarm({ pair, livePrice, direction }: Props): React.ReactEl
       {open && (
         <div className="border-border bg-bg-card rounded-lg border p-3 flex flex-col gap-2.5">
           {maxReached && (
-            <p className="text-amber-400 font-mono text-2xs">⚠ Maks. 10 aktif alarm</p>
+            <p className="text-amber-400 font-mono text-2xs">{t("karar.alarmMaxReached")}</p>
           )}
 
           <div className="flex items-center gap-2">
@@ -109,7 +111,7 @@ export function QuickAlarm({ pair, livePrice, direction }: Props): React.ReactEl
                       : "border-border text-text-t4 hover:text-text-t2"
                   }`}
                 >
-                  {c === "above" ? "▲ Üstünde" : "▼ Altında"}
+                  {c === "above" ? t("karar.alarmAbove") : t("karar.alarmBelow")}
                 </button>
               ))}
             </div>
@@ -123,7 +125,7 @@ export function QuickAlarm({ pair, livePrice, direction }: Props): React.ReactEl
               step="any"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
-              placeholder="Hedef fiyat"
+              placeholder={t("karar.alarmTargetPrice")}
               className="flex-1 bg-bg-page border border-border rounded px-2 py-1 font-mono text-xs text-text-t1 tabular-nums focus:outline-none focus:border-text-t3"
             />
             {livePrice && (
@@ -133,7 +135,7 @@ export function QuickAlarm({ pair, livePrice, direction }: Props): React.ReactEl
                 }
                 className="font-mono text-2xs text-text-t4 border border-border rounded px-1.5 py-1 hover:text-text-t2 shrink-0"
               >
-                Şu an
+                {t("karar.alarmCurrent")}
               </button>
             )}
           </div>
@@ -144,7 +146,7 @@ export function QuickAlarm({ pair, livePrice, direction }: Props): React.ReactEl
             maxLength={40}
             value={label}
             onChange={(e) => setLabel(e.target.value)}
-            placeholder="Etiket (isteğe bağlı)"
+            placeholder={t("karar.alarmLabel")}
             className="bg-bg-page border border-border rounded px-2 py-1 font-mono text-xs text-text-t1 focus:outline-none focus:border-text-t3"
           />
 
@@ -153,7 +155,7 @@ export function QuickAlarm({ pair, livePrice, direction }: Props): React.ReactEl
             disabled={!price || maxReached}
             className="border border-amber-400/40 bg-amber-400/10 text-amber-300 font-mono text-xs font-bold px-3 py-1.5 rounded hover:bg-amber-400/20 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
           >
-            ▶ Alarm Ekle
+            {t("karar.alarmAddButton")}
           </button>
         </div>
       )}

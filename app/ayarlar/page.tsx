@@ -4,7 +4,6 @@ import { TradingLimitsCard } from "@/components/ayarlar/TradingLimitsCard";
 import { DrawdownToggleCard } from "@/components/ayarlar/DrawdownToggleCard";
 import { AccountBalanceCard } from "@/components/ayarlar/AccountBalanceCard";
 import { ModeToggleCard } from "@/components/ayarlar/ModeToggleCard";
-import { LanguageCard } from "@/components/ayarlar/LanguageCard";
 import { DangerZoneCard } from "@/components/ayarlar/DangerZoneCard";
 import { GoAlertsCard } from "@/components/ayarlar/GoAlertsCard";
 import { PriceAlarmsCard } from "@/components/ayarlar/PriceAlarmsCard";
@@ -32,10 +31,7 @@ export default function AyarlarPage() {
         <DrawdownToggleCard />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <ModeToggleCard />
-        <LanguageCard />
-      </div>
+      <ModeToggleCard />
 
       <DangerZoneCard />
     </div>

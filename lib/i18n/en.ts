@@ -10,6 +10,10 @@ export const en: Dictionary = {
     tagline: "Advanced AI Trading Systems",
     demo: "DEMO",
     forwardTest: "MEASURE",
+    openPositions: "open positions",
+    dailyPnlTitle: "Today's realized P&L",
+    closeFailed: "Close failed",
+    connecting: "Connecting...",
   },
 
   nav: {
@@ -150,6 +154,19 @@ export const en: Dictionary = {
     flowNoDivergence: "None (aligned)",
     flowZonesNearby: "zones nearby",
     flowZonesFar: "Far",
+    correlationWarning: "High Correlation Warning",
+    correlationWith: "{pair} {pct}% correlation ({dir}).",
+    correlationRisk: "Two trades in the same direction can compound risk.",
+    alarmAdded: "✓ Added",
+    alarmCancel: "Cancel",
+    alarmOpen: "Add Alarm",
+    alarmAddButton: "▶ Add Alarm",
+    alarmMaxReached: "⚠ Max 10 active alarms",
+    alarmAbove: "▲ Above",
+    alarmBelow: "▼ Below",
+    alarmTargetPrice: "Target price",
+    alarmCurrent: "Current",
+    alarmLabel: "Label (optional)",
   },
 
   settings: {

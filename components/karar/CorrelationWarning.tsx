@@ -13,6 +13,7 @@ import { useMemo } from "react";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { dailyReturns, pearson } from "@/lib/market/correlation";
+import { useT } from "@/lib/i18n/context";
 import type { Pair } from "@/lib/constants/pairs";
 
 const CORR_THRESHOLD = 0.70;
@@ -24,6 +25,7 @@ interface Props {
 }
 
 export function CorrelationWarning({ pair, direction }: Props): React.ReactElement | null {
+  const t = useT();
   const allCandles = useCandleStore((s) => s.candles);
   const positions = usePositionStore((s) => s.positions);
 
@@ -65,15 +67,18 @@ export function CorrelationWarning({ pair, direction }: Props): React.ReactEleme
         <span className="text-amber-400 text-sm shrink-0">⚠</span>
         <div>
           <div className="text-amber-400 font-mono text-xs font-semibold">
-            Yüksek Korelasyon Uyarısı
+            {t("karar.correlationWarning")}
           </div>
           <div className="text-amber-300/80 font-mono text-2xs mt-0.5 leading-relaxed">
             {warnings.map((w, i) => (
               <span key={i}>
-                {w.posPair} ile {(w.corr * 100).toFixed(0)}% korelasyon ({w.dir}).{" "}
+                {t("karar.correlationWith")
+                  .replace("{pair}", w.posPair)
+                  .replace("{pct}", (w.corr * 100).toFixed(0))
+                  .replace("{dir}", w.dir)}{" "}
               </span>
             ))}
-            İki işlem aynı yönde hareket ederek riski artırabilir.
+            {t("karar.correlationRisk")}
           </div>
         </div>
       </div>
