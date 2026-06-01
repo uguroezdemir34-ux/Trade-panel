@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useAccountStore } from "@/lib/store/accountStore";
 import { useHydrated } from "@/lib/store/hydration";
 import { useT } from "@/lib/i18n/context";
 import { ConnectionBadge } from "./ConnectionBadge";
@@ -15,6 +16,7 @@ export function AppHeader(): React.ReactElement {
   const hydrated = useHydrated();
   const demoMode = useSettingsStore((s) => s.demoMode);
   const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
+  const dailyPnlPct = useAccountStore((s) => s.dailyPnlPct);
   const t = useT();
   const pathname = usePathname();
 
@@ -63,6 +65,19 @@ export function AppHeader(): React.ReactElement {
           <ConnectionBadge />
           {hydrated && (
             <>
+              {/* Daily P&L badge — only show when nonzero */}
+              {dailyPnlPct !== 0 && (
+                <span
+                  className={`rounded px-2 py-0.5 font-mono text-2xs tabular-nums tracking-wider ${
+                    dailyPnlPct > 0
+                      ? "bg-green-500/10 text-green-400"
+                      : "bg-red-500/10 text-red-400"
+                  }`}
+                  title="Bugünkü gerçekleşmiş P&L"
+                >
+                  {dailyPnlPct > 0 ? "+" : ""}{dailyPnlPct.toFixed(2)}%
+                </span>
+              )}
               {demoMode && (
                 <span className="bg-soft-blue text-signal-blue rounded px-2 py-0.5 font-mono text-2xs tracking-wider">
                   {t("app.demo")}
