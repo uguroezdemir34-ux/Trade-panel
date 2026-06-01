@@ -100,7 +100,7 @@ export default function PnlPage() {
 
   function downloadCsv() {
     if (trades.length === 0) return;
-    const header = "closedAt,openedAt,pair,direction,pnlUsd,pnlPct,score,closeReason,isPaper";
+    const header = "closedAt,openedAt,pair,direction,pnlUsd,pnlPct,rMultiple,score,closeReason,isPaper";
     const rows = trades.map((t) =>
       [
         new Date(t.closedAt).toISOString(),
@@ -109,6 +109,7 @@ export default function PnlPage() {
         t.direction,
         t.pnlUsd.toFixed(4),
         (t.pnlPct ?? "").toString(),
+        t.rMultiple !== undefined ? t.rMultiple.toFixed(4) : "",
         (t.score ?? "").toString(),
         t.closeReason ?? "",
         t.isPaper ? "true" : "false",

@@ -45,6 +45,7 @@ import { ScoreLeaderboard } from "@/components/karar/ScoreLeaderboard";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
 import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
+import { GoSignalLog } from "@/components/karar/GoSignalLog";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export default function KararPage() {
@@ -362,6 +363,9 @@ export default function KararPage() {
         activePair={activePair}
         onSelect={setActivePair}
       />
+
+      {/* GO sinyali geçmişi */}
+      <GoSignalLog />
 
       {/* Pair grup filtresi */}
       <div className="flex flex-wrap gap-1">

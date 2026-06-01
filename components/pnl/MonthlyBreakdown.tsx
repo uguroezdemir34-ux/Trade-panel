@@ -6,6 +6,15 @@ interface Props {
   months: MonthlyAggregate[];
 }
 
+function trendArrow(curr: number, prev: number | undefined): { symbol: string; color: string } | null {
+  if (prev === undefined) return null;
+  const delta = curr - prev;
+  if (Math.abs(delta) < 0.01) return null;
+  return delta > 0
+    ? { symbol: "↑", color: "text-green-400" }
+    : { symbol: "↓", color: "text-red-400" };
+}
+
 export function MonthlyBreakdown({ months }: Props): React.ReactElement | null {
   if (months.length === 0) return null;
 
@@ -23,7 +32,7 @@ export function MonthlyBreakdown({ months }: Props): React.ReactElement | null {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        {months.map((mo) => {
+        {months.map((mo, idx) => {
           const isProfit = mo.totalPnlUsd >= 0;
           const barPct = (Math.abs(mo.totalPnlUsd) / maxAbs) * 100;
           const sign = mo.totalPnlUsd > 0 ? "+" : mo.totalPnlUsd < 0 ? "" : "";
@@ -35,6 +44,9 @@ export function MonthlyBreakdown({ months }: Props): React.ReactElement | null {
               : mo.winRate > 0
               ? "text-red-400"
               : "text-text-t4";
+
+          const prevPnl = idx > 0 ? months[idx - 1].totalPnlUsd : undefined;
+          const arrow = trendArrow(mo.totalPnlUsd, prevPnl);
 
           return (
             <div key={mo.yearMonth} className="flex items-center gap-2">
@@ -78,6 +90,26 @@ export function MonthlyBreakdown({ months }: Props): React.ReactElement | null {
               <span className={`font-mono text-2xs tabular-nums w-8 text-right shrink-0 ${wrColor}`}>
                 {mo.tradeCount > 0 ? `${Math.round(mo.winRate * 100)}%` : "—"}
               </span>
+
+              {/* Avg R */}
+              <span
+                className={`font-mono text-2xs tabular-nums w-12 text-right shrink-0 ${
+                  mo.avgR === null
+                    ? "text-text-t4"
+                    : mo.avgR > 0
+                    ? "text-green-400"
+                    : "text-red-400"
+                }`}
+              >
+                {mo.avgR !== null
+                  ? `${mo.avgR > 0 ? "+" : ""}${mo.avgR.toFixed(2)}R`
+                  : ""}
+              </span>
+
+              {/* Trend arrow vs prev month */}
+              <span className={`font-mono text-2xs w-3 shrink-0 ${arrow?.color ?? "text-transparent"}`}>
+                {arrow?.symbol ?? "·"}
+              </span>
             </div>
           );
         })}
@@ -87,6 +119,8 @@ export function MonthlyBreakdown({ months }: Props): React.ReactElement | null {
       <div className="mt-2 flex items-center gap-3 border-t border-border/30 pt-2">
         <span className="text-text-t4 font-mono text-2xs">t = trades</span>
         <span className="text-text-t4 font-mono text-2xs">% = win rate</span>
+        <span className="text-text-t4 font-mono text-2xs">R = avg R-multiple</span>
+        <span className="text-text-t4 font-mono text-2xs">↑↓ = vs prev month</span>
       </div>
     </div>
   );

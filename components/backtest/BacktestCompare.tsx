@@ -311,6 +311,16 @@ export function BacktestCompare({
             fmtDeltaStr={(d) => fmtDelta(d, 2)}
           />
         )}
+        {sA.profitFactor !== null && sB.profitFactor !== null && (
+          <StatRow
+            label="Prof. Factor"
+            valA={sA.profitFactor.toFixed(2)}
+            valB={sB.profitFactor.toFixed(2)}
+            delta={sB.profitFactor - sA.profitFactor}
+            higherIsBetter={true}
+            fmtDeltaStr={(d) => fmtDelta(d, 2)}
+          />
+        )}
 
         {/* Direction breakdown */}
         {(["LONG", "SHORT"] as const).map((dir) => {
