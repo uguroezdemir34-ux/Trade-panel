@@ -61,6 +61,50 @@ function RCurve({ trades }: { trades: BacktestTrade[] }): React.ReactElement {
   );
 }
 
+// ── Drawdown curve ────────────────────────────────────────────────────────────
+
+function DrawdownCurve({ trades }: { trades: BacktestTrade[] }): React.ReactElement {
+  const { points, maxDd } = useMemo(() => {
+    let cumR = 0;
+    let peak = 0;
+    const pts: number[] = [];
+    let max = 0;
+    for (const t of trades) {
+      cumR += t.rMultiple;
+      if (cumR > peak) peak = cumR;
+      const dd = peak - cumR;
+      if (dd > max) max = dd;
+      pts.push(dd);
+    }
+    return { points: pts, maxDd: max };
+  }, [trades]);
+
+  if (points.length < 2 || maxDd === 0) return <div className="text-text-t4 font-mono text-xs">—</div>;
+
+  const W = 400;
+  const H = 60;
+  const PAD = { top: 4, right: 8, bottom: 4, left: 8 };
+  const cw = W - PAD.left - PAD.right;
+  const ch = H - PAD.top - PAD.bottom;
+
+  const xOf = (i: number) => PAD.left + (i / (points.length - 1)) * cw;
+  const yOf = (v: number) => PAD.top + (v / (maxDd * 1.05)) * ch;
+
+  const pathD = points.map((v, i) => `${i === 0 ? "M" : "L"}${xOf(i).toFixed(1)},${yOf(v).toFixed(1)}`).join(" ");
+  const fillD = `${pathD} L${xOf(points.length - 1).toFixed(1)},${H - PAD.bottom} L${PAD.left},${H - PAD.bottom} Z`;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ maxHeight: 60 }}>
+      <path d={fillD} fill="#ef4444" fillOpacity="0.10" />
+      <path d={pathD} fill="none" stroke="#ef4444" strokeWidth="1.5" strokeOpacity="0.7" />
+      <text x={W - PAD.right} y={PAD.top + 2} textAnchor="end"
+        dominantBaseline="hanging" fontSize="9" fontFamily="monospace" fill="#ef4444">
+        -{maxDd.toFixed(2)}R
+      </text>
+    </svg>
+  );
+}
+
 // ── CSV export ────────────────────────────────────────────────────────────────
 
 function downloadCsv(trades: BacktestTrade[], pair: string): void {
@@ -321,12 +365,16 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
         )}
       </div>
 
-      {/* ── R-Curve ── */}
+      {/* ── R-Curve + Drawdown ── */}
       <div className="border-border bg-surface rounded-lg border p-4">
         <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-2">
           {t("backtest.rCurve")}{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
         </h3>
         <RCurve trades={filteredTrades} />
+        <div className="mt-2">
+          <span className="text-text-t4 font-mono text-2xs tracking-wider uppercase">Drawdown</span>
+          <DrawdownCurve trades={filteredTrades} />
+        </div>
       </div>
 
       {/* ── Score Buckets ── */}
