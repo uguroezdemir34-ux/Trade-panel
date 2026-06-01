@@ -2,6 +2,7 @@
 
 import { DrawdownMeter } from "@/components/risk/DrawdownMeter";
 import { DailyStatsCard } from "@/components/risk/DailyStatsCard";
+import { DailyGoalCard } from "@/components/risk/DailyGoalCard";
 import { PositionSizeCalc } from "@/components/risk/PositionSizeCalc";
 import { AdherenceScore } from "@/components/risk/AdherenceScore";
 import { LocksList } from "@/components/risk/LocksList";
@@ -12,6 +13,7 @@ export default function RiskPage() {
     <div className="flex flex-col gap-4">
       <DrawdownMeter />
       <DailyStatsCard />
+      <DailyGoalCard />
       <PositionSizeCalc />
       <AdherenceScore />
       <LocksList />
