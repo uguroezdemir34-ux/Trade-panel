@@ -7,6 +7,7 @@ import { ModeToggleCard } from "@/components/ayarlar/ModeToggleCard";
 import { LanguageCard } from "@/components/ayarlar/LanguageCard";
 import { DangerZoneCard } from "@/components/ayarlar/DangerZoneCard";
 import { GoAlertsCard } from "@/components/ayarlar/GoAlertsCard";
+import { PriceAlarmsCard } from "@/components/ayarlar/PriceAlarmsCard";
 
 export default function AyarlarPage() {
   return (
@@ -16,6 +17,7 @@ export default function AyarlarPage() {
       <OkxCredsCard />
       <TelegramTestCard />
       <GoAlertsCard />
+      <PriceAlarmsCard />
       <TradingLimitsCard />
       <DrawdownToggleCard />
       <LanguageCard />

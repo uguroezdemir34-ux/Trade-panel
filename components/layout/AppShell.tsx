@@ -42,6 +42,7 @@ import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
 import { useSignalFirehose } from "@/lib/hooks/useSignalFirehose";
+import { usePriceAlarms } from "@/lib/hooks/usePriceAlarms";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 
 const SPLASH_DATE_KEY = "qx_splash_date";
@@ -97,6 +98,8 @@ export function AppShell({
   useTradeFeed();
   // Telegram sinyal firehose — verdict go geçişlerini izler
   useSignalFirehose();
+  // Fiyat alarmları — hedef fiyat aşılınca Telegram bildirimi
+  usePriceAlarms();
 
   useEffect(() => {
     rehydrateSettings();

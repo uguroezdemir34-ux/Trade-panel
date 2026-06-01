@@ -32,6 +32,8 @@ export function formatNotifyMessage(msg: NotifyMessage): string {
       return formatLockTriggered(msg);
     case "go_signal":
       return formatGoSignal(msg);
+    case "price_alarm":
+      return formatPriceAlarm(msg);
     case "test":
       return formatTest(msg);
     default: {
@@ -186,6 +188,25 @@ function formatGoSignal(msg: NotifyMessage): string {
   if (msg.reasonText) {
     lines.push("");
     lines.push(escapeMarkdownV2(msg.reasonText));
+  }
+  return lines.join("\n");
+}
+
+// ═══════════════ PRICE ALARM ═══════════════
+
+function formatPriceAlarm(msg: NotifyMessage): string {
+  const lines: string[] = [];
+  lines.push("🔔 " + bold("FİYAT ALARMI"));
+  lines.push("");
+  const conditionText = msg.reasonText ?? "";
+  const priceStr = msg.entry !== undefined ? formatUsdMd2(msg.entry) : "—";
+  const targetStr = msg.tp1 !== undefined ? formatUsdMd2(msg.tp1) : "—";
+  lines.push(`${bold(msg.pair)} ${escapeMarkdownV2(conditionText)}`);
+  lines.push(`Hedef: ${targetStr} → Mevcut: ${priceStr}`);
+  if (msg.timestamp !== undefined) {
+    const date = new Date(msg.timestamp);
+    const timeStr = `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;
+    lines.push(`⏰ ${escapeMarkdownV2(timeStr)}`);
   }
   return lines.join("\n");
 }

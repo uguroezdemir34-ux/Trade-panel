@@ -31,6 +31,7 @@ export type NotifyKind =
   | "tp_hit"
   | "lock_triggered"
   | "go_signal"
+  | "price_alarm"
   | "test"; // health check
 
 /**
