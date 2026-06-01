@@ -51,7 +51,7 @@ export function useGoAlerts(): void {
           if (audioAlertsEnabled) playGoAlert();
           browserNotify(
             `🚀 GO — ${pair}`,
-            `${dir ? dir + " · " : ""}Skor ${result.score}`,
+            `${dir ? dir + " · " : ""}Score ${result.score}`,
           );
           sendGoAlert(pair, result.score, dir).catch(() => {
             // fire-and-forget; silently ignore network errors
@@ -76,7 +76,7 @@ async function sendGoAlert(
       pair,
       direction,
       score,
-      reasonText: `Skor ${score} — GO eşiği geçildi`,
+      reasonText: `Score ${score} — GO threshold crossed`,
       timestamp: Date.now(),
     },
   };

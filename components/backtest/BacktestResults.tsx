@@ -467,6 +467,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
         <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-3">
           {t("backtest.scoreBuckets")}{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
         </h3>
+        <div className="overflow-x-auto">
         <table className="w-full font-mono text-xs">
           <thead>
             <tr className="text-text-t4 border-b border-border">
@@ -491,6 +492,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* ── Exit Reason Breakdown ── */}
@@ -508,6 +510,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
             <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-3">
               Exit Analysis{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
             </h3>
+            <div className="overflow-x-auto">
             <table className="w-full font-mono text-xs">
               <thead>
                 <tr className="text-text-t4 border-b border-border">
@@ -543,6 +546,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
                 })}
               </tbody>
             </table>
+            </div>
           </div>
         );
       })()}

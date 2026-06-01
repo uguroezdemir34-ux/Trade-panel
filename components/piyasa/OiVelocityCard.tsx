@@ -19,11 +19,11 @@ const REGIME_META: Record<
   string,
   { label: string; color: string }
 > = {
-  aggressive_long:    { label: "Agresif Long",    color: "#22C55E" },
-  short_squeeze_risk: { label: "Squeeze Riski",   color: "#EF4444" },
-  long_unwind:        { label: "Long Kapanıyor",  color: "#F59E0B" },
-  bear_exhaustion:    { label: "Bear Yorgunluğu", color: "#3B82F6" },
-  neutral:            { label: "Nötr",            color: "rgb(var(--text-t3))" },
+  aggressive_long:    { label: "Aggressive Long",  color: "#22C55E" },
+  short_squeeze_risk: { label: "Squeeze Risk",     color: "#EF4444" },
+  long_unwind:        { label: "Long Unwind",      color: "#F59E0B" },
+  bear_exhaustion:    { label: "Bear Exhaustion",  color: "#3B82F6" },
+  neutral:            { label: "Neutral",          color: "rgb(var(--text-t3))" },
 };
 
 function scoreColor(s: number): string {
@@ -50,7 +50,7 @@ export function OiVelocityCard({ velocity, loading }: Props): React.ReactElement
 
       {/* Header */}
       <div className="mb-0.5 grid grid-cols-[44px_1fr_40px_48px_48px] gap-x-2 px-1">
-        {["", "Rejim", "Skor", "OI%", "Fiyat%"].map((h) => (
+        {["", "Regime", "Score", "OI%", "Price%"].map((h) => (
           <span key={h} className="text-text-t4 font-mono text-[9px] uppercase tracking-wider">
             {h}
           </span>

@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ chat_id: chatId, text: "✅ Quantix test mesajı." }),
+      body: JSON.stringify({ chat_id: chatId, text: "✅ Quantix bot connection working." }),
     },
   );
 

@@ -352,7 +352,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
   if (sweepRes.reason) reasons.sweep = sweepRes.reason;
   if (regimeRes.reason) reasons.regime = regimeRes.reason;
   if (regimeRes.regime === "trending_strong" && (direction === "LONG" || direction === "SHORT")) {
-    reasons.regimeRelax = `🔥 Trending strong rejim · RSI eşiği ${direction === "LONG" ? "75→80" : "25→20"} gevşedi`;
+    reasons.regimeRelax = `🔥 Trending strong regime · RSI threshold ${direction === "LONG" ? "75→80" : "25→20"} relaxed`;
   }
 
   // ───── 7. VolBreakout override (BB hard iptal için) ─────
@@ -441,7 +441,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
   if (drawdownProtocol.tier !== "normal" && drawdownProtocol.minScore > goThreshold) {
     const oldThreshold = goThreshold;
     goThreshold = Math.min(96, drawdownProtocol.minScore);
-    reasons.drawdownGate = `${drawdownProtocol.label} ${drawdownProtocol.reason} → eşik ${oldThreshold}→${goThreshold}`;
+    reasons.drawdownGate = `${drawdownProtocol.label} ${drawdownProtocol.reason} → threshold ${oldThreshold}→${goThreshold}`;
   }
 
   // ───── 10b. Pullback engine (paket #5e) ─────
@@ -477,7 +477,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
           (lockRamp.active ? 5 : 0),
       ),
     );
-    reasons.pullbackThreshold = `🔄 Pullback eşiği ${pullbackThreshold} (klasik ${goThreshold})`;
+    reasons.pullbackThreshold = `🔄 Pullback threshold ${pullbackThreshold} (classic ${goThreshold})`;
   }
 
   // Etkin eşik
@@ -504,7 +504,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
     baseScore < goThreshold &&
     bucket.wr !== null
   ) {
-    reasons.adaptiveCut = `Skor ${baseScore} ama ${bucket.min}-${bucket.max} bucket WR ${bucket.wr.toFixed(0)}% (n=${bucket.n}) zayıf → ${goThreshold}+ bekle`;
+    reasons.adaptiveCut = `Skor ${baseScore} ama ${bucket.min}-${bucket.max} bucket WR ${bucket.wr.toFixed(0)}% (n=${bucket.n}) weak → ${goThreshold}+ needed`;
   }
 
   // Soft block summary
@@ -515,7 +515,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
   // Lock ramp mesajı (panel satır 7997-8000) — düşük skorda da göster
   if (lockRamp.active && lockReleasedAt !== null) {
     const hoursSince = ((now - lockReleasedAt) / 3600000).toFixed(1);
-    reasons.lockRamp = `🔓 Kilit kalkalı ${hoursSince}sa — skor ${goThreshold}+ gerek (normal: 80, ramp: +5)`;
+    reasons.lockRamp = `🔓 Lock released ${hoursSince}h ago — score ${goThreshold}+ needed (normal: 80, ramp: +5)`;
   }
 
   // Overextended detail (UI gösterim için)

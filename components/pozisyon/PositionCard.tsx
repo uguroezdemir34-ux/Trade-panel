@@ -109,7 +109,7 @@ export function PositionCard({
                   ? "bg-yellow-500/10 text-yellow-400"
                   : "bg-red-500/10 text-red-400/70"
               }`}
-              title={`Skor: ${scoreResult.score}`}
+              title={`Score: ${scoreResult.score}`}
             >
               {scoreResult.score}
             </span>

@@ -57,7 +57,7 @@ function detectHammer(c: Candle): CandlePattern | null {
       name: isBullish(c) ? "Hammer" : "Hanging Man",
       bias: "bullish",
       strength,
-      description: "Uzun alt fitil — alıcılar düşükten fiyatı yukarı çekti",
+      description: "Long lower wick — buyers pushed price up from the low",
     };
   }
   return null;
@@ -76,7 +76,7 @@ function detectShootingStar(c: Candle): CandlePattern | null {
       name: "Shooting Star",
       bias: "bearish",
       strength,
-      description: "Uzun üst fitil — satıcılar yüksekten fiyatı aşağı çekti",
+      description: "Long upper wick — sellers pushed price down from the high",
     };
   }
   return null;
@@ -97,7 +97,7 @@ function detectDoji(c: Candle): CandlePattern | null {
       name,
       bias: "neutral",
       strength: "weak",
-      description: "Alıcı-satıcı dengesi — trend dönüşü sinyali olabilir",
+      description: "Buyer-seller balance — potential trend reversal signal",
     };
   }
   return null;
@@ -111,13 +111,13 @@ function detectMarubozu(c: Candle): CandlePattern | null {
   if (b >= 0.9 * r) {
     const bias: PatternBias = isBullish(c) ? "bullish" : "bearish";
     return {
-      name: `Marubozu ${bias === "bullish" ? "Boğa" : "Ayı"}`,
+      name: `Marubozu ${bias === "bullish" ? "Bull" : "Bear"}`,
       bias,
       strength: "strong",
       description:
         bias === "bullish"
-          ? "Güçlü alım baskısı — kapanış en tepede"
-          : "Güçlü satış baskısı — kapanış en diptе",
+          ? "Strong buying pressure — close at the top"
+          : "Strong selling pressure — close at the bottom",
     };
   }
   return null;
@@ -144,18 +144,18 @@ function detectEngulfing(prev: Candle, curr: Candle): CandlePattern | null {
 
   if (bullish) {
     return {
-      name: "Boğa Yutan",
+      name: "Bullish Engulfing",
       bias: "bullish",
       strength: currBody >= 1.5 * prevBody ? "strong" : "moderate",
-      description: "Önceki düşüş mumunu tamamen kapsayan yükseliş mumu",
+      description: "Bullish candle fully engulfs the previous bearish candle",
     };
   }
   if (bearish) {
     return {
-      name: "Ayı Yutan",
+      name: "Bearish Engulfing",
       bias: "bearish",
       strength: currBody >= 1.5 * prevBody ? "strong" : "moderate",
-      description: "Önceki yükseliş mumunu tamamen kapsayan düşüş mumu",
+      description: "Bearish candle fully engulfs the previous bullish candle",
     };
   }
   return null;
@@ -175,10 +175,10 @@ function detectPiercingDark(prev: Candle, curr: Candle): CandlePattern | null {
     curr.close < prev.open
   ) {
     return {
-      name: "Delici Çizgi",
+      name: "Piercing Line",
       bias: "bullish",
       strength: "moderate",
-      description: "Önceki düşüş mumunun yarısını aşan yükseliş kapanışı",
+      description: "Bullish close above the midpoint of the previous bearish candle",
     };
   }
 
@@ -191,10 +191,10 @@ function detectPiercingDark(prev: Candle, curr: Candle): CandlePattern | null {
     curr.close > prev.open
   ) {
     return {
-      name: "Kara Bulut",
+      name: "Dark Cloud Cover",
       bias: "bearish",
       strength: "moderate",
-      description: "Önceki yükseliş mumunun yarısını kesen düşüş kapanışı",
+      description: "Bearish close below the midpoint of the previous bullish candle",
     };
   }
 

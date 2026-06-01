@@ -58,7 +58,7 @@ export function useScoreMomentumAlerts(): void {
       if (audioAlertsEnabled) playMomentumAlert();
       browserNotify(
         `📈 ${pair} Momentum`,
-        `Skor ${current.score} (+${rise}) — GO eşiğine yaklaşıyor`,
+        `Score ${current.score} (+${rise}) — Approaching GO threshold`,
       );
       sendMomentumAlert(pair, current.score, rise, dir).catch(() => {
         // fire-and-forget
@@ -76,7 +76,7 @@ async function sendMomentumAlert(
   const credState = useCredentialStore.getState();
 
   const dirText = direction === "LONG" ? " ▲ LONG" : direction === "SHORT" ? " ▼ SHORT" : "";
-  const reasonText = `Skor ${score}${dirText} — son 4 okumada +${rise} puan yükseldi, GO eşiğine yaklaşıyor`;
+  const reasonText = `Score ${score}${dirText} — rose +${rise} pts across last 4 snapshots, approaching GO threshold`;
 
   const body: Record<string, unknown> = {
     msg: {

@@ -61,8 +61,8 @@ export function weeklyEquityTier(
       tier: "locked",
       multiplier: 0,
       minScore: 100,
-      label: "🔒 Haftalık Full Halt",
-      reason: `Haftalık kayıp %${weeklyPnlPct.toFixed(2)} — haftalık tam kilit (≤-7.5%)`,
+      label: "🔒 Weekly Full Halt",
+      reason: `Weekly loss %${weeklyPnlPct.toFixed(2)} — weekly full lock (≤-7.5%)`,
     };
   }
 
@@ -70,8 +70,8 @@ export function weeklyEquityTier(
     tier: "restricted",
     multiplier: 0.25,
     minScore: 85,
-    label: "🟠 Haftalık Kısıtlı",
-    reason: `Haftalık kayıp %${weeklyPnlPct.toFixed(2)} — risk ¼ (≤-5%)`,
+    label: "🟠 Weekly Restricted",
+    reason: `Weekly loss %${weeklyPnlPct.toFixed(2)} — risk ¼ (≤-5%)`,
   };
 }
 
@@ -89,8 +89,8 @@ export function monthlyEquityTier(
     tier: "locked",
     multiplier: 0,
     minScore: 100,
-    label: "🔒 Aylık Siber Kilit",
-    reason: `Aylık kayıp %${monthlyPnlPct.toFixed(2)} — aylık siber kilit (≤-12%)`,
+    label: "🔒 Monthly Cyber Lock",
+    reason: `Monthly loss %${monthlyPnlPct.toFixed(2)} — monthly cyber lock (≤-12%)`,
   };
 }
 
@@ -124,8 +124,8 @@ export function computeEquityCurveDecision(
         tier: "locked",
         multiplier: 0,
         minScore: 100,
-        label: "🔒 Günlük Kilit",
-        reason: `Günlük kayıp %${dp.toFixed(2)}`,
+        label: "🔒 Daily Lock",
+        reason: `Daily loss %${dp.toFixed(2)}`,
         triggeredBy: "daily",
       };
     }
@@ -134,8 +134,8 @@ export function computeEquityCurveDecision(
         tier: "restricted",
         multiplier: 0.25,
         minScore: 85,
-        label: "🟠 Kısıtlı",
-        reason: `Günlük kayıp %${dp.toFixed(2)} — risk ¼`,
+        label: "🟠 Restricted",
+        reason: `Daily loss %${dp.toFixed(2)} — risk ¼`,
         triggeredBy: "daily",
       };
     }
@@ -145,7 +145,7 @@ export function computeEquityCurveDecision(
         multiplier: 0.5,
         minScore: 80,
         label: "🟡 Dikkat",
-        reason: `Günlük kayıp %${dp.toFixed(2)} — risk ½`,
+        reason: `Daily loss %${dp.toFixed(2)} — risk ½`,
         triggeredBy: "daily",
       };
     }
@@ -156,7 +156,7 @@ export function computeEquityCurveDecision(
     multiplier: 1.0,
     minScore: 80,
     label: "🟢 Normal",
-    reason: "Drawdown sınırları içinde",
+    reason: "Within drawdown limits",
     triggeredBy: null,
   };
 }

@@ -51,9 +51,9 @@ export function useConsecutiveLossAlert(): void {
         alertedAt.current.add(threshold);
         const msg =
           threshold >= 5
-            ? `🛑 ${streak} ardışık zarar — Bugün işlemi durdur`
-            : `⚠️ ${streak} ardışık zarar — Stratejiyi gözden geçir`;
-        browserNotify("Ardışık Zarar Alarmı", msg);
+            ? `🛑 ${streak} consecutive losses — Stop trading today`
+            : `⚠️ ${streak} consecutive losses — Review your strategy`;
+        browserNotify("Consecutive Loss Alert", msg);
         sendLossAlert(streak, threshold).catch(() => {});
         break; // only fire the highest applicable threshold at once
       }
@@ -69,11 +69,11 @@ export function useConsecutiveLossAlert(): void {
 async function sendLossAlert(streak: number, threshold: number): Promise<void> {
   const credState = useCredentialStore.getState();
 
-  const severity = threshold >= 5 ? "DURDUR" : "UYARI";
+  const severity = threshold >= 5 ? "STOP" : "WARNING";
   const reasonText =
     threshold >= 5
-      ? `${streak} ardışık zarar — Bugün işlemi durdur, sistemi sıfırla`
-      : `${streak} ardışık zarar — Stratejiyi ve psikolojiyi gözden geçir`;
+      ? `${streak} consecutive losses — Stop trading today, reset the system`
+      : `${streak} consecutive losses — Review your strategy and mindset`;
 
   const body: Record<string, unknown> = {
     msg: {

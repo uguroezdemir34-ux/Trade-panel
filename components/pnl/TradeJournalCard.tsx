@@ -6,7 +6,7 @@ import { useTradeNotesStore } from "@/lib/store/tradeNotesStore";
 import { useT } from "@/lib/i18n/context";
 import type { TradeSnapshot } from "@/lib/trades/types";
 
-const PRESET_TAGS = ["#plan", "#fomo", "#disiplin", "#mükemmel", "#hata", "#sabır"];
+const PRESET_TAGS = ["#plan", "#fomo", "#discipline", "#perfect", "#mistake", "#patience"];
 
 const PAGE_SIZE = 10;
 

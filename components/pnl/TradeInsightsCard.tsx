@@ -51,7 +51,7 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
     if (wr >= 0.55) {
       insights.push({
         icon: "🏆",
-        text: `${bestPair} en iyi pariteniz — ${pct(wr)} kazanma oranı (${best.total} işlem)`,
+        text: `${bestPair} is your best pair — ${pct(wr)} win rate (${best.total} trades)`,
         color: "text-green-400",
       });
     }
@@ -61,7 +61,7 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
       if (wr2 <= 0.40) {
         insights.push({
           icon: "⚠",
-          text: `${worstPair} zor parite — ${pct(wr2)} kazanma oranı (${worst.total} işlem). Lotunuzu azaltın.`,
+          text: `${worstPair} is a difficult pair — ${pct(wr2)} win rate (${worst.total} trades). Consider reducing size.`,
           color: "text-amber-400",
         });
       }
@@ -92,7 +92,7 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
     const endH = (bestWindowStart + 3) % 24;
     insights.push({
       icon: "⏰",
-      text: `En iyi saat aralığınız ${bestWindowStart}:00-${endH}:00 UTC — ${pct(bestWindowWr)} kazanma oranı`,
+      text: `Your best time window is ${bestWindowStart}:00-${endH}:00 UTC — ${pct(bestWindowWr)} win rate`,
       color: "text-blue-400",
     });
   }
@@ -110,7 +110,7 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
       const worseWr = Math.min(longWr, shortWr);
       insights.push({
         icon: better === "LONG" ? "▲" : "▼",
-        text: `${better} işlemleriniz daha güçlü: ${pct(betterWr)} vs ${pct(worseWr)} (${better === "LONG" ? "SHORT" : "LONG"})`,
+        text: `Your ${better} trades are stronger: ${pct(betterWr)} vs ${pct(worseWr)} (${better === "LONG" ? "SHORT" : "LONG"})`,
         color: better === "LONG" ? "text-green-400" : "text-red-400",
       });
     }
@@ -134,7 +134,7 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
   if (bestBucket && bestBucketAvgR > 0.3) {
     insights.push({
       icon: "🎯",
-      text: `Skor ${bestBucket} aralığı en verimli — ortalama +${bestBucketAvgR.toFixed(2)}R (${buckets[bestBucket].length} işlem)`,
+      text: `Score range ${bestBucket} is most efficient — avg +${bestBucketAvgR.toFixed(2)}R (${buckets[bestBucket].length} trades)`,
       color: "text-purple-400",
     });
   }

@@ -45,10 +45,10 @@ export function usePriceAlarms(): void {
       if (triggered) {
         notified.current.add(alarm.id);
         markTriggered(alarm.id);
-        const condStr = alarm.condition === "above" ? "▲ üzerine çıktı" : "▼ altına indi";
+        const condStr = alarm.condition === "above" ? "▲ crossed above" : "▼ dropped below";
         if (audioEnabled) playPriceAlert();
         browserNotify(
-          `🔔 ${alarm.pair} Fiyat Alarmı`,
+          `🔔 ${alarm.pair} Price Alarm`,
           `${alarm.label ? alarm.label + " — " : ""}${alarm.targetPrice.toLocaleString()} ${condStr}`,
         );
         sendAlarmNotification(alarm.pair as Pair, alarm.targetPrice, alarm.condition, currentPrice, alarm.label).catch(() => {
@@ -70,8 +70,8 @@ async function sendAlarmNotification(
 
   const conditionText =
     condition === "above"
-      ? `▲ ${targetPrice.toLocaleString()} üzerine çıktı`
-      : `▼ ${targetPrice.toLocaleString()} altına indi`;
+      ? `▲ ${targetPrice.toLocaleString()} crossed above`
+      : `▼ ${targetPrice.toLocaleString()} dropped below`;
 
   const reasonText = label ? `${label} — ${conditionText}` : conditionText;
 

@@ -62,13 +62,13 @@ export function checkVolBreakoutOverride(
   if (isLong && last4hMovePct >= 2.0 && trend4hUp) {
     return {
       active: true,
-      reason: `📊 Hacim patlaması (${volRatio.toFixed(2)}x) + 4H +${last4hMovePct.toFixed(2)}% · BB hard iptal`,
+      reason: `📊 Volume surge (${volRatio.toFixed(2)}x) + 4H +${last4hMovePct.toFixed(2)}% · BB hard block cancelled`,
     };
   }
   if (isShort && last4hMovePct <= -2.0 && trend4hDown) {
     return {
       active: true,
-      reason: `📊 Hacim patlaması (${volRatio.toFixed(2)}x) + 4H ${last4hMovePct.toFixed(2)}% · BB hard iptal`,
+      reason: `📊 Volume surge (${volRatio.toFixed(2)}x) + 4H ${last4hMovePct.toFixed(2)}% · BB hard block cancelled`,
     };
   }
   return { active: false, reason: null };
@@ -124,23 +124,23 @@ export function checkOverextended(input: OverextendedInput): string | null {
   }
 
   if (flags.length >= 2) {
-    return `⚠️ Aşırı uzanmış: ${flags.join(", ")} — geri çekilme bekle`;
+    return `⚠️ Over-extended: ${flags.join(", ")} — wait for pullback`;
   }
   return null;
 }
 
 export function checkNeutralDirection(direction: Direction): string | null {
-  return direction === "NEUTRAL" ? "Yön belirsiz" : null;
+  return direction === "NEUTRAL" ? "Direction unclear" : null;
 }
 
 export function checkCounterTrend(counterTrend: boolean): string | null {
-  return counterTrend ? "🚫 Counter-trend (4H ana trende karşı)" : null;
+  return counterTrend ? "🚫 Counter-trend (against 4H main trend)" : null;
 }
 
 export function checkAdxWeakOrTired(adx: number | null): string | null {
   if (adx === null) return null;
-  if (adx < 20) return `ADX zayıf (${adx.toFixed(0)})`;
-  if (adx > 50) return `ADX yorgun (${adx.toFixed(0)})`;
+  if (adx < 20) return `ADX weak (${adx.toFixed(0)})`;
+  if (adx > 50) return `ADX tired (${adx.toFixed(0)})`;
   return null;
 }
 
@@ -166,10 +166,10 @@ export function checkRsiExtreme(input: RsiExtremeInput): string | null {
   const lowerHard = regimeRelax && isShort ? 20 : 25;
 
   if (rsi > upperHard) {
-    return `RSI aşırı alım (${rsi.toFixed(0)}${regimeRelax && isLong ? ", regime relax ile" : ""})`;
+    return `RSI overbought (${rsi.toFixed(0)}${regimeRelax && isLong ? ", regime relaxed)" : ""})`;
   }
   if (rsi < lowerHard) {
-    return `RSI aşırı satım (${rsi.toFixed(0)}${regimeRelax && isShort ? ", regime relax ile" : ""})`;
+    return `RSI oversold (${rsi.toFixed(0)}${regimeRelax && isShort ? ", regime relaxed)" : ""})`;
   }
   return null;
 }
@@ -185,8 +185,8 @@ export function checkBbOutOfBand(
   const out: string[] = [];
   if (volBreakoutActive) return out;
   if (bbPct === null) return out;
-  if (bbPct > 0.97) out.push("BB üst dışı");
-  if (bbPct < 0.03) out.push("BB alt dışı");
+  if (bbPct > 0.97) out.push("BB above upper");
+  if (bbPct < 0.03) out.push("BB below lower");
   return out;
 }
 
@@ -197,7 +197,7 @@ export function checkVwapExtreme(
   if (vwap === null || vwap.stddev <= 0) return null;
   const distSigma = Math.abs(px - vwap.vwap) / vwap.stddev;
   if (distSigma > 2.0) {
-    return `VWAP ${px > vwap.vwap ? "+" : "-"}${distSigma.toFixed(1)}σ (aşırı uzak)`;
+    return `VWAP ${px > vwap.vwap ? "+" : "-"}${distSigma.toFixed(1)}σ (extreme distance)`;
   }
   return null;
 }
@@ -205,14 +205,14 @@ export function checkVwapExtreme(
 export function checkVolumeLow(volRatio: number | null): string | null {
   if (volRatio === null) return null;
   return volRatio < 0.7
-    ? `Hacim çok düşük (${volRatio.toFixed(2)}x) - teyitsiz`
+    ? `Volume very low (${volRatio.toFixed(2)}x) - unconfirmed`
     : null;
 }
 
 export function checkFundingExtreme(fundingRate: number | null): string | null {
   if (fundingRate === null) return null;
   const fr = fundingRate * 100;
-  return Math.abs(fr) > 0.06 ? `Funding aşırı (${fr.toFixed(3)}%)` : null;
+  return Math.abs(fr) > 0.06 ? `Funding extreme (${fr.toFixed(3)}%)` : null;
 }
 
 export interface TimeQualityInput {
@@ -239,7 +239,7 @@ export function checkEventSkip(input: EventSkipInput): string | null {
     remainMin >= 60
       ? `${Math.floor(remainMin / 60)}sa ${remainMin % 60}dk`
       : `${remainMin}dk`;
-  return `📅 Event skip aktif (${remainTxt} kaldı)`;
+  return `📅 Event skip active (${remainTxt} remaining)`;
 }
 
 export interface BtcCooldownInput {
@@ -261,7 +261,7 @@ export function checkBtcCooldown(input: BtcCooldownInput): string | null {
   if (!btcCooldownUntil || now >= btcCooldownUntil) return null;
   const remainMin = Math.ceil((btcCooldownUntil - now) / 60000);
   const reasonText = btcCooldownReason ? ` (${btcCooldownReason})` : "";
-  return `🚨 BTC korelasyon ${remainMin}dk soğuma${reasonText}`;
+  return `🚨 BTC correlation ${remainMin}m cooldown${reasonText}`;
 }
 
 export interface BtcSelfCooldownInput {
@@ -283,7 +283,7 @@ export function checkBtcSelfCooldown(
   if (!btcSelfCooldownUntil || now >= btcSelfCooldownUntil) return null;
   const remainMin = Math.ceil((btcSelfCooldownUntil - now) / 60000);
   const reasonText = btcCooldownReason ? ` (${btcCooldownReason})` : "";
-  return `🚨 BTC kendi spike sonrası ${remainMin}dk soğuma${reasonText}`;
+  return `🚨 BTC post-spike ${remainMin}m cooldown${reasonText}`;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -304,10 +304,10 @@ export function checkDailyTrendOpposite(input: DailyTrendInput): string | null {
   const { direction, px, ema50_1d } = input;
   if (ema50_1d === null) return null;
   if (direction === "LONG" && px < ema50_1d) {
-    return `📅 Daily trend ters: px ${px.toFixed(2)} < EMA50_1D ${ema50_1d.toFixed(2)}`;
+    return `📅 Daily trend opposite: px ${px.toFixed(2)} < EMA50_1D ${ema50_1d.toFixed(2)}`;
   }
   if (direction === "SHORT" && px > ema50_1d) {
-    return `📅 Daily trend ters: px ${px.toFixed(2)} > EMA50_1D ${ema50_1d.toFixed(2)}`;
+    return `📅 Daily trend opposite: px ${px.toFixed(2)} > EMA50_1D ${ema50_1d.toFixed(2)}`;
   }
   return null;
 }
@@ -330,10 +330,10 @@ export function checkFundingCrowded(
   if (absFr < 0.04 || absFr > 0.06) return null;
 
   if (isLong && fr > 0) {
-    return `💰 Funding +${fr.toFixed(3)}% — LONG kalabalık, üstüne binme`;
+    return `💰 Funding +${fr.toFixed(3)}% — LONG crowded, avoid piling in`;
   }
   if (isShort && fr < 0) {
-    return `💰 Funding ${fr.toFixed(3)}% — SHORT kalabalık, üstüne binme`;
+    return `💰 Funding ${fr.toFixed(3)}% — SHORT crowded, avoid piling in`;
   }
   return null;
 }
@@ -361,7 +361,7 @@ export function checkLockReleaseRamp(input: LockRampInput): {
   const hoursSince = (elapsed / 3600000).toFixed(1);
   return {
     active: true,
-    message: `🔓 Kilit kalkalı ${hoursSince}sa — ilk trade için kalite eşiği yükseldi`,
+    message: `🔓 Lock released ${hoursSince}h ago — quality threshold elevated for first trade`,
   };
 }
 
@@ -423,26 +423,26 @@ export function checkAtrRegime(input: AtrRegimeInput): {
     return {
       adj: -3,
       softBlock: null,
-      reason: `🟢 ATR %${p} — compression (sakin) · eşik -3`,
+      reason: `🟢 ATR %${p} — compression (quiet) · threshold -3`,
     };
   }
   if (p > 95) {
     return {
       adj: 5,
-      softBlock: `⚡ Volatilite extreme (ATR %${p}) — geniş wick riski yüksek`,
-      reason: `🔴 ATR %${p} — extreme expansion (kaos) · eşik +5`,
+      softBlock: `⚡ Volatility extreme (ATR %${p}) — wide wick risk high`,
+      reason: `🔴 ATR %${p} — extreme expansion (chaos) · threshold +5`,
     };
   }
   if (p > 80) {
     return {
       adj: 5,
       softBlock: null,
-      reason: `🟠 ATR %${p} — expansion (volatil) · eşik +5`,
+      reason: `🟠 ATR %${p} — expansion (volatile) · threshold +5`,
     };
   }
   return {
     adj: 0,
     softBlock: null,
-    reason: `⚪ ATR %${p} — normal rejim`,
+    reason: `⚪ ATR %${p} — normal regime`,
   };
 }

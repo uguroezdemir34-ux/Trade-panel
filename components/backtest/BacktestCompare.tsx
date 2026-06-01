@@ -231,7 +231,7 @@ export function BacktestCompare({
 
       {/* ── Config row ── */}
       <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-2 border-b border-border/40 pb-2">
-        <span className="text-text-t4 font-mono text-2xs tracking-wider">Pair · Dönem · FG</span>
+        <span className="text-text-t4 font-mono text-2xs tracking-wider">Pair · Period · FG</span>
         <span className="text-text-t3 font-mono text-2xs tabular-nums w-16 text-right">
           {resultA.pair} {resultA.dataMonths}mo {configA.frozenFg}fg
         </span>

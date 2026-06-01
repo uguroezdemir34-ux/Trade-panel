@@ -40,12 +40,12 @@ export interface ExposurePosition {
 
 export interface ExposureConfig {
   /**
-   * Tüm pozisyonların kümülatif margin toplamının net equity'ye oranı.
+   * Tüm pozisyonların kümülatif margin totalının net equity'ye oranı.
    * 0.25 = %25 (varsayılan). Aşılırsa yeni pozisyon kısılır/bloke edilir.
    */
   totalCapPct: number;
   /**
-   * Tek yön (LONG veya SHORT) kümülatif margin toplamının net equity oranı.
+   * Tek yön (LONG veya SHORT) kümülatif margin totalının net equity oranı.
    * 0.20 = %20 (varsayılan).
    */
   directionalCapPct: number;
@@ -97,7 +97,7 @@ export interface ExposureCheckResult {
 // ─── Yardımcı hesaplar ────────────────────────────────────────
 
 /**
- * Tüm açık/bekleyen pozisyonların toplam margin.
+ * Tüm açık/bekleyen pozisyonların total margin.
  */
 export function computeTotalMargin(
   positions: readonly ExposurePosition[],
@@ -112,7 +112,7 @@ export function computeTotalMargin(
 }
 
 /**
- * Belirli yöndeki toplam margin.
+ * Belirli yöndeki total margin.
  */
 export function computeDirectionalMargin(
   positions: readonly ExposurePosition[],
@@ -176,7 +176,7 @@ export function checkExposure(
       verdict: "blocked",
       allowedMarginUsd: 0,
       scaleFactor: 0,
-      reason: "Geçersiz talep: margin ≤ 0",
+      reason: "Invalid request: margin ≤ 0",
       diagnostics,
     };
   }
@@ -187,7 +187,7 @@ export function checkExposure(
       verdict: "blocked",
       allowedMarginUsd: 0,
       scaleFactor: 0,
-      reason: "Net kasa (equity) sıfır veya negatif — pozisyon açılamaz",
+      reason: "Net equity zero or negative — cannot open position",
       diagnostics,
     };
   }
@@ -195,14 +195,14 @@ export function checkExposure(
   // Limit aşılmış → bloke
   if (rawAllowedUsd <= 0) {
     const which =
-      totalRoomUsd <= 0 ? "toplam exposure cap" : "yönsel exposure cap";
+      totalRoomUsd <= 0 ? "total exposure cap" : "directional exposure cap";
     return {
       verdict: "blocked",
       allowedMarginUsd: 0,
       scaleFactor: 0,
       reason:
         `${which} dolu: mevcut ${direction} marjin=$${currentDirectionalMarginUsd.toFixed(2)}, ` +
-        `toplam marjin=$${currentTotalMarginUsd.toFixed(2)}, ` +
+        `total marjin=$${currentTotalMarginUsd.toFixed(2)}, ` +
         `equity=$${equityUsd.toFixed(2)}`,
       diagnostics,
     };
@@ -225,21 +225,21 @@ export function checkExposure(
   if (rawAllowedUsd < config.minMarginUsd) {
     // Kısma sonucu min eşiğin altında → bloke
     const which =
-      directionalRoomUsd < totalRoomUsd ? "yönsel" : "toplam";
+      directionalRoomUsd < totalRoomUsd ? "directional" : "total";
     return {
       verdict: "blocked",
       allowedMarginUsd: 0,
       scaleFactor: 0,
       reason:
-        `ScaleDown sonrası marjin ($${rawAllowedUsd.toFixed(2)}) ` +
-        `minimum eşiğin ($${config.minMarginUsd}) altında. ` +
-        `${which} cap sınırı aşıldı.`,
+        `Post-ScaleDown margin ($${rawAllowedUsd.toFixed(2)}) ` +
+        `below minimum threshold ($${config.minMarginUsd}). ` +
+        `${which} cap exceeded.`,
       diagnostics,
     };
   }
 
   const which =
-    directionalRoomUsd < totalRoomUsd ? "yönsel exposure cap" : "toplam exposure cap";
+    directionalRoomUsd < totalRoomUsd ? "directional exposure cap" : "total exposure cap";
   return {
     verdict: "scaled_down",
     allowedMarginUsd: rawAllowedUsd,

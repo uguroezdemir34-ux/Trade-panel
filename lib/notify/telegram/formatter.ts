@@ -51,7 +51,7 @@ export function formatNotifyMessage(msg: NotifyMessage): string {
 
 function formatTradeOpened(msg: NotifyMessage): string {
   const lines: string[] = [];
-  lines.push("🚨 " + bold("QUANTIX SİNYALİ"));
+  lines.push("🚨 " + bold("QUANTIX SIGNAL"));
   lines.push("");
 
   // Pair + Direction
@@ -94,7 +94,7 @@ function formatTradeOpened(msg: NotifyMessage): string {
 
   // Skor
   if (msg.score !== undefined) {
-    lines.push(`📊 Skor: ${bold(msg.score + "/100")}`);
+    lines.push(`📊 Score: ${bold(msg.score + "/100")}`);
   }
 
   // Sebep
@@ -120,7 +120,7 @@ function formatTradeOpened(msg: NotifyMessage): string {
 
 function formatTradeClosed(msg: NotifyMessage): string {
   const lines: string[] = [];
-  lines.push("✅ " + bold("POZİSYON KAPANDI"));
+  lines.push("✅ " + bold("POSITION CLOSED"));
   lines.push("");
   lines.push(bold(msg.pair ?? '—') + (msg.direction ? " " + escapeMarkdownV2(msg.direction) : ""));
 
@@ -138,7 +138,7 @@ function formatTradeClosed(msg: NotifyMessage): string {
 
 function formatSlHit(msg: NotifyMessage): string {
   const lines: string[] = [];
-  lines.push("🛑 " + bold("STOP-LOSS TETİKLENDİ"));
+  lines.push("🛑 " + bold("STOP-LOSS TRIGGERED"));
   lines.push("");
   lines.push(bold(msg.pair ?? '—'));
   if (msg.pnl !== undefined) {
@@ -154,7 +154,7 @@ function formatSlHit(msg: NotifyMessage): string {
 
 function formatTpHit(msg: NotifyMessage): string {
   const lines: string[] = [];
-  lines.push("🎯 " + bold("TAKE-PROFIT TETİKLENDİ"));
+  lines.push("🎯 " + bold("TAKE-PROFIT TRIGGERED"));
   lines.push("");
   lines.push(bold(msg.pair ?? '—'));
   if (msg.pnl !== undefined) {
@@ -170,7 +170,7 @@ function formatTpHit(msg: NotifyMessage): string {
 
 function formatLockTriggered(msg: NotifyMessage): string {
   const lines: string[] = [];
-  lines.push("⛔ " + bold("DİSİPLİN KİLİDİ"));
+  lines.push("⛔ " + bold("DISCIPLINE LOCK"));
   lines.push("");
   if (msg.reasonText) {
     lines.push(escapeMarkdownV2(msg.reasonText));
@@ -182,12 +182,12 @@ function formatLockTriggered(msg: NotifyMessage): string {
 
 function formatGoSignal(msg: NotifyMessage): string {
   const lines: string[] = [];
-  lines.push("⚡ " + bold("QUANTIX GO SİNYALİ"));
+  lines.push("⚡ " + bold("QUANTIX GO SIGNAL"));
   lines.push("");
   const dir = msg.direction === "LONG" ? "▲ LONG" : msg.direction === "SHORT" ? "▼ SHORT" : "";
   lines.push(`${bold(msg.pair ?? '—')}${dir ? " " + escapeMarkdownV2(dir) : ""}`);
   if (msg.score !== undefined) {
-    lines.push(escapeMarkdownV2(`Skor: ${msg.score}`));
+    lines.push(escapeMarkdownV2(`Score: ${msg.score}`));
   }
   if (msg.reasonText) {
     lines.push("");
@@ -200,13 +200,13 @@ function formatGoSignal(msg: NotifyMessage): string {
 
 function formatPriceAlarm(msg: NotifyMessage): string {
   const lines: string[] = [];
-  lines.push("🔔 " + bold("FİYAT ALARMI"));
+  lines.push("🔔 " + bold("PRICE ALARM"));
   lines.push("");
   const conditionText = msg.reasonText ?? "";
   const priceStr = msg.entry !== undefined ? formatUsdMd2(msg.entry) : "—";
   const targetStr = msg.tp1 !== undefined ? formatUsdMd2(msg.tp1) : "—";
   lines.push(`${bold(msg.pair ?? '—')} ${escapeMarkdownV2(conditionText)}`);
-  lines.push(`Hedef: ${targetStr} → Mevcut: ${priceStr}`);
+  lines.push(`Target: ${targetStr} → Current: ${priceStr}`);
   if (msg.timestamp !== undefined) {
     const date = new Date(msg.timestamp);
     const timeStr = `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;
@@ -219,12 +219,12 @@ function formatPriceAlarm(msg: NotifyMessage): string {
 
 function formatScoreMomentum(msg: NotifyMessage): string {
   const lines: string[] = [];
-  lines.push("📈 " + bold("SKOR MOMENTUMU"));
+  lines.push("📈 " + bold("SCORE MOMENTUM"));
   lines.push("");
   const dirEmoji = msg.direction === "LONG" ? "▲" : msg.direction === "SHORT" ? "▼" : "◆";
   const riseStr = msg.rise !== undefined ? `\\+${msg.rise}` : "";
-  lines.push(`${dirEmoji} ${bold(msg.pair ?? '—')} — Skor: ${bold(String(msg.score ?? "—"))} ${escapeMarkdownV2(riseStr)}`);
-  lines.push(escapeMarkdownV2("GO eşiğine yaklaşıyor — izlemede tut"));
+  lines.push(`${dirEmoji} ${bold(msg.pair ?? '—')} — Score: ${bold(String(msg.score ?? "—"))} ${escapeMarkdownV2(riseStr)}`);
+  lines.push(escapeMarkdownV2("Approaching GO threshold — watch it"));
   if (msg.timestamp !== undefined) {
     const date = new Date(msg.timestamp);
     const timeStr = `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;
@@ -238,9 +238,9 @@ function formatScoreMomentum(msg: NotifyMessage): string {
 function formatConsecutiveLoss(msg: NotifyMessage): string {
   const lines: string[] = [];
   const isCritical = (msg.streak ?? 0) >= 5;
-  lines.push((isCritical ? "🛑" : "⚠️") + " " + bold("ARDIŞIK ZARAR ALARMI"));
+  lines.push((isCritical ? "🛑" : "⚠️") + " " + bold("CONSECUTIVE LOSS ALERT"));
   lines.push("");
-  lines.push(escapeMarkdownV2(`${msg.streak ?? "?"} ardışık zarar tespit edildi`));
+  lines.push(escapeMarkdownV2(`${msg.streak ?? "?"} consecutive losses detected`));
   lines.push("");
   if (msg.reasonText) {
     lines.push(escapeMarkdownV2(msg.reasonText));
@@ -259,7 +259,7 @@ function formatTest(_msg: NotifyMessage): string {
   return (
     bold("QUANTIX Telegram Test") +
     "\n\n" +
-    escapeMarkdownV2("Bot bağlantısı çalışıyor ✓")
+    escapeMarkdownV2("Bot connection working ✓")
   );
 }
 
