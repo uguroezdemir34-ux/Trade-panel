@@ -23,6 +23,8 @@ export function emptyPnlStats(): PnlStats {
     grossLoss: 0,
     profitFactor: null,
     maxDrawdownUsd: 0,
+    sharpe: null,
+    sortino: null,
     bestDay: null,
     worstDay: null,
   };
@@ -81,6 +83,19 @@ export function computePnlStats(
   // Max drawdown (peak-to-trough)
   const maxDrawdownUsd = computeMaxDrawdown(trades);
 
+  // Sharpe + Sortino (R-multiple based, matches backtest engine)
+  let sharpe: number | null = null;
+  let sortino: number | null = null;
+  const rValues = trades.filter((t) => typeof t.rMultiple === "number").map((t) => t.rMultiple!);
+  if (rValues.length >= 5) {
+    const rMean = rValues.reduce((s, r) => s + r, 0) / rValues.length;
+    const rVar = rValues.reduce((s, r) => s + (r - rMean) ** 2, 0) / rValues.length;
+    const rStd = Math.sqrt(rVar);
+    if (rStd > 0) sharpe = rMean / rStd;
+    const downVar = rValues.filter((r) => r < 0).reduce((s, r) => s + r ** 2, 0) / rValues.length;
+    if (downVar > 0) sortino = rMean / Math.sqrt(downVar);
+  }
+
   // Best/worst day
   const dailyAggs = computeDailyAggregates(trades, tzOffsetMin);
   let bestDay: DailyAggregate | null = null;
@@ -102,6 +117,8 @@ export function computePnlStats(
     grossLoss,
     profitFactor,
     maxDrawdownUsd,
+    sharpe,
+    sortino,
     bestDay,
     worstDay,
   };

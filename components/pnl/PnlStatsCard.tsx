@@ -88,6 +88,22 @@ export function PnlStatsCard({ stats }: Props): React.ReactElement {
         />
       </div>
 
+      {/* Sharpe + Sortino row */}
+      {(stats.sharpe !== null || stats.sortino !== null) && (
+        <div className="mb-3 grid grid-cols-2 gap-2">
+          <Stat
+            label="Sharpe"
+            value={stats.sharpe === null ? "—" : stats.sharpe.toFixed(2)}
+            sub={stats.sharpe !== null ? (stats.sharpe >= 1 ? "good" : stats.sharpe >= 0 ? "ok" : "poor") : undefined}
+          />
+          <Stat
+            label="Sortino"
+            value={stats.sortino === null ? "—" : stats.sortino.toFixed(2)}
+            sub={stats.sortino !== null ? (stats.sortino >= 1.5 ? "good" : stats.sortino >= 0 ? "ok" : "poor") : undefined}
+          />
+        </div>
+      )}
+
       {/* Gross profit/loss */}
       <div className="text-text-t3 grid grid-cols-2 gap-2 font-mono text-2xs tracking-wider">
         <div>
