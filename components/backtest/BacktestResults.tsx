@@ -116,6 +116,20 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
 
   const riskRatios = { sharpe: stats.sharpe, sortino: stats.sortino };
 
+  const kellyEv = useMemo(() => {
+    const wins = trades.filter((t) => t.rMultiple > 0);
+    const losses = trades.filter((t) => t.rMultiple <= 0);
+    if (wins.length === 0 || losses.length === 0) return null;
+    const avgWin = wins.reduce((s, t) => s + t.rMultiple, 0) / wins.length;
+    const avgLoss = Math.abs(losses.reduce((s, t) => s + t.rMultiple, 0) / losses.length);
+    const wr = wins.length / trades.length;
+    const lr = 1 - wr;
+    const payoff = avgWin / avgLoss;
+    const kelly = wr - lr / payoff;
+    const ev = wr * avgWin - lr * avgLoss;
+    return { kelly: Math.max(0, kelly), ev, avgWin, avgLoss, payoff };
+  }, [trades]);
+
   return (
     <div className="flex flex-col gap-4">
       {/* ── Header ── */}
@@ -174,6 +188,24 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
             <Stat label="Sortino"
               value={riskRatios.sortino.toFixed(2)}
               color={riskRatios.sortino > 1 ? "text-green-400" : riskRatios.sortino > 0 ? "text-yellow-400" : "text-red-400"} />
+          )}
+          {kellyEv && (
+            <Stat label="EV/Trade"
+              value={`${kellyEv.ev > 0 ? "+" : ""}${kellyEv.ev.toFixed(3)}R`}
+              color={kellyEv.ev > 0 ? "text-green-400" : "text-red-400"}
+              hint="wr×avgW − lr×avgL" />
+          )}
+          {kellyEv && (
+            <Stat label="Kelly %"
+              value={`${(kellyEv.kelly * 100).toFixed(1)}%`}
+              color={kellyEv.kelly > 0.15 ? "text-green-400" : kellyEv.kelly > 0 ? "text-yellow-400" : "text-red-400"}
+              hint="optimal risk fraction" />
+          )}
+          {kellyEv && (
+            <Stat label="Payoff"
+              value={`${kellyEv.payoff.toFixed(2)}×`}
+              color={kellyEv.payoff >= 1.5 ? "text-green-400" : kellyEv.payoff >= 1 ? "text-yellow-400" : "text-red-400"}
+              hint={`${kellyEv.avgWin.toFixed(2)}R / ${kellyEv.avgLoss.toFixed(2)}R`} />
           )}
         </div>
 
