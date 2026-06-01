@@ -1,10 +1,12 @@
 "use client";
 
 /**
- * TRADE CONFIRM MODAL — Pozisyon açmadan önce son onay.
+ * TRADE CONFIRM MODAL — Pozisyon açmadan önce son onay + mental checklist.
+ *
+ * Tüm mental kontroller işaretlenmeden "Onayla" butonu aktif olmaz.
  */
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { formatPrice, formatCoinAmount, formatPercent } from "@/lib/i18n/format";
 import type { PositionSizerResult } from "@/lib/sizer/types";
@@ -22,6 +24,15 @@ export function TradeConfirmModal({
   const locale = useLocale();
   const isLong = result.direction === "LONG";
   const dirCls = isLong ? "text-signal-green" : "text-signal-red";
+
+  const CHECKLIST = [
+    `GO sinyaline göre işlem alıyorum — FOMO değil`,
+    `${formatPrice(result.risk.riskUsd, locale)} risk kaybedebileceğimi kabul ediyorum`,
+    `Duygusal olarak dengeliyim — intikam ticareti yapmıyorum`,
+    `Sisteme güveniyorum, planı uyguluyorum`,
+  ];
+  const [checked, setChecked] = useState<boolean[]>(() => new Array(CHECKLIST.length).fill(false));
+  const allChecked = checked.every(Boolean);
 
   // Esc tuşu ile kapat
   useEffect(() => {
@@ -99,11 +110,32 @@ export function TradeConfirmModal({
           />
         </div>
 
-        {/* Disclaimers */}
-        <div className="text-text-t3 mt-4 space-y-1 text-2xs leading-relaxed">
-          <p>{t("confirm.disclaimer1")}</p>
-          <p>{t("confirm.disclaimer2")}</p>
-          <p>{t("confirm.disclaimer3", { pct: (result.risk.riskPct * 100).toFixed(2) })}</p>
+        {/* Mental Checklist */}
+        <div className="border-border mt-4 border-t pt-3">
+          <div className="text-text-t4 mb-2 font-mono text-2xs tracking-widest uppercase">
+            Mental Kontrol
+          </div>
+          <div className="flex flex-col gap-2">
+            {CHECKLIST.map((item, i) => (
+              <label key={i} className="flex items-start gap-2 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={checked[i]}
+                  onChange={() => {
+                    const next = [...checked];
+                    next[i] = !next[i];
+                    setChecked(next);
+                  }}
+                  className="mt-0.5 shrink-0 accent-current"
+                />
+                <span className={`font-mono text-2xs leading-relaxed transition-colors ${
+                  checked[i] ? "text-text-t2 line-through opacity-60" : "text-text-t3"
+                }`}>
+                  {item}
+                </span>
+              </label>
+            ))}
+          </div>
         </div>
 
         {/* Butonlar */}
@@ -118,11 +150,14 @@ export function TradeConfirmModal({
           <button
             type="button"
             onClick={onConfirm}
-            className={`flex-1 rounded-md py-2 font-mono text-sm font-bold tracking-wider transition-colors ${
-              isLong ? "bg-signal-green" : "bg-signal-red"
-            } text-bg hover:opacity-90`}
+            disabled={!allChecked}
+            className={`flex-1 rounded-md py-2 font-mono text-sm font-bold tracking-wider transition-all ${
+              allChecked
+                ? `${isLong ? "bg-signal-green" : "bg-signal-red"} text-bg hover:opacity-90`
+                : "bg-border text-text-t4 cursor-not-allowed opacity-60"
+            }`}
           >
-            {t("confirm.confirm")}
+            {allChecked ? t("confirm.confirm") : `✓ ${CHECKLIST.length - checked.filter(Boolean).length} kaldı`}
           </button>
         </div>
       </div>
