@@ -32,6 +32,7 @@ export type NotifyKind =
   | "lock_triggered"
   | "go_signal"
   | "price_alarm"
+  | "score_momentum"
   | "test"; // health check
 
 /**
@@ -49,6 +50,8 @@ export interface NotifyMessage {
   reasonText?: string;
   /** Skor 0-100 */
   score?: number;
+  /** Skor artışı (momentum alert için) */
+  rise?: number;
   /** Ek bilgi (PnL kapanışta vb.) */
   pnl?: number;
   pnlPct?: number;

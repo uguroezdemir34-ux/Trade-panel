@@ -34,6 +34,8 @@ export function formatNotifyMessage(msg: NotifyMessage): string {
       return formatGoSignal(msg);
     case "price_alarm":
       return formatPriceAlarm(msg);
+    case "score_momentum":
+      return formatScoreMomentum(msg);
     case "test":
       return formatTest(msg);
     default: {
@@ -203,6 +205,24 @@ function formatPriceAlarm(msg: NotifyMessage): string {
   const targetStr = msg.tp1 !== undefined ? formatUsdMd2(msg.tp1) : "—";
   lines.push(`${bold(msg.pair)} ${escapeMarkdownV2(conditionText)}`);
   lines.push(`Hedef: ${targetStr} → Mevcut: ${priceStr}`);
+  if (msg.timestamp !== undefined) {
+    const date = new Date(msg.timestamp);
+    const timeStr = `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;
+    lines.push(`⏰ ${escapeMarkdownV2(timeStr)}`);
+  }
+  return lines.join("\n");
+}
+
+// ═══════════════ SCORE MOMENTUM ═══════════════
+
+function formatScoreMomentum(msg: NotifyMessage): string {
+  const lines: string[] = [];
+  lines.push("📈 " + bold("SKOR MOMENTUMU"));
+  lines.push("");
+  const dirEmoji = msg.direction === "LONG" ? "▲" : msg.direction === "SHORT" ? "▼" : "◆";
+  const riseStr = msg.rise !== undefined ? `\\+${msg.rise}` : "";
+  lines.push(`${dirEmoji} ${bold(msg.pair)} — Skor: ${bold(String(msg.score ?? "—"))} ${escapeMarkdownV2(riseStr)}`);
+  lines.push(escapeMarkdownV2("GO eşiğine yaklaşıyor — izlemede tut"));
   if (msg.timestamp !== undefined) {
     const date = new Date(msg.timestamp);
     const timeStr = `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;

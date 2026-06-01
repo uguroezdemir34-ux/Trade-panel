@@ -44,6 +44,7 @@ import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
 import { useSignalFirehose } from "@/lib/hooks/useSignalFirehose";
 import { usePriceAlarms } from "@/lib/hooks/usePriceAlarms";
+import { useScoreMomentumAlerts } from "@/lib/hooks/useScoreMomentumAlerts";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 
 const SPLASH_DATE_KEY = "qx_splash_date";
@@ -101,6 +102,8 @@ export function AppShell({
   useSignalFirehose();
   // Fiyat alarmları — hedef fiyat aşılınca Telegram bildirimi
   usePriceAlarms();
+  // Skor momentum — GO öncesi hızlı yükselişte pre-alert
+  useScoreMomentumAlerts();
 
   useEffect(() => {
     rehydrateSettings();
