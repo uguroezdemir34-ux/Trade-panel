@@ -538,5 +538,8 @@ export const tr: Dictionary = {
     scanningPair: "Şu an taranan",
     scanLeaderboard: "PARİTE SIRALAMASI · Beklenen Değer",
     scanSortHint: "EV'e göre sıralandı (azalan)",
+    restoredBanner: "Önbellekten geri yüklendi",
+    restoredAgo: "önce",
+    clearCache: "Temizle",
   },
 };

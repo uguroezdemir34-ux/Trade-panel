@@ -5,6 +5,7 @@
 import { create } from "zustand";
 import type { BacktestConfig, BacktestResult } from "@/lib/backtest/types";
 import type { Pair } from "@/lib/constants/pairs";
+import { saveBtCache, loadBtCache, clearBtCache } from "@/lib/persistence/backtestCache";
 
 // ── Single-pair run ────────────────────────────────────────────────────────
 
@@ -68,68 +69,124 @@ interface BacktestStoreState {
   setScanError: (msg: string) => void;
   startScan: (config: ScanConfig) => void;
   resetScan: () => void;
+
+  // Shared
+  /** Epoch ms when results were last saved to localStorage. null = not saved yet. */
+  savedAt: number | null;
+  clearCache: () => void;
 }
 
-export const useBacktestStore = create<BacktestStoreState>((set) => ({
-  // Single-pair initial state
-  status: "idle",
-  downloadPct: 0,
-  computePct: 0,
-  currentPair: null,
-  result: null,
-  error: null,
-  config: null,
+export const useBacktestStore = create<BacktestStoreState>((set, get) => {
+  // Hydrate from localStorage on client (deferred so store is fully initialized first)
+  if (typeof window !== "undefined") {
+    setTimeout(() => {
+      const cached = loadBtCache();
+      if (!cached) return;
+      if (cached.type === "single") {
+        set({
+          status: "done",
+          result: cached.result,
+          config: cached.config,
+          savedAt: cached.savedAt,
+        });
+      } else {
+        set({
+          scanStatus: "done",
+          scanRows: cached.scanRows,
+          scanConfig: cached.scanConfig,
+          savedAt: cached.savedAt,
+        });
+      }
+    }, 0);
+  }
 
-  setStatus: (s) => set({ status: s }),
-  setDownloadPct: (pct) => set({ downloadPct: pct }),
-  setComputePct: (pct) => set({ computePct: pct }),
-  setCurrentPair: (pair) => set({ currentPair: pair }),
-  setResult: (result, config) =>
-    set({ status: "done", result, config, error: null, computePct: 1 }),
-  setError: (msg) => set({ status: "error", error: msg }),
-  reset: () =>
-    set({
-      status: "idle",
-      downloadPct: 0,
-      computePct: 0,
-      currentPair: null,
-      result: null,
-      error: null,
-      config: null,
-    }),
+  return {
+    // Single-pair initial state
+    status: "idle",
+    downloadPct: 0,
+    computePct: 0,
+    currentPair: null,
+    result: null,
+    error: null,
+    config: null,
 
-  // Multi-pair scan initial state
-  scanStatus: "idle",
-  scanDone: 0,
-  scanTotal: 0,
-  scanCurrentPair: null,
-  scanRows: [],
-  scanError: null,
-  scanConfig: null,
+    setStatus: (s) => set({ status: s }),
+    setDownloadPct: (pct) => set({ downloadPct: pct }),
+    setComputePct: (pct) => set({ computePct: pct }),
+    setCurrentPair: (pair) => set({ currentPair: pair }),
+    setResult: (result, config) => {
+      const savedAt = Date.now();
+      saveBtCache({ type: "single", result, config, savedAt });
+      set({ status: "done", result, config, error: null, computePct: 1, savedAt });
+    },
+    setError: (msg) => set({ status: "error", error: msg }),
+    reset: () => {
+      clearBtCache();
+      set({
+        status: "idle",
+        downloadPct: 0,
+        computePct: 0,
+        currentPair: null,
+        result: null,
+        error: null,
+        config: null,
+        savedAt: null,
+      });
+    },
 
-  setScanStatus: (s) => set({ scanStatus: s }),
-  setScanProgress: (done, total, current) =>
-    set({ scanDone: done, scanTotal: total, scanCurrentPair: current }),
-  addScanRow: (row) => set((s) => ({ scanRows: [...s.scanRows, row] })),
-  setScanError: (msg) => set({ scanStatus: "error", scanError: msg }),
-  startScan: (config: ScanConfig) =>
-    set({
-      scanStatus: "scanning",
-      scanDone: 0,
-      scanTotal: 0,
-      scanCurrentPair: null,
-      scanRows: [],
-      scanError: null,
-      scanConfig: config,
-    }),
-  resetScan: () =>
-    set({
-      scanStatus: "idle",
-      scanDone: 0,
-      scanTotal: 0,
-      scanCurrentPair: null,
-      scanRows: [],
-      scanError: null,
-      scanConfig: null,
-    }),
-}));
+    // Multi-pair scan initial state
+    scanStatus: "idle",
+    scanDone: 0,
+    scanTotal: 0,
+    scanCurrentPair: null,
+    scanRows: [],
+    scanError: null,
+    scanConfig: null,
+
+    setScanStatus: (s) => {
+      set({ scanStatus: s });
+      if (s === "done") {
+        const { scanRows, scanConfig } = get();
+        if (scanConfig && scanRows.length > 0) {
+          const savedAt = Date.now();
+          saveBtCache({ type: "scan", scanRows, scanConfig, savedAt });
+          set({ savedAt });
+        }
+      }
+    },
+    setScanProgress: (done, total, current) =>
+      set({ scanDone: done, scanTotal: total, scanCurrentPair: current }),
+    addScanRow: (row) => set((s) => ({ scanRows: [...s.scanRows, row] })),
+    setScanError: (msg) => set({ scanStatus: "error", scanError: msg }),
+    startScan: (config: ScanConfig) =>
+      set({
+        scanStatus: "scanning",
+        scanDone: 0,
+        scanTotal: 0,
+        scanCurrentPair: null,
+        scanRows: [],
+        scanError: null,
+        scanConfig: config,
+      }),
+    resetScan: () => {
+      clearBtCache();
+      set({
+        scanStatus: "idle",
+        scanDone: 0,
+        scanTotal: 0,
+        scanCurrentPair: null,
+        scanRows: [],
+        scanError: null,
+        scanConfig: null,
+        savedAt: null,
+      });
+    },
+
+    // Shared
+    savedAt: null,
+    clearCache: () => {
+      clearBtCache();
+      set({ savedAt: null });
+    },
+  };
+});

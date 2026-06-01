@@ -28,6 +28,9 @@ export default function BacktestPage() {
     scanRows,
     scanConfig,
     resetScan,
+    // persistence
+    savedAt,
+    clearCache,
   } = useBacktest();
 
   const isSingleRunning = status === "downloading" || status === "computing";
@@ -68,6 +71,21 @@ export default function BacktestPage() {
           </button>
         )}
       </div>
+
+      {/* Restored-from-cache banner */}
+      {savedAt !== null && !isAnyRunning && (
+        <div className="flex items-center justify-between rounded-lg border border-amber-400/25 bg-amber-400/5 px-3 py-2">
+          <span className="font-mono text-xs text-amber-400/80">
+            📂 {t("backtest.restoredBanner")} · {relativeTime(savedAt)} {t("backtest.restoredAgo")}
+          </span>
+          <button
+            onClick={clearCache}
+            className="font-mono text-xs text-text-t4 hover:text-text-t2 transition-colors"
+          >
+            {t("backtest.clearCache")}
+          </button>
+        </div>
+      )}
 
       {/* Config — visible when idle or only scan is showing */}
       {!isSingleRunning && !showSingleResult && (
@@ -124,6 +142,16 @@ export default function BacktestPage() {
       )}
     </div>
   );
+}
+
+function relativeTime(epochMs: number): string {
+  const diffMs = Date.now() - epochMs;
+  const mins = Math.floor(diffMs / 60_000);
+  if (mins < 1) return "<1m";
+  if (mins < 60) return `${mins}m`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h`;
+  return `${Math.floor(hrs / 24)}d`;
 }
 
 function ProgressBar({

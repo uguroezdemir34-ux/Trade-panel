@@ -536,5 +536,8 @@ export const ar: Dictionary = {
     scanningPair: "Scanning",
     scanLeaderboard: "PAIR LEADERBOARD · Expected Value",
     scanSortHint: "Sorted by EV descending",
+    restoredBanner: "Restored from cache",
+    restoredAgo: "ago",
+    clearCache: "Clear",
   },
 };
