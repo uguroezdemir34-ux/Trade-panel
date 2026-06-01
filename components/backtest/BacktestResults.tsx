@@ -146,6 +146,56 @@ function exitColor(reason: BacktestTrade["exitReason"]): string {
   return "text-text-t4";
 }
 
+// ── Hour-of-day analysis ──────────────────────────────────────────────────────
+
+interface HourBucket {
+  hour: number;
+  count: number;
+  wins: number;
+  totalR: number;
+}
+
+function computeHourBuckets(trades: BacktestTrade[]): HourBucket[] {
+  const map: HourBucket[] = Array.from({ length: 24 }, (_, i) => ({ hour: i, count: 0, wins: 0, totalR: 0 }));
+  for (const t of trades) {
+    const h = new Date(t.entryTs).getUTCHours();
+    map[h].count++;
+    if (t.rMultiple > 0) map[h].wins++;
+    map[h].totalR += t.rMultiple;
+  }
+  return map;
+}
+
+function HourHeatmap({ trades }: { trades: BacktestTrade[] }): React.ReactElement | null {
+  const hours = useMemo(() => computeHourBuckets(trades), [trades]);
+  const maxCount = Math.max(1, ...hours.map((h) => h.count));
+  if (trades.length < 5) return null;
+
+  return (
+    <div>
+      <div className="flex gap-0.5 items-end h-12">
+        {hours.map((h) => {
+          const heightPct = h.count > 0 ? (h.count / maxCount) * 100 : 0;
+          const wr = h.count > 0 ? h.wins / h.count : 0;
+          const color = h.count === 0 ? "bg-border/20" : wr >= 0.6 ? "bg-green-400/70" : wr >= 0.45 ? "bg-yellow-400/60" : "bg-red-400/60";
+          return (
+            <div key={h.hour} className="flex-1 flex flex-col items-center justify-end gap-0.5" title={`${h.hour}:00 UTC — ${h.count}t, ${h.count > 0 ? `${(wr*100).toFixed(0)}%` : "—"}`}>
+              <div className={`w-full rounded-t-sm ${color}`} style={{ height: `${heightPct}%`, minHeight: h.count > 0 ? 2 : 0 }} />
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex justify-between mt-1">
+        <span className="text-text-t4 font-mono text-2xs">00</span>
+        <span className="text-text-t4 font-mono text-2xs">06</span>
+        <span className="text-text-t4 font-mono text-2xs">12</span>
+        <span className="text-text-t4 font-mono text-2xs">18</span>
+        <span className="text-text-t4 font-mono text-2xs">23</span>
+      </div>
+    </div>
+  );
+}
+
 // ── Monthly breakdown helper ──────────────────────────────────────────────────
 
 interface MonthBucket {
@@ -472,6 +522,19 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
               );
             })}
           </div>
+        </div>
+      )}
+
+      {/* ── Hour of Day ── */}
+      {filteredTrades.length >= 5 && (
+        <div className="border-border bg-surface rounded-lg border p-4">
+          <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-3">
+            Entry Hour · UTC{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
+          </h3>
+          <HourHeatmap trades={filteredTrades} />
+          <p className="text-text-t4 font-mono text-2xs mt-2">
+            green ≥60% WR · yellow ≥45% · red &lt;45% · height = trade count
+          </p>
         </div>
       )}
 
