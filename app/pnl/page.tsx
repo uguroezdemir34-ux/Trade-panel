@@ -15,6 +15,7 @@ import { TopTradesCard } from "@/components/pnl/TopTradesCard";
 import { PairBreakdownCard } from "@/components/pnl/PairBreakdownCard";
 import { ExitBreakdownCard } from "@/components/pnl/ExitBreakdownCard";
 import { ScoreHeatmap } from "@/components/pnl/ScoreHeatmap";
+import { HoldingTimeCard } from "@/components/pnl/HoldingTimeCard";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
@@ -136,6 +137,7 @@ export default function PnlPage() {
       <PairBreakdownCard trades={trades} />
       <ExitBreakdownCard trades={trades} />
       <ScoreHeatmap trades={trades} />
+      <HoldingTimeCard trades={trades} />
       <ParameterAudit stats={calibrationStats} />
     </div>
   );
