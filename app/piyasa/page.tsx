@@ -12,6 +12,7 @@ import { FundingAlertBanner } from "@/components/piyasa/FundingAlertBanner";
 import { OiVelocityCard } from "@/components/piyasa/OiVelocityCard";
 import { PriceTable } from "@/components/piyasa/PriceTable";
 import { TopMoversCard } from "@/components/piyasa/TopMoversCard";
+import { VolatilityRankCard } from "@/components/piyasa/VolatilityRankCard";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { MtfTrendResult } from "@/lib/market/mtfTrend";
@@ -71,7 +72,10 @@ export default function PiyasaPage() {
   return (
     <div className="flex flex-col gap-4 p-4">
       <PriceTable />
-      <TopMoversCard />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <TopMoversCard />
+        <VolatilityRankCard />
+      </div>
       <FundingAlertBanner funding={funding} />
       <MarketSummaryBanner summary={marketSummary} />
       <FearGreedGauge info={fgInfo} loading={fgLoading} />
