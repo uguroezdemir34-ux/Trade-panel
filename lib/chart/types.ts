@@ -25,6 +25,13 @@ export interface VolumePoint {
   color: string;
 }
 
+export interface MacdPoint {
+  time: number;
+  hist: number;
+  macd: number;
+  signal: number;
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
@@ -32,5 +39,6 @@ export interface ChartSeries {
   ema200?: LinePoint[];
   volume?: VolumePoint[];
   rsi?: LinePoint[];
+  macdData?: MacdPoint[];
   markers?: ChartMarker[];
 }

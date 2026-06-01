@@ -462,6 +462,7 @@ export const tr: Dictionary = {
     showTrades: "İşlemleri göster",
     showVolume: "Hacim",
     showRsi: "RSI",
+    showMacd: "MACD",
     legend: {
       candleUp: "Yükseliş mumu",
       candleDown: "Düşüş mumu",
@@ -472,6 +473,8 @@ export const tr: Dictionary = {
       tradeShort: "SHORT işlemi",
       volume: "Hacim",
       rsi14: "RSI 14",
+      macdLine: "MACD",
+      macdSignal: "Sinyal",
     },
   },
 

@@ -29,27 +29,41 @@ interface Props {
   height?: number;
 }
 
-const COLOR_UP    = "#22c55e";
-const COLOR_DOWN  = "#ef4444";
-const COLOR_EMA20 = "#3b82f6";
-const COLOR_EMA50 = "#f59e0b";
-const COLOR_EMA200 = "#a855f7";
-const COLOR_RSI   = "#ec4899";
-const COLOR_GRID  = "#e5e5e5";
-const COLOR_TEXT  = "#525252";
+const COLOR_UP       = "#22c55e";
+const COLOR_DOWN     = "#ef4444";
+const COLOR_EMA20    = "#3b82f6";
+const COLOR_EMA50    = "#f59e0b";
+const COLOR_EMA200   = "#a855f7";
+const COLOR_RSI      = "#ec4899";
+const COLOR_MACD     = "#3b82f6";
+const COLOR_SIGNAL   = "#f59e0b";
+const COLOR_GRID     = "#e5e5e5";
+const COLOR_TEXT     = "#525252";
 
-// Scale margin presets for each pane combination
-function candleMargins(hasVol: boolean, hasRsi: boolean) {
-  if (hasVol && hasRsi) return { top: 0.03, bottom: 0.42 };
-  if (hasVol || hasRsi)  return { top: 0.03, bottom: 0.22 };
-  return { top: 0.03, bottom: 0.02 };
+// Dynamic pane layout — each sub-panel gets PANEL_H of chart height
+const PANEL_H = 0.20;
+const BOT_PAD = 0.01;
+
+function panelMargins(slotFromBottom: number) {
+  return {
+    top: 1.0 - (slotFromBottom + 1) * PANEL_H - BOT_PAD,
+    bottom: slotFromBottom * PANEL_H + BOT_PAD,
+  };
 }
-function volMargins(hasRsi: boolean) {
-  return hasRsi
-    ? { top: 0.60, bottom: 0.20 }
-    : { top: 0.78, bottom: 0.02 };
+
+function candleMargins(panelCount: number) {
+  return { top: 0.03, bottom: panelCount * PANEL_H + BOT_PAD };
 }
-const RSI_MARGINS = { top: 0.82, bottom: 0.02 };
+
+// Assign slots bottom→top: MACD=0, RSI=1, Vol=2
+function computeSlots(hasVol: boolean, hasRsi: boolean, hasMacd: boolean) {
+  const slots: { name: string; slot: number }[] = [];
+  let next = 0;
+  if (hasMacd) slots.push({ name: "macd", slot: next++ });
+  if (hasRsi)  slots.push({ name: "rsi",  slot: next++ });
+  if (hasVol)  slots.push({ name: "volume", slot: next++ });
+  return slots;
+}
 
 export function PriceChart({ series, height = 400 }: Props): React.ReactElement {
   const containerRef  = useRef<HTMLDivElement>(null);
@@ -60,6 +74,9 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
   const ema200Ref     = useRef<ISeriesApi<"Line"> | null>(null);
   const volumeRef     = useRef<ISeriesApi<"Histogram"> | null>(null);
   const rsiRef        = useRef<ISeriesApi<"Line"> | null>(null);
+  const macdHistRef   = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const macdLineRef   = useRef<ISeriesApi<"Line"> | null>(null);
+  const macdSignalRef = useRef<ISeriesApi<"Line"> | null>(null);
 
   // ─── Mount ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -112,8 +129,11 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
       ema20Ref.current  = null;
       ema50Ref.current  = null;
       ema200Ref.current = null;
-      volumeRef.current = null;
-      rsiRef.current    = null;
+      volumeRef.current    = null;
+      rsiRef.current       = null;
+      macdHistRef.current  = null;
+      macdLineRef.current  = null;
+      macdSignalRef.current = null;
     };
   }, [height]);
 
@@ -124,12 +144,16 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
     if (!chart || !candle) return;
 
     // Determine what's active this render
-    const hasVol = !!(series.volume?.length);
-    const hasRsi = !!(series.rsi?.length);
+    const hasVol  = !!(series.volume?.length);
+    const hasRsi  = !!(series.rsi?.length);
+    const hasMacd = !!(series.macdData?.length);
+
+    const slots = computeSlots(hasVol, hasRsi, hasMacd);
+    const panelCount = slots.length;
 
     // 1. Update candle price scale margins
     chart.priceScale("right").applyOptions({
-      scaleMargins: candleMargins(hasVol, hasRsi),
+      scaleMargins: candleMargins(panelCount),
     });
 
     // 2. Candle data
@@ -179,20 +203,16 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
 
     // 6. Volume histogram
     if (hasVol) {
+      const volSlot = slots.find((s) => s.name === "volume")!.slot;
       if (!volumeRef.current) {
         volumeRef.current = chart.addHistogramSeries({
           priceScaleId: "volume",
           priceLineVisible: false,
           lastValueVisible: false,
         });
-        chart.priceScale("volume").applyOptions({
-          drawTicks: false,
-          borderVisible: false,
-        });
+        chart.priceScale("volume").applyOptions({ drawTicks: false, borderVisible: false });
       }
-      chart.priceScale("volume").applyOptions({
-        scaleMargins: volMargins(hasRsi),
-      });
+      chart.priceScale("volume").applyOptions({ scaleMargins: panelMargins(volSlot) });
       volumeRef.current.setData(series.volume as HistogramData<Time>[]);
     } else if (volumeRef.current) {
       chart.removeSeries(volumeRef.current);
@@ -201,6 +221,7 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
 
     // 7. RSI panel
     if (hasRsi) {
+      const rsiSlot = slots.find((s) => s.name === "rsi")!.slot;
       if (!rsiRef.current) {
         const rsiLine = chart.addLineSeries({
           priceScaleId: "rsi",
@@ -212,17 +233,67 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
         rsiLine.createPriceLine({ price: 70, color: "#ef444466", lineWidth: 1, lineStyle: 2 });
         rsiLine.createPriceLine({ price: 50, color: "#52525244", lineWidth: 1, lineStyle: 2 });
         rsiLine.createPriceLine({ price: 30, color: "#22c55e66", lineWidth: 1, lineStyle: 2 });
-        chart.priceScale("rsi").applyOptions({
-          drawTicks: false,
-          borderVisible: false,
-          scaleMargins: RSI_MARGINS,
-        });
+        chart.priceScale("rsi").applyOptions({ drawTicks: false, borderVisible: false });
         rsiRef.current = rsiLine;
       }
+      chart.priceScale("rsi").applyOptions({ scaleMargins: panelMargins(rsiSlot) });
       rsiRef.current.setData(series.rsi as LineData<Time>[]);
     } else if (rsiRef.current) {
       chart.removeSeries(rsiRef.current);
       rsiRef.current = null;
+    }
+
+    // 7b. MACD panel
+    if (hasMacd) {
+      const macdSlot = slots.find((s) => s.name === "macd")!.slot;
+      const histData = series.macdData!.map((p) => ({
+        time: p.time as Time,
+        value: p.hist,
+        color: p.hist >= 0 ? "#22c55e88" : "#ef444488",
+      }));
+      const macdLineData = series.macdData!.map((p) => ({
+        time: p.time as Time,
+        value: p.macd,
+      }));
+      const signalData = series.macdData!.map((p) => ({
+        time: p.time as Time,
+        value: p.signal,
+      }));
+
+      if (!macdHistRef.current) {
+        macdHistRef.current = chart.addHistogramSeries({
+          priceScaleId: "macd",
+          priceLineVisible: false,
+          lastValueVisible: false,
+        });
+        chart.priceScale("macd").applyOptions({ drawTicks: false, borderVisible: false });
+      }
+      if (!macdLineRef.current) {
+        macdLineRef.current = chart.addLineSeries({
+          priceScaleId: "macd",
+          color: COLOR_MACD,
+          lineWidth: 1,
+          priceLineVisible: false,
+          lastValueVisible: false,
+        });
+      }
+      if (!macdSignalRef.current) {
+        macdSignalRef.current = chart.addLineSeries({
+          priceScaleId: "macd",
+          color: COLOR_SIGNAL,
+          lineWidth: 1,
+          priceLineVisible: false,
+          lastValueVisible: false,
+        });
+      }
+      chart.priceScale("macd").applyOptions({ scaleMargins: panelMargins(macdSlot) });
+      macdHistRef.current.setData(histData);
+      macdLineRef.current.setData(macdLineData as LineData<Time>[]);
+      macdSignalRef.current.setData(signalData as LineData<Time>[]);
+    } else {
+      if (macdHistRef.current) { chart.removeSeries(macdHistRef.current); macdHistRef.current = null; }
+      if (macdLineRef.current) { chart.removeSeries(macdLineRef.current); macdLineRef.current = null; }
+      if (macdSignalRef.current) { chart.removeSeries(macdSignalRef.current); macdSignalRef.current = null; }
     }
 
     // 8. Trade markers

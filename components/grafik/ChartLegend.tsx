@@ -13,6 +13,7 @@ interface Props {
   showTrades: boolean;
   showVolume: boolean;
   showRsi: boolean;
+  showMacd: boolean;
 }
 
 export function ChartLegend({
@@ -22,6 +23,7 @@ export function ChartLegend({
   showTrades,
   showVolume,
   showRsi,
+  showMacd,
 }: Props): React.ReactElement {
   const t = useT();
 
@@ -40,6 +42,12 @@ export function ChartLegend({
       )}
       {showVolume && <LegendBar label={t("grafik.legend.volume")} />}
       {showRsi && <LegendDot color="#ec4899" label={t("grafik.legend.rsi14")} />}
+      {showMacd && (
+        <>
+          <LegendDot color="#3b82f6" label={t("grafik.legend.macdLine")} />
+          <LegendDot color="#f59e0b" label={t("grafik.legend.macdSignal")} />
+        </>
+      )}
     </div>
   );
 }

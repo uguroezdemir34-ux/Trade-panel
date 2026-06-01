@@ -462,6 +462,7 @@ export const en: Dictionary = {
     showTrades: "Show trades",
     showVolume: "Volume",
     showRsi: "RSI",
+    showMacd: "MACD",
     legend: {
       candleUp: "Up candle",
       candleDown: "Down candle",
@@ -472,6 +473,8 @@ export const en: Dictionary = {
       tradeShort: "SHORT trade",
       volume: "Volume",
       rsi14: "RSI 14",
+      macdLine: "MACD",
+      macdSignal: "Signal",
     },
   },
 

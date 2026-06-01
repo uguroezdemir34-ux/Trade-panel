@@ -8,9 +8,10 @@ import { ChartControls } from "@/components/grafik/ChartControls";
 import { ChartLegend } from "@/components/grafik/ChartLegend";
 import { emaSeries } from "@/lib/indicators/ema";
 import { rsiSeries } from "@/lib/indicators/rsi";
+import { macdSeries } from "@/lib/indicators/macd";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
-import type { ChartSeries, LinePoint, VolumePoint, ChartMarker } from "@/lib/chart/types";
+import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint } from "@/lib/chart/types";
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
@@ -29,6 +30,7 @@ export default function GrafikPage() {
   const [showTrades, setShowTrades] = useState(false);
   const [showVolume, setShowVolume] = useState(true);
   const [showRsi, setShowRsi] = useState(false);
+  const [showMacd, setShowMacd] = useState(false);
 
   const candlesRaw = useCandleStore((s) => s.candles[`${pair}_${timeframe}`]);
   const candles = candlesRaw ?? EMPTY_CANDLES;
@@ -91,6 +93,12 @@ export default function GrafikPage() {
         .filter((p): p is LinePoint => p !== null);
     }
 
+    // MACD panel
+    let macdData: MacdPoint[] | undefined;
+    if (showMacd && candles.length >= 35) {
+      macdData = macdSeries(closes, times);
+    }
+
     // Trade markers
     let markers: ChartMarker[] | undefined;
     if (showTrades) {
@@ -104,8 +112,8 @@ export default function GrafikPage() {
       }));
     }
 
-    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, markers };
-  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi]);
+    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, markers };
+  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -118,6 +126,7 @@ export default function GrafikPage() {
         showTrades={showTrades}
         showVolume={showVolume}
         showRsi={showRsi}
+        showMacd={showMacd}
         onPairChange={setPair}
         onTimeframeChange={setTimeframe}
         onToggleEma20={() => setShowEma20((v) => !v)}
@@ -126,6 +135,7 @@ export default function GrafikPage() {
         onToggleTrades={() => setShowTrades((v) => !v)}
         onToggleVolume={() => setShowVolume((v) => !v)}
         onToggleRsi={() => setShowRsi((v) => !v)}
+        onToggleMacd={() => setShowMacd((v) => !v)}
       />
       <ChartLegend
         showEma20={showEma20}
@@ -134,6 +144,7 @@ export default function GrafikPage() {
         showTrades={showTrades}
         showVolume={showVolume}
         showRsi={showRsi}
+        showMacd={showMacd}
       />
       <PriceChart series={series} height={480} />
     </div>
