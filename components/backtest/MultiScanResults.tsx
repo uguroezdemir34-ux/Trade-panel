@@ -4,6 +4,34 @@ import { useMemo } from "react";
 import { useT } from "@/lib/i18n/context";
 import type { ScanRow, ScanConfig } from "@/lib/store/backtestStore";
 
+function downloadScanCsv(rows: ScanRow[], config: ScanConfig | null): void {
+  const header = "Pair,Trades,WinRate%,AvgR,EV,Sharpe,MaxDrawdownR,LongWR%,ShortWR%";
+  const dataRows = rows.map((r) =>
+    [
+      r.pair,
+      r.totalTrades,
+      r.winRate.toFixed(1),
+      r.avgR !== null ? r.avgR.toFixed(3) : "",
+      r.ev !== null ? r.ev.toFixed(4) : "",
+      r.sharpe !== null ? r.sharpe.toFixed(3) : "",
+      r.maxDrawdownR.toFixed(2),
+      r.longWinRate !== null ? r.longWinRate.toFixed(1) : "",
+      r.shortWinRate !== null ? r.shortWinRate.toFixed(1) : "",
+    ].join(","),
+  );
+  const meta = config
+    ? `# Scan: ${config.dataMonths}mo, F&G ${config.frozenFg}${config.minScore ? `, minScore≥${config.minScore}` : ""}\n`
+    : "";
+  const csv = meta + [header, ...dataRows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `scan_${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 interface Props {
   rows: ScanRow[];
   scanDone: number;
@@ -68,11 +96,21 @@ export function MultiScanResults({
             <h2 className="text-text-t1 font-mono text-sm font-semibold tracking-wider uppercase">
               {t("backtest.scanLeaderboard")}
             </h2>
-            {config && (
-              <span className="text-text-t4 font-mono text-2xs">
-                {config.dataMonths}{t("backtest.months")} · F&G {config.frozenFg}
-              </span>
-            )}
+            <div className="flex items-center gap-3">
+              {config && (
+                <span className="text-text-t4 font-mono text-2xs">
+                  {config.dataMonths}{t("backtest.months")} · F&G {config.frozenFg}
+                </span>
+              )}
+              {sorted.length > 0 && status === "done" && (
+                <button
+                  onClick={() => downloadScanCsv(sorted, config)}
+                  className="text-text-t4 font-mono text-2xs border border-border rounded px-2 py-1 hover:text-text-t2 transition-colors"
+                >
+                  ↓ CSV
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="overflow-x-auto">
