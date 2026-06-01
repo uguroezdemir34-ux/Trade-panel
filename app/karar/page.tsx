@@ -47,6 +47,7 @@ import { StreakBanner } from "@/components/karar/StreakBanner";
 import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
 import { GoSignalLog } from "@/components/karar/GoSignalLog";
 import { HistoricalEdge } from "@/components/karar/HistoricalEdge";
+import { FundingBadge } from "@/components/karar/FundingBadge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export default function KararPage() {
@@ -482,6 +483,10 @@ export default function KararPage() {
           <DirectionBadge
             direction={result.direction}
             confidence={result.dirConfidence}
+          />
+          <FundingBadge
+            pair={activePair}
+            direction={result.direction !== "NEUTRAL" ? result.direction : undefined}
           />
           <ScoreBar
             score={result.score}
