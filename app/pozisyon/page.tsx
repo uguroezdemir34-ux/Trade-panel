@@ -8,6 +8,7 @@ import { PositionCard } from "@/components/pozisyon/PositionCard";
 import { PositionEmptyState } from "@/components/pozisyon/PositionEmptyState";
 import { TradeTimelineCard } from "@/components/pozisyon/TradeTimelineCard";
 import { CloseConfirmModal } from "@/components/pozisyon/CloseConfirmModal";
+import { PortfolioSummaryBanner } from "@/components/pozisyon/PortfolioSummaryBanner";
 import { getOkxAdapter } from "@/lib/exchange/okx-adapter";
 import type { Position } from "@/lib/okx/positions";
 
@@ -50,14 +51,19 @@ export default function PozisyonPage() {
       {positions.length === 0 ? (
         <PositionEmptyState />
       ) : (
-        positions.map((pos) => (
-          <PositionCard
-            key={pos.instId}
-            position={pos}
-            onClose={() => setConfirmPosition(pos)}
-            isClosing={closingInstId === pos.instId}
-          />
-        ))
+        <>
+          {positions.length > 1 && (
+            <PortfolioSummaryBanner positions={positions} />
+          )}
+          {positions.map((pos) => (
+            <PositionCard
+              key={pos.instId}
+              position={pos}
+              onClose={() => setConfirmPosition(pos)}
+              isClosing={closingInstId === pos.instId}
+            />
+          ))}
+        </>
       )}
 
       {closeError && (
