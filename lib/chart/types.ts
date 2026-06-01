@@ -55,6 +55,12 @@ export interface SrLevel {
   type: "support" | "resistance";
 }
 
+export interface TradeLevelLine {
+  price: number;
+  kind: "entry" | "sl" | "tp1" | "tp2";
+  direction: "LONG" | "SHORT";
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
@@ -68,4 +74,5 @@ export interface ChartSeries {
   alarmLevels?: AlarmLevel[];
   markers?: ChartMarker[];
   srLevels?: SrLevel[];
+  tradeLevels?: TradeLevelLine[];
 }

@@ -15,7 +15,7 @@ import { findAllSwingHighs, findAllSwingLows } from "@/lib/sr/swing";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
-import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel } from "@/lib/chart/types";
+import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 const PriceChart = dynamic(
@@ -44,6 +44,19 @@ export default function GrafikPage() {
   const candles = candlesRaw ?? EMPTY_CANDLES;
   const trades = useTradesStore((s) => s.trades);
   const alarms = usePriceAlarmStore((s) => s.alarms);
+
+  const tradeLevels = useMemo<TradeLevelLine[]>(() => {
+    const open = trades.filter((t) => t.status === "open" && t.pair === pair);
+    const lines: TradeLevelLine[] = [];
+    for (const t of open) {
+      if (t.direction !== "LONG" && t.direction !== "SHORT") continue;
+      lines.push({ price: t.entryPrice, kind: "entry", direction: t.direction });
+      lines.push({ price: t.stopPrice, kind: "sl", direction: t.direction });
+      if (t.takeProfit1) lines.push({ price: t.takeProfit1, kind: "tp1", direction: t.direction });
+      if (t.takeProfit2) lines.push({ price: t.takeProfit2, kind: "tp2", direction: t.direction });
+    }
+    return lines;
+  }, [trades, pair]);
 
   const alarmLevels = useMemo<AlarmLevel[]>(
     () =>
@@ -179,8 +192,8 @@ export default function GrafikPage() {
       ];
     }
 
-    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, bb: bbBands, vwap: vwapBands, alarmLevels, markers, srLevels };
-  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd, showBb, showVwap, showSr, alarmLevels]);
+    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, bb: bbBands, vwap: vwapBands, alarmLevels, markers, srLevels, tradeLevels };
+  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd, showBb, showVwap, showSr, alarmLevels, tradeLevels]);
 
   return (
     <div className="flex flex-col gap-3">

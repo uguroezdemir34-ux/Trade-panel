@@ -82,6 +82,7 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
   const macdSignalRef = useRef<ISeriesApi<"Line"> | null>(null);
   const alarmLinesRef = useRef<IPriceLine[]>([]);
   const srLinesRef = useRef<IPriceLine[]>([]);
+  const tradeLinesRef = useRef<IPriceLine[]>([]);
   const bbUpperRef    = useRef<ISeriesApi<"Line"> | null>(null);
   const bbMiddleRef   = useRef<ISeriesApi<"Line"> | null>(null);
   const bbLowerRef    = useRef<ISeriesApi<"Line"> | null>(null);
@@ -402,7 +403,39 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
       }
     }
 
-    // 10. Trade markers
+    // 10. Open trade level lines (entry/SL/TP)
+    for (const line of tradeLinesRef.current) {
+      try { candle.removePriceLine(line); } catch { /* ignore */ }
+    }
+    tradeLinesRef.current = [];
+    if (series.tradeLevels?.length) {
+      const TRADE_LINE_COLORS: Record<string, string> = {
+        entry: "#3b82f6",
+        sl: "#ef4444",
+        tp1: "#22c55e",
+        tp2: "#86efac",
+      };
+      const TRADE_LINE_TITLES: Record<string, string> = {
+        entry: "Entry",
+        sl: "SL",
+        tp1: "TP1",
+        tp2: "TP2",
+      };
+      for (const tl of series.tradeLevels) {
+        const color = TRADE_LINE_COLORS[tl.kind] ?? "#ffffff";
+        const line = candle.createPriceLine({
+          price: tl.price,
+          color,
+          lineWidth: 1,
+          lineStyle: tl.kind === "entry" ? 0 : 2, // solid for entry, dashed for SL/TP
+          axisLabelVisible: true,
+          title: TRADE_LINE_TITLES[tl.kind] ?? tl.kind,
+        });
+        tradeLinesRef.current.push(line);
+      }
+    }
+
+    // 11. Trade markers
     if (series.markers?.length) {
       const markers: SeriesMarker<Time>[] = series.markers.map((m) => ({
         time: m.time as Time,
