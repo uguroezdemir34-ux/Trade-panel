@@ -15,6 +15,7 @@ import { TopMoversCard } from "@/components/piyasa/TopMoversCard";
 import { VolatilityRankCard } from "@/components/piyasa/VolatilityRankCard";
 import { MarketSessionsCard } from "@/components/piyasa/MarketSessionsCard";
 import { MarketBreadthCard } from "@/components/piyasa/MarketBreadthCard";
+import { CorrelationCard } from "@/components/piyasa/CorrelationCard";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { MtfTrendResult } from "@/lib/market/mtfTrend";
@@ -87,7 +88,10 @@ export default function PiyasaPage() {
       <FearGreedGauge info={fgInfo} loading={fgLoading} />
       <DominanceCard info={dominance} loading={domLoading} />
       <MtfTrendGrid results={mtfResults} />
-      <FundingRateRow funding={funding} loading={fundingLoading} />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <FundingRateRow funding={funding} loading={fundingLoading} />
+        <CorrelationCard />
+      </div>
       <OiVelocityCard velocity={oiVelocity} loading={oiLoading} />
     </div>
   );
