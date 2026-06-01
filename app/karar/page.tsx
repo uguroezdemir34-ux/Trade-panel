@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
@@ -77,6 +77,28 @@ export default function KararPage() {
   const openPending = useTradesStore((s) => s.openPending);
   const funding = useMacroStore((s) => s.funding);
   const fgValue = useMacroStore((s) => s.fgValue);
+
+  // Keyboard shortcuts: 1-9 → select pair by index, G → next GO pair
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.target as HTMLElement).tagName === "INPUT") return;
+      if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
+      const digit = parseInt(e.key);
+      if (!isNaN(digit) && digit >= 1 && digit <= 9) {
+        const target = PAIRS[digit - 1];
+        if (target) setActivePair(target);
+        return;
+      }
+      if (e.key === "g" || e.key === "G") {
+        const goList = PAIRS.filter((p) => allResults[p]?.verdict === "go");
+        if (goList.length === 0) return;
+        const currentIdx = goList.indexOf(activePair);
+        setActivePair(goList[(currentIdx + 1) % goList.length]);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [allResults, activePair]);
 
   // GO sinyali olan pariteler (tümü için özet)
   const goPairs = useMemo(
