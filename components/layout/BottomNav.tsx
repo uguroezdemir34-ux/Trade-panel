@@ -19,6 +19,7 @@ import { TABS } from "@/lib/nav/tabs";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useHydrated } from "@/lib/store/hydration";
 import { useT } from "@/lib/i18n/context";
+import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export function BottomNav(): React.ReactElement {
   const pathname = usePathname();
@@ -26,6 +27,9 @@ export function BottomNav(): React.ReactElement {
   const setLastTab = useSettingsStore((s) => s.setLastTab);
   const hydrated = useHydrated();
   const t = useT();
+  const triggeredAlarmCount = usePriceAlarmStore(
+    (s) => s.alarms.filter((a) => a.status === "triggered").length,
+  );
 
   return (
     <nav
@@ -59,8 +63,13 @@ export function BottomNav(): React.ReactElement {
                   router.refresh();
                 }}
               >
-                <span className="text-base leading-none" aria-hidden>
+                <span className="relative text-base leading-none" aria-hidden>
                   {tab.icon}
+                  {tab.id === "ayarlar" && triggeredAlarmCount > 0 && (
+                    <span className="absolute -top-1 -right-1.5 bg-amber-400 text-black font-mono font-bold rounded-full leading-none flex items-center justify-center" style={{ fontSize: 7, minWidth: 12, height: 12, padding: "0 2px" }}>
+                      {triggeredAlarmCount > 9 ? "9+" : triggeredAlarmCount}
+                    </span>
+                  )}
                 </span>
                 <span className="font-mono text-2xs tracking-wider">
                   {t(tab.shortKey)}
