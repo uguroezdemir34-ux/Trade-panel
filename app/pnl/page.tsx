@@ -136,10 +136,19 @@ export default function PnlPage() {
 
       <TopTradesCard trades={trades} />
       <PairBreakdownCard trades={trades} />
-      <ExitBreakdownCard trades={trades} />
-      <ScoreHeatmap trades={trades} />
-      <HoldingTimeCard trades={trades} />
-      <DayOfWeekCard trades={trades} />
+
+      {/* Exit + Score side by side on desktop */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ExitBreakdownCard trades={trades} />
+        <ScoreHeatmap trades={trades} />
+      </div>
+
+      {/* Holding time + Day of week side by side on desktop */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <HoldingTimeCard trades={trades} />
+        <DayOfWeekCard trades={trades} />
+      </div>
+
       <ParameterAudit stats={calibrationStats} />
     </div>
   );
