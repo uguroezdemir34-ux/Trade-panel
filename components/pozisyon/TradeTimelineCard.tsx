@@ -57,7 +57,7 @@ function TimelineItem({
   t,
 }: {
   trade: TradeSnapshot;
-  t: (k: string) => string;
+  t: (k: string, params?: Record<string, string | number>) => string;
 }) {
   const isClosed = trade.status === "closed";
   const isWin = isClosed && (trade.exit?.pnlUsd ?? 0) > 0;
@@ -152,7 +152,7 @@ function StatusBadge({
 }: {
   status: TradeSnapshot["status"];
   isPaper: boolean;
-  t: (k: string) => string;
+  t: (k: string, params?: Record<string, string | number>) => string;
 }) {
   const colorClass =
     status === "open"

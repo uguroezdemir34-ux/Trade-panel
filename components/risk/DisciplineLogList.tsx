@@ -110,8 +110,8 @@ function LogRow({
   t,
 }: {
   entry: DisciplineEntry;
-  locale: "en" | "tr";
-  t: (key: string) => string;
+  locale: import("@/lib/i18n/types").Locale;
+  t: (key: string, params?: Record<string, string | number>) => string;
 }): React.ReactElement {
   const type = entry.type as DisciplineEventType;
   const icon = TYPE_ICONS[type] ?? "•";

@@ -40,7 +40,7 @@ function pnlColor(val: number): string {
 
 // ── Sub-components ────────────────────────────────────────────────────────────
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children }: React.PropsWithChildren<Record<never, never>>) {
   return (
     <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
       {children}

@@ -326,7 +326,7 @@ function SlTpStat({
   label: string;
   value: number | null;
   fallback: string;
-  locale: "en" | "tr";
+  locale: import("@/lib/i18n/types").Locale;
   color: string;
 }) {
   return (

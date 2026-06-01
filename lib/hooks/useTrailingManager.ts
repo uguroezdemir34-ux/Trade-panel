@@ -16,6 +16,7 @@ import { TrailingManager } from "@/lib/trailing/manager";
 import { setActiveTrailingManager } from "@/lib/trailing/managerRef";
 import { getOkxAdapter } from "@/lib/exchange/okx-adapter";
 import { createChannel } from "@/lib/notify/registry";
+import { atr as calcAtr } from "@/lib/indicators/atr";
 import type { OkxPosition, OkxKline } from "@/types/okx";
 import type { Position } from "@/lib/okx/positions";
 
@@ -48,7 +49,7 @@ export function useTrailingManager(): void {
           return usePositionStore.getState().positions.map(toOkxPosition);
         },
 
-        async getKlines(pair: string, tf: string, limit: number): Promise<OkxKline[]> {
+        async getKlines(pair: string, tf: "4h" | "1h", limit: number): Promise<OkxKline[]> {
           const key = `${pair}_${tf}`;
           const candles = useCandleStore.getState().candles[key] ?? [];
           const slice = candles.slice(-limit);
@@ -60,6 +61,11 @@ export function useTrailingManager(): void {
             c: c.close,
             v: c.v,
           }));
+        },
+
+        computeAtr(candles: readonly OkxKline[], period = 14): number | null {
+          const adapted = candles.map((k) => ({ h: k.h, l: k.l, c: k.c }));
+          return calcAtr(adapted as never, { period });
         },
 
         async cancelAlgoOrders(instId: string): Promise<boolean> {
