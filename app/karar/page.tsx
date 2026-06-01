@@ -42,6 +42,7 @@ import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
 import { ScoreLeaderboard } from "@/components/karar/ScoreLeaderboard";
+import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export default function KararPage() {
@@ -452,6 +453,11 @@ export default function KararPage() {
             score={result.score}
             threshold={result.effectiveThreshold}
             goThreshold={result.goThreshold}
+          />
+          <QuickAlarm
+            pair={activePair}
+            livePrice={livePrice}
+            direction={result.direction}
           />
           <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} />
           <FlowAlignmentRow flow={flowResult} />

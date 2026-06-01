@@ -254,6 +254,22 @@ export function BacktestCompare({
           higherIsBetter={false}
           fmtDeltaStr={(d) => `${fmtDelta(d, 2)}R`}
         />
+        <StatRow
+          label={t("backtest.winStreak")}
+          valA={sA.maxWinStreak.toString()}
+          valB={sB.maxWinStreak.toString()}
+          delta={sB.maxWinStreak - sA.maxWinStreak}
+          higherIsBetter={true}
+          fmtDeltaStr={(d) => fmtDelta(d, 0)}
+        />
+        <StatRow
+          label={t("backtest.lossStreak")}
+          valA={sA.maxLossStreak.toString()}
+          valB={sB.maxLossStreak.toString()}
+          delta={sB.maxLossStreak - sA.maxLossStreak}
+          higherIsBetter={false}
+          fmtDeltaStr={(d) => fmtDelta(d, 0)}
+        />
 
         {/* Direction breakdown */}
         {(["LONG", "SHORT"] as const).map((dir) => {

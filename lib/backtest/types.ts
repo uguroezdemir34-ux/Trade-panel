@@ -56,6 +56,10 @@ export interface BacktestStats {
   avgRMultiple: number | null;
   /** Maximum peak-to-trough R drawdown across sequential trades */
   maxDrawdownR: number;
+  /** Longest consecutive win run */
+  maxWinStreak: number;
+  /** Longest consecutive loss run */
+  maxLossStreak: number;
   byScoreBucket: ScoreBucket[];
   byDirection: { LONG: DirectionStats; SHORT: DirectionStats };
 }

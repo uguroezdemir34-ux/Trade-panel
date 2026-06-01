@@ -135,6 +135,14 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
           <Stat label={t("backtest.exits")}
             value={`${exitCounts.tp2}/${exitCounts.tp1}/${exitCounts.sl}/${exitCounts.timeout}`}
             hint="tp2/tp1/sl/to" />
+          {stats.maxWinStreak > 0 && (
+            <Stat label={t("backtest.winStreak")} value={`${stats.maxWinStreak}`}
+              color="text-green-400" hint={t("backtest.streakHint")} />
+          )}
+          {stats.maxLossStreak > 0 && (
+            <Stat label={t("backtest.lossStreak")} value={`${stats.maxLossStreak}`}
+              color="text-red-400" hint={t("backtest.streakHint")} />
+          )}
           {riskRatios?.sharpe !== null && riskRatios?.sharpe !== undefined && (
             <Stat label="Sharpe"
               value={riskRatios.sharpe.toFixed(2)}

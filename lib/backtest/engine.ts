@@ -106,6 +106,26 @@ function computeStats(trades: BacktestTrade[]): BacktestStats {
     if (dd > maxDd) maxDd = dd;
   }
 
+  // Streak computation
+  let curStreak = 0;
+  let maxWinStreak = 0;
+  let maxLossStreak = 0;
+  let streakType: "win" | "loss" | null = null;
+  for (const t of trades) {
+    const w = t.rMultiple > 0;
+    const type = w ? "win" : "loss";
+    if (type === streakType) {
+      curStreak++;
+    } else {
+      if (streakType === "win") maxWinStreak = Math.max(maxWinStreak, curStreak);
+      else if (streakType === "loss") maxLossStreak = Math.max(maxLossStreak, curStreak);
+      streakType = type;
+      curStreak = 1;
+    }
+  }
+  if (streakType === "win") maxWinStreak = Math.max(maxWinStreak, curStreak);
+  else if (streakType === "loss") maxLossStreak = Math.max(maxLossStreak, curStreak);
+
   // Score buckets: <80, 80-84, 85-89, 90-94, 95+
   const BUCKETS: Array<{ label: string; min: number; max: number }> = [
     { label: "<80", min: 0, max: 79 },
@@ -145,6 +165,8 @@ function computeStats(trades: BacktestTrade[]): BacktestStats {
     winRate,
     avgRMultiple: avgR,
     maxDrawdownR: maxDd,
+    maxWinStreak,
+    maxLossStreak,
     byScoreBucket,
     byDirection: { LONG: dirStats("LONG"), SHORT: dirStats("SHORT") },
   };
