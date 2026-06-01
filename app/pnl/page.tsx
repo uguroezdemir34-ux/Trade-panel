@@ -93,26 +93,62 @@ export default function PnlPage() {
     [allSnapshots],
   );
 
+  function downloadCsv() {
+    if (trades.length === 0) return;
+    const header = "closedAt,openedAt,pair,direction,pnlUsd,pnlPct,score,closeReason,isPaper";
+    const rows = trades.map((t) =>
+      [
+        new Date(t.closedAt).toISOString(),
+        t.openedAt ? new Date(t.openedAt).toISOString() : "",
+        t.pair,
+        t.direction,
+        t.pnlUsd.toFixed(4),
+        (t.pnlPct ?? "").toString(),
+        (t.score ?? "").toString(),
+        t.closeReason ?? "",
+        t.isPaper ? "true" : "false",
+      ].join(","),
+    );
+    const csv = [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `pnl_${filter}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="flex flex-col gap-4 p-4">
-      {/* Filter tabs — only shown when paper trades exist */}
-      {hasPaperTrades && (
-        <div className="flex gap-1">
-          {(["all", "live", "paper"] as TradeFilter[]).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`rounded px-3 py-1 font-mono text-xs font-medium tracking-widest uppercase transition-colors ${
-                filter === f
-                  ? "bg-surface-s2 text-text-t1"
-                  : "text-text-t3 hover:text-text-t2"
-              }`}
-            >
-              {f === "paper" ? "FWD Test" : f}
-            </button>
-          ))}
-        </div>
-      )}
+      {/* Filter tabs + export — header row */}
+      <div className="flex items-center gap-2">
+        {hasPaperTrades && (
+          <div className="flex gap-1">
+            {(["all", "live", "paper"] as TradeFilter[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`rounded px-3 py-1 font-mono text-xs font-medium tracking-widest uppercase transition-colors ${
+                  filter === f
+                    ? "bg-surface-s2 text-text-t1"
+                    : "text-text-t3 hover:text-text-t2"
+                }`}
+              >
+                {f === "paper" ? "FWD Test" : f}
+              </button>
+            ))}
+          </div>
+        )}
+        {trades.length > 0 && (
+          <button
+            onClick={downloadCsv}
+            className="ml-auto text-text-t4 font-mono text-2xs border border-border rounded px-2 py-1 hover:text-text-t2 transition-colors"
+          >
+            ↓ CSV ({trades.length})
+          </button>
+        )}
+      </div>
 
       <PnlSummaryRow trades={trades} />
       <PnlStatsCard stats={stats} />
