@@ -146,6 +146,38 @@ function exitColor(reason: BacktestTrade["exitReason"]): string {
   return "text-text-t4";
 }
 
+// ── Monthly breakdown helper ──────────────────────────────────────────────────
+
+interface MonthBucket {
+  label: string;
+  count: number;
+  wins: number;
+  totalR: number;
+  winRate: number | null;
+}
+
+function computeMonthlyBuckets(trades: BacktestTrade[]): MonthBucket[] {
+  const map = new Map<string, { count: number; wins: number; totalR: number }>();
+  for (const t of trades) {
+    const d = new Date(t.entryTs);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    const b = map.get(key) ?? { count: 0, wins: 0, totalR: 0 };
+    b.count++;
+    if (t.rMultiple > 0) b.wins++;
+    b.totalR += t.rMultiple;
+    map.set(key, b);
+  }
+  return Array.from(map.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, b]) => ({
+      label: key,
+      count: b.count,
+      wins: b.wins,
+      totalR: b.totalR,
+      winRate: b.count > 0 ? (b.wins / b.count) * 100 : null,
+    }));
+}
+
 // ── Main component ────────────────────────────────────────────────────────────
 
 type DirFilter = "ALL" | "LONG" | "SHORT";
@@ -181,6 +213,9 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
     const ev = wr * avgWin - lr * avgLoss;
     return { kelly: Math.max(0, kelly), ev, avgWin, avgLoss, payoff };
   }, [filteredTrades]);
+
+  // Monthly performance buckets
+  const monthlyBuckets = useMemo(() => computeMonthlyBuckets(filteredTrades), [filteredTrades]);
 
   // Direction-filtered score buckets
   const filteredBuckets = useMemo(() => {
@@ -407,6 +442,38 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
           </tbody>
         </table>
       </div>
+
+      {/* ── Monthly Breakdown ── */}
+      {monthlyBuckets.length > 0 && (
+        <div className="border-border bg-surface rounded-lg border p-4">
+          <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-3">
+            {t("backtest.monthlyBreakdown")}{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
+          </h3>
+          <div className="grid gap-1">
+            {monthlyBuckets.map((m) => {
+              const barPct = Math.min(100, Math.abs(m.totalR) / Math.max(...monthlyBuckets.map((x) => Math.abs(x.totalR))) * 100);
+              const isPos = m.totalR >= 0;
+              return (
+                <div key={m.label} className="grid items-center gap-x-2 font-mono text-xs" style={{ gridTemplateColumns: "56px 1fr auto auto" }}>
+                  <span className="text-text-t4 text-2xs tabular-nums">{m.label}</span>
+                  <div className="relative h-3 rounded-sm bg-border/20 overflow-hidden">
+                    <div
+                      className={`absolute inset-y-0 left-0 rounded-sm ${isPos ? "bg-green-400/40" : "bg-red-400/40"}`}
+                      style={{ width: `${barPct}%` }}
+                    />
+                  </div>
+                  <span className={`tabular-nums text-2xs w-14 text-right ${isPos ? "text-green-400" : "text-red-400"}`}>
+                    {isPos ? "+" : ""}{m.totalR.toFixed(2)}R
+                  </span>
+                  <span className="text-text-t4 tabular-nums text-2xs w-16 text-right">
+                    {m.count}t · {m.winRate !== null ? `${m.winRate.toFixed(0)}%` : "—"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* ── Trade List ── */}
       {filteredTrades.length > 0 && (

@@ -571,5 +571,6 @@ export const de: Dictionary = {
     runB: "B — Active",
     clearPin: "Clear comparison",
     compareConfig: "Config",
+    monthlyBreakdown: "Monthly Breakdown",
   },
 };

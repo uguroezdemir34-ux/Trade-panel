@@ -585,5 +585,6 @@ export const tr: Dictionary = {
     runB: "B — Aktif",
     clearPin: "Karşılaştırmayı temizle",
     compareConfig: "Yapılandırma",
+    monthlyBreakdown: "Aylık Dağılım",
   },
 };
