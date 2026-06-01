@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useTradeNotesStore } from "@/lib/store/tradeNotesStore";
+import { useT } from "@/lib/i18n/context";
 import type { TradeSnapshot } from "@/lib/trades/types";
 
 const PRESET_TAGS = ["#plan", "#fomo", "#disiplin", "#mükemmel", "#hata", "#sabır"];
@@ -27,6 +28,7 @@ interface NoteEditorProps {
 }
 
 function NoteEditor({ tradeId }: NoteEditorProps) {
+  const t = useT();
   const note = useTradeNotesStore((s) => s.notes[tradeId]);
   const setNote = useTradeNotesStore((s) => s.setNote);
   const deleteNote = useTradeNotesStore((s) => s.deleteNote);
@@ -67,7 +69,7 @@ function NoteEditor({ tradeId }: NoteEditorProps) {
       <textarea
         value={text}
         onChange={(e) => handleTextChange(e.target.value)}
-        placeholder="Bu trade hakkında notlar… (Neden girdin? Plan uyuldu mu? Duygusal mıydı?)"
+        placeholder={t("pnl.journal.notePlaceholder")}
         rows={3}
         className="w-full resize-none rounded border border-border bg-surface-s1 px-3 py-2 font-mono text-xs text-text-t1 placeholder:text-text-t4 focus:outline-none focus:ring-1 focus:ring-brand/40"
       />
@@ -87,7 +89,7 @@ function NoteEditor({ tradeId }: NoteEditorProps) {
           </button>
         ))}
         {saved && (
-          <span className="ml-auto font-mono text-2xs text-signal-green">✓ kaydedildi</span>
+          <span className="ml-auto font-mono text-2xs text-signal-green">{t("pnl.journal.saved")}</span>
         )}
       </div>
     </div>
@@ -101,6 +103,7 @@ interface TradeRowProps {
 }
 
 function TradeRow({ trade, expanded, onToggle }: TradeRowProps) {
+  const t = useT();
   const note = useTradeNotesStore((s) => s.notes[trade.id]);
   const pnl = trade.exit!.pnlUsd;
   const r = trade.exit!.rMultiple;
@@ -162,11 +165,11 @@ function TradeRow({ trade, expanded, onToggle }: TradeRowProps) {
       {expanded && (
         <div className="px-3 pb-3">
           <div className="flex flex-wrap gap-2 font-mono text-2xs text-text-t4 mb-2">
-            <span>Giriş: {trade.entryPrice.toLocaleString()}</span>
+            <span>{t("pnl.journal.entryLabel")} {trade.entryPrice.toLocaleString()}</span>
             <span>·</span>
-            <span>Çıkış: {trade.exit!.exitPrice.toLocaleString()}</span>
+            <span>{t("pnl.journal.exitLabel")} {trade.exit!.exitPrice.toLocaleString()}</span>
             <span>·</span>
-            <span>Sebep: {trade.exit!.reason.toUpperCase()}</span>
+            <span>{t("pnl.journal.reasonLabel")} {trade.exit!.reason.toUpperCase()}</span>
             {trade.entryContext.reasonText && (
               <>
                 <span>·</span>
@@ -182,6 +185,7 @@ function TradeRow({ trade, expanded, onToggle }: TradeRowProps) {
 }
 
 export function TradeJournalCard(): React.ReactElement | null {
+  const t = useT();
   const trades = useTradesStore((s) => s.trades);
   const rehydrate = useTradeNotesStore((s) => s.rehydrate);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -193,12 +197,12 @@ export function TradeJournalCard(): React.ReactElement | null {
   useEffect(() => { rehydrate(); }, [rehydrate]);
 
   const closed = trades
-    .filter((t) => t.status === "closed" && t.exit != null)
+    .filter((tr) => tr.status === "closed" && tr.exit != null)
     .sort((a, b) => b.exit!.closedAt - a.exit!.closedAt);
 
-  const filtered = closed.filter((t) => {
-    if (filter === "noted") return !!notes[t.id]?.text;
-    if (filter === "unnoted") return !notes[t.id]?.text;
+  const filtered = closed.filter((tr) => {
+    if (filter === "noted") return !!notes[tr.id]?.text;
+    if (filter === "unnoted") return !notes[tr.id]?.text;
     return true;
   });
 
@@ -207,16 +211,20 @@ export function TradeJournalCard(): React.ReactElement | null {
 
   if (closed.length === 0) return null;
 
-  const notedCount = closed.filter((t) => !!notes[t.id]?.text).length;
+  const notedCount = closed.filter((tr) => !!notes[tr.id]?.text).length;
+
+  const notedCountLabel = t("pnl.journal.notedCount")
+    .replace("{noted}", String(notedCount))
+    .replace("{total}", String(closed.length));
 
   return (
     <div className="border-border bg-bg-card rounded-lg border overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between gap-3 border-b border-border/40 px-4 py-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-text-t1 text-sm font-medium">📓 Trade Günlüğü</h3>
+          <h3 className="text-text-t1 text-sm font-medium">{t("pnl.journal.title")}</h3>
           <span className="font-mono text-2xs text-text-t4">
-            {notedCount}/{closed.length} not yazıldı
+            {notedCountLabel}
           </span>
         </div>
         <div className="flex gap-1">
@@ -231,7 +239,7 @@ export function TradeJournalCard(): React.ReactElement | null {
                   : "text-text-t4 hover:text-text-t2",
               ].join(" ")}
             >
-              {f === "all" ? "Tümü" : f === "noted" ? "Not Var" : "Not Yok"}
+              {f === "all" ? t("pnl.journal.filterAll") : f === "noted" ? t("pnl.journal.filterNoted") : t("pnl.journal.filterUnnoted")}
             </button>
           ))}
         </div>
@@ -239,10 +247,10 @@ export function TradeJournalCard(): React.ReactElement | null {
 
       {/* Column headers */}
       <div className="flex items-center gap-2 border-b border-border/20 bg-surface-s1/30 px-3 py-1.5">
-        <span className="w-28 shrink-0 font-mono text-2xs text-text-t4">Tarih</span>
-        <span className="w-24 shrink-0 font-mono text-2xs text-text-t4">Parite</span>
-        <span className="w-10 shrink-0 font-mono text-2xs text-text-t4">Yön</span>
-        <span className="w-10 shrink-0 text-center font-mono text-2xs text-text-t4">Skor</span>
+        <span className="w-28 shrink-0 font-mono text-2xs text-text-t4">{t("pnl.journal.colDate")}</span>
+        <span className="w-24 shrink-0 font-mono text-2xs text-text-t4">{t("pnl.journal.colPair")}</span>
+        <span className="w-10 shrink-0 font-mono text-2xs text-text-t4">{t("pnl.journal.colDirection")}</span>
+        <span className="w-10 shrink-0 text-center font-mono text-2xs text-text-t4">{t("pnl.journal.colScore")}</span>
         <span className="flex-1 text-right font-mono text-2xs text-text-t4">P&L</span>
         <span className="w-12 text-right font-mono text-2xs text-text-t4">R</span>
         <span className="w-6" />
@@ -251,15 +259,15 @@ export function TradeJournalCard(): React.ReactElement | null {
       {/* Trade rows */}
       {paginated.length === 0 ? (
         <p className="px-4 py-6 text-center font-mono text-xs text-text-t4">
-          {filter === "noted" ? "Henüz not yazılmış trade yok" : "Trade bulunamadı"}
+          {filter === "noted" ? t("pnl.journal.emptyNoted") : t("pnl.journal.empty")}
         </p>
       ) : (
-        paginated.map((t) => (
+        paginated.map((tr) => (
           <TradeRow
-            key={t.id}
-            trade={t}
-            expanded={expandedId === t.id}
-            onToggle={() => setExpandedId(expandedId === t.id ? null : t.id)}
+            key={tr.id}
+            trade={tr}
+            expanded={expandedId === tr.id}
+            onToggle={() => setExpandedId(expandedId === tr.id ? null : tr.id)}
           />
         ))
       )}
@@ -272,7 +280,7 @@ export function TradeJournalCard(): React.ReactElement | null {
             disabled={page === 0}
             className="font-mono text-2xs text-text-t4 hover:text-text-t2 disabled:opacity-30"
           >
-            ← Önceki
+            {t("pnl.journal.prev")}
           </button>
           <span className="font-mono text-2xs text-text-t4">
             {page + 1} / {totalPages}
@@ -282,7 +290,7 @@ export function TradeJournalCard(): React.ReactElement | null {
             disabled={page === totalPages - 1}
             className="font-mono text-2xs text-text-t4 hover:text-text-t2 disabled:opacity-30"
           >
-            Sonraki →
+            {t("pnl.journal.next")}
           </button>
         </div>
       )}

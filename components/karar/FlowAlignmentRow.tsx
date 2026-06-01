@@ -19,18 +19,20 @@
 import { useState } from "react";
 import type { FlowIntelligenceResult } from "@/lib/orderflow/flowIntelligence";
 import { formatCvd } from "@/lib/orderflow/cvd";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   flow: FlowIntelligenceResult | null;
 }
 
 export function FlowAlignmentRow({ flow }: Props) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
 
   if (!flow) {
     return (
       <div className="bg-surface-s2 rounded-md p-3 text-text-t3 text-xs">
-        Flow Intelligence: hazırlanıyor...
+        {t("karar.flowPreparing")}
       </div>
     );
   }
@@ -106,11 +108,11 @@ export function FlowAlignmentRow({ flow }: Props) {
             value={
               flow.flowVerdict.vpin && flow.flowVerdict.vpin.ready
                 ? `${flow.flowVerdict.vpin.toxicity.toUpperCase()} (VPIN ${flow.flowVerdict.vpin.vpin.toFixed(2)})`
-                : "Hesaplanıyor..."
+                : t("karar.flowComputing")
             }
           />
           <DetailRow
-            label="Volume Delta (5dk)"
+            label="Volume Delta (5m)"
             value={formatCvd(flow.flowVerdict.cvd.w5m.cvdUsd)}
             tone={
               flow.flowVerdict.cvd.w5m.direction === "bullish"
@@ -125,7 +127,7 @@ export function FlowAlignmentRow({ flow }: Props) {
             value={
               flow.flowVerdict.divergence.confluence
                 ? `⚠ ${flow.flowVerdict.divergence.confluenceType.replace("_", " ").toUpperCase()}`
-                : "Yok (uyumlu)"
+                : t("karar.flowNoDivergence")
             }
             tone={flow.flowVerdict.divergence.confluence ? "down" : "neutral"}
           />
@@ -145,8 +147,8 @@ export function FlowAlignmentRow({ flow }: Props) {
               label="Liq Magnet"
               value={
                 flow.liqMap.magnetZones.length > 0
-                  ? `${flow.liqMap.magnetZones.length} zone yakın`
-                  : "Uzak"
+                  ? `${flow.liqMap.magnetZones.length} ${t("karar.flowZonesNearby")}`
+                  : t("karar.flowZonesFar")
               }
             />
           ) : null}

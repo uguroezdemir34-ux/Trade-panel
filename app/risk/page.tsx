@@ -12,14 +12,21 @@ import { DisciplineLogList } from "@/components/risk/DisciplineLogList";
 export default function RiskPage() {
   return (
     <div className="flex flex-col gap-4">
-      <DrawdownMeter />
-      <DailyStatsCard />
-      <DailyGoalCard />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <DrawdownMeter />
+        <DailyStatsCard />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <DailyGoalCard />
+        <AdherenceScore />
+      </div>
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <PositionSizeCalc />
         <KellyAdvisorCard />
       </div>
-      <AdherenceScore />
+
       <LocksList />
       <DisciplineLogList />
     </div>

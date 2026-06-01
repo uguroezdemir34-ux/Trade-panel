@@ -14,15 +14,29 @@ export default function AyarlarPage() {
   return (
     <div className="flex flex-col gap-4 p-4">
       <AccountBalanceCard />
-      <ModeToggleCard />
-      <OkxCredsCard />
-      <TelegramTestCard />
-      <GoAlertsCard />
-      <PriceAlarmsCard />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <OkxCredsCard />
+        <TelegramTestCard />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <GoAlertsCard />
+        <PriceAlarmsCard />
+      </div>
+
       <TvWebhookCard />
-      <TradingLimitsCard />
-      <DrawdownToggleCard />
-      <LanguageCard />
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <TradingLimitsCard />
+        <DrawdownToggleCard />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <ModeToggleCard />
+        <LanguageCard />
+      </div>
+
       <DangerZoneCard />
     </div>
   );

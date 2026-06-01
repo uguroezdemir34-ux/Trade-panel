@@ -85,8 +85,10 @@ export default function PiyasaPage() {
       </div>
       <FundingAlertBanner funding={funding} />
       <MarketSummaryBanner summary={marketSummary} />
-      <FearGreedGauge info={fgInfo} loading={fgLoading} />
-      <DominanceCard info={dominance} loading={domLoading} />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <FearGreedGauge info={fgInfo} loading={fgLoading} />
+        <DominanceCard info={dominance} loading={domLoading} />
+      </div>
       <MtfTrendGrid results={mtfResults} />
       <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <FundingRateRow funding={funding} loading={fundingLoading} />

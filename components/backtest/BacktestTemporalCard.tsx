@@ -12,6 +12,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { BacktestTrade } from "@/lib/backtest/types";
 
 interface Props {
@@ -63,6 +64,7 @@ function formatDate(ts: number): string {
 }
 
 export function BacktestTemporalCard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const periods = useMemo(() => computePeriods(trades), [trades]);
 
   if (!periods) return null;
@@ -72,7 +74,6 @@ export function BacktestTemporalCard({ trades }: Props): React.ReactElement | nu
   const minWr = Math.min(...wrValues);
   const wrSpread = maxWr - minWr;
 
-  // Consistency rating
   const isConsistent = wrSpread < 15;
   const isDiverging =
     (periods[2].winRate ?? 0) < (periods[0].winRate ?? 0) - 15;
@@ -83,16 +84,16 @@ export function BacktestTemporalCard({ trades }: Props): React.ReactElement | nu
     ? "text-signal-red"
     : "text-amber-400";
   const statusText = isConsistent
-    ? "Tutarlı strateji"
+    ? t("backtest.temporalConsistent")
     : isDiverging
-    ? "Performans düşüşü — rejim riski"
-    : "Orta tutarlılık";
+    ? t("backtest.temporalDiverging")
+    : t("backtest.temporalMedium");
 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          📅 Zamansal Tutarlılık
+          {t("backtest.temporalTitle")}
         </h3>
         <span className={`font-mono text-2xs ${statusColor}`}>{statusText}</span>
       </div>
@@ -133,8 +134,7 @@ export function BacktestTemporalCard({ trades }: Props): React.ReactElement | nu
 
       {wrSpread >= 15 && (
         <div className="mt-3 border-t border-border pt-2 text-text-t4 font-mono text-2xs leading-relaxed">
-          WR aralığı: {wrSpread.toFixed(0)}pp — stratejinin belirli piyasa
-          rejimleriyle sınırlı olabileceğini gösterir.
+          {t("backtest.temporalWrSpread").replace("{n}", wrSpread.toFixed(0))}
         </div>
       )}
     </div>

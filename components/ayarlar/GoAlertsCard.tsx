@@ -72,13 +72,13 @@ export function GoAlertsCard(): React.ReactElement {
       {browserPerm !== "unsupported" && (
         <div className="flex items-center justify-between border-t border-border/40 pt-3">
           <div className="flex flex-col gap-0.5">
-            <span className="text-text-t2 text-xs font-medium">🔔 Tarayıcı Bildirimleri</span>
+            <span className="text-text-t2 text-xs font-medium">{t("settings.goAlerts.browserNotif")}</span>
             <span className="text-text-t4 text-2xs font-mono">
               {browserPerm === "granted"
-                ? "✓ İzin verildi — sekmeden çıkınca da bildirim gelir"
+                ? t("settings.goAlerts.permGranted")
                 : browserPerm === "denied"
-                ? "✗ Engellendi — tarayıcı ayarlarından aç"
-                : "Sinyal geldiğinde masaüstü bildirimi almak için izin ver"}
+                ? t("settings.goAlerts.permDenied")
+                : t("settings.goAlerts.permDefault")}
             </span>
           </div>
           {browserPerm === "default" && (
@@ -86,11 +86,11 @@ export function GoAlertsCard(): React.ReactElement {
               onClick={handleRequestPerm}
               className="shrink-0 rounded border border-brand/40 bg-brand/10 px-3 py-1 font-mono text-2xs text-brand hover:bg-brand/20 transition-colors"
             >
-              İzin Ver
+              {t("settings.goAlerts.permButton")}
             </button>
           )}
           {browserPerm === "granted" && (
-            <span className="text-signal-green font-mono text-2xs">AKTİF</span>
+            <span className="text-signal-green font-mono text-2xs">{t("settings.goAlerts.permActive")}</span>
           )}
         </div>
       )}
@@ -98,9 +98,9 @@ export function GoAlertsCard(): React.ReactElement {
       {/* Audio alerts row */}
       <div className="flex items-center justify-between border-t border-border/40 pt-3">
         <div className="flex flex-col gap-0.5">
-          <span className="text-text-t2 text-xs font-medium">🔊 Sesli Uyarılar</span>
+          <span className="text-text-t2 text-xs font-medium">{t("settings.goAlerts.audioTitle")}</span>
           <span className="text-text-t4 text-2xs font-mono">
-            GO, skor momentumu ve fiyat alarmı için kısa bip sesi
+            {t("settings.goAlerts.audioDesc")}
           </span>
         </div>
         <button

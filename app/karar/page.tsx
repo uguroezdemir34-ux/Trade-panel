@@ -11,6 +11,7 @@ import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
+import { useT } from "@/lib/i18n/context";
 
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
@@ -54,6 +55,7 @@ import { CandlePatternBadge } from "@/components/karar/CandlePatternBadge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export default function KararPage() {
+  const t = useT();
   const [activePair, setActivePair] = useState<Pair>("BTC");
   const [pairGroup, setPairGroup] = useState<PairGroup>("all");
   const watchlistPairs = useWatchlistStore((s) => s.pairs);
@@ -111,27 +113,23 @@ export default function KararPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [allResults, activePair]);
 
-  // GO sinyali olan pariteler (tümü için özet)
   const goPairs = useMemo(
     () => PAIRS.filter((p) => allResults[p]?.verdict === "go"),
     [allResults],
   );
 
-  // Aktif alarmı olan pariteler
   const alarms = usePriceAlarmStore((s) => s.alarms);
   const alarmedPairs = useMemo(
     () => new Set(alarms.filter((a) => a.status === "active").map((a) => a.pair)),
     [alarms],
   );
 
-  // Filtreli parite listesi
   const displayPairs = useMemo<readonly Pair[]>(() => {
     if (pairGroup === "go") return goPairs.length > 0 ? goPairs : PAIRS;
     if (pairGroup === "watch") return watchlistPairs.length > 0 ? watchlistPairs : PAIRS;
     return PAIR_GROUPS[pairGroup] ?? PAIRS;
   }, [pairGroup, goPairs, watchlistPairs]);
 
-  // Skor momentumu — son 4 snapshot'taki net skor değişimi
   const pairMomentum = useMemo<Partial<Record<Pair, number>>>(() => {
     const out: Partial<Record<Pair, number>> = {};
     for (const p of PAIRS) {
@@ -143,22 +141,19 @@ export default function KararPage() {
     return out;
   }, [scoreHistory]);
 
-  // En son hesaplanan skor zamanı
   const latestScoreTime = useMemo(() => {
     const times = Object.values(computedAt).filter((v): v is number => v !== undefined);
     return times.length > 0 ? Math.max(...times) : null;
   }, [computedAt]);
 
-  // Bucket istatistikleri — geçmiş trade'lerden score bazlı performans
   const bucketStats = useMemo(() => {
     if (!result) return null;
     const closedTrades = trades
-      .filter((t) => t.status === "closed" && t.exit != null && t.pair === activePair)
-      .map((t) => ({ score: t.entryContext.score, pnlUsd: t.exit!.pnlUsd }));
+      .filter((tr) => tr.status === "closed" && tr.exit != null && tr.pair === activePair)
+      .map((tr) => ({ score: tr.entryContext.score, pnlUsd: tr.exit!.pnlUsd }));
     return getBucketStats(result.score, closedTrades);
   }, [result, trades, activePair]);
 
-  // Signal direction for flow intelligence (uppercase: "LONG" | "SHORT")
   const signalDir: "LONG" | "SHORT" =
     result?.direction === "SHORT" ? "SHORT" : "LONG";
 
@@ -169,14 +164,11 @@ export default function KararPage() {
     return atr(candles1h.map(toIndicatorCandle), { period: 14 });
   }, [candles1h]);
 
-  // ADX ham değeri — TP modunu belirlemek için (weak/healthy/strong)
   const adxValue = useMemo(() => {
     if (candles1h.length < 29) return null;
     return adx(candles1h.map(toIndicatorCandle), 14)?.adx ?? null;
   }, [candles1h]);
 
-  // Swing seviyeleri — yapısal stop için
-  // 4h öncelikli (daha anlamlı yapı), 1h fallback
   const swingLevels = useMemo(() => {
     const sw4h =
       candles4h.length >= 10
@@ -186,7 +178,6 @@ export default function KararPage() {
       candles1h.length >= 10
         ? findSwingLevels(candles1h.map(toIndicatorCandle), 30, 2)
         : { swingLow: null, swingHigh: null };
-    // 4h varsa kullan, yoksa 1h'a düş
     return {
       swingLow: sw4h.swingLow ?? sw1h.swingLow,
       swingHigh: sw4h.swingHigh ?? sw1h.swingHigh,
@@ -236,8 +227,8 @@ export default function KararPage() {
     setExecError(null);
 
     const today = new Date();
-    const todayTrades = trades.filter((t) => {
-      const d = new Date(t.openedAt);
+    const todayTrades = trades.filter((tr) => {
+      const d = new Date(tr.openedAt);
       return (
         d.getFullYear() === today.getFullYear() &&
         d.getMonth() === today.getMonth() &&
@@ -247,7 +238,6 @@ export default function KararPage() {
 
     const fundingResult = funding[activePair] ?? null;
 
-    // ── Forward Test Mode: bypass exchange, record paper trade directly ──
     if (forwardTestMode) {
       openPending({
         pair: activePair,
@@ -308,7 +298,6 @@ export default function KararPage() {
         },
       );
 
-      // Disiplin logu — her durumda kayıt
       const je = output.journalEntry;
       logEvent(je.type as Parameters<typeof logEvent>[0], {
         pair: je.pair,
@@ -345,14 +334,14 @@ export default function KararPage() {
         setExecError(output.reasonHuman);
       }
     } catch (e) {
-      setExecError(e instanceof Error ? e.message : "Bilinmeyen hata");
+      setExecError(e instanceof Error ? e.message : t("karar.unknownError"));
     } finally {
       setIsExecuting(false);
     }
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-3">
       {/* Forward Test Mode banner */}
       {forwardTestMode && (
         <div className="flex items-center gap-2 rounded-lg border border-[#22C55E]/30 bg-[#22C55E]/8 px-3 py-2">
@@ -360,227 +349,231 @@ export default function KararPage() {
             FWD TEST
           </span>
           <span className="text-text-t2 font-mono text-xs">
-            Aktif — emirler simüle edilir, gerçek pozisyon açılmaz
+            {t("karar.fwdTestActive")}
           </span>
         </div>
       )}
 
-      {/* Streak alert */}
       <StreakBanner />
 
-      {/* Skor tazelik göstergesi */}
-      <div className="flex items-center justify-between">
-        <span className="text-text-t4 font-mono text-2xs tracking-wider">
-          {latestScoreTime !== null
-            ? `Skorlar güncellendi · ${scoreAge(latestScoreTime)} önce`
-            : "Henüz hesaplanmadı"}
-        </span>
-        {computing && (
-          <span className="text-brand font-mono text-2xs animate-pulse">⟳</span>
-        )}
-      </div>
+      {/* Desktop 2-column layout */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
 
-      {/* Skor sıralaması */}
-      <ScoreLeaderboard
-        results={allResults}
-        activePair={activePair}
-        onSelect={setActivePair}
-      />
+        {/* LEFT SIDEBAR — pair selection */}
+        <div className="flex flex-col gap-3 lg:w-72 lg:shrink-0">
+          {/* Score freshness */}
+          <div className="flex items-center justify-between">
+            <span className="text-text-t4 font-mono text-2xs tracking-wider">
+              {latestScoreTime !== null
+                ? `${t("karar.scoresUpdated")} · ${scoreAge(latestScoreTime)} ${t("karar.scoresAgo")}`
+                : t("karar.scoresNever")}
+            </span>
+            {computing && (
+              <span className="text-brand font-mono text-2xs animate-pulse">⟳</span>
+            )}
+          </div>
 
-      {/* GO sinyali geçmişi */}
-      <GoSignalLog />
+          <ScoreLeaderboard
+            results={allResults}
+            activePair={activePair}
+            onSelect={setActivePair}
+          />
 
-      {/* Pair grup filtresi */}
-      <div className="flex flex-wrap gap-1">
-        {(["all", "majors", "alts", "meme", "go", "watch"] as PairGroup[]).map((g) => {
-          const label =
-            g === "all" ? "Tüm" :
-            g === "majors" ? "Majors" :
-            g === "alts" ? "Alts" :
-            g === "meme" ? "Meme" :
-            g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
-            `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
-          const isActive = pairGroup === g;
-          const isGo = g === "go";
-          const isWatch = g === "watch";
-          return (
-            <button
-              key={g}
-              onClick={() => {
-                setPairGroup(g);
-                const target = g === "go" ? goPairs : g === "watch" ? watchlistPairs : PAIR_GROUPS[g] ?? PAIRS;
-                if (target.length > 0 && !target.includes(activePair)) {
-                  setActivePair(target[0] as Pair);
-                }
-              }}
-              className={[
-                "px-2.5 py-1 rounded font-mono text-2xs font-medium transition-colors",
-                isActive
-                  ? isGo
-                    ? "bg-green-500/20 text-green-400"
-                    : isWatch
-                    ? "bg-amber-500/20 text-amber-400"
-                    : "bg-surface-s2 text-text-t1"
-                  : isGo && goPairs.length > 0
-                  ? "text-green-400/70 hover:text-green-400"
-                  : isWatch && watchlistPairs.length > 0
-                  ? "text-amber-400/70 hover:text-amber-400"
-                  : "text-text-t4 hover:text-text-t2",
-              ].join(" ")}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
+          <GoSignalLog />
 
-      {/* Pair seçici — skor + verdict ile zenginleştirilmiş */}
-      <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(displayPairs.length, 5)}, 1fr)` }}>
-        {displayPairs.map((p) => {
-          const pr = allResults[p];
-          const v = pr?.verdict;
-          const score = pr?.score;
-          const dir = pr?.direction;
-          const isActive = activePair === p;
+          {/* Pair group filter */}
+          <div className="flex flex-wrap gap-1">
+            {(["all", "majors", "alts", "meme", "go", "watch"] as PairGroup[]).map((g) => {
+              const label =
+                g === "all" ? t("karar.groupAll") :
+                g === "majors" ? "Majors" :
+                g === "alts" ? "Alts" :
+                g === "meme" ? "Meme" :
+                g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
+                `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
+              const isActive = pairGroup === g;
+              const isGo = g === "go";
+              const isWatch = g === "watch";
+              return (
+                <button
+                  key={g}
+                  onClick={() => {
+                    setPairGroup(g);
+                    const target = g === "go" ? goPairs : g === "watch" ? watchlistPairs : PAIR_GROUPS[g] ?? PAIRS;
+                    if (target.length > 0 && !target.includes(activePair)) {
+                      setActivePair(target[0] as Pair);
+                    }
+                  }}
+                  className={[
+                    "px-2.5 py-1 rounded font-mono text-2xs font-medium transition-colors",
+                    isActive
+                      ? isGo
+                        ? "bg-green-500/20 text-green-400"
+                        : isWatch
+                        ? "bg-amber-500/20 text-amber-400"
+                        : "bg-surface-s2 text-text-t1"
+                      : isGo && goPairs.length > 0
+                      ? "text-green-400/70 hover:text-green-400"
+                      : isWatch && watchlistPairs.length > 0
+                      ? "text-amber-400/70 hover:text-amber-400"
+                      : "text-text-t4 hover:text-text-t2",
+                  ].join(" ")}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
 
-          const verdictBorder =
-            v === "go"
-              ? "border-b-2 border-green-400"
-              : v === "wait"
-              ? "border-b-2 border-yellow-400"
-              : v === "no"
-              ? "border-b-2 border-red-400/50"
-              : "border-b-2 border-transparent";
+          {/* Pair grid */}
+          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(displayPairs.length, 5)}, 1fr)` }}>
+            {displayPairs.map((p) => {
+              const pr = allResults[p];
+              const v = pr?.verdict;
+              const score = pr?.score;
+              const dir = pr?.direction;
+              const isActive = activePair === p;
 
-          const scoreColor =
-            v === "go"
-              ? "text-green-400"
-              : v === "wait"
-              ? "text-yellow-400"
-              : "text-text-t4";
+              const verdictBorder =
+                v === "go"
+                  ? "border-b-2 border-green-400"
+                  : v === "wait"
+                  ? "border-b-2 border-yellow-400"
+                  : v === "no"
+                  ? "border-b-2 border-red-400/50"
+                  : "border-b-2 border-transparent";
 
-          const dirArrow =
-            dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
+              const scoreColor =
+                v === "go"
+                  ? "text-green-400"
+                  : v === "wait"
+                  ? "text-yellow-400"
+                  : "text-text-t4";
 
-          const momentum = pairMomentum[p];
-          const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
-          const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
+              const dirArrow =
+                dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
 
-          const isWatched = watchlistPairs.includes(p);
-          return (
-            <div key={p} className="relative group">
-              <button
-                onClick={() => setActivePair(p as Pair)}
-                className={[
-                  "w-full flex flex-col items-center rounded pt-1.5 pb-0.5 font-mono transition-colors",
-                  verdictBorder,
-                  isActive
-                    ? "bg-surface-s2 text-text-t1"
-                    : "text-text-t3 hover:text-text-t2",
-                ].join(" ")}
-              >
-                <div className="relative flex items-center justify-center">
-                  <span className="text-xs font-semibold tracking-wide">{p}</span>
-                  {alarmedPairs.has(p) && (
-                    <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                  )}
+              const momentum = pairMomentum[p];
+              const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
+              const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
+
+              const isWatched = watchlistPairs.includes(p);
+              return (
+                <div key={p} className="relative group">
+                  <button
+                    onClick={() => setActivePair(p as Pair)}
+                    className={[
+                      "w-full flex flex-col items-center rounded pt-1.5 pb-0.5 font-mono transition-colors",
+                      verdictBorder,
+                      isActive
+                        ? "bg-surface-s2 text-text-t1"
+                        : "text-text-t3 hover:text-text-t2",
+                    ].join(" ")}
+                  >
+                    <div className="relative flex items-center justify-center">
+                      <span className="text-xs font-semibold tracking-wide">{p}</span>
+                      {alarmedPairs.has(p) && (
+                        <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-0.5">
+                      <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
+                        {score !== undefined ? `${score}${dirArrow}` : "·"}
+                      </span>
+                      {showMom && (
+                        <span className={`text-[8px] tabular-nums leading-none ${momColor}`}>
+                          {(momentum ?? 0) > 0 ? "▲" : "▼"}
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-0.5 h-[10px]">
+                      <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
+                    </div>
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); watchlistToggle(p as Pair); }}
+                    className={`absolute top-0 right-0 px-0.5 py-0.5 font-mono text-[9px] transition-opacity ${
+                      isWatched
+                        ? "opacity-100 text-amber-400"
+                        : "opacity-0 group-hover:opacity-60 text-text-t4"
+                    }`}
+                    title={isWatched ? t("karar.watchRemove") : t("karar.watchAdd")}
+                  >
+                    ★
+                  </button>
                 </div>
-                <div className="flex items-center gap-0.5">
-                  <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
-                    {score !== undefined ? `${score}${dirArrow}` : "·"}
-                  </span>
-                  {showMom && (
-                    <span className={`text-[8px] tabular-nums leading-none ${momColor}`}>
-                      {(momentum ?? 0) > 0 ? "▲" : "▼"}
-                    </span>
-                  )}
-                </div>
-                <div className="mt-0.5 h-[10px]">
-                  <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
-                </div>
-              </button>
-              {/* Star/watchlist toggle — shows on hover or when starred */}
-              <button
-                onClick={(e) => { e.stopPropagation(); watchlistToggle(p as Pair); }}
-                className={`absolute top-0 right-0 px-0.5 py-0.5 font-mono text-[9px] transition-opacity ${
-                  isWatched
-                    ? "opacity-100 text-amber-400"
-                    : "opacity-0 group-hover:opacity-60 text-text-t4"
-                }`}
-                title={isWatched ? "İzlemeden çıkar" : "İzlemeye ekle"}
-              >
-                ★
-              </button>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Yükleniyor */}
-      {!result && (
-        <div className="bg-surface-s1 rounded-lg p-6 text-center font-mono text-sm text-text-t3">
-          {computing ? "Hesaplanıyor..." : "Mum verisi bekleniyor..."}
+              );
+            })}
+          </div>
         </div>
-      )}
 
-      {/* Sonuç */}
-      {result && (
-        <>
-          <HistoricalEdge pair={activePair} />
-          <LiveEdgeBadge pair={activePair} />
-          <VerdictBadge
-            verdict={result.verdict}
-            signalType={result.pullbackActive ? "pullback" : "classic"}
-          />
-          <DirectionBadge
-            direction={result.direction}
-            confidence={result.dirConfidence}
-          />
-          <FundingBadge
-            pair={activePair}
-            direction={result.direction !== "NEUTRAL" ? result.direction : undefined}
-          />
-          <ScoreBar
-            score={result.score}
-            threshold={result.effectiveThreshold}
-            goThreshold={result.goThreshold}
-          />
-          <QuickAlarm
-            pair={activePair}
-            livePrice={livePrice}
-            direction={result.direction}
-          />
-          <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} />
-          <FlowAlignmentRow flow={flowResult} />
-          <CandlePatternBadge pair={activePair} />
-          <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
-          <BlocksList
-            hardBlocks={result.blocks}
-            softBlocks={result.softBlocks}
-          />
-          <ReasonsList reasons={result.reasons} />
-
-          {sizerResult && result.direction !== "NEUTRAL" && (
-            <CorrelationWarning pair={activePair} direction={result.direction} />
-          )}
-
-          {sizerResult && (
-            <PositionSizer
-              result={sizerResult}
-              onTrade={() => {
-                setExecError(null);
-                setShowConfirm(true);
-              }}
-            />
-          )}
-
-          {execError && (
-            <div className="bg-soft-red text-signal-red rounded-lg p-3 font-mono text-xs">
-              {execError}
+        {/* RIGHT MAIN — active pair details */}
+        <div className="flex flex-col gap-3 lg:flex-1 lg:min-w-0">
+          {!result && (
+            <div className="bg-surface-s1 rounded-lg p-6 text-center font-mono text-sm text-text-t3">
+              {computing ? t("karar.computing") : t("karar.waitingData")}
             </div>
           )}
-        </>
-      )}
+
+          {result && (
+            <>
+              <HistoricalEdge pair={activePair} />
+              <LiveEdgeBadge pair={activePair} />
+              <VerdictBadge
+                verdict={result.verdict}
+                signalType={result.pullbackActive ? "pullback" : "classic"}
+              />
+              <DirectionBadge
+                direction={result.direction}
+                confidence={result.dirConfidence}
+              />
+              <FundingBadge
+                pair={activePair}
+                direction={result.direction !== "NEUTRAL" ? result.direction : undefined}
+              />
+              <ScoreBar
+                score={result.score}
+                threshold={result.effectiveThreshold}
+                goThreshold={result.goThreshold}
+              />
+              <QuickAlarm
+                pair={activePair}
+                livePrice={livePrice}
+                direction={result.direction}
+              />
+              <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} t={t} />
+              <FlowAlignmentRow flow={flowResult} />
+              <CandlePatternBadge pair={activePair} />
+              <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
+              <BlocksList
+                hardBlocks={result.blocks}
+                softBlocks={result.softBlocks}
+              />
+              <ReasonsList reasons={result.reasons} />
+
+              {sizerResult && result.direction !== "NEUTRAL" && (
+                <CorrelationWarning pair={activePair} direction={result.direction} />
+              )}
+
+              {sizerResult && (
+                <PositionSizer
+                  result={sizerResult}
+                  onTrade={() => {
+                    setExecError(null);
+                    setShowConfirm(true);
+                  }}
+                />
+              )}
+
+              {execError && (
+                <div className="bg-soft-red text-signal-red rounded-lg p-3 font-mono text-xs">
+                  {execError}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       {showConfirm && sizerResult && (
         <TradeConfirmModal
@@ -593,7 +586,7 @@ export default function KararPage() {
       {isExecuting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-bg-card rounded-lg p-6 font-mono text-sm text-text-t1">
-            Emir gönderiliyor...
+            {t("karar.sendingOrder")}
           </div>
         </div>
       )}
@@ -601,7 +594,13 @@ export default function KararPage() {
   );
 }
 
-function ScoreHistoryChart({ snapshots }: { snapshots: import("@/lib/store/scoreHistoryStore").ScoreSnapshot[] }) {
+function ScoreHistoryChart({
+  snapshots,
+  t,
+}: {
+  snapshots: import("@/lib/store/scoreHistoryStore").ScoreSnapshot[];
+  t: (key: string) => string;
+}) {
   const pts = snapshots.slice(-40);
   if (pts.length < 2) return null;
 
@@ -614,7 +613,6 @@ function ScoreHistoryChart({ snapshots }: { snapshots: import("@/lib/store/score
   function xOf(i: number) { return PAD + i * xStep; }
   function yOf(s: number) { return PAD + ((100 - s) / 100) * (H - PAD * 2); }
 
-  // Color segments by verdict
   const segments: { d: string; color: string }[] = [];
   for (let i = 1; i < pts.length; i++) {
     const p = pts[i];
@@ -625,26 +623,21 @@ function ScoreHistoryChart({ snapshots }: { snapshots: import("@/lib/store/score
     });
   }
 
-  // Threshold line at score 90 (approximate go threshold)
   const yGo = yOf(90);
-
   const latest = pts[pts.length - 1];
 
   return (
     <div className="border-border bg-bg-card rounded-lg border px-3 pt-2 pb-1">
       <div className="flex items-center justify-between mb-1">
-        <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">Score Trend</span>
-        <span className="text-text-t4 font-mono text-2xs">{pts.length} snapshots</span>
+        <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">{t("karar.scoreTrend")}</span>
+        <span className="text-text-t4 font-mono text-2xs">{pts.length} {t("karar.snapshots")}</span>
       </div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
-        {/* GO threshold line */}
         <line x1={PAD} y1={yGo} x2={W - PAD} y2={yGo}
           stroke="#22c55e" strokeWidth="0.5" strokeDasharray="3,3" strokeOpacity="0.35" />
-        {/* Score line — verdict-colored segments */}
         {segments.map((seg, i) => (
           <path key={i} d={seg.d} fill="none" stroke={seg.color} strokeWidth="1.5" strokeOpacity="0.8" />
         ))}
-        {/* End dot */}
         <circle
           cx={xOf(n - 1)}
           cy={yOf(latest.score)}
@@ -652,7 +645,6 @@ function ScoreHistoryChart({ snapshots }: { snapshots: import("@/lib/store/score
           fill={latest.verdict === "go" ? "#22c55e" : latest.verdict === "wait" ? "#f59e0b" : "#ef4444"}
         />
       </svg>
-      {/* Y-axis labels */}
       <div className="flex justify-between mt-0.5">
         <span className="text-text-t4 font-mono text-2xs">{pts[0].ts ? new Date(pts[0].ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
         <span className="text-text-t4 font-mono text-2xs">{latest.ts ? new Date(latest.ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>

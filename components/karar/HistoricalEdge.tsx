@@ -12,6 +12,7 @@
 
 import { useMemo } from "react";
 import { useBacktestStore } from "@/lib/store/backtestStore";
+import { useT } from "@/lib/i18n/context";
 import type { Pair } from "@/lib/constants/pairs";
 
 interface Props {
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function HistoricalEdge({ pair }: Props): React.ReactElement | null {
+  const t = useT();
   const scanRows = useBacktestStore((s) => s.scanRows);
   const scanConfig = useBacktestStore((s) => s.scanConfig);
   const scanStatus = useBacktestStore((s) => s.scanStatus);
@@ -42,7 +44,7 @@ export function HistoricalEdge({ pair }: Props): React.ReactElement | null {
     <div className={`rounded-lg border px-3 py-2 font-mono ${borderColor} ${bgColor}`}>
       <div className="flex items-center justify-between mb-1.5">
         <span className="text-text-t4 text-2xs tracking-widest uppercase">
-          Geçmiş Edge
+          {t("confirm.historicalEdge")}
         </span>
         {scanConfig && (
           <span className="text-text-t4 text-2xs">

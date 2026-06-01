@@ -1,13 +1,7 @@
 "use client";
 
-/**
- * TV WEBHOOK CARD — Shows TradingView webhook URL and setup instructions.
- *
- * Users configure TradingView to POST to their panel's /api/webhook/tv endpoint.
- * Optional: set TV_WEBHOOK_SECRET env var for protection.
- */
-
 import { useState } from "react";
+import { useT } from "@/lib/i18n/context";
 
 const TV_EXAMPLE = JSON.stringify(
   {
@@ -25,6 +19,7 @@ const TV_EXAMPLE = JSON.stringify(
 );
 
 export function TvWebhookCard(): React.ReactElement {
+  const t = useT();
   const [copied, setCopied] = useState(false);
 
   const origin =
@@ -47,12 +42,12 @@ export function TvWebhookCard(): React.ReactElement {
         📡 TradingView Webhook
       </h3>
       <p className="text-text-t4 font-mono text-2xs mb-3 leading-relaxed">
-        TradingView alert'lerini Telegram'a yönlendir. Alert ayarlarında bu URL'yi kullan.
+        {t("settings.tvWebhook.description")}
       </p>
 
       {/* Webhook URL */}
       <div className="mb-3">
-        <div className="text-text-t4 font-mono text-2xs mb-1 tracking-wider">Webhook URL</div>
+        <div className="text-text-t4 font-mono text-2xs mb-1 tracking-wider">{t("settings.tvWebhook.urlLabel")}</div>
         <div className="flex items-center gap-2">
           <div className="flex-1 overflow-hidden rounded border border-border bg-surface-s1 px-2.5 py-1.5">
             <span className="font-mono text-xs text-text-t2 break-all">{webhookUrl}</span>
@@ -61,7 +56,7 @@ export function TvWebhookCard(): React.ReactElement {
             onClick={copyUrl}
             className="shrink-0 rounded border border-border px-2.5 py-1.5 font-mono text-2xs text-text-t3 transition-colors hover:text-text-t1"
           >
-            {copied ? "✓ Kopyalandı" : "Kopyala"}
+            {copied ? t("settings.tvWebhook.copied") : t("settings.tvWebhook.copy")}
           </button>
         </div>
       </div>
@@ -69,17 +64,16 @@ export function TvWebhookCard(): React.ReactElement {
       {/* Optional secret */}
       <div className="mb-3 rounded border border-border/50 bg-surface-s1/50 p-2.5">
         <div className="text-text-t3 font-mono text-2xs font-semibold mb-1">
-          Güvenlik (opsiyonel)
+          {t("settings.tvWebhook.security")}
         </div>
         <p className="text-text-t4 font-mono text-2xs leading-relaxed">
-          Vercel env var olarak <code className="text-text-t2">TV_WEBHOOK_SECRET=güçlü-şifre</code> ekle,
-          ardından URL'ye <code className="text-text-t2">?secret=güçlü-şifre</code> ekle.
+          {t("settings.tvWebhook.securityDesc")}
         </p>
       </div>
 
       {/* JSON template */}
       <div>
-        <div className="text-text-t4 font-mono text-2xs mb-1 tracking-wider">Alert JSON Şablonu</div>
+        <div className="text-text-t4 font-mono text-2xs mb-1 tracking-wider">{t("settings.tvWebhook.template")}</div>
         <pre className="overflow-x-auto rounded border border-border bg-surface-s1 p-2.5 font-mono text-2xs text-text-t3 leading-relaxed">
           {TV_EXAMPLE}
         </pre>
@@ -87,12 +81,12 @@ export function TvWebhookCard(): React.ReactElement {
 
       {/* Steps */}
       <div className="mt-3 flex flex-col gap-1.5">
-        {[
-          "TradingView'de bir alert oluştur (Create Alert)",
-          "Notifications sekmesinde Webhook URL'yi yapıştır",
-          'Alert Message kutusuna yukardaki JSON şablonunu yaz',
-          "Telegram kanalında gelen alert'i gör",
-        ].map((step, i) => (
+        {([
+          t("settings.tvWebhook.step1"),
+          t("settings.tvWebhook.step2"),
+          t("settings.tvWebhook.step3"),
+          t("settings.tvWebhook.step4"),
+        ] as string[]).map((step, i) => (
           <div key={i} className="flex items-start gap-2">
             <span className="text-text-t4 font-mono text-2xs shrink-0 mt-0.5">{i + 1}.</span>
             <span className="text-text-t4 font-mono text-2xs leading-relaxed">{step}</span>

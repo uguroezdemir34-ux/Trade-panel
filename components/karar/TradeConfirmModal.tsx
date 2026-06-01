@@ -26,10 +26,10 @@ export function TradeConfirmModal({
   const dirCls = isLong ? "text-signal-green" : "text-signal-red";
 
   const CHECKLIST = [
-    `GO sinyaline göre işlem alıyorum — FOMO değil`,
-    `${formatPrice(result.risk.riskUsd, locale)} risk kaybedebileceğimi kabul ediyorum`,
-    `Duygusal olarak dengeliyim — intikam ticareti yapmıyorum`,
-    `Sisteme güveniyorum, planı uyguluyorum`,
+    t("confirm.check1"),
+    t("confirm.check2").replace("{amount}", formatPrice(result.risk.riskUsd, locale)),
+    t("confirm.check3"),
+    t("confirm.check4"),
   ];
   const [checked, setChecked] = useState<boolean[]>(() => new Array(CHECKLIST.length).fill(false));
   const allChecked = checked.every(Boolean);
@@ -157,7 +157,7 @@ export function TradeConfirmModal({
                 : "bg-border text-text-t4 cursor-not-allowed opacity-60"
             }`}
           >
-            {allChecked ? t("confirm.confirm") : `✓ ${CHECKLIST.length - checked.filter(Boolean).length} kaldı`}
+            {allChecked ? t("confirm.confirm") : `✓ ${t("confirm.remaining").replace("{n}", String(CHECKLIST.length - checked.filter(Boolean).length))}`}
           </button>
         </div>
       </div>
