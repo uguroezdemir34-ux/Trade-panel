@@ -9,10 +9,13 @@ import { EquityCurve } from "@/components/pnl/EquityCurve";
 import { WeeklySummary } from "@/components/pnl/WeeklySummary";
 import { ParameterAudit } from "@/components/pnl/ParameterAudit";
 import { FtComparison } from "@/components/pnl/FtComparison";
+import { MonthlyBreakdown } from "@/components/pnl/MonthlyBreakdown";
+import { PnlDistribution } from "@/components/pnl/PnlDistribution";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
 import { computeWeeklyAggregates } from "@/lib/pnl/weekly";
+import { computeMonthlyAggregates } from "@/lib/pnl/monthly";
 import { computeCalibrationStats } from "@/lib/pnl/calibration";
 import type { TradeRecord } from "@/lib/pnl/types";
 
@@ -62,6 +65,7 @@ export default function PnlPage() {
   const stats = useMemo(() => computePnlStats(trades), [trades]);
   const equityPoints = useMemo(() => computeEquityCurve(trades), [trades]);
   const weeklyAggs = useMemo(() => computeWeeklyAggregates(trades, 8), [trades]);
+  const monthlyAggs = useMemo(() => computeMonthlyAggregates(trades), [trades]);
 
   const aggregates = useMemo(() => computeDailyAggregates(trades), [trades]);
   const calendarAggregates = useMemo(
@@ -117,6 +121,12 @@ export default function PnlPage() {
       </div>
 
       <PnlCalendar aggregates={calendarAggregates} maxAbsPnl={maxAbsPnl} />
+
+      {/* Monthly + distribution side by side on desktop */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <MonthlyBreakdown months={monthlyAggs} />
+        <PnlDistribution trades={trades} />
+      </div>
 
       <ParameterAudit stats={calibrationStats} />
     </div>

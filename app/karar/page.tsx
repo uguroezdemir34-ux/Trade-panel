@@ -10,6 +10,14 @@ import { useRiskStore } from "@/lib/store/riskStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
+
+const PAIR_GROUPS: Record<string, readonly Pair[]> = {
+  all:    PAIRS,
+  majors: ["BTC", "ETH", "BNB", "XRP", "SOL"],
+  alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "FET", "SUI"],
+  meme:   ["DOGE", "SHIB"],
+};
+type PairGroup = "all" | "majors" | "alts" | "meme" | "go";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreBar } from "@/components/karar/ScoreBar";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
@@ -36,6 +44,7 @@ import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
 
 export default function KararPage() {
   const [activePair, setActivePair] = useState<Pair>("BTC");
+  const [pairGroup, setPairGroup] = useState<PairGroup>("all");
   const [showConfirm, setShowConfirm] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [execError, setExecError] = useState<string | null>(null);
@@ -69,6 +78,12 @@ export default function KararPage() {
     () => PAIRS.filter((p) => allResults[p]?.verdict === "go"),
     [allResults],
   );
+
+  // Filtreli parite listesi
+  const displayPairs = useMemo<readonly Pair[]>(() => {
+    if (pairGroup === "go") return goPairs.length > 0 ? goPairs : PAIRS;
+    return PAIR_GROUPS[pairGroup] ?? PAIRS;
+  }, [pairGroup, goPairs]);
 
   // En son hesaplanan skor zamanı
   const latestScoreTime = useMemo(() => {
@@ -324,9 +339,47 @@ export default function KararPage() {
         )
       )}
 
+      {/* Pair grup filtresi */}
+      <div className="flex flex-wrap gap-1">
+        {(["all", "majors", "alts", "meme", "go"] as PairGroup[]).map((g) => {
+          const label =
+            g === "all" ? "Tüm" :
+            g === "majors" ? "Majors" :
+            g === "alts" ? "Alts" :
+            g === "meme" ? "Meme" :
+            `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
+          const isActive = pairGroup === g;
+          const isGo = g === "go";
+          return (
+            <button
+              key={g}
+              onClick={() => {
+                setPairGroup(g);
+                const target = g === "go" ? goPairs : PAIR_GROUPS[g] ?? PAIRS;
+                if (target.length > 0 && !target.includes(activePair)) {
+                  setActivePair(target[0] as Pair);
+                }
+              }}
+              className={[
+                "px-2.5 py-1 rounded font-mono text-2xs font-medium transition-colors",
+                isActive
+                  ? isGo
+                    ? "bg-green-500/20 text-green-400"
+                    : "bg-surface-s2 text-text-t1"
+                  : isGo && goPairs.length > 0
+                  ? "text-green-400/70 hover:text-green-400"
+                  : "text-text-t4 hover:text-text-t2",
+              ].join(" ")}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+
       {/* Pair seçici — skor + verdict ile zenginleştirilmiş */}
-      <div className="grid grid-cols-5 gap-1.5">
-        {PAIRS.map((p) => {
+      <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(displayPairs.length, 5)}, 1fr)` }}>
+        {displayPairs.map((p) => {
           const pr = allResults[p];
           const v = pr?.verdict;
           const score = pr?.score;
@@ -355,7 +408,7 @@ export default function KararPage() {
           return (
             <button
               key={p}
-              onClick={() => setActivePair(p)}
+              onClick={() => setActivePair(p as Pair)}
               className={[
                 "flex flex-col items-center rounded pt-1.5 pb-0.5 font-mono transition-colors",
                 verdictBorder,
