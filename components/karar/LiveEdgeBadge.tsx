@@ -46,12 +46,22 @@ export function LiveEdgeBadge({ pair }: Props): React.ReactElement | null {
     const std = Math.sqrt(rs.reduce((s, r) => s + (r - mean) ** 2, 0) / rs.length);
     const sharpe = std > 0 ? mean / std : null;
 
-    return { ev, wr, avgWin, avgLoss, n: rs.length, sharpe };
+    // Direction split
+    const longs = closed.filter((t) => t.direction === "LONG");
+    const shorts = closed.filter((t) => t.direction === "SHORT");
+    const longWr = longs.length >= 3
+      ? longs.filter((t) => t.exit!.rMultiple! > 0).length / longs.length
+      : null;
+    const shortWr = shorts.length >= 3
+      ? shorts.filter((t) => t.exit!.rMultiple! > 0).length / shorts.length
+      : null;
+
+    return { ev, wr, avgWin, avgLoss, n: rs.length, sharpe, longWr, shortWr, longN: longs.length, shortN: shorts.length };
   }, [trades, pair]);
 
   if (!edge) return null;
 
-  const { ev, wr, n, sharpe } = edge;
+  const { ev, wr, n, sharpe, longWr, shortWr, longN, shortN } = edge;
   const isPos = ev > 0;
   const isNeg = ev < 0;
 
@@ -64,11 +74,11 @@ export function LiveEdgeBadge({ pair }: Props): React.ReactElement | null {
       className="rounded-lg border px-3 py-2 flex items-center gap-4"
       style={{ background: bgColor, borderColor }}
     >
-      <div className="flex flex-col gap-0.5">
+      <div className="flex flex-col gap-0.5 flex-1">
         <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">
           Live Edge ({n} trades)
         </span>
-        <div className="flex items-baseline gap-3">
+        <div className="flex items-baseline gap-3 flex-wrap">
           <span className="font-mono text-sm font-bold tabular-nums" style={{ color }}>
             EV {ev >= 0 ? "+" : ""}{ev.toFixed(3)}R
           </span>
@@ -81,6 +91,20 @@ export function LiveEdgeBadge({ pair }: Props): React.ReactElement | null {
             </span>
           )}
         </div>
+        {(longWr !== null || shortWr !== null) && (
+          <div className="flex items-center gap-3 mt-0.5">
+            {longWr !== null && (
+              <span className="font-mono text-2xs tabular-nums" style={{ color: longWr >= 0.5 ? "#22c55e" : "#ef4444" }}>
+                ▲ LONG {(longWr * 100).toFixed(0)}% ({longN})
+              </span>
+            )}
+            {shortWr !== null && (
+              <span className="font-mono text-2xs tabular-nums" style={{ color: shortWr >= 0.5 ? "#22c55e" : "#ef4444" }}>
+                ▼ SHORT {(shortWr * 100).toFixed(0)}% ({shortN})
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
