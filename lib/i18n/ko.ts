@@ -456,6 +456,7 @@ export const ko: Dictionary = {
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "거래 표시",
+    showVwap: "VWAP",
     legend: {
       candleUp: "상승 캔들",
       candleDown: "하락 캔들",

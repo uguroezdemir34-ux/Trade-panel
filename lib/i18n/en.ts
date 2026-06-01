@@ -464,6 +464,7 @@ export const en: Dictionary = {
     showRsi: "RSI",
     showMacd: "MACD",
     showBb: "BB(20)",
+    showVwap: "VWAP",
     legend: {
       candleUp: "Up candle",
       candleDown: "Down candle",
@@ -477,6 +478,7 @@ export const en: Dictionary = {
       macdLine: "MACD",
       macdSignal: "Signal",
       bb: "BB(20,2)",
+      vwap: "VWAP",
     },
   },
 

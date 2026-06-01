@@ -10,9 +10,10 @@ import { emaSeries } from "@/lib/indicators/ema";
 import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
 import { bbSeries } from "@/lib/indicators/bb";
+import { vwapSeries } from "@/lib/indicators/vwap";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
-import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands } from "@/lib/chart/types";
+import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 const PriceChart = dynamic(
@@ -34,6 +35,7 @@ export default function GrafikPage() {
   const [showRsi, setShowRsi] = useState(false);
   const [showMacd, setShowMacd] = useState(false);
   const [showBb, setShowBb] = useState(false);
+  const [showVwap, setShowVwap] = useState(false);
 
   const candlesRaw = useCandleStore((s) => s.candles[`${pair}_${timeframe}`]);
   const candles = candlesRaw ?? EMPTY_CANDLES;
@@ -128,6 +130,27 @@ export default function GrafikPage() {
       if (upper.length > 0) bbBands = { upper, middle, lower };
     }
 
+    // VWAP overlay
+    let vwapBands: VwapBands | undefined;
+    if (showVwap && candles.length >= 2) {
+      const highs   = candles.map((c) => c.high);
+      const lows    = candles.map((c) => c.low);
+      const vols    = candles.map((c) => c.volume);
+      const tsMs    = candles.map((c) => c.ts);
+      const pts = vwapSeries(closes, highs, lows, vols, tsMs);
+      const vwapLine: LinePoint[] = [];
+      const upperLine: LinePoint[] = [];
+      const lowerLine: LinePoint[] = [];
+      pts.forEach((v, i) => {
+        if (v !== null) {
+          vwapLine.push({ time: times[i], value: v.vwap });
+          upperLine.push({ time: times[i], value: v.upper });
+          lowerLine.push({ time: times[i], value: v.lower });
+        }
+      });
+      if (vwapLine.length > 0) vwapBands = { vwap: vwapLine, upper: upperLine, lower: lowerLine };
+    }
+
     // Trade markers
     let markers: ChartMarker[] | undefined;
     if (showTrades) {
@@ -141,8 +164,8 @@ export default function GrafikPage() {
       }));
     }
 
-    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, bb: bbBands, alarmLevels, markers };
-  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd, showBb, alarmLevels]);
+    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, bb: bbBands, vwap: vwapBands, alarmLevels, markers };
+  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd, showBb, showVwap, alarmLevels]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -157,6 +180,7 @@ export default function GrafikPage() {
         showRsi={showRsi}
         showMacd={showMacd}
         showBb={showBb}
+        showVwap={showVwap}
         onPairChange={setPair}
         onTimeframeChange={setTimeframe}
         onToggleEma20={() => setShowEma20((v) => !v)}
@@ -167,6 +191,7 @@ export default function GrafikPage() {
         onToggleRsi={() => setShowRsi((v) => !v)}
         onToggleMacd={() => setShowMacd((v) => !v)}
         onToggleBb={() => setShowBb((v) => !v)}
+        onToggleVwap={() => setShowVwap((v) => !v)}
       />
       <ChartLegend
         showEma20={showEma20}
@@ -177,6 +202,7 @@ export default function GrafikPage() {
         showRsi={showRsi}
         showMacd={showMacd}
         showBb={showBb}
+        showVwap={showVwap}
       />
       <PriceChart series={series} height={480} />
     </div>

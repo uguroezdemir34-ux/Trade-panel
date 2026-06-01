@@ -456,6 +456,7 @@ export const pt: Dictionary = {
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "Mostrar trades",
+    showVwap: "VWAP",
     legend: {
       candleUp: "Vela de alta",
       candleDown: "Vela de baixa",

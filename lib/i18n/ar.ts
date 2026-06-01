@@ -456,6 +456,7 @@ export const ar: Dictionary = {
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "عرض الصفقات",
+    showVwap: "VWAP",
     legend: {
       candleUp: "شمعة صاعدة",
       candleDown: "شمعة هابطة",

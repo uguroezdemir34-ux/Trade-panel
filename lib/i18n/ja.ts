@@ -456,6 +456,7 @@ export const ja: Dictionary = {
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "トレードを表示",
+    showVwap: "VWAP",
     legend: {
       candleUp: "陽線",
       candleDown: "陰線",

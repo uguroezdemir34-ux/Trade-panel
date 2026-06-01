@@ -15,6 +15,7 @@ interface Props {
   showRsi: boolean;
   showMacd: boolean;
   showBb: boolean;
+  showVwap: boolean;
 }
 
 export function ChartLegend({
@@ -26,6 +27,7 @@ export function ChartLegend({
   showRsi,
   showMacd,
   showBb,
+  showVwap,
 }: Props): React.ReactElement {
   const t = useT();
 
@@ -44,6 +46,7 @@ export function ChartLegend({
       )}
       {showVolume && <LegendBar label={t("grafik.legend.volume")} />}
       {showBb && <LegendDot color="#06b6d4" label={t("grafik.legend.bb")} dashed />}
+      {showVwap && <LegendDot color="#f97316" label={t("grafik.legend.vwap")} />}
       {showRsi && <LegendDot color="#ec4899" label={t("grafik.legend.rsi14")} />}
       {showMacd && (
         <>

@@ -37,6 +37,7 @@ const COLOR_EMA50    = "#f59e0b";
 const COLOR_EMA200   = "#a855f7";
 const COLOR_RSI      = "#ec4899";
 const COLOR_BB       = "#06b6d4"; // cyan-500
+const COLOR_VWAP     = "#f97316"; // orange-500
 const COLOR_MACD     = "#3b82f6";
 const COLOR_SIGNAL   = "#f59e0b";
 const COLOR_GRID     = "#e5e5e5";
@@ -83,6 +84,9 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
   const bbUpperRef    = useRef<ISeriesApi<"Line"> | null>(null);
   const bbMiddleRef   = useRef<ISeriesApi<"Line"> | null>(null);
   const bbLowerRef    = useRef<ISeriesApi<"Line"> | null>(null);
+  const vwapRef       = useRef<ISeriesApi<"Line"> | null>(null);
+  const vwapUpperRef  = useRef<ISeriesApi<"Line"> | null>(null);
+  const vwapLowerRef  = useRef<ISeriesApi<"Line"> | null>(null);
 
   // ─── Mount ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -143,6 +147,9 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
       bbUpperRef.current   = null;
       bbMiddleRef.current  = null;
       bbLowerRef.current   = null;
+      vwapRef.current      = null;
+      vwapUpperRef.current = null;
+      vwapLowerRef.current = null;
     };
   }, [height]);
 
@@ -229,6 +236,36 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
       if (bbUpperRef.current)  { chart.removeSeries(bbUpperRef.current);  bbUpperRef.current  = null; }
       if (bbMiddleRef.current) { chart.removeSeries(bbMiddleRef.current); bbMiddleRef.current = null; }
       if (bbLowerRef.current)  { chart.removeSeries(bbLowerRef.current);  bbLowerRef.current  = null; }
+    }
+
+    // 5c. VWAP overlay
+    if (series.vwap?.vwap.length) {
+      const vwapOpts = {
+        priceLineVisible: false,
+        lastValueVisible: true,
+      };
+      if (!vwapRef.current) {
+        vwapRef.current = chart.addLineSeries({
+          ...vwapOpts, color: COLOR_VWAP, lineWidth: 2,
+        });
+      }
+      if (!vwapUpperRef.current) {
+        vwapUpperRef.current = chart.addLineSeries({
+          ...vwapOpts, color: COLOR_VWAP, lineWidth: 1, lineStyle: 2, lastValueVisible: false,
+        });
+      }
+      if (!vwapLowerRef.current) {
+        vwapLowerRef.current = chart.addLineSeries({
+          ...vwapOpts, color: COLOR_VWAP, lineWidth: 1, lineStyle: 2, lastValueVisible: false,
+        });
+      }
+      vwapRef.current.setData(series.vwap.vwap as LineData<Time>[]);
+      vwapUpperRef.current.setData(series.vwap.upper as LineData<Time>[]);
+      vwapLowerRef.current.setData(series.vwap.lower as LineData<Time>[]);
+    } else {
+      if (vwapRef.current)      { chart.removeSeries(vwapRef.current);      vwapRef.current      = null; }
+      if (vwapUpperRef.current) { chart.removeSeries(vwapUpperRef.current); vwapUpperRef.current = null; }
+      if (vwapLowerRef.current) { chart.removeSeries(vwapLowerRef.current); vwapLowerRef.current = null; }
     }
 
     // 6. Volume histogram

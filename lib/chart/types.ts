@@ -44,6 +44,12 @@ export interface AlarmLevel {
   label?: string;
 }
 
+export interface VwapBands {
+  vwap: LinePoint[];
+  upper: LinePoint[];
+  lower: LinePoint[];
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
@@ -53,6 +59,7 @@ export interface ChartSeries {
   rsi?: LinePoint[];
   macdData?: MacdPoint[];
   bb?: BbBands;
+  vwap?: VwapBands;
   alarmLevels?: AlarmLevel[];
   markers?: ChartMarker[];
 }
