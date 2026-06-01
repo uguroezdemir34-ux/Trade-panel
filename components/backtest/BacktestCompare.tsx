@@ -181,6 +181,26 @@ export function BacktestCompare({
   const avgRA = sA.avgRMultiple ?? 0;
   const avgRB = sB.avgRMultiple ?? 0;
 
+  const evA = useMemo(() => {
+    const wins = resultA.trades.filter((t) => t.rMultiple > 0);
+    const losses = resultA.trades.filter((t) => t.rMultiple <= 0);
+    if (!wins.length || !losses.length) return null;
+    const avgW = wins.reduce((s, t) => s + t.rMultiple, 0) / wins.length;
+    const avgL = Math.abs(losses.reduce((s, t) => s + t.rMultiple, 0) / losses.length);
+    const wr = wins.length / resultA.trades.length;
+    return wr * avgW - (1 - wr) * avgL;
+  }, [resultA.trades]);
+
+  const evB = useMemo(() => {
+    const wins = resultB.trades.filter((t) => t.rMultiple > 0);
+    const losses = resultB.trades.filter((t) => t.rMultiple <= 0);
+    if (!wins.length || !losses.length) return null;
+    const avgW = wins.reduce((s, t) => s + t.rMultiple, 0) / wins.length;
+    const avgL = Math.abs(losses.reduce((s, t) => s + t.rMultiple, 0) / losses.length);
+    const wr = wins.length / resultB.trades.length;
+    return wr * avgW - (1 - wr) * avgL;
+  }, [resultB.trades]);
+
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4 flex flex-col gap-4">
       {/* ── Header ── */}
@@ -270,6 +290,27 @@ export function BacktestCompare({
           higherIsBetter={false}
           fmtDeltaStr={(d) => fmtDelta(d, 0)}
         />
+
+        {evA !== null && evB !== null && (
+          <StatRow
+            label="EV/Trade"
+            valA={`${evA >= 0 ? "+" : ""}${evA.toFixed(3)}R`}
+            valB={`${evB >= 0 ? "+" : ""}${evB.toFixed(3)}R`}
+            delta={evB - evA}
+            higherIsBetter={true}
+            fmtDeltaStr={(d) => `${fmtDelta(d, 3)}R`}
+          />
+        )}
+        {sA.sharpe !== null && sB.sharpe !== null && (
+          <StatRow
+            label="Sharpe"
+            valA={sA.sharpe.toFixed(2)}
+            valB={sB.sharpe.toFixed(2)}
+            delta={sB.sharpe - sA.sharpe}
+            higherIsBetter={true}
+            fmtDeltaStr={(d) => fmtDelta(d, 2)}
+          />
+        )}
 
         {/* Direction breakdown */}
         {(["LONG", "SHORT"] as const).map((dir) => {
