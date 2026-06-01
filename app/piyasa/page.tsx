@@ -13,6 +13,7 @@ import { OiVelocityCard } from "@/components/piyasa/OiVelocityCard";
 import { PriceTable } from "@/components/piyasa/PriceTable";
 import { TopMoversCard } from "@/components/piyasa/TopMoversCard";
 import { VolatilityRankCard } from "@/components/piyasa/VolatilityRankCard";
+import { MarketSessionsCard } from "@/components/piyasa/MarketSessionsCard";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { MtfTrendResult } from "@/lib/market/mtfTrend";
@@ -76,6 +77,7 @@ export default function PiyasaPage() {
         <TopMoversCard />
         <VolatilityRankCard />
       </div>
+      <MarketSessionsCard />
       <FundingAlertBanner funding={funding} />
       <MarketSummaryBanner summary={marketSummary} />
       <FearGreedGauge info={fgInfo} loading={fgLoading} />
