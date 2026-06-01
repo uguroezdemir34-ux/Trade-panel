@@ -19,6 +19,7 @@ import { HoldingTimeCard } from "@/components/pnl/HoldingTimeCard";
 import { DayOfWeekCard } from "@/components/pnl/DayOfWeekCard";
 import { TimeOfDayCard } from "@/components/pnl/TimeOfDayCard";
 import { RMultipleChart } from "@/components/pnl/RMultipleChart";
+import { PairEvLeaderboard } from "@/components/pnl/PairEvLeaderboard";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
@@ -192,6 +193,8 @@ export default function PnlPage() {
 
       {/* Time of day */}
       <TimeOfDayCard trades={trades} />
+
+      <PairEvLeaderboard trades={trades} />
 
       <ParameterAudit stats={calibrationStats} />
     </div>
