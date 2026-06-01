@@ -4,12 +4,13 @@
  * MTF TREND GRID — Tüm pair'ler için çok-zaman-dilimli yön matrisi.
  *
  * 15 pair desteği: results map'ten dinamik olarak render eder.
- * Kompakt tablo: pair | 1H | 4H | 1D | sınıf
+ * Kompakt tablo: pair | 1H | 4H | 1D | Score | sınıf
  */
 
 import { useT } from "@/lib/i18n/context";
 import type { MtfTrendResult, MtfClass, TrendDirection } from "@/lib/market/mtfTrend";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
+import { useScoreStore } from "@/lib/store/scoreStore";
 
 interface Props {
   results: Partial<Record<Pair, MtfTrendResult>>;
@@ -33,6 +34,7 @@ const DIR_COLOR: Record<TrendDirection, string> = {
 
 export function MtfTrendGrid({ results }: Props): React.ReactElement {
   const t = useT();
+  const scoreResults = useScoreStore((s) => s.results);
 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-3">
@@ -41,13 +43,14 @@ export function MtfTrendGrid({ results }: Props): React.ReactElement {
       </h3>
 
       {/* Header */}
-      <div className="mb-0.5 grid grid-cols-[44px_1fr_1fr_1fr_72px] gap-x-1 px-1">
+      <div className="mb-0.5 grid grid-cols-[44px_1fr_1fr_1fr_32px_60px] gap-x-1 px-1">
         <span />
         {(["1h", "4h", "1d"] as const).map((tf) => (
           <span key={tf} className="text-text-t4 text-center font-mono text-[9px] uppercase tracking-wider">
             {t(`piyasa.mtf.tf.${tf}`)}
           </span>
         ))}
+        <span className="text-text-t4 text-center font-mono text-[9px] uppercase tracking-wider">Sc</span>
         <span />
       </div>
 
@@ -56,11 +59,15 @@ export function MtfTrendGrid({ results }: Props): React.ReactElement {
         {PAIRS.map((pair) => {
           const result = results[pair];
           const cls: MtfClass = result?.cls ?? "no_data";
+          const scoreResult = scoreResults[pair];
+          const score = scoreResult?.score;
+          const verdict = scoreResult?.verdict;
+          const scoreColor = verdict === "go" ? "text-green-400" : verdict === "wait" ? "text-yellow-400" : verdict === "no" ? "text-red-400/70" : "text-text-t4";
 
           return (
             <div
               key={pair}
-              className="grid grid-cols-[44px_1fr_1fr_1fr_72px] items-center gap-x-1 py-0.5 px-1"
+              className="grid grid-cols-[44px_1fr_1fr_1fr_32px_60px] items-center gap-x-1 py-0.5 px-1"
             >
               <span className="text-text-t2 font-mono text-xs font-semibold">{pair}</span>
 
@@ -76,6 +83,10 @@ export function MtfTrendGrid({ results }: Props): React.ReactElement {
                   </div>
                 );
               })}
+
+              <span className={`text-center font-mono text-xs font-semibold tabular-nums ${scoreColor}`}>
+                {score !== undefined ? score : "—"}
+              </span>
 
               <span className={`truncate font-mono text-[9px] tracking-widest uppercase ${CLS_COLOR[cls]}`}>
                 {t(`piyasa.mtf.cls.${cls}`)}
