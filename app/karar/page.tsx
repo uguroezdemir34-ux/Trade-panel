@@ -10,6 +10,7 @@ import { useRiskStore } from "@/lib/store/riskStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
+import { useWatchlistStore } from "@/lib/store/watchlistStore";
 
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
@@ -17,7 +18,7 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "FET", "SUI"],
   meme:   ["DOGE", "SHIB"],
 };
-type PairGroup = "all" | "majors" | "alts" | "meme" | "go";
+type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreBar } from "@/components/karar/ScoreBar";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
@@ -53,6 +54,11 @@ import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 export default function KararPage() {
   const [activePair, setActivePair] = useState<Pair>("BTC");
   const [pairGroup, setPairGroup] = useState<PairGroup>("all");
+  const watchlistPairs = useWatchlistStore((s) => s.pairs);
+  const watchlistToggle = useWatchlistStore((s) => s.toggle);
+  const watchlistLoad = useWatchlistStore((s) => s.load);
+
+  useEffect(() => { watchlistLoad(); }, [watchlistLoad]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [execError, setExecError] = useState<string | null>(null);
@@ -119,8 +125,9 @@ export default function KararPage() {
   // Filtreli parite listesi
   const displayPairs = useMemo<readonly Pair[]>(() => {
     if (pairGroup === "go") return goPairs.length > 0 ? goPairs : PAIRS;
+    if (pairGroup === "watch") return watchlistPairs.length > 0 ? watchlistPairs : PAIRS;
     return PAIR_GROUPS[pairGroup] ?? PAIRS;
-  }, [pairGroup, goPairs]);
+  }, [pairGroup, goPairs, watchlistPairs]);
 
   // En son hesaplanan skor zamanı
   const latestScoreTime = useMemo(() => {
@@ -371,21 +378,23 @@ export default function KararPage() {
 
       {/* Pair grup filtresi */}
       <div className="flex flex-wrap gap-1">
-        {(["all", "majors", "alts", "meme", "go"] as PairGroup[]).map((g) => {
+        {(["all", "majors", "alts", "meme", "go", "watch"] as PairGroup[]).map((g) => {
           const label =
             g === "all" ? "Tüm" :
             g === "majors" ? "Majors" :
             g === "alts" ? "Alts" :
             g === "meme" ? "Meme" :
+            g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
             `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
           const isActive = pairGroup === g;
           const isGo = g === "go";
+          const isWatch = g === "watch";
           return (
             <button
               key={g}
               onClick={() => {
                 setPairGroup(g);
-                const target = g === "go" ? goPairs : PAIR_GROUPS[g] ?? PAIRS;
+                const target = g === "go" ? goPairs : g === "watch" ? watchlistPairs : PAIR_GROUPS[g] ?? PAIRS;
                 if (target.length > 0 && !target.includes(activePair)) {
                   setActivePair(target[0] as Pair);
                 }
@@ -395,9 +404,13 @@ export default function KararPage() {
                 isActive
                   ? isGo
                     ? "bg-green-500/20 text-green-400"
+                    : isWatch
+                    ? "bg-amber-500/20 text-amber-400"
                     : "bg-surface-s2 text-text-t1"
                   : isGo && goPairs.length > 0
                   ? "text-green-400/70 hover:text-green-400"
+                  : isWatch && watchlistPairs.length > 0
+                  ? "text-amber-400/70 hover:text-amber-400"
                   : "text-text-t4 hover:text-text-t2",
               ].join(" ")}
             >
@@ -435,31 +448,45 @@ export default function KararPage() {
           const dirArrow =
             dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
 
+          const isWatched = watchlistPairs.includes(p);
           return (
-            <button
-              key={p}
-              onClick={() => setActivePair(p as Pair)}
-              className={[
-                "flex flex-col items-center rounded pt-1.5 pb-0.5 font-mono transition-colors",
-                verdictBorder,
-                isActive
-                  ? "bg-surface-s2 text-text-t1"
-                  : "text-text-t3 hover:text-text-t2",
-              ].join(" ")}
-            >
-              <div className="relative flex items-center justify-center">
-                <span className="text-xs font-semibold tracking-wide">{p}</span>
-                {alarmedPairs.has(p) && (
-                  <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-amber-400" />
-                )}
-              </div>
-              <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
-                {score !== undefined ? `${score}${dirArrow}` : "·"}
-              </span>
-              <div className="mt-0.5 h-[10px]">
-                <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
-              </div>
-            </button>
+            <div key={p} className="relative group">
+              <button
+                onClick={() => setActivePair(p as Pair)}
+                className={[
+                  "w-full flex flex-col items-center rounded pt-1.5 pb-0.5 font-mono transition-colors",
+                  verdictBorder,
+                  isActive
+                    ? "bg-surface-s2 text-text-t1"
+                    : "text-text-t3 hover:text-text-t2",
+                ].join(" ")}
+              >
+                <div className="relative flex items-center justify-center">
+                  <span className="text-xs font-semibold tracking-wide">{p}</span>
+                  {alarmedPairs.has(p) && (
+                    <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-amber-400" />
+                  )}
+                </div>
+                <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
+                  {score !== undefined ? `${score}${dirArrow}` : "·"}
+                </span>
+                <div className="mt-0.5 h-[10px]">
+                  <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
+                </div>
+              </button>
+              {/* Star/watchlist toggle — shows on hover or when starred */}
+              <button
+                onClick={(e) => { e.stopPropagation(); watchlistToggle(p as Pair); }}
+                className={`absolute top-0 right-0 px-0.5 py-0.5 font-mono text-[9px] transition-opacity ${
+                  isWatched
+                    ? "opacity-100 text-amber-400"
+                    : "opacity-0 group-hover:opacity-60 text-text-t4"
+                }`}
+                title={isWatched ? "İzlemeden çıkar" : "İzlemeye ekle"}
+              >
+                ★
+              </button>
+            </div>
           );
         })}
       </div>
