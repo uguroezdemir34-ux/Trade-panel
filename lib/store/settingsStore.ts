@@ -46,6 +46,7 @@ const settingsSchema = z.object({
   wsUrl: z.string().nullable(),
   maxTradesPerDay: z.number().int().min(1).max(20),
   defaultLeverage: z.number().int().min(1).max(125),
+  defaultRiskPct: z.number().min(0.1).max(5),
   drawdownProtocolEnabled: z.boolean(),
   theme: themeSchema,
   goAlertsEnabled: z.boolean(),
@@ -64,6 +65,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   wsUrl: null,
   maxTradesPerDay: 2,
   defaultLeverage: 10,
+  defaultRiskPct: 1,
   drawdownProtocolEnabled: true,
   theme: "dark",
   goAlertsEnabled: false,
@@ -80,6 +82,7 @@ const KEYS = {
   wsUrl: "ws_url",
   maxTradesPerDay: "max_trades_per_day",
   defaultLeverage: "default_leverage",
+  defaultRiskPct: "default_risk_pct",
   drawdownProtocolEnabled: "dd_protocol_enabled",
   theme: "theme",
   goAlertsEnabled: "go_alerts_enabled",
@@ -97,6 +100,7 @@ interface SettingsStoreState extends SettingsData {
   setWsUrl: (url: string | null) => void;
   setMaxTradesPerDay: (n: number) => void;
   setDefaultLeverage: (n: number) => void;
+  setDefaultRiskPct: (n: number) => void;
   setDrawdownProtocolEnabled: (on: boolean) => void;
   setTheme: (theme: Theme) => void;
   setGoAlertsEnabled: (on: boolean) => void;
@@ -141,6 +145,11 @@ export function loadSettings(): SettingsData {
       KEYS.defaultLeverage,
       DEFAULT_SETTINGS.defaultLeverage,
       z.number().int().min(1).max(125),
+    ),
+    defaultRiskPct: loadFromStorage<number>(
+      KEYS.defaultRiskPct,
+      DEFAULT_SETTINGS.defaultRiskPct,
+      z.number().min(0.1).max(5),
     ),
     drawdownProtocolEnabled: loadFromStorage<boolean>(
       KEYS.drawdownProtocolEnabled,
@@ -198,6 +207,12 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ defaultLeverage: safe });
   },
 
+  setDefaultRiskPct: (n) => {
+    const safe = Math.max(0.1, Math.min(5, Math.round(n * 10) / 10));
+    saveToStorage(KEYS.defaultRiskPct, safe);
+    set({ defaultRiskPct: safe });
+  },
+
   setDrawdownProtocolEnabled: (on) => {
     saveToStorage(KEYS.drawdownProtocolEnabled, on);
     set({ drawdownProtocolEnabled: on });
@@ -221,6 +236,7 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     saveToStorage(KEYS.wsUrl, DEFAULT_SETTINGS.wsUrl);
     saveToStorage(KEYS.maxTradesPerDay, DEFAULT_SETTINGS.maxTradesPerDay);
     saveToStorage(KEYS.defaultLeverage, DEFAULT_SETTINGS.defaultLeverage);
+    saveToStorage(KEYS.defaultRiskPct, DEFAULT_SETTINGS.defaultRiskPct);
     saveToStorage(
       KEYS.drawdownProtocolEnabled,
       DEFAULT_SETTINGS.drawdownProtocolEnabled,

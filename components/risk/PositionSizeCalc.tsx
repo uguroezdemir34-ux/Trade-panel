@@ -7,9 +7,11 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 export function PositionSizeCalc(): React.ReactElement {
   const balance = useAccountStore((s) => s.balanceTotal);
   const defaultLev = useSettingsStore((s) => s.defaultLeverage);
+  const defaultRiskPct = useSettingsStore((s) => s.defaultRiskPct);
+  const setDefaultRiskPct = useSettingsStore((s) => s.setDefaultRiskPct);
 
   const [direction, setDirection] = useState<"LONG" | "SHORT">("LONG");
-  const [riskPct, setRiskPct] = useState(1.0);
+  const [riskPct, setRiskPct] = useState(defaultRiskPct);
   const [entry, setEntry] = useState("");
   const [sl, setSl] = useState("");
   const [lev, setLev] = useState<number>(defaultLev);
@@ -73,7 +75,11 @@ export function PositionSizeCalc(): React.ReactElement {
             max={5}
             step={0.1}
             value={riskPct}
-            onChange={(e) => setRiskPct(Math.max(0.1, Math.min(5, parseFloat(e.target.value) || 1)))}
+            onChange={(e) => {
+              const v = Math.max(0.1, Math.min(5, parseFloat(e.target.value) || 1));
+              setRiskPct(v);
+              setDefaultRiskPct(v);
+            }}
             className="w-14 bg-bg-page border border-border rounded px-1.5 py-0.5 font-mono text-xs text-text-t1 text-right tabular-nums focus:outline-none focus:border-text-t3"
           />
           <span className="text-text-t4 font-mono text-2xs">%</span>
