@@ -189,6 +189,12 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
               value={riskRatios.sortino.toFixed(2)}
               color={riskRatios.sortino > 1 ? "text-green-400" : riskRatios.sortino > 0 ? "text-yellow-400" : "text-red-400"} />
           )}
+          {stats.profitFactor !== null && stats.profitFactor !== undefined && (
+            <Stat label="Prof. Factor"
+              value={stats.profitFactor.toFixed(2)}
+              color={stats.profitFactor >= 1.5 ? "text-green-400" : stats.profitFactor >= 1 ? "text-yellow-400" : "text-red-400"}
+              hint="grossWins/grossLoss" />
+          )}
           {kellyEv && (
             <Stat label="EV/Trade"
               value={`${kellyEv.ev > 0 ? "+" : ""}${kellyEv.ev.toFixed(3)}R`}

@@ -170,6 +170,10 @@ function computeStats(trades: BacktestTrade[]): BacktestStats {
     };
   }
 
+  const grossWins = wins.reduce((s, t) => s + t.rMultiple, 0);
+  const grossLosses = Math.abs(losses.reduce((s, t) => s + t.rMultiple, 0));
+  const profitFactor = grossLosses > 0 ? grossWins / grossLosses : (grossWins > 0 ? null : null);
+
   return {
     totalTrades: trades.length,
     winCount: wins.length,
@@ -179,6 +183,7 @@ function computeStats(trades: BacktestTrade[]): BacktestStats {
     maxDrawdownR: maxDd,
     maxWinStreak,
     maxLossStreak,
+    profitFactor,
     ...computeRatios(trades),
     byScoreBucket,
     byDirection: { LONG: dirStats("LONG"), SHORT: dirStats("SHORT") },

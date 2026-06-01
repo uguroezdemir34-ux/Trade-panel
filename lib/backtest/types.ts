@@ -62,6 +62,8 @@ export interface BacktestStats {
   maxWinStreak: number;
   /** Longest consecutive loss run */
   maxLossStreak: number;
+  /** Gross wins / gross losses (R) — null if no losses */
+  profitFactor: number | null;
   /** mean(R)/std(R) — null when < 5 trades */
   sharpe: number | null;
   /** mean(R)/downside_std(R) — null when < 5 trades */
