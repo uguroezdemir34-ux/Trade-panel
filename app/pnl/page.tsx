@@ -21,6 +21,7 @@ import { TimeOfDayCard } from "@/components/pnl/TimeOfDayCard";
 import { RMultipleChart } from "@/components/pnl/RMultipleChart";
 import { PairEvLeaderboard } from "@/components/pnl/PairEvLeaderboard";
 import { EntryQualityChart } from "@/components/pnl/EntryQualityChart";
+import { TradeInsightsCard } from "@/components/pnl/TradeInsightsCard";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
@@ -158,6 +159,7 @@ export default function PnlPage() {
 
       <PnlSummaryRow trades={trades} />
       <PnlStatsCard stats={stats} />
+      <TradeInsightsCard trades={trades} />
 
       {/* FT comparison — shown when paper trades exist (always uses allTrades for full picture) */}
       <FtComparison trades={allTrades} />
