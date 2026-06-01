@@ -26,6 +26,7 @@ export interface ScanRow {
   /** winRate/100 × avgR — primary sort key */
   ev: number | null;
   sharpe: number | null;
+  profitFactor: number | null;
   status: "done" | "error";
   errorMsg?: string;
 }

@@ -122,6 +122,7 @@ export function useBacktest() {
                 ? (stats.winRate / 100) * stats.avgRMultiple
                 : null,
             sharpe: stats.sharpe,
+            profitFactor: stats.profitFactor,
             status: "done",
           };
           store.addScanRow(row);
@@ -136,6 +137,7 @@ export function useBacktest() {
             shortWinRate: null,
             ev: null,
             sharpe: null,
+            profitFactor: null,
             status: "error",
             errorMsg: err instanceof Error ? err.message : "Error",
           });

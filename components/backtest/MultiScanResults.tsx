@@ -5,7 +5,7 @@ import { useT } from "@/lib/i18n/context";
 import type { ScanRow, ScanConfig } from "@/lib/store/backtestStore";
 
 function downloadScanCsv(rows: ScanRow[], config: ScanConfig | null): void {
-  const header = "Pair,Trades,WinRate%,AvgR,EV,Sharpe,MaxDrawdownR,LongWR%,ShortWR%";
+  const header = "Pair,Trades,WinRate%,AvgR,EV,Sharpe,ProfitFactor,MaxDrawdownR,LongWR%,ShortWR%";
   const dataRows = rows.map((r) =>
     [
       r.pair,
@@ -14,6 +14,7 @@ function downloadScanCsv(rows: ScanRow[], config: ScanConfig | null): void {
       r.avgR !== null ? r.avgR.toFixed(3) : "",
       r.ev !== null ? r.ev.toFixed(4) : "",
       r.sharpe !== null ? r.sharpe.toFixed(3) : "",
+      r.profitFactor !== null ? r.profitFactor.toFixed(3) : "",
       r.maxDrawdownR.toFixed(2),
       r.longWinRate !== null ? r.longWinRate.toFixed(1) : "",
       r.shortWinRate !== null ? r.shortWinRate.toFixed(1) : "",
@@ -124,6 +125,7 @@ export function MultiScanResults({
                   <th className="text-right py-1.5 pr-3">{t("backtest.avgR")}</th>
                   <th className="text-right py-1.5 pr-3">EV</th>
                   <th className="text-right py-1.5 pr-3">Sharpe</th>
+                  <th className="text-right py-1.5 pr-3">PF</th>
                   <th className="text-right py-1.5 pr-3">L%</th>
                   <th className="text-right py-1.5">S%</th>
                 </tr>
@@ -138,7 +140,7 @@ export function MultiScanResults({
                       <tr key={row.pair} className="border-b border-border/30">
                         <td className="text-text-t4 py-1.5 pr-3">{rank}</td>
                         <td className="text-text-t2 py-1.5 pr-3 font-semibold">{row.pair}</td>
-                        <td colSpan={7} className="text-red-400 text-right py-1.5 text-2xs">
+                        <td colSpan={8} className="text-red-400 text-right py-1.5 text-2xs">
                           {row.errorMsg ?? "Error"}
                         </td>
                       </tr>
@@ -189,6 +191,13 @@ export function MultiScanResults({
                         row.sharpe !== null ? "text-red-400" : "text-text-t4"
                       }`}>
                         {row.sharpe !== null ? row.sharpe.toFixed(2) : "—"}
+                      </td>
+                      <td className={`text-right py-1.5 pr-3 tabular-nums ${
+                        row.profitFactor !== null && row.profitFactor >= 1.5 ? "text-green-400" :
+                        row.profitFactor !== null && row.profitFactor >= 1 ? "text-yellow-400" :
+                        row.profitFactor !== null ? "text-red-400" : "text-text-t4"
+                      }`}>
+                        {row.profitFactor !== null ? row.profitFactor.toFixed(2) : "—"}
                       </td>
                       <td className="text-text-t3 text-right py-1.5 pr-3 tabular-nums">
                         {row.longWinRate !== null ? `${row.longWinRate.toFixed(0)}%` : "—"}
