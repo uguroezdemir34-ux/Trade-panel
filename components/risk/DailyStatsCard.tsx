@@ -25,12 +25,36 @@ export function DailyStatsCard(): React.ReactElement {
     const losses = closed.filter((t) => (t.exit?.pnlUsd ?? 0) < 0).length;
     const wr = closed.length > 0 ? (wins / closed.length) * 100 : null;
 
-    return { opened: opened.length, closed: closed.length, pnl, wins, losses, wr };
+    // Current streak from ALL closed trades (most recent last)
+    const allClosed = [...trades]
+      .filter((t) => t.status === "closed" && t.exit != null)
+      .sort((a, b) => a.exit!.closedAt - b.exit!.closedAt);
+
+    let streak = 0;
+    let streakType: "win" | "loss" | null = null;
+    if (allClosed.length > 0) {
+      const lastType = (allClosed[allClosed.length - 1].exit!.pnlUsd ?? 0) > 0 ? "win" : "loss";
+      streakType = lastType;
+      for (let i = allClosed.length - 1; i >= 0; i--) {
+        const isWin = (allClosed[i].exit!.pnlUsd ?? 0) > 0;
+        if ((lastType === "win" && isWin) || (lastType === "loss" && !isWin)) {
+          streak++;
+        } else {
+          break;
+        }
+      }
+    }
+
+    return { opened: opened.length, closed: closed.length, pnl, wins, losses, wr, streak, streakType };
   }, [trades]);
 
   const pnlColor = stats.pnl > 0 ? "text-green-400" : stats.pnl < 0 ? "text-red-400" : "text-text-t3";
   const pnlSign = stats.pnl > 0 ? "+" : "";
   const wrColor = stats.wr === null ? "text-text-t4" : stats.wr >= 55 ? "text-green-400" : stats.wr >= 45 ? "text-yellow-400" : "text-red-400";
+  const streakColor = stats.streakType === "win" ? "text-green-400" : stats.streakType === "loss" ? "text-red-400" : "text-text-t4";
+  const streakLabel = stats.streak >= 2 && stats.streakType
+    ? `${stats.streakType === "win" ? "🔥" : "⚠"} ${stats.streak} ${stats.streakType}`
+    : "—";
 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
@@ -52,6 +76,11 @@ export function DailyStatsCard(): React.ReactElement {
           hint={stats.closed > 0 ? `${stats.wins}W/${stats.losses}L` : undefined}
         />
       </div>
+      {stats.streak >= 2 && (
+        <div className={`mt-2 pt-2 border-t border-border/30 font-mono text-xs ${streakColor}`}>
+          {streakLabel} streak
+        </div>
+      )}
     </div>
   );
 }
