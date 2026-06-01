@@ -4,6 +4,7 @@ import { DrawdownMeter } from "@/components/risk/DrawdownMeter";
 import { DailyStatsCard } from "@/components/risk/DailyStatsCard";
 import { DailyGoalCard } from "@/components/risk/DailyGoalCard";
 import { PositionSizeCalc } from "@/components/risk/PositionSizeCalc";
+import { KellyAdvisorCard } from "@/components/risk/KellyAdvisorCard";
 import { AdherenceScore } from "@/components/risk/AdherenceScore";
 import { LocksList } from "@/components/risk/LocksList";
 import { DisciplineLogList } from "@/components/risk/DisciplineLogList";
@@ -14,7 +15,10 @@ export default function RiskPage() {
       <DrawdownMeter />
       <DailyStatsCard />
       <DailyGoalCard />
-      <PositionSizeCalc />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <PositionSizeCalc />
+        <KellyAdvisorCard />
+      </div>
       <AdherenceScore />
       <LocksList />
       <DisciplineLogList />
