@@ -6,6 +6,8 @@ import type { BacktestResult, BacktestTrade } from "@/lib/backtest/types";
 
 interface Props {
   result: BacktestResult;
+  onPin?: () => void;
+  isPinned?: boolean;
 }
 
 // ── Inline R-curve (pure SVG, no deps) ───────────────────────────────────────
@@ -70,7 +72,7 @@ function exitColor(reason: BacktestTrade["exitReason"]): string {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function BacktestResults({ result }: Props): React.ReactElement {
+export function BacktestResults({ result, onPin, isPinned }: Props): React.ReactElement {
   const t = useT();
   const { stats, trades, pair, dataMonths, totalBarsScanned, runAt } = result;
 
@@ -84,13 +86,27 @@ export function BacktestResults({ result }: Props): React.ReactElement {
     <div className="flex flex-col gap-4">
       {/* ── Header ── */}
       <div className="border-border bg-surface rounded-lg border p-4">
-        <div className="flex items-center justify-between mb-3">
+        <div className="flex items-start justify-between mb-3 gap-2">
           <h2 className="text-text-t1 font-mono text-sm font-semibold tracking-wider uppercase">
             {pair}/USDT · {dataMonths}{t("backtest.months")} · {totalBarsScanned.toLocaleString()} {t("backtest.bars")}
           </h2>
-          <span className="text-text-t4 font-mono text-2xs">
-            {new Date(runAt).toLocaleTimeString()}
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="text-text-t4 font-mono text-2xs">
+              {new Date(runAt).toLocaleTimeString()}
+            </span>
+            {onPin && (
+              <button
+                onClick={onPin}
+                className={`font-mono text-2xs border rounded px-2 py-1 transition-colors ${
+                  isPinned
+                    ? "border-signal-green/40 text-signal-green bg-soft-green"
+                    : "border-border text-text-t4 hover:text-text-t2"
+                }`}
+              >
+                {isPinned ? t("backtest.pinned") : t("backtest.pinButton")}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Stats grid */}

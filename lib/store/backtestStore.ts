@@ -74,6 +74,12 @@ interface BacktestStoreState {
   /** Epoch ms when results were last saved to localStorage. null = not saved yet. */
   savedAt: number | null;
   clearCache: () => void;
+
+  // Compare pin
+  pinnedResult: BacktestResult | null;
+  pinnedConfig: BacktestConfig | null;
+  pinForCompare: () => void;
+  clearPin: () => void;
 }
 
 export const useBacktestStore = create<BacktestStoreState>((set, get) => {
@@ -188,5 +194,14 @@ export const useBacktestStore = create<BacktestStoreState>((set, get) => {
       clearBtCache();
       set({ savedAt: null });
     },
+
+    // Compare pin
+    pinnedResult: null,
+    pinnedConfig: null,
+    pinForCompare: () => {
+      const { result, config } = get();
+      if (result && config) set({ pinnedResult: result, pinnedConfig: config });
+    },
+    clearPin: () => set({ pinnedResult: null, pinnedConfig: null }),
   };
 });

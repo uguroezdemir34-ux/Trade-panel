@@ -553,5 +553,12 @@ export const tr: Dictionary = {
     restoredBanner: "Önbellekten geri yüklendi",
     restoredAgo: "önce",
     clearCache: "Temizle",
+    pinButton: "📌 Referans olarak sabitle",
+    pinned: "📌 Sabitlendi",
+    compareTitle: "KARŞILAŞTIRMA",
+    runA: "A — Referans",
+    runB: "B — Aktif",
+    clearPin: "Karşılaştırmayı temizle",
+    compareConfig: "Yapılandırma",
   },
 };

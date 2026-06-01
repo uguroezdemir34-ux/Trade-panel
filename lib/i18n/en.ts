@@ -553,5 +553,12 @@ export const en: Dictionary = {
     restoredBanner: "Restored from cache",
     restoredAgo: "ago",
     clearCache: "Clear",
+    pinButton: "📌 Pin as reference",
+    pinned: "📌 Pinned",
+    compareTitle: "COMPARISON",
+    runA: "A — Reference",
+    runB: "B — Active",
+    clearPin: "Clear comparison",
+    compareConfig: "Config",
   },
 };

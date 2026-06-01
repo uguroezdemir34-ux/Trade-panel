@@ -4,6 +4,7 @@ import { useT } from "@/lib/i18n/context";
 import { useBacktest } from "@/lib/hooks/useBacktest";
 import { BacktestConfigPanel } from "@/components/backtest/BacktestConfig";
 import { BacktestResults } from "@/components/backtest/BacktestResults";
+import { BacktestCompare } from "@/components/backtest/BacktestCompare";
 import { MultiScanResults } from "@/components/backtest/MultiScanResults";
 import type { BacktestConfig } from "@/lib/backtest/types";
 import type { ScanConfig } from "@/lib/store/backtestStore";
@@ -18,6 +19,7 @@ export default function BacktestPage() {
     downloadPct,
     computePct,
     result,
+    config,
     error,
     reset,
     // scan state
@@ -31,6 +33,11 @@ export default function BacktestPage() {
     // persistence
     savedAt,
     clearCache,
+    // compare
+    pinnedResult,
+    pinnedConfig,
+    pinForCompare,
+    clearPin,
   } = useBacktest();
 
   const isSingleRunning = status === "downloading" || status === "computing";
@@ -127,7 +134,21 @@ export default function BacktestPage() {
       )}
 
       {/* Single-pair result */}
-      {showSingleResult && <BacktestResults result={result!} />}
+      {showSingleResult && pinnedResult && pinnedConfig && config ? (
+        <BacktestCompare
+          resultA={pinnedResult}
+          configA={pinnedConfig}
+          resultB={result!}
+          configB={config}
+          onClear={clearPin}
+        />
+      ) : showSingleResult ? (
+        <BacktestResults
+          result={result!}
+          onPin={pinForCompare}
+          isPinned={pinnedResult?.runAt === result?.runAt}
+        />
+      ) : null}
 
       {/* Multi-pair scan (can show alongside config) */}
       {showScan && (
