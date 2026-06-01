@@ -52,6 +52,7 @@ export default function PnlPage() {
           pnlPct: t.exit!.pnlPct,
           score: t.entryContext.score,
           closeReason: t.exit!.reason,
+          rMultiple: t.exit!.rMultiple,
           isPaper: t.isPaper,
         })),
     [snapshots],
