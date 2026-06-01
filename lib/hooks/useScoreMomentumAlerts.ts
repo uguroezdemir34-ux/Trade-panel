@@ -15,6 +15,7 @@ import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { browserNotify } from "@/lib/notify/browser";
+import { playMomentumAlert } from "@/lib/notify/audio";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 
 const COOLDOWN_MS = 45 * 60 * 1000;
@@ -53,6 +54,7 @@ export function useScoreMomentumAlerts(): void {
 
       lastAlerted.current[pair] = now;
       const dir = current.direction !== "NEUTRAL" ? current.direction : undefined;
+      playMomentumAlert();
       browserNotify(
         `📈 ${pair} Momentum`,
         `Skor ${current.score} (+${rise}) — GO eşiğine yaklaşıyor`,

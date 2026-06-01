@@ -13,6 +13,7 @@ import { useScoreStore } from "@/lib/store/scoreStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { browserNotify } from "@/lib/notify/browser";
+import { playGoAlert } from "@/lib/notify/audio";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Verdict, ScoreResult } from "@/lib/score/orchestrator";
 
@@ -46,6 +47,7 @@ export function useGoAlerts(): void {
         if (now - lastTime >= COOLDOWN_MS) {
           lastAlerted.current[pair] = now;
           const dir = result.direction !== "NEUTRAL" ? result.direction : undefined;
+          playGoAlert();
           browserNotify(
             `🚀 GO — ${pair}`,
             `${dir ? dir + " · " : ""}Skor ${result.score}`,

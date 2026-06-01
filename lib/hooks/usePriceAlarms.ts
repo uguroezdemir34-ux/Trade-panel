@@ -5,6 +5,7 @@ import { useMarketStore } from "@/lib/store/marketStore";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { browserNotify } from "@/lib/notify/browser";
+import { playPriceAlert } from "@/lib/notify/audio";
 import type { Pair } from "@/lib/constants/pairs";
 
 export function usePriceAlarms(): void {
@@ -43,6 +44,7 @@ export function usePriceAlarms(): void {
         notified.current.add(alarm.id);
         markTriggered(alarm.id);
         const condStr = alarm.condition === "above" ? "▲ üzerine çıktı" : "▼ altına indi";
+        playPriceAlert();
         browserNotify(
           `🔔 ${alarm.pair} Fiyat Alarmı`,
           `${alarm.label ? alarm.label + " — " : ""}${alarm.targetPrice.toLocaleString()} ${condStr}`,
