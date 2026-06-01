@@ -26,6 +26,7 @@ import { AppHeader } from "./AppHeader";
 import { BottomNav } from "./BottomNav";
 import { SplashScreen } from "./SplashScreen";
 import { ThemeSync } from "./ThemeSync";
+import { AlarmToastContainer } from "./AlarmToastContainer";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useAccountStore } from "@/lib/store/accountStore";
 import { useRiskStore } from "@/lib/store/riskStore";
@@ -119,6 +120,7 @@ export function AppShell({
       <ThemeSync />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />
+      <AlarmToastContainer />
       <main className="app-main mx-auto max-w-screen-2xl px-4 pt-4 lg:px-6">
         {children}
       </main>
