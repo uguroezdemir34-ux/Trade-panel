@@ -50,6 +50,7 @@ import { GoSignalLog } from "@/components/karar/GoSignalLog";
 import { HistoricalEdge } from "@/components/karar/HistoricalEdge";
 import { FundingBadge } from "@/components/karar/FundingBadge";
 import { CorrelationWarning } from "@/components/karar/CorrelationWarning";
+import { CandlePatternBadge } from "@/components/karar/CandlePatternBadge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export default function KararPage() {
@@ -551,6 +552,7 @@ export default function KararPage() {
           />
           <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} />
           <FlowAlignmentRow flow={flowResult} />
+          <CandlePatternBadge pair={activePair} />
           <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
           <BlocksList
             hardBlocks={result.blocks}
