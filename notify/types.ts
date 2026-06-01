@@ -30,6 +30,10 @@ export type NotifyKind =
   | "sl_hit"
   | "tp_hit"
   | "lock_triggered"
+  | "go_signal"
+  | "price_alarm"
+  | "score_momentum"
+  | "consecutive_loss"
   | "test"; // health check
 
 /**
@@ -37,7 +41,7 @@ export type NotifyKind =
  */
 export interface NotifyMessage {
   kind: NotifyKind;
-  pair: Pair;
+  pair?: Pair;
   direction?: "LONG" | "SHORT";
   entry?: number;
   stopPrice?: number;
@@ -47,6 +51,12 @@ export interface NotifyMessage {
   reasonText?: string;
   /** Skor 0-100 */
   score?: number;
+  /** Skor artışı (momentum alert için) */
+  rise?: number;
+  /** Ardışık zarar sayısı */
+  streak?: number;
+  /** Uyarı seviyesi (consecutive_loss için) */
+  severity?: string;
   /** Ek bilgi (PnL kapanışta vb.) */
   pnl?: number;
   pnlPct?: number;

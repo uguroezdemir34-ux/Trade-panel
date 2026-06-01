@@ -45,6 +45,7 @@ import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
 import { useSignalFirehose } from "@/lib/hooks/useSignalFirehose";
 import { usePriceAlarms } from "@/lib/hooks/usePriceAlarms";
 import { useScoreMomentumAlerts } from "@/lib/hooks/useScoreMomentumAlerts";
+import { useConsecutiveLossAlert } from "@/lib/hooks/useConsecutiveLossAlert";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 
 const SPLASH_DATE_KEY = "qx_splash_date";
@@ -104,6 +105,8 @@ export function AppShell({
   usePriceAlarms();
   // Skor momentum — GO öncesi hızlı yükselişte pre-alert
   useScoreMomentumAlerts();
+  // Ardışık zarar alarmı — 3+ ardışık zararı Telegram'a bildir
+  useConsecutiveLossAlert();
 
   useEffect(() => {
     rehydrateSettings();
