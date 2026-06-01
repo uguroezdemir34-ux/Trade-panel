@@ -12,6 +12,7 @@ import { FtComparison } from "@/components/pnl/FtComparison";
 import { MonthlyBreakdown } from "@/components/pnl/MonthlyBreakdown";
 import { PnlDistribution } from "@/components/pnl/PnlDistribution";
 import { TopTradesCard } from "@/components/pnl/TopTradesCard";
+import { PairBreakdownCard } from "@/components/pnl/PairBreakdownCard";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
@@ -130,6 +131,7 @@ export default function PnlPage() {
       </div>
 
       <TopTradesCard trades={trades} />
+      <PairBreakdownCard trades={trades} />
       <ParameterAudit stats={calibrationStats} />
     </div>
   );
