@@ -41,6 +41,8 @@ import { useFlowIntelligence } from "@/lib/hooks/useFlowIntelligence";
 import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
+import { ScoreLeaderboard } from "@/components/karar/ScoreLeaderboard";
+import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export default function KararPage() {
   const [activePair, setActivePair] = useState<Pair>("BTC");
@@ -77,6 +79,13 @@ export default function KararPage() {
   const goPairs = useMemo(
     () => PAIRS.filter((p) => allResults[p]?.verdict === "go"),
     [allResults],
+  );
+
+  // Aktif alarmı olan pariteler
+  const alarms = usePriceAlarmStore((s) => s.alarms);
+  const alarmedPairs = useMemo(
+    () => new Set(alarms.filter((a) => a.status === "active").map((a) => a.pair)),
+    [alarms],
   );
 
   // Filtreli parite listesi
@@ -319,25 +328,12 @@ export default function KararPage() {
         )}
       </div>
 
-      {/* GO sinyali özeti */}
-      {goPairs.length > 0 ? (
-        <div className="flex items-center gap-2 rounded-lg border border-green-400/30 bg-green-400/5 px-3 py-2">
-          <span className="font-mono text-xs font-bold text-green-400">
-            {goPairs.length} GO
-          </span>
-          <span className="text-text-t3 font-mono text-xs">
-            {goPairs.join(" · ")}
-          </span>
-        </div>
-      ) : (
-        Object.keys(allResults).length > 0 && (
-          <div className="flex items-center gap-2 rounded-lg border border-border/50 px-3 py-1.5">
-            <span className="text-text-t4 font-mono text-xs">
-              {Object.keys(allResults).length}/{PAIRS.length} hesaplandı · GO sinyal yok
-            </span>
-          </div>
-        )
-      )}
+      {/* Skor sıralaması */}
+      <ScoreLeaderboard
+        results={allResults}
+        activePair={activePair}
+        onSelect={setActivePair}
+      />
 
       {/* Pair grup filtresi */}
       <div className="flex flex-wrap gap-1">
@@ -417,7 +413,12 @@ export default function KararPage() {
                   : "text-text-t3 hover:text-text-t2",
               ].join(" ")}
             >
-              <span className="text-xs font-semibold tracking-wide">{p}</span>
+              <div className="relative flex items-center justify-center">
+                <span className="text-xs font-semibold tracking-wide">{p}</span>
+                {alarmedPairs.has(p) && (
+                  <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-amber-400" />
+                )}
+              </div>
               <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
                 {score !== undefined ? `${score}${dirArrow}` : "·"}
               </span>
