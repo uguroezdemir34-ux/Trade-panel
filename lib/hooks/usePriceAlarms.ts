@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
+import { browserNotify } from "@/lib/notify/browser";
 import type { Pair } from "@/lib/constants/pairs";
 
 export function usePriceAlarms(): void {
@@ -41,6 +42,11 @@ export function usePriceAlarms(): void {
       if (triggered) {
         notified.current.add(alarm.id);
         markTriggered(alarm.id);
+        const condStr = alarm.condition === "above" ? "▲ üzerine çıktı" : "▼ altına indi";
+        browserNotify(
+          `🔔 ${alarm.pair} Fiyat Alarmı`,
+          `${alarm.label ? alarm.label + " — " : ""}${alarm.targetPrice.toLocaleString()} ${condStr}`,
+        );
         sendAlarmNotification(alarm.pair as Pair, alarm.targetPrice, alarm.condition, currentPrice, alarm.label).catch(() => {
           // fire-and-forget
         });

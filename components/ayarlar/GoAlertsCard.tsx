@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useT } from "@/lib/i18n/context";
+import { notifyPermission, requestBrowserPermission } from "@/lib/notify/browser";
 
 export function GoAlertsCard(): React.ReactElement {
   const t = useT();
@@ -14,8 +16,18 @@ export function GoAlertsCard(): React.ReactElement {
 
   const title = t("settings.goAlerts.title");
 
+  const [browserPerm, setBrowserPerm] = useState<ReturnType<typeof notifyPermission>>("default");
+  useEffect(() => {
+    setBrowserPerm(notifyPermission());
+  }, []);
+
+  async function handleRequestPerm() {
+    const granted = await requestBrowserPermission();
+    setBrowserPerm(granted ? "granted" : "denied");
+  }
+
   return (
-    <div className="border-border bg-bg-card rounded-lg border p-4">
+    <div className="border-border bg-bg-card rounded-lg border p-4 flex flex-col gap-3">
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -53,6 +65,33 @@ export function GoAlertsCard(): React.ReactElement {
           />
         </button>
       </div>
+
+      {/* Browser notification permission row */}
+      {browserPerm !== "unsupported" && (
+        <div className="flex items-center justify-between border-t border-border/40 pt-3">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-text-t2 text-xs font-medium">🔔 Tarayıcı Bildirimleri</span>
+            <span className="text-text-t4 text-2xs font-mono">
+              {browserPerm === "granted"
+                ? "✓ İzin verildi — sekmeden çıkınca da bildirim gelir"
+                : browserPerm === "denied"
+                ? "✗ Engellendi — tarayıcı ayarlarından aç"
+                : "Sinyal geldiğinde masaüstü bildirimi almak için izin ver"}
+            </span>
+          </div>
+          {browserPerm === "default" && (
+            <button
+              onClick={handleRequestPerm}
+              className="shrink-0 rounded border border-brand/40 bg-brand/10 px-3 py-1 font-mono text-2xs text-brand hover:bg-brand/20 transition-colors"
+            >
+              İzin Ver
+            </button>
+          )}
+          {browserPerm === "granted" && (
+            <span className="text-signal-green font-mono text-2xs">AKTİF</span>
+          )}
+        </div>
+      )}
     </div>
   );
 }

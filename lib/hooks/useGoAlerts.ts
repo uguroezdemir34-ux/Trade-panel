@@ -12,6 +12,7 @@ import { useEffect, useRef } from "react";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
+import { browserNotify } from "@/lib/notify/browser";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Verdict, ScoreResult } from "@/lib/score/orchestrator";
 
@@ -44,11 +45,12 @@ export function useGoAlerts(): void {
         const lastTime = lastAlerted.current[pair] ?? 0;
         if (now - lastTime >= COOLDOWN_MS) {
           lastAlerted.current[pair] = now;
-          sendGoAlert(
-            pair,
-            result.score,
-            result.direction !== "NEUTRAL" ? result.direction : undefined,
-          ).catch(() => {
+          const dir = result.direction !== "NEUTRAL" ? result.direction : undefined;
+          browserNotify(
+            `🚀 GO — ${pair}`,
+            `${dir ? dir + " · " : ""}Skor ${result.score}`,
+          );
+          sendGoAlert(pair, result.score, dir).catch(() => {
             // fire-and-forget; silently ignore network errors
           });
         }
