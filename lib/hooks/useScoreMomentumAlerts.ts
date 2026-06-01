@@ -14,6 +14,7 @@ import { useEffect, useRef } from "react";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
+import { browserNotify } from "@/lib/notify/browser";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 
 const COOLDOWN_MS = 45 * 60 * 1000;
@@ -51,7 +52,12 @@ export function useScoreMomentumAlerts(): void {
       if (now - lastTime < COOLDOWN_MS) continue;
 
       lastAlerted.current[pair] = now;
-      sendMomentumAlert(pair, current.score, rise, current.direction !== "NEUTRAL" ? current.direction : undefined).catch(() => {
+      const dir = current.direction !== "NEUTRAL" ? current.direction : undefined;
+      browserNotify(
+        `📈 ${pair} Momentum`,
+        `Skor ${current.score} (+${rise}) — GO eşiğine yaklaşıyor`,
+      );
+      sendMomentumAlert(pair, current.score, rise, dir).catch(() => {
         // fire-and-forget
       });
     }
