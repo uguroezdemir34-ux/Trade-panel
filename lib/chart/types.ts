@@ -32,6 +32,12 @@ export interface MacdPoint {
   signal: number;
 }
 
+export interface AlarmLevel {
+  price: number;
+  condition: "above" | "below";
+  label?: string;
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
@@ -40,5 +46,6 @@ export interface ChartSeries {
   volume?: VolumePoint[];
   rsi?: LinePoint[];
   macdData?: MacdPoint[];
+  alarmLevels?: AlarmLevel[];
   markers?: ChartMarker[];
 }

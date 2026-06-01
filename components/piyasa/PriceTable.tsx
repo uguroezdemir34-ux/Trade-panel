@@ -1,8 +1,11 @@
 "use client";
 
+import { useState, useMemo } from "react";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { PAIRS } from "@/lib/constants/pairs";
+
+type SortKey = "score" | "chg" | "pair";
 
 const VERDICT_DOT: Record<string, string> = {
   go:   "bg-green-400",
@@ -17,15 +20,69 @@ function fmtPrice(p: number): string {
   return p.toLocaleString("en-US", { maximumFractionDigits: 6 });
 }
 
+function SortHeader({
+  label,
+  sortKey,
+  active,
+  desc,
+  onClick,
+}: {
+  label: string;
+  sortKey: SortKey;
+  active: boolean;
+  desc: boolean;
+  onClick: (k: SortKey) => void;
+}) {
+  return (
+    <button
+      onClick={() => onClick(sortKey)}
+      className={`font-mono text-2xs tracking-wider uppercase text-right transition-colors ${
+        active ? "text-text-t1" : "text-text-t4 hover:text-text-t3"
+      }`}
+    >
+      {label}{active ? (desc ? " ▼" : " ▲") : ""}
+    </button>
+  );
+}
+
 export function PriceTable(): React.ReactElement {
   const prices = useMarketStore((s) => s.prices);
   const results = useScoreStore((s) => s.results);
+  const [sortKey, setSortKey] = useState<SortKey>("score");
+  const [sortDesc, setSortDesc] = useState(true);
 
-  const rows = PAIRS.map((pair) => ({
-    pair,
-    tick: prices[pair],
-    result: results[pair],
-  }));
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDesc((d) => !d);
+    } else {
+      setSortKey(key);
+      setSortDesc(true);
+    }
+  }
+
+  const rows = useMemo(() => {
+    const base = PAIRS.map((pair) => ({
+      pair,
+      tick: prices[pair],
+      result: results[pair],
+    }));
+
+    return [...base].sort((a, b) => {
+      let av: number, bv: number;
+      if (sortKey === "score") {
+        av = a.result?.score ?? -1;
+        bv = b.result?.score ?? -1;
+      } else if (sortKey === "chg") {
+        av = a.tick?.chg ?? -999;
+        bv = b.tick?.chg ?? -999;
+      } else {
+        av = a.pair < b.pair ? -1 : 1;
+        bv = 0;
+        return sortDesc ? (a.pair < b.pair ? 1 : -1) : (a.pair < b.pair ? -1 : 1);
+      }
+      return sortDesc ? bv - av : av - bv;
+    });
+  }, [prices, results, sortKey, sortDesc]);
 
   const anyData = rows.some((r) => !!r.tick);
 
@@ -36,10 +93,10 @@ export function PriceTable(): React.ReactElement {
         className="grid items-center gap-x-2 px-3 py-1.5 border-b border-border/50"
         style={{ gridTemplateColumns: "44px 1fr 64px 40px 16px" }}
       >
-        <span className="text-text-t4 font-mono text-2xs tracking-wider uppercase">Pair</span>
-        <span className="text-text-t4 font-mono text-2xs tracking-wider text-right">Price</span>
-        <span className="text-text-t4 font-mono text-2xs tracking-wider text-right">24h %</span>
-        <span className="text-text-t4 font-mono text-2xs tracking-wider text-right">Score</span>
+        <SortHeader label="Pair" sortKey="pair" active={sortKey === "pair"} desc={sortDesc} onClick={handleSort} />
+        <span className="text-text-t4 font-mono text-2xs tracking-wider uppercase text-right">Price</span>
+        <SortHeader label="24h %" sortKey="chg" active={sortKey === "chg"} desc={sortDesc} onClick={handleSort} />
+        <SortHeader label="Score" sortKey="score" active={sortKey === "score"} desc={sortDesc} onClick={handleSort} />
         <span />
       </div>
 
@@ -65,20 +122,13 @@ export function PriceTable(): React.ReactElement {
                 className="grid items-center gap-x-2 px-3 py-1.5"
                 style={{ gridTemplateColumns: "44px 1fr 64px 40px 16px" }}
               >
-                {/* Pair */}
                 <span className="text-text-t2 font-mono text-xs font-semibold">{pair}</span>
-
-                {/* Price */}
                 <span className="text-text-t1 font-mono text-xs tabular-nums text-right">
                   {tick ? `$${fmtPrice(tick.last)}` : "—"}
                 </span>
-
-                {/* 24h change */}
                 <span className={`font-mono text-xs tabular-nums text-right ${chgColor}`}>
                   {chg !== null ? `${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%` : "—"}
                 </span>
-
-                {/* Score + direction */}
                 <span className={`font-mono text-xs tabular-nums text-right ${
                   verdict === "go" ? "text-green-400" :
                   verdict === "wait" ? "text-yellow-400" :
@@ -86,8 +136,6 @@ export function PriceTable(): React.ReactElement {
                 }`}>
                   {score !== undefined ? `${score}${dirArrow}` : "—"}
                 </span>
-
-                {/* Verdict dot */}
                 <div className="flex justify-center">
                   <div className={`h-1.5 w-1.5 rounded-full ${dotClass}`} />
                 </div>

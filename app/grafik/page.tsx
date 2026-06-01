@@ -11,7 +11,8 @@ import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
-import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint } from "@/lib/chart/types";
+import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel } from "@/lib/chart/types";
+import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
@@ -35,6 +36,15 @@ export default function GrafikPage() {
   const candlesRaw = useCandleStore((s) => s.candles[`${pair}_${timeframe}`]);
   const candles = candlesRaw ?? EMPTY_CANDLES;
   const trades = useTradesStore((s) => s.trades);
+  const alarms = usePriceAlarmStore((s) => s.alarms);
+
+  const alarmLevels = useMemo<AlarmLevel[]>(
+    () =>
+      alarms
+        .filter((a) => a.pair === pair && a.status === "active")
+        .map((a) => ({ price: a.targetPrice, condition: a.condition, label: a.label })),
+    [alarms, pair],
+  );
 
   const series: ChartSeries = useMemo(() => {
     const candlePoints = candles.map((c) => ({
@@ -112,8 +122,8 @@ export default function GrafikPage() {
       }));
     }
 
-    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, markers };
-  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd]);
+    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, alarmLevels, markers };
+  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd, alarmLevels]);
 
   return (
     <div className="flex flex-col gap-3">

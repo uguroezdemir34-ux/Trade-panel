@@ -16,6 +16,7 @@ import {
   createChart,
   type IChartApi,
   type ISeriesApi,
+  type IPriceLine,
   type CandlestickData,
   type LineData,
   type HistogramData,
@@ -77,6 +78,7 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
   const macdHistRef   = useRef<ISeriesApi<"Histogram"> | null>(null);
   const macdLineRef   = useRef<ISeriesApi<"Line"> | null>(null);
   const macdSignalRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const alarmLinesRef = useRef<IPriceLine[]>([]);
 
   // ─── Mount ───────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -296,7 +298,26 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
       if (macdSignalRef.current) { chart.removeSeries(macdSignalRef.current); macdSignalRef.current = null; }
     }
 
-    // 8. Trade markers
+    // 8. Alarm price lines
+    for (const line of alarmLinesRef.current) {
+      try { candle.removePriceLine(line); } catch { /* ignore */ }
+    }
+    alarmLinesRef.current = [];
+    if (series.alarmLevels?.length) {
+      for (const alarm of series.alarmLevels) {
+        const line = candle.createPriceLine({
+          price: alarm.price,
+          color: alarm.condition === "above" ? "#f59e0b" : "#a78bfa",
+          lineWidth: 1,
+          lineStyle: 2, // dashed
+          axisLabelVisible: true,
+          title: alarm.label ? `⏰ ${alarm.label}` : "⏰",
+        });
+        alarmLinesRef.current.push(line);
+      }
+    }
+
+    // 9. Trade markers
     if (series.markers?.length) {
       const markers: SeriesMarker<Time>[] = series.markers.map((m) => ({
         time: m.time as Time,
