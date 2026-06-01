@@ -46,6 +46,7 @@ import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
 import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
 import { GoSignalLog } from "@/components/karar/GoSignalLog";
+import { HistoricalEdge } from "@/components/karar/HistoricalEdge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 
 export default function KararPage() {
@@ -472,6 +473,7 @@ export default function KararPage() {
       {/* Sonuç */}
       {result && (
         <>
+          <HistoricalEdge pair={activePair} />
           <LiveEdgeBadge pair={activePair} />
           <VerdictBadge
             verdict={result.verdict}
