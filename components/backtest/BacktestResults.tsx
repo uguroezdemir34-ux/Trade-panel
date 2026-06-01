@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n/context";
 import type { BacktestResult, BacktestTrade } from "@/lib/backtest/types";
 
@@ -104,31 +104,50 @@ function exitColor(reason: BacktestTrade["exitReason"]): string {
 
 // ── Main component ────────────────────────────────────────────────────────────
 
+type DirFilter = "ALL" | "LONG" | "SHORT";
+
 export function BacktestResults({ result, onPin, isPinned }: Props): React.ReactElement {
   const t = useT();
   const { stats, trades, pair, dataMonths, totalBarsScanned, runAt } = result;
+  const [dirFilter, setDirFilter] = useState<DirFilter>("ALL");
+
+  const filteredTrades = useMemo(
+    () => dirFilter === "ALL" ? trades : trades.filter((t) => t.direction === dirFilter),
+    [trades, dirFilter],
+  );
 
   const exitCounts = useMemo(() => {
     const c = { tp1: 0, tp2: 0, sl: 0, timeout: 0 };
-    for (const tr of trades) c[tr.exitReason]++;
+    for (const tr of filteredTrades) c[tr.exitReason]++;
     return c;
-  }, [trades]);
+  }, [filteredTrades]);
 
   const riskRatios = { sharpe: stats.sharpe, sortino: stats.sortino };
 
   const kellyEv = useMemo(() => {
-    const wins = trades.filter((t) => t.rMultiple > 0);
-    const losses = trades.filter((t) => t.rMultiple <= 0);
+    const wins = filteredTrades.filter((t) => t.rMultiple > 0);
+    const losses = filteredTrades.filter((t) => t.rMultiple <= 0);
     if (wins.length === 0 || losses.length === 0) return null;
     const avgWin = wins.reduce((s, t) => s + t.rMultiple, 0) / wins.length;
     const avgLoss = Math.abs(losses.reduce((s, t) => s + t.rMultiple, 0) / losses.length);
-    const wr = wins.length / trades.length;
+    const wr = wins.length / filteredTrades.length;
     const lr = 1 - wr;
     const payoff = avgWin / avgLoss;
     const kelly = wr - lr / payoff;
     const ev = wr * avgWin - lr * avgLoss;
     return { kelly: Math.max(0, kelly), ev, avgWin, avgLoss, payoff };
-  }, [trades]);
+  }, [filteredTrades]);
+
+  // Direction-filtered quick stats
+  const dirStats = useMemo(() => {
+    if (dirFilter === "ALL") return null;
+    const wins = filteredTrades.filter((t) => t.rMultiple > 0);
+    const total = filteredTrades.length;
+    const wr = total > 0 ? (wins.length / total) * 100 : 0;
+    const avgR = total > 0 ? filteredTrades.reduce((s, t) => s + t.rMultiple, 0) / total : 0;
+    const totalR = filteredTrades.reduce((s, t) => s + t.rMultiple, 0);
+    return { total, wins: wins.length, wr, avgR, totalR };
+  }, [filteredTrades, dirFilter]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -157,39 +176,79 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
           </div>
         </div>
 
+        {/* Direction filter */}
+        <div className="flex gap-1 mb-3">
+          {(["ALL", "LONG", "SHORT"] as const).map((d) => (
+            <button
+              key={d}
+              onClick={() => setDirFilter(d)}
+              className={[
+                "rounded border font-mono text-2xs px-2 py-0.5 transition-colors",
+                dirFilter === d
+                  ? d === "LONG" ? "border-green-400/50 text-green-400 bg-green-400/10"
+                    : d === "SHORT" ? "border-red-400/50 text-red-400 bg-red-400/10"
+                    : "border-brand text-brand bg-brand/10"
+                  : "border-border text-text-t4 hover:text-text-t2",
+              ].join(" ")}
+            >
+              {d === "LONG" ? "▲ LONG" : d === "SHORT" ? "▼ SHORT" : "ALL"}
+            </button>
+          ))}
+        </div>
+
+        {/* Filtered quick stats */}
+        {dirStats && (
+          <div className="mb-3 rounded border border-border/50 bg-surface-s1 px-3 py-2 grid grid-cols-4 gap-2">
+            <Stat label={t("backtest.totalTrades")} value={dirStats.total.toString()} />
+            <Stat label={t("backtest.winRate")} value={`${dirStats.wr.toFixed(1)}%`}
+              color={dirStats.wr >= 55 ? "text-green-400" : dirStats.wr >= 45 ? "text-yellow-400" : "text-red-400"} />
+            <Stat label={t("backtest.avgR")}
+              value={`${dirStats.avgR > 0 ? "+" : ""}${dirStats.avgR.toFixed(2)}R`}
+              color={dirStats.avgR > 0 ? "text-green-400" : "text-red-400"} />
+            <Stat label="Total R"
+              value={`${dirStats.totalR > 0 ? "+" : ""}${dirStats.totalR.toFixed(2)}R`}
+              color={dirStats.totalR > 0 ? "text-green-400" : "text-red-400"} />
+          </div>
+        )}
+
         {/* Stats grid */}
         <div className="grid grid-cols-3 gap-3">
-          <Stat label={t("backtest.totalTrades")} value={stats.totalTrades.toString()} />
-          <Stat label={t("backtest.winRate")} value={`${stats.winRate.toFixed(1)}%`}
-            color={stats.winRate >= 55 ? "text-green-400" : stats.winRate >= 45 ? "text-yellow-400" : "text-red-400"} />
+          <Stat label={t("backtest.totalTrades")} value={dirFilter === "ALL" ? stats.totalTrades.toString() : filteredTrades.length.toString()} />
+          <Stat label={t("backtest.winRate")} value={`${dirFilter === "ALL" ? stats.winRate.toFixed(1) : (dirStats?.wr.toFixed(1) ?? "0.0")}%`}
+            color={(dirFilter === "ALL" ? stats.winRate : dirStats?.wr ?? 0) >= 55 ? "text-green-400" : (dirFilter === "ALL" ? stats.winRate : dirStats?.wr ?? 0) >= 45 ? "text-yellow-400" : "text-red-400"} />
           <Stat label={t("backtest.avgR")}
-            value={stats.avgRMultiple !== null ? `${stats.avgRMultiple > 0 ? "+" : ""}${stats.avgRMultiple.toFixed(2)}R` : "—"}
-            color={stats.avgRMultiple !== null && stats.avgRMultiple > 0 ? "text-green-400" : "text-red-400"} />
-          <Stat label="W / L" value={`${stats.winCount} / ${stats.loseCount}`} />
+            value={dirFilter === "ALL"
+              ? (stats.avgRMultiple !== null ? `${stats.avgRMultiple > 0 ? "+" : ""}${stats.avgRMultiple.toFixed(2)}R` : "—")
+              : `${(dirStats?.avgR ?? 0) > 0 ? "+" : ""}${(dirStats?.avgR ?? 0).toFixed(2)}R`}
+            color={(dirFilter === "ALL" ? stats.avgRMultiple ?? 0 : dirStats?.avgR ?? 0) > 0 ? "text-green-400" : "text-red-400"} />
+          <Stat label="W / L"
+            value={dirFilter === "ALL"
+              ? `${stats.winCount} / ${stats.loseCount}`
+              : `${dirStats?.wins ?? 0} / ${(dirStats?.total ?? 0) - (dirStats?.wins ?? 0)}`} />
           <Stat label={t("backtest.maxDd")} value={`${stats.maxDrawdownR.toFixed(2)}R`}
             color="text-red-400" />
           <Stat label={t("backtest.exits")}
             value={`${exitCounts.tp2}/${exitCounts.tp1}/${exitCounts.sl}/${exitCounts.timeout}`}
             hint="tp2/tp1/sl/to" />
-          {stats.maxWinStreak > 0 && (
+          {dirFilter === "ALL" && stats.maxWinStreak > 0 && (
             <Stat label={t("backtest.winStreak")} value={`${stats.maxWinStreak}`}
               color="text-green-400" hint={t("backtest.streakHint")} />
           )}
-          {stats.maxLossStreak > 0 && (
+          {dirFilter === "ALL" && stats.maxLossStreak > 0 && (
             <Stat label={t("backtest.lossStreak")} value={`${stats.maxLossStreak}`}
               color="text-red-400" hint={t("backtest.streakHint")} />
           )}
-          {riskRatios?.sharpe !== null && riskRatios?.sharpe !== undefined && (
+          {dirFilter === "ALL" && riskRatios?.sharpe !== null && riskRatios?.sharpe !== undefined && (
             <Stat label="Sharpe"
               value={riskRatios.sharpe.toFixed(2)}
               color={riskRatios.sharpe > 0.5 ? "text-green-400" : riskRatios.sharpe > 0 ? "text-yellow-400" : "text-red-400"} />
           )}
-          {riskRatios?.sortino !== null && riskRatios?.sortino !== undefined && (
+          {dirFilter === "ALL" && riskRatios?.sortino !== null && riskRatios?.sortino !== undefined && (
             <Stat label="Sortino"
               value={riskRatios.sortino.toFixed(2)}
               color={riskRatios.sortino > 1 ? "text-green-400" : riskRatios.sortino > 0 ? "text-yellow-400" : "text-red-400"} />
           )}
-          {stats.profitFactor !== null && stats.profitFactor !== undefined && (
+          {dirFilter === "ALL" && stats.profitFactor !== null && stats.profitFactor !== undefined && (
             <Stat label="Prof. Factor"
               value={stats.profitFactor.toFixed(2)}
               color={stats.profitFactor >= 1.5 ? "text-green-400" : stats.profitFactor >= 1 ? "text-yellow-400" : "text-red-400"}
@@ -215,37 +274,42 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
           )}
         </div>
 
-        {/* Direction stats */}
-        <div className="mt-3 grid grid-cols-2 gap-2">
-          {(["LONG", "SHORT"] as const).map((dir) => {
-            const ds = stats.byDirection[dir];
-            return (
-              <div key={dir} className="border-border rounded border px-2 py-1.5 flex items-center justify-between">
-                <span className={`font-mono text-xs font-semibold ${dir === "LONG" ? "text-green-400" : "text-red-400"}`}>
-                  {dir}
-                </span>
-                <span className="text-text-t3 font-mono text-xs tabular-nums">
-                  {ds.count} {t("backtest.trades")} · {ds.winRate !== null ? `${ds.winRate.toFixed(0)}%` : "—"}
-                </span>
-              </div>
-            );
-          })}
-        </div>
+        {/* Direction stats — shown only in ALL mode */}
+        {dirFilter === "ALL" && (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {(["LONG", "SHORT"] as const).map((dir) => {
+              const ds = stats.byDirection[dir];
+              return (
+                <button
+                  key={dir}
+                  onClick={() => setDirFilter(dir)}
+                  className="border-border rounded border px-2 py-1.5 flex items-center justify-between hover:bg-surface-s1 transition-colors"
+                >
+                  <span className={`font-mono text-xs font-semibold ${dir === "LONG" ? "text-green-400" : "text-red-400"}`}>
+                    {dir}
+                  </span>
+                  <span className="text-text-t3 font-mono text-xs tabular-nums">
+                    {ds.count} {t("backtest.trades")} · {ds.winRate !== null ? `${ds.winRate.toFixed(0)}%` : "—"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* ── R-Curve ── */}
       <div className="border-border bg-surface rounded-lg border p-4">
         <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-2">
-          {t("backtest.rCurve")}
+          {t("backtest.rCurve")}{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
         </h3>
-        <RCurve trades={trades} />
+        <RCurve trades={filteredTrades} />
       </div>
 
       {/* ── Score Buckets ── */}
       <div className="border-border bg-surface rounded-lg border p-4">
         <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-3">
-          {t("backtest.scoreBuckets")}
-        </h3>
+          {t("backtest.scoreBuckets")}</h3>
         <table className="w-full font-mono text-xs">
           <thead>
             <tr className="text-text-t4 border-b border-border">
@@ -273,21 +337,21 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
       </div>
 
       {/* ── Trade List ── */}
-      {trades.length > 0 && (
+      {filteredTrades.length > 0 && (
         <div className="border-border bg-surface rounded-lg border p-4">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase">
-              {t("backtest.tradeList")} ({trades.length})
+              {t("backtest.tradeList")} ({filteredTrades.length}{dirFilter !== "ALL" ? ` ${dirFilter}` : ""})
             </h3>
             <button
-              onClick={() => downloadCsv(trades, pair)}
+              onClick={() => downloadCsv(filteredTrades, pair)}
               className="font-mono text-2xs border border-border text-text-t4 hover:text-text-t2 rounded px-2 py-0.5 transition-colors"
             >
               ↓ CSV
             </button>
           </div>
           <div className="flex flex-col gap-0.5 max-h-64 overflow-y-auto">
-            {trades.map((tr, idx) => (
+            {filteredTrades.map((tr, idx) => (
               <div key={idx}
                 className="grid font-mono text-2xs tabular-nums border-b border-border/30 py-1"
                 style={{ gridTemplateColumns: "auto 1fr auto auto" }}>
