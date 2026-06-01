@@ -8,6 +8,7 @@ import { FearGreedGauge } from "@/components/piyasa/FearGreedGauge";
 import { DominanceCard } from "@/components/piyasa/DominanceCard";
 import { MtfTrendGrid } from "@/components/piyasa/MtfTrendGrid";
 import { FundingRateRow } from "@/components/piyasa/FundingRateRow";
+import { FundingAlertBanner } from "@/components/piyasa/FundingAlertBanner";
 import { OiVelocityCard } from "@/components/piyasa/OiVelocityCard";
 import { PriceTable } from "@/components/piyasa/PriceTable";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
@@ -69,6 +70,7 @@ export default function PiyasaPage() {
   return (
     <div className="flex flex-col gap-4 p-4">
       <PriceTable />
+      <FundingAlertBanner funding={funding} />
       <MarketSummaryBanner summary={marketSummary} />
       <FearGreedGauge info={fgInfo} loading={fgLoading} />
       <DominanceCard info={dominance} loading={domLoading} />
