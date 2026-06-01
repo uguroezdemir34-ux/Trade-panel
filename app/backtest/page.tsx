@@ -62,6 +62,17 @@ export default function BacktestPage() {
     resetScan();
   }
 
+  function handleDrillDown(pair: string) {
+    if (!scanConfig) return;
+    reset(); // clear any previous single result
+    run({
+      pair: pair as import("@/lib/constants/pairs").Pair,
+      dataMonths: scanConfig.dataMonths,
+      frozenFg: scanConfig.frozenFg,
+      minScore: scanConfig.minScore,
+    });
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* Header */}
@@ -159,6 +170,7 @@ export default function BacktestPage() {
           scanCurrentPair={scanCurrentPair}
           config={scanConfig}
           status={scanStatus === "idle" ? "done" : scanStatus}
+          onSelectPair={scanConfig && scanStatus === "done" ? handleDrillDown : undefined}
         />
       )}
     </div>

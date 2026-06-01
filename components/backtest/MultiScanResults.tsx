@@ -40,6 +40,7 @@ interface Props {
   scanCurrentPair: string | null;
   config: ScanConfig | null;
   status: "scanning" | "done" | "error";
+  onSelectPair?: (pair: string) => void;
 }
 
 type SortKey = "ev" | "winRate" | "avgR" | "sharpe" | "profitFactor" | "totalTrades" | "longWinRate" | "shortWinRate";
@@ -65,6 +66,7 @@ export function MultiScanResults({
   scanCurrentPair,
   config,
   status,
+  onSelectPair,
 }: Props): React.ReactElement {
   const t = useT();
   const [sortKey, setSortKey] = useState<SortKey>("ev");
@@ -197,8 +199,19 @@ export function MultiScanResults({
                       <td className={`py-1.5 pr-3 ${isTop3 ? "text-brand font-bold" : "text-text-t4"}`}>
                         {rank}
                       </td>
-                      <td className={`py-1.5 pr-3 font-semibold ${isTop3 ? "text-brand" : "text-text-t2"}`}>
-                        {row.pair}
+                      <td className="py-1.5 pr-3">
+                        {onSelectPair && row.status === "done" ? (
+                          <button
+                            onClick={() => onSelectPair(row.pair)}
+                            className={`font-semibold underline underline-offset-2 decoration-dotted hover:decoration-solid transition-all ${isTop3 ? "text-brand" : "text-text-t2 hover:text-text-t1"}`}
+                          >
+                            {row.pair}
+                          </button>
+                        ) : (
+                          <span className={`font-semibold ${isTop3 ? "text-brand" : "text-text-t2"}`}>
+                            {row.pair}
+                          </span>
+                        )}
                       </td>
                       <td className="text-text-t3 text-right py-1.5 pr-3 tabular-nums">
                         {row.totalTrades}
