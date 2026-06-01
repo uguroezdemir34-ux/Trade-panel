@@ -7,14 +7,18 @@ import { useTradesStore } from "@/lib/store/tradesStore";
 import { ChartControls } from "@/components/grafik/ChartControls";
 import { ChartLegend } from "@/components/grafik/ChartLegend";
 import { emaSeries } from "@/lib/indicators/ema";
+import { rsiSeries } from "@/lib/indicators/rsi";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
-import type { ChartSeries, LinePoint, ChartMarker } from "@/lib/chart/types";
+import type { ChartSeries, LinePoint, VolumePoint, ChartMarker } from "@/lib/chart/types";
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
   { ssr: false },
 );
+
+const VOL_UP = "rgba(34,197,94,0.5)";
+const VOL_DOWN = "rgba(239,68,68,0.5)";
 
 export default function GrafikPage() {
   const [pair, setPair] = useState<Pair>("BTC");
@@ -23,6 +27,8 @@ export default function GrafikPage() {
   const [showEma50, setShowEma50] = useState(true);
   const [showEma200, setShowEma200] = useState(true);
   const [showTrades, setShowTrades] = useState(false);
+  const [showVolume, setShowVolume] = useState(true);
+  const [showRsi, setShowRsi] = useState(false);
 
   const candlesRaw = useCandleStore((s) => s.candles[`${pair}_${timeframe}`]);
   const candles = candlesRaw ?? EMPTY_CANDLES;
@@ -43,6 +49,7 @@ export default function GrafikPage() {
     // EMA overlays
     let ema20: LinePoint[] | undefined;
     let ema50: LinePoint[] | undefined;
+    let ema200: LinePoint[] | undefined;
 
     if (showEma20 && candles.length >= 20) {
       const vals = emaSeries(closes, { period: 20 });
@@ -58,7 +65,6 @@ export default function GrafikPage() {
         .filter((p): p is LinePoint => p !== null);
     }
 
-    let ema200: LinePoint[] | undefined;
     if (showEma200 && candles.length >= 200) {
       const vals = emaSeries(closes, { period: 200 });
       ema200 = vals
@@ -66,7 +72,26 @@ export default function GrafikPage() {
         .filter((p): p is LinePoint => p !== null);
     }
 
-    // Trade markers — bu pair'in trade'leri
+    // Volume bars
+    let volume: VolumePoint[] | undefined;
+    if (showVolume && candles.length > 0) {
+      volume = candles.map((c, i) => ({
+        time: times[i],
+        value: c.volume,
+        color: c.close >= c.open ? VOL_UP : VOL_DOWN,
+      }));
+    }
+
+    // RSI panel
+    let rsi: LinePoint[] | undefined;
+    if (showRsi && candles.length >= 15) {
+      const vals = rsiSeries(closes, { period: 14 });
+      rsi = vals
+        .map((v, i) => (v !== null ? { time: times[i], value: v } : null))
+        .filter((p): p is LinePoint => p !== null);
+    }
+
+    // Trade markers
     let markers: ChartMarker[] | undefined;
     if (showTrades) {
       const pairTrades = trades.filter((t) => t.pair === pair);
@@ -79,8 +104,8 @@ export default function GrafikPage() {
       }));
     }
 
-    return { candles: candlePoints, ema20, ema50, ema200, markers };
-  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades]);
+    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, markers };
+  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -91,20 +116,26 @@ export default function GrafikPage() {
         showEma50={showEma50}
         showEma200={showEma200}
         showTrades={showTrades}
+        showVolume={showVolume}
+        showRsi={showRsi}
         onPairChange={setPair}
         onTimeframeChange={setTimeframe}
         onToggleEma20={() => setShowEma20((v) => !v)}
         onToggleEma50={() => setShowEma50((v) => !v)}
         onToggleEma200={() => setShowEma200((v) => !v)}
         onToggleTrades={() => setShowTrades((v) => !v)}
+        onToggleVolume={() => setShowVolume((v) => !v)}
+        onToggleRsi={() => setShowRsi((v) => !v)}
       />
       <ChartLegend
         showEma20={showEma20}
         showEma50={showEma50}
         showEma200={showEma200}
         showTrades={showTrades}
+        showVolume={showVolume}
+        showRsi={showRsi}
       />
-      <PriceChart series={series} height={420} />
+      <PriceChart series={series} height={480} />
     </div>
   );
 }

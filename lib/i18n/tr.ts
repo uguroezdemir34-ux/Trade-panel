@@ -445,6 +445,8 @@ export const tr: Dictionary = {
     ema50: "EMA 50",
     ema200: "EMA 200",
     showTrades: "İşlemleri göster",
+    showVolume: "Hacim",
+    showRsi: "RSI",
     legend: {
       candleUp: "Yükseliş mumu",
       candleDown: "Düşüş mumu",
@@ -453,6 +455,8 @@ export const tr: Dictionary = {
       ema200: "EMA 200",
       tradeLong: "LONG işlemi",
       tradeShort: "SHORT işlemi",
+      volume: "Hacim",
+      rsi14: "RSI 14",
     },
   },
 

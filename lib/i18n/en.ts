@@ -445,6 +445,8 @@ export const en: Dictionary = {
     ema50: "EMA 50",
     ema200: "EMA 200",
     showTrades: "Show trades",
+    showVolume: "Volume",
+    showRsi: "RSI",
     legend: {
       candleUp: "Up candle",
       candleDown: "Down candle",
@@ -453,6 +455,8 @@ export const en: Dictionary = {
       ema200: "EMA 200",
       tradeLong: "LONG trade",
       tradeShort: "SHORT trade",
+      volume: "Volume",
+      rsi14: "RSI 14",
     },
   },
 

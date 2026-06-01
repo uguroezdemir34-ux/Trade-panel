@@ -11,6 +11,8 @@ interface Props {
   showEma50: boolean;
   showEma200: boolean;
   showTrades: boolean;
+  showVolume: boolean;
+  showRsi: boolean;
 }
 
 export function ChartLegend({
@@ -18,6 +20,8 @@ export function ChartLegend({
   showEma50,
   showEma200,
   showTrades,
+  showVolume,
+  showRsi,
 }: Props): React.ReactElement {
   const t = useT();
 
@@ -34,6 +38,8 @@ export function ChartLegend({
           <LegendArrow up={false} label={t("grafik.legend.tradeShort")} />
         </>
       )}
+      {showVolume && <LegendBar label={t("grafik.legend.volume")} />}
+      {showRsi && <LegendDot color="#ec4899" label={t("grafik.legend.rsi14")} />}
     </div>
   );
 }
@@ -56,6 +62,20 @@ function LegendArrow({ up, label }: { up: boolean; label: string }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-text-t1 font-bold">{up ? "▲" : "▼"}</span>
+      <span className="text-text-t3">{label}</span>
+    </div>
+  );
+}
+
+function LegendBar({ label }: { label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <div className="flex h-3 w-4 items-end gap-px">
+        <div className="w-1 rounded-sm" style={{ height: "40%", background: "rgba(239,68,68,0.6)" }} />
+        <div className="w-1 rounded-sm" style={{ height: "70%", background: "rgba(34,197,94,0.6)" }} />
+        <div className="w-1 rounded-sm" style={{ height: "55%", background: "rgba(34,197,94,0.6)" }} />
+        <div className="w-1 rounded-sm" style={{ height: "90%", background: "rgba(34,197,94,0.6)" }} />
+      </div>
       <span className="text-text-t3">{label}</span>
     </div>
   );

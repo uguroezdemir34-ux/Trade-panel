@@ -19,10 +19,18 @@ export interface ChartMarker {
   text?: string;
 }
 
+export interface VolumePoint {
+  time: number;
+  value: number;
+  color: string;
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
   ema50?: LinePoint[];
   ema200?: LinePoint[];
+  volume?: VolumePoint[];
+  rsi?: LinePoint[];
   markers?: ChartMarker[];
 }
