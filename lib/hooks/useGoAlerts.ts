@@ -22,6 +22,7 @@ const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 export function useGoAlerts(): void {
   const results = useScoreStore((s) => s.results);
   const goAlertsEnabled = useSettingsStore((s) => s.goAlertsEnabled);
+  const audioAlertsEnabled = useSettingsStore((s) => s.audioAlertsEnabled);
 
   // Track previous verdicts without causing re-renders
   const prevVerdicts = useRef<Partial<Record<Pair, Verdict>>>({});
@@ -47,7 +48,7 @@ export function useGoAlerts(): void {
         if (now - lastTime >= COOLDOWN_MS) {
           lastAlerted.current[pair] = now;
           const dir = result.direction !== "NEUTRAL" ? result.direction : undefined;
-          playGoAlert();
+          if (audioAlertsEnabled) playGoAlert();
           browserNotify(
             `🚀 GO — ${pair}`,
             `${dir ? dir + " · " : ""}Skor ${result.score}`,
@@ -60,7 +61,7 @@ export function useGoAlerts(): void {
 
       prevVerdicts.current[pair] = curr;
     }
-  }, [results, goAlertsEnabled]);
+  }, [results, goAlertsEnabled, audioAlertsEnabled]);
 }
 
 async function sendGoAlert(

@@ -27,6 +27,7 @@ const SCORE_UPPER = 84;
 export function useScoreMomentumAlerts(): void {
   const history = useScoreHistoryStore((s) => s.history);
   const goAlertsEnabled = useSettingsStore((s) => s.goAlertsEnabled);
+  const audioAlertsEnabled = useSettingsStore((s) => s.audioAlertsEnabled);
   const lastAlerted = useRef<Partial<Record<Pair, number>>>({});
 
   useEffect(() => {
@@ -54,7 +55,7 @@ export function useScoreMomentumAlerts(): void {
 
       lastAlerted.current[pair] = now;
       const dir = current.direction !== "NEUTRAL" ? current.direction : undefined;
-      playMomentumAlert();
+      if (audioAlertsEnabled) playMomentumAlert();
       browserNotify(
         `📈 ${pair} Momentum`,
         `Skor ${current.score} (+${rise}) — GO eşiğine yaklaşıyor`,
@@ -63,7 +64,7 @@ export function useScoreMomentumAlerts(): void {
         // fire-and-forget
       });
     }
-  }, [history, goAlertsEnabled]);
+  }, [history, goAlertsEnabled, audioAlertsEnabled]);
 }
 
 async function sendMomentumAlert(

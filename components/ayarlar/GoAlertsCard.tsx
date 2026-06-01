@@ -10,6 +10,8 @@ export function GoAlertsCard(): React.ReactElement {
   const t = useT();
   const enabled = useSettingsStore((s) => s.goAlertsEnabled);
   const setEnabled = useSettingsStore((s) => s.setGoAlertsEnabled);
+  const audioEnabled = useSettingsStore((s) => s.audioAlertsEnabled);
+  const setAudioEnabled = useSettingsStore((s) => s.setAudioAlertsEnabled);
   const telegram = useCredentialStore((s) => s.telegram);
 
   const telegramReady = !!telegram?.botToken || true; // also works via server env vars
@@ -92,6 +94,32 @@ export function GoAlertsCard(): React.ReactElement {
           )}
         </div>
       )}
+
+      {/* Audio alerts row */}
+      <div className="flex items-center justify-between border-t border-border/40 pt-3">
+        <div className="flex flex-col gap-0.5">
+          <span className="text-text-t2 text-xs font-medium">🔊 Sesli Uyarılar</span>
+          <span className="text-text-t4 text-2xs font-mono">
+            GO, skor momentumu ve fiyat alarmı için kısa bip sesi
+          </span>
+        </div>
+        <button
+          role="switch"
+          aria-checked={audioEnabled}
+          onClick={() => setAudioEnabled(!audioEnabled)}
+          className={[
+            "relative h-7 w-12 shrink-0 rounded-full transition-colors",
+            audioEnabled ? "bg-brand" : "bg-border-strong",
+          ].join(" ")}
+        >
+          <span
+            className={[
+              "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform",
+              audioEnabled ? "translate-x-5" : "translate-x-0.5",
+            ].join(" ")}
+          />
+        </button>
+      </div>
     </div>
   );
 }

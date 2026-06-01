@@ -51,6 +51,7 @@ const settingsSchema = z.object({
   drawdownProtocolEnabled: z.boolean(),
   theme: themeSchema,
   goAlertsEnabled: z.boolean(),
+  audioAlertsEnabled: z.boolean(),
 });
 
 export type SettingsData = z.infer<typeof settingsSchema>;
@@ -71,6 +72,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   drawdownProtocolEnabled: true,
   theme: "dark",
   goAlertsEnabled: false,
+  audioAlertsEnabled: true,
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -89,6 +91,7 @@ const KEYS = {
   drawdownProtocolEnabled: "dd_protocol_enabled",
   theme: "theme",
   goAlertsEnabled: "go_alerts_enabled",
+  audioAlertsEnabled: "audio_alerts_enabled",
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -108,6 +111,7 @@ interface SettingsStoreState extends SettingsData {
   setDrawdownProtocolEnabled: (on: boolean) => void;
   setTheme: (theme: Theme) => void;
   setGoAlertsEnabled: (on: boolean) => void;
+  setAudioAlertsEnabled: (on: boolean) => void;
   /** Tüm ayarları varsayılana sıfırla */
   reset: () => void;
   /** localStorage'tan tekrar yükle (SSR sonrası hydrate için) */
@@ -169,6 +173,11 @@ export function loadSettings(): SettingsData {
     goAlertsEnabled: loadFromStorage<boolean>(
       KEYS.goAlertsEnabled,
       DEFAULT_SETTINGS.goAlertsEnabled,
+      z.boolean(),
+    ),
+    audioAlertsEnabled: loadFromStorage<boolean>(
+      KEYS.audioAlertsEnabled,
+      DEFAULT_SETTINGS.audioAlertsEnabled,
       z.boolean(),
     ),
   };
@@ -243,6 +252,11 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ goAlertsEnabled: on });
   },
 
+  setAudioAlertsEnabled: (on) => {
+    saveToStorage(KEYS.audioAlertsEnabled, on);
+    set({ audioAlertsEnabled: on });
+  },
+
   reset: () => {
     // Sadece state'i sıfırla, localStorage'a yaz
     saveToStorage(KEYS.lastTab, DEFAULT_SETTINGS.lastTab);
@@ -259,6 +273,7 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     );
     saveToStorage(KEYS.theme, DEFAULT_SETTINGS.theme);
     saveToStorage(KEYS.goAlertsEnabled, DEFAULT_SETTINGS.goAlertsEnabled);
+    saveToStorage(KEYS.audioAlertsEnabled, DEFAULT_SETTINGS.audioAlertsEnabled);
     set({ ...DEFAULT_SETTINGS });
   },
 
