@@ -35,7 +35,7 @@ export function BottomNav(): React.ReactElement {
       }}
       aria-label={t("nav.ariaLabel")}
     >
-      <ul className="mx-auto grid max-w-2xl grid-cols-7 px-1">
+      <ul className="mx-auto grid max-w-2xl grid-cols-8 px-1">
         {TABS.map((tab) => {
           const active = pathname === tab.path;
           return (

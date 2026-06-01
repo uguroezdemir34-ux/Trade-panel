@@ -21,7 +21,7 @@ import { loadFromStorage, saveToStorage } from "./persist";
 // TIP TANIMLARI
 // ═══════════════════════════════════════════════════════════════════
 
-/** v2 panelin tab kimlikleri (7 sekme, paket #5'te detay) */
+/** v2 panelin tab kimlikleri (8 sekme) */
 export const TAB_IDS = [
   "karar",
   "pozisyon",
@@ -29,6 +29,7 @@ export const TAB_IDS = [
   "piyasa",
   "risk",
   "pnl",
+  "backtest",
   "ayarlar",
 ] as const;
 export type TabId = (typeof TAB_IDS)[number];

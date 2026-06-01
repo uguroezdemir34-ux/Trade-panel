@@ -69,6 +69,13 @@ export const TABS: readonly TabConfig[] = [
     icon: "💰",
   },
   {
+    id: "backtest",
+    path: "/backtest",
+    labelKey: "nav.backtest",
+    shortKey: "nav.backtestShort",
+    icon: "🔬",
+  },
+  {
     id: "ayarlar",
     path: "/ayarlar",
     labelKey: "nav.settings",

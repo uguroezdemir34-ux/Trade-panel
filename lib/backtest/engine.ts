@@ -1,0 +1,263 @@
+/**
+ * BACKTEST ENGINE — Pure function. No React, no Zustand, no browser APIs.
+ *
+ * Algorithm:
+ *   1. Build a 4h→1h pointer map (O(n+m) alignment)
+ *   2. Iterate 1h bars from index WARMUP onward (sliding window)
+ *   3. For each bar: compose score input → computeScore
+ *   4. GO verdict → compute SL/TP → simulateExit on future bars
+ *   5. Accumulate trades, compute stats
+ *
+ * Timeframes used:
+ *   - 1h bars: primary iteration (one signal-check per bar)
+ *   - 4h bars: trend context window (last 200 4h bars aligned by ts)
+ *   - 15m proxy: last 25 1h bars (same data — px15/ema21_15m approximation)
+ *
+ * Macro frozen:
+ *   - F&G = frozenFg (default 50/neutral)
+ *   - OI velocity = null (not available in history)
+ *   - Funding = null (ignored in scoring)
+ *   - Risk state = default ("normal" tier, no cooldowns)
+ */
+
+import { composeScoreInput } from "@/lib/score/composeScoreInput";
+import { computeScore } from "@/lib/score/orchestrator";
+import { computeAdaptiveTPs } from "@/lib/sizer/take-profit";
+import { computeStructuralStop } from "@/lib/sizer/stop";
+import type { Candle } from "@/lib/okx/candles";
+import { simulateExit, simpleAtr } from "./exitSimulator";
+import type {
+  BacktestConfig,
+  BacktestResult,
+  BacktestTrade,
+  ScoreBucket,
+  DirectionStats,
+  BacktestStats,
+} from "./types";
+import type { Pair } from "@/lib/constants/pairs";
+import type { Trade } from "@/lib/bucket/stats";
+import type { ScoreInput } from "@/lib/score/orchestrator";
+import type { SweepInput } from "@/lib/score/scorers";
+
+/** Minimum bars of 1h context required before a signal is valid */
+const WARMUP = 210;
+/** Use last 200 4h bars for trend context */
+const C4H_WINDOW = 200;
+/** Use last 25 1h bars as 15m proxy (ema21_15m approximation) */
+const C15M_PROXY = 25;
+/** Maximum 1h bars to hold a trade before timing out */
+const MAX_HOLD_BARS = 48;
+/** Yield to event loop every N bars to keep UI responsive */
+const YIELD_EVERY = 100;
+
+/** Frozen risk/macro state for backtesting */
+const FROZEN_STATE = {
+  eventSkipUntil: null,
+  btcCooldownUntil: null,
+  btcCooldownReason: "",
+  btcSelfCooldownUntil: null,
+  lockReleasedAt: null,
+  openPositions: [] as ScoreInput["openPositions"],
+  drawdownProtocol: {
+    tier: "normal" as const,
+    minScore: 80,
+    label: "Normal",
+    reason: "",
+  },
+  trades: [] as readonly Trade[],
+  srModifier: 0,
+  sweep15m: { type: null, strength: 0 } as SweepInput,
+  timeQuality: { quality: 1.0, reason: "backtest" },
+};
+
+/** Align 4h bars to 1h bars (precompute pointer array in O(n+m)) */
+function build4hPointers(
+  candles1h: readonly Candle[],
+  candles4h: readonly Candle[],
+): Int32Array {
+  const ptrs = new Int32Array(candles1h.length).fill(-1);
+  let j = 0;
+  for (let i = 0; i < candles1h.length; i++) {
+    const ts1h = candles1h[i].ts;
+    while (j < candles4h.length - 1 && candles4h[j + 1].ts <= ts1h) j++;
+    if (j < candles4h.length && candles4h[j].ts <= ts1h) ptrs[i] = j;
+  }
+  return ptrs;
+}
+
+function computeStats(trades: BacktestTrade[]): BacktestStats {
+  const wins = trades.filter((t) => t.rMultiple > 0);
+  const losses = trades.filter((t) => t.rMultiple <= 0);
+
+  const winRate = trades.length > 0 ? (wins.length / trades.length) * 100 : 0;
+  const avgR =
+    trades.length > 0
+      ? trades.reduce((s, t) => s + t.rMultiple, 0) / trades.length
+      : null;
+
+  // Peak-to-trough R drawdown
+  let peak = 0;
+  let equity = 0;
+  let maxDd = 0;
+  for (const t of trades) {
+    equity += t.rMultiple;
+    if (equity > peak) peak = equity;
+    const dd = peak - equity;
+    if (dd > maxDd) maxDd = dd;
+  }
+
+  // Score buckets: <80, 80-84, 85-89, 90-94, 95+
+  const BUCKETS: Array<{ label: string; min: number; max: number }> = [
+    { label: "<80", min: 0, max: 79 },
+    { label: "80-84", min: 80, max: 84 },
+    { label: "85-89", min: 85, max: 89 },
+    { label: "90-94", min: 90, max: 94 },
+    { label: "95+", min: 95, max: 100 },
+  ];
+  const byScoreBucket: ScoreBucket[] = BUCKETS.map((b) => {
+    const bt = trades.filter((t) => t.score >= b.min && t.score <= b.max);
+    const bw = bt.filter((t) => t.rMultiple > 0);
+    const avgBr = bt.length > 0 ? bt.reduce((s, t) => s + t.rMultiple, 0) / bt.length : null;
+    return {
+      ...b,
+      count: bt.length,
+      winCount: bw.length,
+      winRate: bt.length > 0 ? (bw.length / bt.length) * 100 : null,
+      avgR: avgBr,
+    };
+  });
+
+  // Direction breakdown
+  function dirStats(dir: "LONG" | "SHORT"): DirectionStats {
+    const dt = trades.filter((t) => t.direction === dir);
+    const dw = dt.filter((t) => t.rMultiple > 0);
+    return {
+      count: dt.length,
+      winCount: dw.length,
+      winRate: dt.length > 0 ? (dw.length / dt.length) * 100 : null,
+    };
+  }
+
+  return {
+    totalTrades: trades.length,
+    winCount: wins.length,
+    loseCount: losses.length,
+    winRate,
+    avgRMultiple: avgR,
+    maxDrawdownR: maxDd,
+    byScoreBucket,
+    byDirection: { LONG: dirStats("LONG"), SHORT: dirStats("SHORT") },
+  };
+}
+
+/**
+ * Run backtest.
+ *
+ * @param candles1h Full 1h history (oldest → newest)
+ * @param candles4h Full 4h history (oldest → newest)
+ * @param config Backtest parameters
+ * @param onProgress Optional progress callback (0–1)
+ */
+export async function runBacktest(
+  candles1h: readonly Candle[],
+  candles4h: readonly Candle[],
+  config: BacktestConfig,
+  onProgress?: (pct: number) => void,
+): Promise<BacktestResult> {
+  const trades: BacktestTrade[] = [];
+  const ptrs = build4hPointers(candles1h, candles4h);
+  const total = candles1h.length - WARMUP;
+
+  for (let i = WARMUP; i < candles1h.length; i++) {
+    // Progress + yield to event loop every YIELD_EVERY bars
+    if ((i - WARMUP) % YIELD_EVERY === 0) {
+      onProgress?.((i - WARMUP) / total);
+      await new Promise<void>((r) => setTimeout(r, 0));
+    }
+
+    const bar = candles1h[i];
+    // 15m proxy: last C15M_PROXY 1h bars (closes are same — ema21_15m approximation)
+    const c15m = candles1h.slice(Math.max(0, i - C15M_PROXY + 1), i + 1);
+    const c1h = candles1h.slice(Math.max(0, i - 209), i + 1);
+    const ptr4h = ptrs[i];
+    if (ptr4h < 0) continue; // not enough 4h data yet
+    const c4h = candles4h.slice(Math.max(0, ptr4h - C4H_WINDOW + 1), ptr4h + 1);
+
+    if (c1h.length < 200 || c4h.length < 200 || c15m.length < 20) continue;
+
+    const composed = composeScoreInput({
+      pair: config.pair,
+      livePrice: bar.close,
+      candles1h: c1h as Candle[],
+      candles4h: c4h as Candle[],
+      candles15m: c15m as Candle[],
+      fg: config.frozenFg,
+      fundingRate: null,
+      oiVelocityScore: null,
+      whaleInflowScore: null,
+      now: bar.ts,
+      ...FROZEN_STATE,
+    });
+    if (!composed) continue;
+
+    const result = computeScore(composed);
+    if (result.verdict !== "go") continue;
+
+    // Entry: next bar's open price
+    const nextBar = candles1h[i + 1];
+    if (!nextBar) continue;
+    const entryPrice = nextBar.open;
+    const atr = simpleAtr(c1h);
+    if (atr <= 0) continue;
+
+    if (result.direction !== "LONG" && result.direction !== "SHORT") continue;
+    const direction = result.direction;
+
+    // SL: structural stop (no swing data in backtest → ATR fallback 1.5×)
+    const sl = computeStructuralStop(direction, entryPrice, atr, null, null);
+    // TP: ADX-adaptive
+    const tp = computeAdaptiveTPs(direction, entryPrice, atr, composed.adx);
+
+    const future = candles1h.slice(i + 2);
+    const exit = simulateExit(
+      direction,
+      entryPrice,
+      sl.stopPrice,
+      tp.tp1Price,
+      tp.tp2Price,
+      future,
+      MAX_HOLD_BARS,
+    );
+
+    const priceDelta = (exit.exitPrice - entryPrice) * (direction === "LONG" ? 1 : -1);
+    const rMultiple = sl.stopDistance > 0 ? priceDelta / sl.stopDistance : 0;
+    const pnlPct = entryPrice > 0 ? (priceDelta / entryPrice) * 100 : 0;
+
+    trades.push({
+      pair: config.pair,
+      direction,
+      entryTs: nextBar.ts,
+      entryPrice,
+      exitTs: exit.exitTs,
+      exitPrice: exit.exitPrice,
+      exitReason: exit.exitReason,
+      tp1Price: tp.tp1Price,
+      tp2Price: tp.tp2Price,
+      stopPrice: sl.stopPrice,
+      score: result.score,
+      rMultiple,
+      pnlPct,
+      barsHeld: exit.barsHeld,
+    });
+  }
+
+  onProgress?.(1);
+  return {
+    pair: config.pair as Pair,
+    trades,
+    stats: computeStats(trades),
+    runAt: Date.now(),
+    dataMonths: config.dataMonths,
+    totalBarsScanned: total,
+  };
+}
