@@ -528,5 +528,13 @@ export const ar: Dictionary = {
     bucket: "Bucket",
     count: "Trades",
     tradeList: "TRADE LIST",
+    modeSingle: "Single Pair",
+    modeScan: "All Pairs",
+    scanButton: "▶ SCAN ALL 15 PAIRS",
+    scanHint: "Runs backtest on all 15 pairs sequentially and ranks by expected value. ~20-40 min (faster with cache).",
+    scanTitle: "SCAN IN PROGRESS",
+    scanningPair: "Scanning",
+    scanLeaderboard: "PAIR LEADERBOARD · Expected Value",
+    scanSortHint: "Sorted by EV descending",
   },
 };

@@ -528,5 +528,13 @@ export const tr: Dictionary = {
     bucket: "Seviye",
     count: "İşlem",
     tradeList: "İŞLEM LİSTESİ",
+    modeSingle: "Tek Parite",
+    modeScan: "Tüm Pariteler",
+    scanButton: "▶ TÜM 15 PARİTEYİ TARA",
+    scanHint: "15 parite sırayla taranır ve beklenen değere göre sıralanır. ~20-40 dakika sürer (önbellek varsa daha hızlı).",
+    scanTitle: "TARAMA DEVAM EDİYOR",
+    scanningPair: "Şu an taranan",
+    scanLeaderboard: "PARİTE SIRALAMASI · Beklenen Değer",
+    scanSortHint: "EV'e göre sıralandı (azalan)",
   },
 };

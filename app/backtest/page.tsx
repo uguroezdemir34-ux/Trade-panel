@@ -4,27 +4,64 @@ import { useT } from "@/lib/i18n/context";
 import { useBacktest } from "@/lib/hooks/useBacktest";
 import { BacktestConfigPanel } from "@/components/backtest/BacktestConfig";
 import { BacktestResults } from "@/components/backtest/BacktestResults";
+import { MultiScanResults } from "@/components/backtest/MultiScanResults";
 import type { BacktestConfig } from "@/lib/backtest/types";
+import type { ScanConfig } from "@/lib/store/backtestStore";
 
 export default function BacktestPage() {
   const t = useT();
-  const { run, status, downloadPct, computePct, result, error, reset } = useBacktest();
+  const {
+    run,
+    runScan,
+    // single-pair state
+    status,
+    downloadPct,
+    computePct,
+    result,
+    error,
+    reset,
+    // scan state
+    scanStatus,
+    scanDone,
+    scanTotal,
+    scanCurrentPair,
+    scanRows,
+    scanConfig,
+    resetScan,
+  } = useBacktest();
 
-  const isRunning = status === "downloading" || status === "computing";
+  const isSingleRunning = status === "downloading" || status === "computing";
+  const isScanRunning = scanStatus === "scanning";
+  const isAnyRunning = isSingleRunning || isScanRunning;
+
+  const showSingleResult = status === "done" && result !== null;
+  const showScan = scanStatus === "scanning" || scanStatus === "done" || scanRows.length > 0;
 
   function handleRun(config: BacktestConfig) {
+    resetScan();
     run(config);
+  }
+
+  function handleScan(config: ScanConfig) {
+    reset();
+    runScan(config);
+  }
+
+  function handleReset() {
+    reset();
+    resetScan();
   }
 
   return (
     <div className="flex flex-col gap-4">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-text-t1 font-mono text-base font-semibold tracking-wider">
           🔬 {t("backtest.title")}
         </h1>
-        {(status === "done" || status === "error") && (
+        {(showSingleResult || showScan) && !isAnyRunning && (
           <button
-            onClick={reset}
+            onClick={handleReset}
             className="text-text-t3 font-mono text-xs border border-border rounded px-2 py-1 hover:text-text-t2 transition-colors"
           >
             {t("backtest.reset")}
@@ -32,18 +69,21 @@ export default function BacktestPage() {
         )}
       </div>
 
-      {/* Config — always visible unless running */}
-      {!isRunning && status !== "done" && (
-        <BacktestConfigPanel onRun={handleRun} disabled={isRunning} />
+      {/* Config — visible when idle or only scan is showing */}
+      {!isSingleRunning && !showSingleResult && (
+        <BacktestConfigPanel
+          onRun={handleRun}
+          onScan={handleScan}
+          disabled={isAnyRunning}
+        />
       )}
 
-      {/* Progress */}
-      {isRunning && (
+      {/* Single-pair progress */}
+      {isSingleRunning && (
         <div className="border-border bg-surface rounded-lg border p-4 flex flex-col gap-4">
           <h2 className="text-text-t1 font-mono text-sm font-semibold tracking-wider uppercase">
             {status === "downloading" ? t("backtest.downloading") : t("backtest.computing")}
           </h2>
-
           <ProgressBar
             label={t("backtest.downloading")}
             pct={downloadPct}
@@ -55,24 +95,33 @@ export default function BacktestPage() {
             done={status === "done"}
             inactive={status === "downloading"}
           />
-
           <p className="text-text-t4 font-mono text-xs">
-            {status === "downloading"
-              ? t("backtest.downloadHint")
-              : t("backtest.computeHint")}
+            {status === "downloading" ? t("backtest.downloadHint") : t("backtest.computeHint")}
           </p>
         </div>
       )}
 
-      {/* Error */}
+      {/* Single-pair error */}
       {status === "error" && error && (
         <div className="border border-red-500/40 bg-red-500/5 rounded-lg p-4">
           <p className="text-red-400 font-mono text-sm">{error}</p>
         </div>
       )}
 
-      {/* Results */}
-      {status === "done" && result && <BacktestResults result={result} />}
+      {/* Single-pair result */}
+      {showSingleResult && <BacktestResults result={result!} />}
+
+      {/* Multi-pair scan (can show alongside config) */}
+      {showScan && (
+        <MultiScanResults
+          rows={scanRows}
+          scanDone={scanDone}
+          scanTotal={scanTotal}
+          scanCurrentPair={scanCurrentPair}
+          config={scanConfig}
+          status={scanStatus === "idle" ? "done" : scanStatus}
+        />
+      )}
     </div>
   );
 }
