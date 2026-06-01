@@ -493,6 +493,60 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
         </table>
       </div>
 
+      {/* ── Exit Reason Breakdown ── */}
+      {filteredTrades.length > 0 && (() => {
+        const reasons = (["tp2", "tp1", "sl", "timeout"] as const);
+        const rows = reasons.map((r) => {
+          const ts = filteredTrades.filter((t) => t.exitReason === r);
+          const wins = ts.filter((t) => t.rMultiple > 0).length;
+          const avgR = ts.length > 0 ? ts.reduce((s, t) => s + t.rMultiple, 0) / ts.length : null;
+          return { r, count: ts.length, wins, avgR };
+        }).filter((row) => row.count > 0);
+        if (rows.length === 0) return null;
+        return (
+          <div className="border-border bg-surface rounded-lg border p-4">
+            <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-3">
+              Exit Analysis{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
+            </h3>
+            <table className="w-full font-mono text-xs">
+              <thead>
+                <tr className="text-text-t4 border-b border-border">
+                  <th className="text-left py-1">Exit</th>
+                  <th className="text-right py-1">Count</th>
+                  <th className="text-right py-1">WR%</th>
+                  <th className="text-right py-1">Avg R</th>
+                  <th className="text-right py-1">Total R</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map(({ r, count, wins, avgR }) => {
+                  const wr = count > 0 ? (wins / count) * 100 : null;
+                  const totalR = filteredTrades.filter((t) => t.exitReason === r).reduce((s, t) => s + t.rMultiple, 0);
+                  const isGood = r === "tp2" || r === "tp1";
+                  return (
+                    <tr key={r} className="border-b border-border/50">
+                      <td className={`py-1 font-semibold ${isGood ? "text-green-400" : r === "sl" ? "text-red-400" : "text-text-t3"}`}>
+                        {r.toUpperCase()}
+                      </td>
+                      <td className="text-text-t3 text-right py-1">{count}</td>
+                      <td className={`text-right py-1 ${wr !== null && wr >= 60 ? "text-green-400" : wr !== null && wr >= 45 ? "text-yellow-400" : "text-red-400"}`}>
+                        {wr !== null ? `${wr.toFixed(0)}%` : "—"}
+                      </td>
+                      <td className={`text-right py-1 tabular-nums ${avgR !== null && avgR > 0 ? "text-green-400" : "text-red-400"}`}>
+                        {avgR !== null ? `${avgR > 0 ? "+" : ""}${avgR.toFixed(2)}` : "—"}
+                      </td>
+                      <td className={`text-right py-1 tabular-nums ${totalR > 0 ? "text-green-400" : "text-red-400"}`}>
+                        {totalR > 0 ? "+" : ""}{totalR.toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        );
+      })()}
+
       {/* ── Monthly Breakdown ── */}
       {monthlyBuckets.length > 0 && (
         <div className="border-border bg-surface rounded-lg border p-4">
