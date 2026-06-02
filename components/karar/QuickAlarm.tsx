@@ -30,6 +30,7 @@ export function QuickAlarm({ pair, livePrice, direction }: Props): React.ReactEl
 
   const alarms = usePriceAlarmStore((s) => s.alarms);
   const addAlarm = usePriceAlarmStore((s) => s.addAlarm);
+  const removeAlarm = usePriceAlarmStore((s) => s.removeAlarm);
 
   const pairAlarms = alarms.filter((a) => a.pair === pair && a.status === "active");
   const maxReached = alarms.filter((a) => a.status === "active").length >= 10;
@@ -157,6 +158,30 @@ export function QuickAlarm({ pair, livePrice, direction }: Props): React.ReactEl
           >
             {t("karar.alarmAddButton")}
           </button>
+
+          {/* Existing alarms for this pair — with delete */}
+          {pairAlarms.length > 0 && (
+            <div className="border-t border-border/40 pt-2 flex flex-col gap-1">
+              {pairAlarms.map((a) => (
+                <div key={a.id} className="flex items-center justify-between gap-2">
+                  <span className="font-mono text-2xs tabular-nums text-amber-400/80">
+                    {a.condition === "above" ? "▲" : "▼"}{" "}
+                    {a.targetPrice.toLocaleString("en-US", { maximumFractionDigits: 6 })}
+                    {a.label && (
+                      <span className="text-text-t4 ml-1.5">{a.label}</span>
+                    )}
+                  </span>
+                  <button
+                    onClick={() => removeAlarm(a.id)}
+                    className="text-text-t4 hover:text-red-400 font-mono text-xs transition-colors leading-none"
+                    aria-label="Remove alarm"
+                  >
+                    ✕
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
     </div>
