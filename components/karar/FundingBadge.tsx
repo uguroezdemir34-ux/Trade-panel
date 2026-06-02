@@ -24,6 +24,17 @@ export function FundingBadge({ pair, direction }: Props): React.ReactElement | n
   const fundingLoading = useMacroStore((s) => s.fundingLoading);
 
   const info = funding[pair];
+
+  // useMemo must be called before any early returns (Rules of Hooks)
+  const timeUntilNext = useMemo(() => {
+    if (!info?.nextFundingTime) return null;
+    const ms = info.nextFundingTime - Date.now();
+    if (ms <= 0) return null;
+    const h = Math.floor(ms / 3_600_000);
+    const m = Math.floor((ms % 3_600_000) / 60_000);
+    return `${h}h ${m}m`;
+  }, [info?.nextFundingTime]);
+
   if (!info && !fundingLoading) return null;
   if (!info) return null;
 
@@ -44,14 +55,6 @@ export function FundingBadge({ pair, direction }: Props): React.ReactElement | n
   const rateSign = rate > 0 ? "+" : "";
   const ratePct = (rate * 100).toFixed(4);
 
-  const timeUntilNext = useMemo(() => {
-    if (!info.nextFundingTime) return null;
-    const ms = info.nextFundingTime - Date.now();
-    if (ms <= 0) return null;
-    const h = Math.floor(ms / 3_600_000);
-    const m = Math.floor((ms % 3_600_000) / 60_000);
-    return `${h}h ${m}m`;
-  }, [info.nextFundingTime]);
 
   return (
     <div className="flex items-center gap-2 rounded border border-border/50 bg-surface-s1 px-2.5 py-1.5 font-mono">
