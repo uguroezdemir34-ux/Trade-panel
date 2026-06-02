@@ -90,9 +90,9 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Tüm monospace sayısal değerler ekran dışına çıkmasın */
+/* Gerçekten uzun string'ler (adres, hash) için overflow koruması.
+   word-break: break-word kaldırıldı — kısa etiketleri (OKX, NEAR) harf harf kırıyordu. */
 .font-mono {
-  word-break: break-word;
   overflow-wrap: break-word;
 }
 

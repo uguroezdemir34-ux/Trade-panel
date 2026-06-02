@@ -44,7 +44,7 @@ export function LiqFeedBadge(): React.ReactElement | null {
             title={`${label}: ${status}`}
           >
             <span className={`inline-block w-1.5 h-1.5 rounded-full ${dot}`} />
-            <span className="font-mono text-[9px] text-text-t4 tracking-wider">{label}</span>
+            <span className="font-mono text-[9px] text-text-t4 tracking-wider whitespace-nowrap">{label}</span>
           </span>
         );
       })}

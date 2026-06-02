@@ -82,9 +82,9 @@ function MoverRow({
 
   return (
     <div className="flex items-center justify-between font-mono text-xs tabular-nums gap-2">
-      <span className="text-text-t2 font-semibold w-12">{pair}</span>
-      <span className="text-text-t4 flex-1 text-right">${fmtPrice(last)}</span>
-      <span className={`font-bold ${color} w-14 text-right`}>
+      <span className="text-text-t2 font-semibold w-12 whitespace-nowrap">{pair}</span>
+      <span className="text-text-t4 flex-1 text-right whitespace-nowrap">${fmtPrice(last)}</span>
+      <span className={`font-bold ${color} w-14 text-right whitespace-nowrap`}>
         {sign}{chg.toFixed(2)}%
       </span>
     </div>

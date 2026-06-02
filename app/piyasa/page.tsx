@@ -83,15 +83,15 @@ export default function PiyasaPage() {
 
         {/* Sağ: Göstergeler 2×2 grid */}
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <MarketBreadthCard />
             <MarketSessionsCard />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <FearGreedGauge info={fgInfo} loading={fgLoading} />
             <DominanceCard info={dominance} loading={domLoading} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <TopMoversCard />
             <VolatilityRankCard />
           </div>
