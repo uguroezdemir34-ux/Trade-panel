@@ -66,6 +66,7 @@ export default function KararPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [execError, setExecError] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   const result = useScoreStore((s) => s.results[activePair]);
   const allResults = useScoreStore((s) => s.results);
@@ -537,7 +538,7 @@ export default function KararPage() {
                 chg={allTicks[activePair]?.chg ?? null}
               />
 
-              {/* Verdict + Direction + Funding — compact inline row */}
+              {/* HERO: Verdict + Direction + Funding */}
               <div className="flex flex-wrap items-center gap-2">
                 <VerdictBadge
                   verdict={result.verdict}
@@ -560,47 +561,62 @@ export default function KararPage() {
                 goThreshold={result.goThreshold}
               />
 
-              {/* Alarm + Candle patterns — quick actions row */}
-              <div className="flex flex-wrap items-start gap-2">
-                <div className="flex-1 min-w-[180px]">
-                  <QuickAlarm
-                    pair={activePair}
-                    livePrice={livePrice}
-                    direction={result.direction}
-                  />
-                </div>
-                <div className="flex flex-wrap gap-1.5 pt-1">
-                  <CandlePatternBadge pair={activePair} />
-                </div>
-              </div>
-
-              {/* Historical edge + Live edge — side by side */}
-              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
-                <HistoricalEdge pair={activePair} />
-                <LiveEdgeBadge pair={activePair} />
-              </div>
-
-              {/* Score trend chart */}
-              <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} t={t} />
-
-              {/* Flow alignment (collapsible) */}
+              {/* Flow summary — single line */}
               <FlowAlignmentRow flow={flowResult} />
 
-              {/* Score breakdown + Blocks + Reasons — 2-col */}
-              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
-                <div className="flex flex-col gap-3">
-                  <BlocksList
-                    hardBlocks={result.blocks}
-                    softBlocks={result.softBlocks}
-                  />
-                  <ReasonsList reasons={result.reasons} />
-                </div>
-              </div>
+              {/* Details accordion — hidden by default */}
+              <div>
+                <button
+                  onClick={() => setShowDetails((v) => !v)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-surface-s1 font-mono text-2xs text-text-t3 hover:text-text-t2 transition-colors"
+                >
+                  <span>Detayları göster</span>
+                  <span>{showDetails ? "▲" : "▼"}</span>
+                </button>
 
-              {sizerResult && result.direction !== "NEUTRAL" && (
-                <CorrelationWarning pair={activePair} direction={result.direction} />
-              )}
+                {showDetails && (
+                  <div className="flex flex-col gap-3 mt-3">
+                    {/* Alarm + Candle patterns */}
+                    <div className="flex flex-wrap items-start gap-2">
+                      <div className="flex-1 min-w-[180px]">
+                        <QuickAlarm
+                          pair={activePair}
+                          livePrice={livePrice}
+                          direction={result.direction}
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        <CandlePatternBadge pair={activePair} />
+                      </div>
+                    </div>
+
+                    {/* Historical edge + Live edge */}
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                      <HistoricalEdge pair={activePair} />
+                      <LiveEdgeBadge pair={activePair} />
+                    </div>
+
+                    {/* Score trend chart */}
+                    <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} t={t} />
+
+                    {/* Score breakdown + Blocks + Reasons */}
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
+                      <div className="flex flex-col gap-3">
+                        <BlocksList
+                          hardBlocks={result.blocks}
+                          softBlocks={result.softBlocks}
+                        />
+                        <ReasonsList reasons={result.reasons} />
+                      </div>
+                    </div>
+
+                    {sizerResult && result.direction !== "NEUTRAL" && (
+                      <CorrelationWarning pair={activePair} direction={result.direction} />
+                    )}
+                  </div>
+                )}
+              </div>
 
               {sizerResult && (
                 <PositionSizer
