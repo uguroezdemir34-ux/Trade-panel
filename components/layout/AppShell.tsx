@@ -47,6 +47,7 @@ import { usePriceAlarms } from "@/lib/hooks/usePriceAlarms";
 import { useScoreMomentumAlerts } from "@/lib/hooks/useScoreMomentumAlerts";
 import { useConsecutiveLossAlert } from "@/lib/hooks/useConsecutiveLossAlert";
 import { useCredentialStore } from "@/lib/store/credentialStore";
+import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
 
 const SPLASH_DATE_KEY = "qx_splash_date";
 
@@ -107,6 +108,8 @@ export function AppShell({
   useScoreMomentumAlerts();
   // Ardışık zarar alarmı — 3+ ardışık zararı Telegram'a bildir
   useConsecutiveLossAlert();
+  // Gerçek OKX liquidation-orders feed — liq haritası için (OHLCV tahmininin yerini alır)
+  useLiqFeed();
 
   useEffect(() => {
     rehydrateSettings();

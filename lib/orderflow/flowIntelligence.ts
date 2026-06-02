@@ -91,6 +91,7 @@ export function enrichWithFlowIntelligence(
   currentPrice: number,
   vpinState?: VpinState,
   now: number = Date.now(),
+  prebuiltLiqMap?: LiquidationMap,
 ): FlowIntelligenceResult {
   // Yetersiz veri → bypass (etki yok)
   if (trades.length === 0 && candles.length === 0) {
@@ -138,7 +139,7 @@ export function enrichWithFlowIntelligence(
       signalDirection,
       flowVerdict,
       smc: analyzeSmc(candles, pair),
-      liqMap: buildLiquidationMap(pair, candles, currentPrice),
+      liqMap: prebuiltLiqMap ?? buildLiquidationMap(pair, candles, currentPrice),
       totalAdjustment: -10, // sembolik, vetoed=true önemli
       confidenceMultiplier: 0.5,
       vetoed: true,
@@ -152,8 +153,8 @@ export function enrichWithFlowIntelligence(
   const smc = analyzeSmc(candles, pair);
   const smcResult = smcScoreAdjustment(smc, signalDirection);
 
-  // 3. Liquidation map
-  const liqMap = buildLiquidationMap(pair, candles, currentPrice);
+  // 3. Liquidation map — gerçek feed varsa kullan, yoksa OHLCV tahmini
+  const liqMap = prebuiltLiqMap ?? buildLiquidationMap(pair, candles, currentPrice);
   const liqResult = liquidationScoreAdjustment(liqMap, signalDirection);
 
   // 4. Toplam adjustment (clamp ±15)
