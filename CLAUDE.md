@@ -138,6 +138,9 @@ useLiqFeed()             // OKX+Binance+Bybit liq feed → liqFeedStore
 
 | Commit | Özellik |
 |--------|---------|
+| `cb1cc79` | Karar sayfası: canlı fiyat başlığı + değişim yüzdesi pair grid'de |
+| `214916e` | FlowAlignmentRow: EST/REAL badge, CVD 3-pencere, Liq Magnet fiyatları, borsa dağılımı |
+| `e58bba6` | Grafik sayfası: canlı LIVE çizgisi, tema desteği, localStorage persist |
 | `9b6d885` | MAX_EVENTS_PER_PAIR 300→900 (3 borsa kapasitesi) |
 | `28a083f` | Çoklu borsa liq feed — OKX + Binance + Bybit, USD notional normalize |
 | `eb9042d` | Gerçek OKX liquidation-orders feed — OHLCV tahminini geçersiz kılar |
@@ -244,13 +247,14 @@ function Toggle({ active, onClick, children }: React.PropsWithChildren<{
 
 ## 13. Öncelikli Sıradaki İşler
 
-Aşağıdan seç veya "devam" de — en üstten başlanır:
+**Durum (2026-06-02):** Önceki tüm roadmap öğeleri tamamlandı veya önceden mevcuttu.
+Yeni geliştirme fırsatları (öncelik sırasına göre):
 
-1. **Flow Intelligence UI** — Liq heatmap seviyeleri karar sayfasında göster, borsa dağılımı (OKX/Binance/Bybit) badge'i
-2. **Grafik sayfası geliştirmeleri** — Hacim barları, RSI panel
-3. **Backtest compare** — İki backtest sonucunu yan yana karşılaştır
-4. **Karar sayfası yenilemesi** — Pair gruplama (majors / alts / meme), filtre
-5. **PnL sayfası iyileştirme** — Aylık breakdown, R-multiple dağılım grafiği
+1. **WebSocket bağlantı sağlığı göstergesi** — AppShell'de WS durumu (OKX/Binance/Bybit) yeşil/kırmızı göster
+2. **Fiyat alarm bildirimleri UI** — Karar sayfasında alarm ekleme/listeleme kartı
+3. **Risk sayfası geliştirme** — Drawdown protokolü detayları, session risk metrikleri
+4. **Karar motoru ağırlık düzenleyici** — Ayarlar sayfasında scorer ağırlıklarını ayarlama
+5. **Trade geçmişi filtreleme** — PnL sayfasında tarih aralığı + pair filtresi
 
 ---
 
