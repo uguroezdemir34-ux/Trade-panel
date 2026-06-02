@@ -12,11 +12,11 @@
 
 /** F&G etiket kategorileri (panel 8411-8416) */
 export type FgLabel =
-  | "AŞIRI KORKU" // < 25
-  | "KORKU" // < 45
-  | "NÖTR" // < 55
-  | "AÇGÖZLÜ" // < 75
-  | "AŞIRI AÇGÖZLÜ"; // ≥ 75
+  | "EXTREME FEAR" // < 25
+  | "FEAR" // < 45
+  | "NEUTRAL" // < 55
+  | "GREED" // < 75
+  | "EXTREME GREED"; // ≥ 75
 
 /** F&G CSS sınıfı (UI için) */
 export type FgClass =

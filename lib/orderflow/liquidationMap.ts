@@ -367,5 +367,5 @@ export function liquidationScoreAdjustment(
     }
   }
 
-  return { adjustment: 0, reason: "Yakın magnet zone yok" };
+  return { adjustment: 0, reason: "No nearby magnet zone" };
 }

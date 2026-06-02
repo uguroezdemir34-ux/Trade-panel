@@ -44,22 +44,22 @@ export function computeAdaptiveTPs(
     tp1Mult = 2.5;
     tp2Mult = 4.0;
     mode = "healthy_fallback";
-    label = "Sağlıklı (ADX yok, varsayılan)";
+    label = "Healthy (no ADX, default)";
   } else if (adx1h < ADX_WEAK_BELOW) {
     tp1Mult = 2.0;
     tp2Mult = 3.0;
     mode = "weak";
-    label = `Zayıf trend (ADX ${adx1h.toFixed(0)}, hızlı çıkış)`;
+    label = `Weak trend (ADX ${adx1h.toFixed(0)}, fast exit)`;
   } else if (adx1h >= ADX_STRONG_ABOVE) {
     tp1Mult = 3.0;
     tp2Mult = 5.0;
     mode = "strong";
-    label = `Güçlü trend (ADX ${adx1h.toFixed(0)}, uzun hedef)`;
+    label = `Strong trend (ADX ${adx1h.toFixed(0)}, extended target)`;
   } else {
     tp1Mult = 2.5;
     tp2Mult = 4.0;
     mode = "healthy";
-    label = `Sağlıklı trend (ADX ${adx1h.toFixed(0)})`;
+    label = `Healthy trend (ADX ${adx1h.toFixed(0)})`;
   }
 
   return {

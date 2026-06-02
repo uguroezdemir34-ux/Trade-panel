@@ -43,7 +43,7 @@ export function getDrawdownProtocol(pnlPct: number): DrawdownProtocol {
       multiplier: 0,
       minScore: 100,
       label: "🔒 Tam kilit",
-      reason: `Günlük kayıp %${pnlPct.toFixed(2)} — tam kilit aktif`,
+      reason: `Daily loss %${pnlPct.toFixed(2)} — full lock active`,
     };
   }
 
@@ -52,8 +52,8 @@ export function getDrawdownProtocol(pnlPct: number): DrawdownProtocol {
       tier: "restricted",
       multiplier: 0.25,
       minScore: 85,
-      label: "🟠 Kısıtlı",
-      reason: `Günlük kayıp %${pnlPct.toFixed(2)} — risk ¼, sadece skor 85+`,
+      label: "🟠 Restricted",
+      reason: `Daily loss %${pnlPct.toFixed(2)} — risk ¼, score 85+ only`,
     };
   }
 
@@ -63,7 +63,7 @@ export function getDrawdownProtocol(pnlPct: number): DrawdownProtocol {
       multiplier: 0.5,
       minScore: 80,
       label: "🟡 Dikkat",
-      reason: `Günlük kayıp %${pnlPct.toFixed(2)} — risk ½, eşik standart`,
+      reason: `Daily loss %${pnlPct.toFixed(2)} — risk ½, standard threshold`,
     };
   }
 
@@ -72,6 +72,6 @@ export function getDrawdownProtocol(pnlPct: number): DrawdownProtocol {
     multiplier: 1.0,
     minScore: 80,
     label: "🟢 Normal",
-    reason: "Drawdown sınırları içinde",
+    reason: "Within drawdown limits",
   };
 }

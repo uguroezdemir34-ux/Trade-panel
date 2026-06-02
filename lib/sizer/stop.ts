@@ -53,7 +53,7 @@ export function computeStructuralStop(
       stopPrice: isLong ? px - dist : px + dist,
       stopDistance: dist,
       kind: "atr_no_pivot",
-      label: "ATR fallback (yapı yok)",
+      label: "ATR fallback (no structure)",
       swingLevel: null,
     };
   }
@@ -69,7 +69,7 @@ export function computeStructuralStop(
       stopPrice: isLong ? px - dist : px + dist,
       stopDistance: dist,
       kind: "atr_invalid_pivot",
-      label: "ATR fallback (yapı geçersiz)",
+      label: "ATR fallback (invalid structure)",
       swingLevel,
     };
   }
@@ -81,7 +81,7 @@ export function computeStructuralStop(
       stopPrice: isLong ? px - dist : px + dist,
       stopDistance: dist,
       kind: "widened",
-      label: `Yapı genişletildi (${(candidateDist / atr).toFixed(1)}× ATR çok yakın)`,
+      label: `Structure widened (${(candidateDist / atr).toFixed(1)}× ATR too close)`,
       swingLevel,
     };
   }
@@ -93,7 +93,7 @@ export function computeStructuralStop(
       stopPrice: isLong ? px - dist : px + dist,
       stopDistance: dist,
       kind: "atr_too_far",
-      label: `ATR fallback (yapı ${(candidateDist / atr).toFixed(1)}× ATR uzak)`,
+      label: `ATR fallback (structure ${(candidateDist / atr).toFixed(1)}× ATR too far)`,
       swingLevel,
     };
   }
@@ -103,7 +103,7 @@ export function computeStructuralStop(
     stopPrice: candidatePrice,
     stopDistance: candidateDist,
     kind: "structural",
-    label: `Yapısal swing (${(candidateDist / atr).toFixed(1)}× ATR)`,
+    label: `Structural swing (${(candidateDist / atr).toFixed(1)}× ATR)`,
     swingLevel,
   };
 }

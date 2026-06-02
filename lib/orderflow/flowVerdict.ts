@@ -152,9 +152,9 @@ export function computeFlowVerdict(
       vetoed: true,
       vetoReason:
         divergence.confluenceType === "bearish_divergence"
-          ? "Çoklu pencerede bearish divergence — smart money satıyor"
-          : "Çoklu pencerede bullish divergence — smart money alıyor",
-      humanSummary: "VETO — Smart money ters yönde",
+          ? "Multi-window bearish divergence — smart money selling"
+          : "Multi-window bullish divergence — smart money buying",
+      humanSummary: "VETO — Smart money in opposite direction",
     };
   }
 
@@ -178,27 +178,27 @@ export function computeFlowVerdict(
     alignment = "strong_align";
     scoreAdjustment = 10;
     confidenceMultiplier = 1.5;
-    humanSummary = "GÜÇLÜ ONAY — Flow tüm pencerelerde uyumlu";
+    humanSummary = "STRONG CONFIRM — Flow aligned across all windows";
   } else if (alignCount >= 2) {
     alignment = "weak_align";
     scoreAdjustment = 5;
     confidenceMultiplier = 1.2;
-    humanSummary = "HAFİF ONAY — Flow çoğunlukla uyumlu";
+    humanSummary = "MILD CONFIRM — Flow mostly aligned";
   } else if (opposeCount === totalFrames) {
     alignment = "strong_oppose";
     scoreAdjustment = -10;
     confidenceMultiplier = 0.5;
-    humanSummary = "GÜÇLÜ ÇELİŞKİ — Flow tamamen ters";
+    humanSummary = "STRONG CONFLICT — Flow fully opposite";
   } else if (opposeCount >= 2) {
     alignment = "weak_oppose";
     scoreAdjustment = -5;
     confidenceMultiplier = 0.7;
-    humanSummary = "HAFİF ÇELİŞKİ — Flow çoğunlukla ters";
+    humanSummary = "MILD CONFLICT — Flow mostly opposite";
   } else {
     alignment = "neutral";
     scoreAdjustment = 0;
     confidenceMultiplier = 1.0;
-    humanSummary = "NÖTR — Flow belirsiz";
+    humanSummary = "NEUTRAL — Flow unclear";
   }
 
   // VPIN multiplier uygula (varsa)
@@ -211,8 +211,8 @@ export function computeFlowVerdict(
     // VPIN yorum bilgisini summary'e ekle
     if (vpin.toxicity === "toxic" || vpin.toxicity === "extreme") {
       humanSummary += signalAlignedWithFlow
-        ? ` · Smart money ${signalDirection === "LONG" ? "alıyor" : "satıyor"} (VPIN ${vpin.vpin.toFixed(2)})`
-        : ` · DİKKAT: Smart money ters yönde (VPIN ${vpin.vpin.toFixed(2)})`;
+        ? ` · Smart money ${signalDirection === "LONG" ? "buying" : "selling"} (VPIN ${vpin.vpin.toFixed(2)})`
+        : ` · WARNING: Smart money opposite (VPIN ${vpin.vpin.toFixed(2)})`;
     }
   }
 

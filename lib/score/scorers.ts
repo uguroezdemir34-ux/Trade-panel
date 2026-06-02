@@ -76,7 +76,7 @@ export function scoreAdx(adx: number | null): ScoreReason {
   if (adx >= 20 && adx < 25)
     return { score: 9, reason: `Developing (${adx.toFixed(0)})` };
   if (adx > 40 && adx <= 50)
-    return { score: 0, reason: `⚠️ Tired (${adx.toFixed(0)}) - geç` };
+    return { score: 0, reason: `⚠️ Tired (${adx.toFixed(0)}) - late` };
   if (adx < 20) return { score: 0, reason: `Weak (${adx.toFixed(0)}) - range` };
   return { score: 0, reason: `⚠️ Over-extended (${adx.toFixed(0)})` };
 }
@@ -101,7 +101,7 @@ export function scoreRsi(
     if (rsi > 65 && rsi <= 70)
       return { score: 3, reason: `Near extreme (${rsi.toFixed(0)})` };
     if (rsi > 70)
-      return { score: 0, reason: `⚠️ Overbought (${rsi.toFixed(0)}) - geç` };
+      return { score: 0, reason: `⚠️ Overbought (${rsi.toFixed(0)}) - late` };
     if (rsi < 45 && rsi >= 35)
       return { score: 4, reason: `Weak (${rsi.toFixed(0)})` };
     return { score: 0, reason: `Direction conflict (${rsi.toFixed(0)})` };
@@ -117,7 +117,7 @@ export function scoreRsi(
     if (rsi >= 30 && rsi < 35)
       return { score: 3, reason: `Near extreme (${rsi.toFixed(0)})` };
     if (rsi < 30)
-      return { score: 0, reason: `⚠️ Oversold (${rsi.toFixed(0)}) - geç` };
+      return { score: 0, reason: `⚠️ Oversold (${rsi.toFixed(0)}) - late` };
     if (rsi > 55 && rsi <= 65)
       return { score: 4, reason: `Weak (${rsi.toFixed(0)})` };
     return { score: 0, reason: `Direction conflict (${rsi.toFixed(0)})` };
@@ -136,7 +136,7 @@ export function scoreVolume(volRatio: number | null): ScoreReason {
     return { score: 10, reason: `Healthy (${volRatio.toFixed(2)}x)` };
   if (volRatio >= 0.7)
     return { score: 3, reason: `Low (${volRatio.toFixed(2)}x)` };
-  return { score: 0, reason: `⚠️ Çok Low (${volRatio.toFixed(2)}x) - teyitsiz` };
+  return { score: 0, reason: `⚠️ Very Low (${volRatio.toFixed(2)}x) - unconfirmed` };
 }
 
 // ───────── E) BB POSITION (10 pts, direction-aware) ─────────

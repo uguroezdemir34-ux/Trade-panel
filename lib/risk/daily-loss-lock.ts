@@ -56,7 +56,7 @@ export class DailyLossLock {
     // Locked tier'a ilk geçiş → yan etki bir kez
     if (protocol.tier === "locked" && !this.state.locked) {
       this.state.locked = true;
-      this.state.lockReason = `Günlük kayıp limiti aşıldı (%${pnlPct.toFixed(1)}).`;
+      this.state.lockReason = `Daily loss limit exceeded (%${pnlPct.toFixed(1)}).`;
       this.events.onLocked?.(this.state.lockReason);
     }
 
