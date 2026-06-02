@@ -11,29 +11,36 @@ import { TvWebhookCard } from "@/components/ayarlar/TvWebhookCard";
 
 export default function AyarlarPage() {
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <AccountBalanceCard />
+    <div className="flex flex-col gap-3 p-4">
+      {/* Row 1: Bakiye + Mod */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <AccountBalanceCard />
+        <ModeToggleCard />
+      </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Row 2: OKX + Telegram */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <OkxCredsCard />
         <TelegramTestCard />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Row 3: GO Alerts + Fiyat Alarmları */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <GoAlertsCard />
         <PriceAlarmsCard />
       </div>
 
-      <TvWebhookCard />
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Row 4: TV Webhook + Trading Limitleri */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <TvWebhookCard />
         <TradingLimitsCard />
-        <DrawdownToggleCard />
       </div>
 
-      <ModeToggleCard />
-
-      <DangerZoneCard />
+      {/* Row 5: Drawdown + Tehlikeli Bölge */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <DrawdownToggleCard />
+        <DangerZoneCard />
+      </div>
     </div>
   );
 }
