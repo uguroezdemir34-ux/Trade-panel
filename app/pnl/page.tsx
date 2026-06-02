@@ -163,63 +163,71 @@ export default function PnlPage() {
 
       <PnlSummaryRow trades={trades} />
 
-      {/* Stats + streak side by side on desktop */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_280px]">
+      {/* Stats + Streak */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_260px]">
         <PnlStatsCard stats={stats} />
         <StreakCard trades={trades} />
       </div>
 
-      <TradeInsightsCard trades={trades} />
+      {/* Insights + FT Comparison */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <TradeInsightsCard trades={trades} />
+        <FtComparison trades={allTrades} />
+      </div>
 
-      {/* FT comparison — shown when paper trades exist (always uses allTrades for full picture) */}
-      <FtComparison trades={allTrades} />
-
-      {/* Equity curve + weekly side by side on desktop */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Equity + Weekly */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <EquityCurve points={equityPoints} />
         <WeeklySummary weeks={weeklyAggs} />
       </div>
 
-      <PnlCalendar aggregates={calendarAggregates} maxAbsPnl={maxAbsPnl} />
-
-      {/* Monthly + distribution side by side on desktop */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Calendar + Monthly */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <PnlCalendar aggregates={calendarAggregates} maxAbsPnl={maxAbsPnl} />
         <MonthlyBreakdown months={monthlyAggs} />
-        <PnlDistribution trades={trades} />
       </div>
 
-      <RMultipleChart trades={trades} />
+      {/* Distribution + R-Multiple */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <PnlDistribution trades={trades} />
+        <RMultipleChart trades={trades} />
+      </div>
 
-      <TopTradesCard trades={trades} />
-      <PairBreakdownCard trades={trades} />
+      {/* Top Trades + Pair Breakdown */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <TopTradesCard trades={trades} />
+        <PairBreakdownCard trades={trades} />
+      </div>
 
-      {/* Exit + Score side by side on desktop */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Exit + Score Heatmap */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <ExitBreakdownCard trades={trades} />
         <ScoreHeatmap trades={trades} />
       </div>
 
-      {/* Holding time + Day of week side by side on desktop */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Holding + Day of Week */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <HoldingTimeCard trades={trades} />
         <DayOfWeekCard trades={trades} />
       </div>
 
-      {/* Time of day + session breakdown side by side on desktop */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Time of Day + Session */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <TimeOfDayCard trades={trades} />
         <SessionBreakdownCard trades={trades} />
       </div>
 
-      {/* Monte Carlo + Entry quality side by side on desktop */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {/* Monte Carlo + Entry Quality */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <MonteCarloCard trades={trades} />
         <EntryQualityChart trades={trades} />
       </div>
 
-      <PairEvLeaderboard trades={trades} />
-
-      <TradeJournalCard />
+      {/* EV Leaderboard + Journal */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <PairEvLeaderboard trades={trades} />
+        <TradeJournalCard />
+      </div>
 
       <ParameterAudit stats={calibrationStats} />
     </div>
