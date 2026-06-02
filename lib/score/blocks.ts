@@ -166,10 +166,10 @@ export function checkRsiExtreme(input: RsiExtremeInput): string | null {
   const lowerHard = regimeRelax && isShort ? 20 : 25;
 
   if (rsi > upperHard) {
-    return `RSI overbought (${rsi.toFixed(0)}${regimeRelax && isLong ? ", regime relaxed)" : ""})`;
+    return `RSI overbought (${rsi.toFixed(0)}${regimeRelax && isLong ? ", regime relaxed" : ""})`;
   }
   if (rsi < lowerHard) {
-    return `RSI oversold (${rsi.toFixed(0)}${regimeRelax && isShort ? ", regime relaxed)" : ""})`;
+    return `RSI oversold (${rsi.toFixed(0)}${regimeRelax && isShort ? ", regime relaxed" : ""})`;
   }
   return null;
 }

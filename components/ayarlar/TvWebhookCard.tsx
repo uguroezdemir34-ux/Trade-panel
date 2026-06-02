@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useT } from "@/lib/i18n/context";
 
 const TV_EXAMPLE = JSON.stringify(
@@ -21,13 +21,11 @@ const TV_EXAMPLE = JSON.stringify(
 export function TvWebhookCard(): React.ReactElement {
   const t = useT();
   const [copied, setCopied] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState("/api/webhook/tv");
 
-  const origin =
-    typeof window !== "undefined"
-      ? window.location.origin
-      : "https://your-domain.vercel.app";
-
-  const webhookUrl = `${origin}/api/webhook/tv`;
+  useEffect(() => {
+    setWebhookUrl(`${window.location.origin}/api/webhook/tv`);
+  }, []);
 
   function copyUrl() {
     navigator.clipboard.writeText(webhookUrl).then(() => {

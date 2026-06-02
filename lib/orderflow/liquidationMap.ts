@@ -322,7 +322,7 @@ export function liquidationScoreAdjustment(
   signalDirection: "LONG" | "SHORT",
 ): { adjustment: number; reason: string } {
   if (!map.nearestLongLiq && !map.nearestShortLiq) {
-    return { adjustment: 0, reason: "Liq map verisi yok" };
+    return { adjustment: 0, reason: "No liq map data" };
   }
 
   const longLiqDist = map.nearestLongLiq

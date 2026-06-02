@@ -31,6 +31,7 @@ function loadHistory(): Partial<Record<Pair, ScoreSnapshot[]>> {
 }
 
 function saveHistory(history: Partial<Record<Pair, ScoreSnapshot[]>>): void {
+  if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
   } catch {

@@ -327,9 +327,9 @@ function humanReasonForVpin(vpin: number, ready: boolean): string {
   const tox = classifyToxicity(vpin);
   switch (tox) {
     case "normal":
-      return "Piyasa normal — flow dengeli";
+      return "Market normal — flow balanced";
     case "elevated":
-      return "Flow asimetrik — dikkat";
+      return "Flow asymmetric — caution";
     case "warning":
       return "Informed activity started";
     case "toxic":
