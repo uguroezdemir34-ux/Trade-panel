@@ -18,7 +18,10 @@ import type { FlowIntelligenceResult } from "@/lib/orderflow/flowIntelligence";
 import type { LiquidationMap } from "@/lib/orderflow/liquidationMap";
 import { formatCvd } from "@/lib/orderflow/cvd";
 import { useLiqFeedStore } from "@/lib/store/liqFeedStore";
+import type { LiqEvent } from "@/lib/store/liqFeedStore";
 import { useT } from "@/lib/i18n/context";
+
+const EMPTY_LIQ_EVENTS: LiqEvent[] = [];
 
 interface Props {
   flow: FlowIntelligenceResult | null;
@@ -29,7 +32,7 @@ export function FlowAlignmentRow({ flow }: Props) {
   const [expanded, setExpanded] = useState(false);
 
   // Exchange feed counts — only subscribed when expanded to avoid wasted renders
-  const allEvents = useLiqFeedStore((s) => (flow ? (s.events[flow.pair] ?? []) : []));
+  const allEvents = useLiqFeedStore((s) => (flow ? (s.events[flow.pair] ?? EMPTY_LIQ_EVENTS) : EMPTY_LIQ_EVENTS));
   const exchangeCounts = useMemo(() => {
     const counts = { okx: 0, binance: 0, bybit: 0, unknown: 0 };
     for (const e of allEvents) {

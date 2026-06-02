@@ -19,6 +19,8 @@ import { useTradeFeedStore, selectTrades } from "@/lib/store/tradeFeedStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useLiqFeedStore } from "@/lib/store/liqFeedStore";
+
+const EMPTY_LIQ_EVENTS: import("@/lib/store/liqFeedStore").LiqEvent[] = [];
 import { buildLiquidationMapFromEvents } from "@/lib/orderflow/liquidationMap";
 import { createVpinState, ingestTradesIntoVpin } from "@/lib/orderflow/vpin";
 import type { Candle as SmcCandle } from "@/lib/orderflow/smc";
@@ -39,7 +41,7 @@ export function useFlowIntelligence(
   const candles1hRaw = useCandleStore((s) => s.candles[`${pair}_1h`]);
   const candles1h = candles1hRaw ?? EMPTY_CANDLES;
   const livePrice = useMarketStore((s) => s.prices[pair]?.last ?? null);
-  const liqEvents = useLiqFeedStore((s) => s.events[pair] ?? []);
+  const liqEvents = useLiqFeedStore((s) => s.events[pair] ?? EMPTY_LIQ_EVENTS);
 
   return useMemo(() => {
     if (trades.length === 0 || !livePrice) return null;
