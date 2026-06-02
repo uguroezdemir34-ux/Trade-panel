@@ -431,7 +431,7 @@ export function buildLiquidationMapFromEvents(
       REAL_MAP_BUCKET_COUNT - 1,
       Math.max(0, Math.floor((ev.price - minPrice) / bucketSize)),
     );
-    const weighted = ev.size * recencyWeight;
+    const weighted = ev.notionalUsd * recencyWeight;
     if (ev.side === "long") longBuckets[idx] += weighted;
     else shortBuckets[idx] += weighted;
   }

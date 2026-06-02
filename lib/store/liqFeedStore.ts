@@ -4,9 +4,11 @@ import type { Pair } from "@/lib/constants/pairs";
 export interface LiqEvent {
   pair: Pair;
   price: number;
-  size: number;
+  /** USD notional — normalized across OKX / Binance / Bybit */
+  notionalUsd: number;
   side: "long" | "short";
   ts: number;
+  exchange?: "okx" | "binance" | "bybit";
 }
 
 const MAX_EVENTS_PER_PAIR = 300;
