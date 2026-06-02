@@ -11,7 +11,7 @@ export interface LiqEvent {
   exchange?: "okx" | "binance" | "bybit";
 }
 
-const MAX_EVENTS_PER_PAIR = 300;
+const MAX_EVENTS_PER_PAIR = 900;
 const EVENT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 interface LiqFeedState {
