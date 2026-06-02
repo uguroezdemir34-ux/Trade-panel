@@ -94,7 +94,8 @@ lib/
 | accountStore | lib/store/accountStore.ts | Bakiye, drawdown protokolü |
 | riskStore | lib/store/riskStore.ts | Risk limitleri, BTC cooldown |
 | credentialStore | lib/store/credentialStore.ts | OKX API key + Telegram (AES-256-GCM şifreli) |
-| tradeFeedStore | lib/store/tradeFeedStore.ts | Canlı trade feed |
+| tradeFeedStore | lib/store/tradeFeedStore.ts | Canlı trade feed (CVD/VPIN/SMC için) |
+| liqFeedStore | lib/store/liqFeedStore.ts | Gerçek liq event'leri — OKX+Binance+Bybit, 900/pair, 24h TTL |
 
 ---
 
@@ -103,16 +104,22 @@ lib/
 `components/layout/AppShell.tsx` içinde sıraya göre:
 
 ```typescript
-useMarketStream()      // WS bağlantısı
-useCandlePoller()      // OHLCV çekimi (önce cache, sonra fetch)
-useScoreEngine()       // Skor hesaplama (candle değişince)
-useGoAlerts()          // GO verdict geçişini Telegram'a gönder
-useScoreHistory()      // Her skor hesabını geçmiş store'a kaydet
+useMarketStream()        // WS bağlantısı
+useCandlePoller()        // OHLCV çekimi (önce cache, sonra fetch)
+useScoreEngine()         // Skor hesaplama (candle değişince)
+useGoAlerts()            // GO verdict geçişini Telegram'a gönder
+useScoreHistory()        // Her skor hesabını geçmiş store'a kaydet
 usePositionPoller(1000)
 useTrailingManager()
 useBalancePoller(2000)
 useMacroPoller(3000)
 useDailyPnlTracker()
+useTradeFeed()           // CVD/VPIN/SMC için canlı trade feed
+useSignalFirehose()      // GO geçişlerini Telegram'a firehose
+usePriceAlarms()         // Fiyat alarm bildirimleri
+useScoreMomentumAlerts() // GO öncesi hızlı yükseliş pre-alert
+useConsecutiveLossAlert()// 3+ ardışık zarar alarmı
+useLiqFeed()             // OKX+Binance+Bybit liq feed → liqFeedStore
 ```
 
 ---
@@ -131,6 +138,10 @@ useDailyPnlTracker()
 
 | Commit | Özellik |
 |--------|---------|
+| `9b6d885` | MAX_EVENTS_PER_PAIR 300→900 (3 borsa kapasitesi) |
+| `28a083f` | Çoklu borsa liq feed — OKX + Binance + Bybit, USD notional normalize |
+| `eb9042d` | Gerçek OKX liquidation-orders feed — OHLCV tahminini geçersiz kılar |
+| `15f8a9e` | Hydration mismatch crash fix + RSI string bug + Türkçe string temizliği |
 | `cb983d7` | Skor geçmişi sparkline'ları + trend grafiği |
 | `2d6cc49` | GO sinyal Telegram uyarıları + skor tazelik göstergesi |
 | `8271dd5` | Backtest sonuçları localStorage persist |
@@ -151,19 +162,14 @@ useDailyPnlTracker()
 
 ## 9. Bilinen Açık Hatalar (Düzeltilmemiş)
 
-Bunlar **pre-existing** gerçek TS hataları — uygulama çalışır ama derleme temiz değil:
+**Durum (2026-06-02 doğrulandı):** Filtreli TS kontrolü sıfır hata veriyor.
+Önceki session'larda listelenen 8 hata tamamen düzeltilmiş.
 
-| Dosya | Hata | Neden |
-|-------|------|-------|
-| `lib/okx/ticker.ts(13)` | TS2740: `Record<Pair, string>` 13 pair eksik | 15-pair genişlemesinde güncellenmedi |
-| `components/pozisyon/PositionCard.tsx(329)` | `locale: "en" \| "tr"` → Locale 12 değer | i18n genişlemesinde daraltılmadı |
-| `components/risk/DisciplineLogList.tsx(99)` | Aynı Locale daraltma sorunu | — |
-| `app/pozisyon/page.tsx(55)` | Position prop type mismatch | — |
-| `components/piyasa/FundingRateRow.tsx(50)` | `key` prop spread | — |
-| `components/pnl/ParameterAudit.tsx(89,184,234,299)` | `children` missing (React.ReactNode) | @types/react yüklü değil |
-| `lib/hooks/useTrailingManager.ts(46)` | TrailingDeps mismatch | — |
-| `lib/exchange/idempotency.ts(46)` | Crypto type conversion | — |
-| `lib/store/marketStore.ts(60)` | Unused `get` param | noUnusedParameters |
+Kalan `npx tsc --noEmit` hataları (4324 adet) **yalnızca** node_modules
+eksikliğinden kaynaklanıyor (react, zustand, next yüklü değil).
+Runtime'da Next.js bundler çözer — gerçek mantık hatası yok.
+
+> Yeni gerçek hata tespit edilirse buraya ekle, node_modules hataları ekleme.
 
 ---
 
@@ -240,12 +246,11 @@ function Toggle({ active, onClick, children }: React.PropsWithChildren<{
 
 Aşağıdan seç veya "devam" de — en üstten başlanır:
 
-1. **Açık TS hatalarını düzelt** — `ticker.ts` (13 pair), Locale daraltma, `FundingRateRow` key, `marketStore` unused param
+1. **Flow Intelligence UI** — Liq heatmap seviyeleri karar sayfasında göster, borsa dağılımı (OKX/Binance/Bybit) badge'i
 2. **Grafik sayfası geliştirmeleri** — Hacim barları, RSI panel
 3. **Backtest compare** — İki backtest sonucunu yan yana karşılaştır
-4. **Fiyat alarm sistemi** — Belirli bir fiyat seviyesine ulaşınca Telegram bildirimi
-5. **Karar sayfası yenilemesi** — Pair gruplama (majors / alts / meme), filtre
-6. **PnL sayfası iyileştirme** — Aylık breakdown, R-multiple dağılım grafiği
+4. **Karar sayfası yenilemesi** — Pair gruplama (majors / alts / meme), filtre
+5. **PnL sayfası iyileştirme** — Aylık breakdown, R-multiple dağılım grafiği
 
 ---
 
