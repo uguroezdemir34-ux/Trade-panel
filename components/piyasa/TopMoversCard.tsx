@@ -31,7 +31,7 @@ export function TopMoversCard(): React.ReactElement | null {
   if (gainers.length === 0) return null;
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="flex flex-col gap-2">
       {/* Gainers */}
       <div className="border border-green-500/20 bg-green-500/5 rounded-lg p-3">
         <p className="text-green-400 font-mono text-2xs tracking-widest uppercase mb-2">
