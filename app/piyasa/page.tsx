@@ -31,8 +31,6 @@ export default function PiyasaPage() {
   const oiVelocity = useMacroStore((s) => s.oiVelocity);
   const oiLoading = useMacroStore((s) => s.oiLoading);
 
-  // Granular candle subscription — only re-renders when 1h/4h/1d last candle
-  // timestamps or confirm flags change (not on 15m polls or live price ticks).
   const allCandles = useCandleStore(
     (s) => s.candles,
     (prev, next) => {
@@ -49,7 +47,7 @@ export default function PiyasaPage() {
           if (pLast.ts !== nLast.ts || pLast.confirm !== nLast.confirm) return false;
         }
       }
-      return true; // no MTF candle closed → skip re-render
+      return true;
     },
   );
 
@@ -73,24 +71,36 @@ export default function PiyasaPage() {
   }, [allCandles]);
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <PriceTable />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <TopMoversCard />
-        <VolatilityRankCard />
-      </div>
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <MarketBreadthCard />
-        <MarketSessionsCard />
-      </div>
+    <div className="flex flex-col gap-3 p-4">
+      {/* Compact banners */}
       <FundingAlertBanner funding={funding} />
       <MarketSummaryBanner summary={marketSummary} />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        <FearGreedGauge info={fgInfo} loading={fgLoading} />
-        <DominanceCard info={dominance} loading={domLoading} />
+
+      {/* Main layout: PriceTable sol | Göstergeler sağ */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr]">
+        {/* Sol: Fiyat tablosu */}
+        <PriceTable />
+
+        {/* Sağ: Göstergeler 2×2 grid */}
+        <div className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <MarketBreadthCard />
+            <MarketSessionsCard />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <FearGreedGauge info={fgInfo} loading={fgLoading} />
+            <DominanceCard info={dominance} loading={domLoading} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <TopMoversCard />
+            <VolatilityRankCard />
+          </div>
+        </div>
       </div>
+
+      {/* Alt: MTF trend + OI + Funding */}
       <MtfTrendGrid results={mtfResults} />
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <FundingRateRow funding={funding} loading={fundingLoading} />
         <CorrelationCard />
       </div>
