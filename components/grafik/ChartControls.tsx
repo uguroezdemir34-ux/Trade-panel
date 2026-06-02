@@ -94,12 +94,12 @@ export function ChartControls({
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
           {t("grafik.timeframeLabel")}
         </span>
-        <div className="flex gap-1">
+        <div className="flex gap-1 overflow-x-auto">
           {TIMEFRAMES.map((tf) => (
             <button
               key={tf}
               onClick={() => onTimeframeChange(tf)}
-              className={`rounded border px-2 py-1 font-mono text-2xs font-bold tracking-widest uppercase ${
+              className={`rounded border px-2 py-1 font-mono text-2xs font-bold tracking-widest uppercase whitespace-nowrap shrink-0 ${
                 timeframe === tf
                   ? "border-text-t1 bg-text-t1 text-bg-page"
                   : "border-border text-text-t2 hover:bg-bg-page"
@@ -116,7 +116,7 @@ export function ChartControls({
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
           {t("grafik.overlays")}
         </span>
-        <div className="flex gap-1">
+        <div className="flex gap-1 overflow-x-auto">
           <Toggle active={showEma20} onClick={onToggleEma20}>
             {t("grafik.ema20")}
           </Toggle>
@@ -171,7 +171,7 @@ function Toggle({
     <button
       onClick={onClick}
       style={active && accent ? activeStyle : undefined}
-      className={`rounded border px-2 py-1 font-mono text-2xs font-bold tracking-widest uppercase ${
+      className={`rounded border px-2 py-1 font-mono text-2xs font-bold tracking-widest uppercase whitespace-nowrap shrink-0 ${
         active && !accent
           ? "border-text-t1 bg-text-t1 text-bg-page"
           : !active

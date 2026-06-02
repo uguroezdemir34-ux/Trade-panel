@@ -42,7 +42,7 @@ export function FundingAlertBanner({ funding }: Props): React.ReactElement | nul
         const ratePct = `${sign}${(rate * 100).toFixed(4)}%`;
         const isLong = tier === "extreme_long";
         return (
-          <div key={pair} className="flex items-center gap-1 font-mono text-2xs tabular-nums">
+          <div key={pair} className="flex items-center gap-1 font-mono text-2xs tabular-nums whitespace-nowrap">
             <span className="text-text-t2 font-bold">{pair}</span>
             <span className={isLong ? "text-red-400" : "text-green-400"}>{ratePct}</span>
             <span className="text-text-t4">

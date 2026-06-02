@@ -43,7 +43,7 @@ export function CandlePatternBadge({ pair }: Props): React.ReactElement | null {
           title={p.description}
           className={`flex items-center gap-1.5 rounded border px-2 py-1 ${biasColors(p.bias)}`}
         >
-          <span className="font-mono text-2xs font-medium">{p.name}</span>
+          <span className="font-mono text-2xs font-medium whitespace-nowrap">{p.name}</span>
           <span className="font-mono text-2xs opacity-60">{strengthDot(p.strength)}</span>
         </div>
       ))}

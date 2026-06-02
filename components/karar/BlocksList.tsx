@@ -41,7 +41,7 @@ export function BlocksList({
               className="bg-soft-red text-signal-red border-signal-red/40 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-2xs tracking-wider"
             >
               <span>❌</span>
-              <span>{b}</span>
+              <span className="whitespace-nowrap">{b}</span>
             </span>
           ))}
           {softBlocks.map((b, i) => (
@@ -50,7 +50,7 @@ export function BlocksList({
               className="bg-soft-amber text-signal-amber border-signal-amber/40 inline-flex items-center gap-1.5 rounded-md border px-2 py-1 font-mono text-2xs tracking-wider"
             >
               <span>⚠</span>
-              <span>{b}</span>
+              <span className="whitespace-nowrap">{b}</span>
             </span>
           ))}
         </div>
