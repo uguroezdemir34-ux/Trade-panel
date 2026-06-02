@@ -101,9 +101,10 @@ export function MarketSessionsCard(): React.ReactElement {
           const barLeft = (session.startUtc / 24) * 100;
 
           return (
-            <div key={session.name} className="flex flex-col gap-1">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div key={session.name} className="flex flex-col gap-0.5">
+              {/* Line 1: dot + name + badge */}
+              <div className="flex items-center justify-between gap-1">
+                <div className="flex items-center gap-1.5">
                   <span
                     className="h-2 w-2 rounded-full shrink-0"
                     style={{
@@ -117,33 +118,22 @@ export function MarketSessionsCard(): React.ReactElement {
                   >
                     {session.name}
                   </span>
-                  <span className="text-text-t4 font-mono text-2xs">
-                    {session.cities}
-                  </span>
                 </div>
-                <div className="flex items-center gap-2">
-                  {active ? (
-                    <span className="text-text-t4 font-mono text-2xs">
-                      closes in {until}
-                    </span>
-                  ) : (
-                    <span className="text-text-t4 font-mono text-2xs">
-                      opens in {until}
-                    </span>
-                  )}
-                  <span
-                    className="font-mono text-2xs font-bold rounded px-1.5 py-0.5"
-                    style={{
-                      background: active ? `${session.color}20` : "transparent",
-                      color: active ? session.color : "var(--color-text-t4)",
-                      border: `1px solid ${active ? `${session.color}40` : "var(--color-border)"}`,
-                    }}
-                  >
-                    {active ? "OPEN" : "CLOSED"}
-                  </span>
-                </div>
+                <span
+                  className="font-mono text-2xs font-bold rounded px-1.5 py-0.5 shrink-0"
+                  style={{
+                    background: active ? `${session.color}20` : "transparent",
+                    color: active ? session.color : "var(--color-text-t4)",
+                    border: `1px solid ${active ? `${session.color}40` : "var(--color-border)"}`,
+                  }}
+                >
+                  {active ? "OPEN" : "CLOSED"}
+                </span>
               </div>
-
+              {/* Line 2: cities + timing */}
+              <div className="pl-3.5 text-text-t4 font-mono text-2xs">
+                {session.cities} · {active ? `closes in ${until}` : `opens in ${until}`}
+              </div>
               {/* Timeline bar */}
               <div className="relative h-1.5 w-full rounded-full bg-border/30 overflow-hidden">
                 <div
@@ -154,7 +144,6 @@ export function MarketSessionsCard(): React.ReactElement {
                     background: active ? session.color : `${session.color}40`,
                   }}
                 />
-                {/* Current time marker */}
                 <div
                   className="absolute top-0 h-full w-0.5 bg-white/60 rounded-full"
                   style={{ left: `${(utcHour / 24) * 100}%` }}
