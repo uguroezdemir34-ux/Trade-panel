@@ -175,7 +175,7 @@ export function MonteCarloCard({ trades }: Props): React.ReactElement | null {
       </div>
 
       {/* Percentile bands */}
-      <div className="mb-3 grid grid-cols-3 gap-2">
+      <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {[
           { label: "P10 (Worst)", value: sim.p10, color: "text-signal-red" },
           { label: "P50 (Median)", value: sim.p50, color: "text-amber-400" },

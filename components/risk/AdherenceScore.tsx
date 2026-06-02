@@ -62,7 +62,7 @@ export function AdherenceScore(): React.ReactElement {
       </div>
 
       {/* Breakdown */}
-      <div className="text-text-t2 grid grid-cols-3 gap-2 font-mono text-2xs tracking-wider">
+      <div className="text-text-t2 grid grid-cols-1 gap-2 font-mono text-2xs tracking-wider sm:grid-cols-3">
         <Stat
           label={t("risk.adherence.withSystem")}
           value={result.withSystem}

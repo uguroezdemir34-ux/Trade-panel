@@ -62,7 +62,7 @@ export function PnlStatsCard({ stats }: Props): React.ReactElement {
       </div>
 
       {/* 3 grid: Win rate + Avg R + Profit factor */}
-      <div className="mb-3 grid grid-cols-3 gap-2">
+      <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <Stat
           label={t("pnl.stats.winRate")}
           value={formatPercent(stats.winRate, locale)}
