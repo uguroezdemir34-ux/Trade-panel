@@ -77,6 +77,7 @@ export default function KararPage() {
   const candles1h = candles1hRaw ?? EMPTY_CANDLES;
   const candles4h = candles4hRaw ?? EMPTY_CANDLES;
   const livePrice = useMarketStore((s) => s.prices[activePair]?.last ?? null);
+  const allTicks = useMarketStore((s) => s.prices);
   const balanceTotal = useAccountStore((s) => s.balanceTotal);
   const balanceFree = useAccountStore((s) => s.balanceFree);
   const drawdownProtocol = useAccountStore((s) => s.drawdownProtocol);
@@ -453,6 +454,13 @@ export default function KararPage() {
               const dirArrow =
                 dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
 
+              const pairChg = allTicks[p]?.chg ?? null;
+              const chgColor =
+                pairChg === null ? "text-text-t4"
+                : pairChg > 0 ? "text-signal-up"
+                : pairChg < 0 ? "text-signal-down"
+                : "text-text-t4";
+
               const momentum = pairMomentum[p];
               const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
               const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
@@ -486,6 +494,11 @@ export default function KararPage() {
                         </span>
                       )}
                     </div>
+                    {pairChg !== null && (
+                      <div className={`text-[8px] tabular-nums leading-none ${chgColor}`}>
+                        {pairChg >= 0 ? "+" : ""}{pairChg.toFixed(1)}%
+                      </div>
+                    )}
                     <div className="mt-0.5 h-[10px]">
                       <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
                     </div>
@@ -517,6 +530,11 @@ export default function KararPage() {
 
           {result && (
             <>
+              <PairPriceHeader
+                pair={activePair}
+                price={livePrice}
+                chg={allTicks[activePair]?.chg ?? null}
+              />
               <HistoricalEdge pair={activePair} />
               <LiveEdgeBadge pair={activePair} />
               <VerdictBadge
@@ -648,6 +666,48 @@ function ScoreHistoryChart({
       <div className="flex justify-between mt-0.5">
         <span className="text-text-t4 font-mono text-2xs">{pts[0].ts ? new Date(pts[0].ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
         <span className="text-text-t4 font-mono text-2xs">{latest.ts ? new Date(latest.ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
+      </div>
+    </div>
+  );
+}
+
+function fmtPrice(price: number): string {
+  if (price >= 10_000) return "$" + price.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  if (price >= 100)    return "$" + price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (price >= 1)      return "$" + price.toFixed(4);
+  if (price >= 0.001)  return "$" + price.toFixed(5);
+  return "$" + price.toPrecision(4);
+}
+
+function PairPriceHeader({
+  pair,
+  price,
+  chg,
+}: {
+  pair: import("@/lib/constants/pairs").Pair;
+  price: number | null;
+  chg: number | null;
+}) {
+  const chgColor =
+    chg === null ? "text-text-t3"
+    : chg > 0 ? "text-signal-up"
+    : chg < 0 ? "text-signal-down"
+    : "text-text-t3";
+
+  return (
+    <div className="flex items-center justify-between bg-surface-s1 rounded-lg px-3 py-2">
+      <span className="font-mono text-sm font-bold text-text-t1 tracking-wide">{pair}</span>
+      <div className="flex items-center gap-3">
+        {price !== null && (
+          <span className="font-mono text-sm font-semibold text-text-t1 tabular-nums">
+            {fmtPrice(price)}
+          </span>
+        )}
+        {chg !== null && (
+          <span className={`font-mono text-xs font-medium tabular-nums ${chgColor}`}>
+            {chg >= 0 ? "+" : ""}{chg.toFixed(2)}%
+          </span>
+        )}
       </div>
     </div>
   );
