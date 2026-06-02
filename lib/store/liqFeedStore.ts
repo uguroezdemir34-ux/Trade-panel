@@ -11,17 +11,23 @@ export interface LiqEvent {
   exchange?: "okx" | "binance" | "bybit";
 }
 
+export type LiqConnStatus = "connecting" | "connected" | "disconnected";
+export type LiqExchange = "okx" | "binance" | "bybit";
+
 const MAX_EVENTS_PER_PAIR = 900;
 const EVENT_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
 interface LiqFeedState {
   events: Partial<Record<Pair, LiqEvent[]>>;
+  connections: Record<LiqExchange, LiqConnStatus>;
   push: (event: LiqEvent) => void;
   prune: (now: number) => void;
+  setConn: (exchange: LiqExchange, status: LiqConnStatus) => void;
 }
 
 export const useLiqFeedStore = create<LiqFeedState>((set) => ({
   events: {},
+  connections: { okx: "connecting", binance: "connecting", bybit: "connecting" },
 
   push: (event) =>
     set((s) => {
@@ -40,4 +46,7 @@ export const useLiqFeedStore = create<LiqFeedState>((set) => ({
       }
       return { events: next };
     }),
+
+  setConn: (exchange, status) =>
+    set((s) => ({ connections: { ...s.connections, [exchange]: status } })),
 }));

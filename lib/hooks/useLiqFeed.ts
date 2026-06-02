@@ -16,7 +16,7 @@
 
 import { useEffect } from "react";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
-import { useLiqFeedStore, type LiqEvent } from "@/lib/store/liqFeedStore";
+import { useLiqFeedStore, type LiqEvent, type LiqExchange } from "@/lib/store/liqFeedStore";
 
 // ── OKX contract sizes: 1 contract → base asset ──────────────────────────────
 const OKX_CONTRACT_SIZE: Partial<Record<Pair, number>> = {
@@ -63,7 +63,7 @@ const PRUNE_INTERVAL_MS = 5 * 60 * 1_000;
 // ── Exchange config ──────────────────────────────────────────────────────────
 
 interface ExchangeConfig {
-  name: "okx" | "binance" | "bybit";
+  name: LiqExchange;
   urls: string[];
   subscribe: (ws: WebSocket) => void;
   parse: (raw: string) => LiqEvent[];
@@ -219,6 +219,7 @@ const BYBIT_CONFIG: ExchangeConfig = {
 function createWsManager(
   config: ExchangeConfig,
   push: (e: LiqEvent) => void,
+  setConn: (exchange: LiqExchange, status: import("@/lib/store/liqFeedStore").LiqConnStatus) => void,
 ): () => void {
   let ws: WebSocket | null = null;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -228,11 +229,13 @@ function createWsManager(
 
   function connect(): void {
     if (destroyed) return;
+    setConn(config.name, "connecting");
     const url = config.urls[urlIdx % config.urls.length];
     urlIdx++;
-    try { ws = new WebSocket(url); } catch { scheduleReconnect(); return; }
+    try { ws = new WebSocket(url); } catch { setConn(config.name, "disconnected"); scheduleReconnect(); return; }
 
     ws.onopen = () => {
+      setConn(config.name, "connected");
       try { config.subscribe(ws!); } catch { /* ignore */ }
       if (config.pingMsg && config.pingIntervalMs) {
         pingTimer = setInterval(() => {
@@ -251,7 +254,10 @@ function createWsManager(
     ws.onclose = () => {
       ws = null;
       if (pingTimer) { clearInterval(pingTimer); pingTimer = null; }
-      if (!destroyed) scheduleReconnect();
+      if (!destroyed) {
+        setConn(config.name, "disconnected");
+        scheduleReconnect();
+      }
     };
   }
 
@@ -279,13 +285,14 @@ function createWsManager(
 export function useLiqFeed(): void {
   const push = useLiqFeedStore((s) => s.push);
   const prune = useLiqFeedStore((s) => s.prune);
+  const setConn = useLiqFeedStore((s) => s.setConn);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const cleanupOkx     = createWsManager(OKX_CONFIG,     push);
-    const cleanupBinance = createWsManager(BINANCE_CONFIG,  push);
-    const cleanupBybit   = createWsManager(BYBIT_CONFIG,    push);
+    const cleanupOkx     = createWsManager(OKX_CONFIG,     push, setConn);
+    const cleanupBinance = createWsManager(BINANCE_CONFIG,  push, setConn);
+    const cleanupBybit   = createWsManager(BYBIT_CONFIG,    push, setConn);
 
     const pruneTimer = setInterval(() => prune(Date.now()), PRUNE_INTERVAL_MS);
 

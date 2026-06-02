@@ -8,6 +8,7 @@ import { usePositionStore } from "@/lib/store/positionStore";
 import { useHydrated } from "@/lib/store/hydration";
 import { useT } from "@/lib/i18n/context";
 import { ConnectionBadge } from "./ConnectionBadge";
+import { LiqFeedBadge } from "./LiqFeedBadge";
 import { BrandHeader } from "@/components/brand/BrandHeader";
 import { LanguageDropdown } from "@/components/ui/LanguageDropdown";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -67,6 +68,7 @@ export function AppHeader(): React.ReactElement {
         <div className="flex items-center gap-2">
           <LanguageDropdown />
           <ThemeToggle />
+          <LiqFeedBadge />
           <ConnectionBadge />
           {hydrated && (
             <>
