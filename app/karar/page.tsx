@@ -530,44 +530,73 @@ export default function KararPage() {
 
           {result && (
             <>
+              {/* Price header */}
               <PairPriceHeader
                 pair={activePair}
                 price={livePrice}
                 chg={allTicks[activePair]?.chg ?? null}
               />
-              <HistoricalEdge pair={activePair} />
-              <LiveEdgeBadge pair={activePair} />
-              <VerdictBadge
-                verdict={result.verdict}
-                signalType={result.pullbackActive ? "pullback" : "classic"}
-              />
-              <DirectionBadge
-                direction={result.direction}
-                confidence={result.dirConfidence}
-              />
-              <FundingBadge
-                pair={activePair}
-                direction={result.direction !== "NEUTRAL" ? result.direction : undefined}
-              />
+
+              {/* Verdict + Direction + Funding — compact inline row */}
+              <div className="flex flex-wrap items-center gap-2">
+                <VerdictBadge
+                  verdict={result.verdict}
+                  signalType={result.pullbackActive ? "pullback" : "classic"}
+                />
+                <DirectionBadge
+                  direction={result.direction}
+                  confidence={result.dirConfidence}
+                />
+                <FundingBadge
+                  pair={activePair}
+                  direction={result.direction !== "NEUTRAL" ? result.direction : undefined}
+                />
+              </div>
+
+              {/* Score bar */}
               <ScoreBar
                 score={result.score}
                 threshold={result.effectiveThreshold}
                 goThreshold={result.goThreshold}
               />
-              <QuickAlarm
-                pair={activePair}
-                livePrice={livePrice}
-                direction={result.direction}
-              />
+
+              {/* Alarm + Candle patterns — quick actions row */}
+              <div className="flex flex-wrap items-start gap-2">
+                <div className="flex-1 min-w-[180px]">
+                  <QuickAlarm
+                    pair={activePair}
+                    livePrice={livePrice}
+                    direction={result.direction}
+                  />
+                </div>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  <CandlePatternBadge pair={activePair} />
+                </div>
+              </div>
+
+              {/* Historical edge + Live edge — side by side */}
+              <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                <HistoricalEdge pair={activePair} />
+                <LiveEdgeBadge pair={activePair} />
+              </div>
+
+              {/* Score trend chart */}
               <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} t={t} />
+
+              {/* Flow alignment (collapsible) */}
               <FlowAlignmentRow flow={flowResult} />
-              <CandlePatternBadge pair={activePair} />
-              <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
-              <BlocksList
-                hardBlocks={result.blocks}
-                softBlocks={result.softBlocks}
-              />
-              <ReasonsList reasons={result.reasons} />
+
+              {/* Score breakdown + Blocks + Reasons — 2-col */}
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
+                <div className="flex flex-col gap-3">
+                  <BlocksList
+                    hardBlocks={result.blocks}
+                    softBlocks={result.softBlocks}
+                  />
+                  <ReasonsList reasons={result.reasons} />
+                </div>
+              </div>
 
               {sizerResult && result.direction !== "NEUTRAL" && (
                 <CorrelationWarning pair={activePair} direction={result.direction} />
