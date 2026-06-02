@@ -75,4 +75,6 @@ export interface ChartSeries {
   markers?: ChartMarker[];
   srLevels?: SrLevel[];
   tradeLevels?: TradeLevelLine[];
+  /** Canlı fiyat — grafik üzerinde mavi kesikli "LIVE" çizgisi */
+  currentPrice?: number;
 }

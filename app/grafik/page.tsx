@@ -1,9 +1,11 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
+import { useMarketStore } from "@/lib/store/marketStore";
+import { useSettingsStore } from "@/lib/store/settingsStore";
 import { ChartControls } from "@/components/grafik/ChartControls";
 import { ChartLegend } from "@/components/grafik/ChartLegend";
 import { emaSeries } from "@/lib/indicators/ema";
@@ -13,7 +15,7 @@ import { bbSeries } from "@/lib/indicators/bb";
 import { vwapSeries } from "@/lib/indicators/vwap";
 import { findAllSwingHighs, findAllSwingLows } from "@/lib/sr/swing";
 import { toIndicatorCandle } from "@/lib/okx/candles";
-import type { Pair } from "@/lib/constants/pairs";
+import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
 import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
@@ -26,7 +28,12 @@ const PriceChart = dynamic(
 const VOL_UP = "rgba(34,197,94,0.5)";
 const VOL_DOWN = "rgba(239,68,68,0.5)";
 
+const CHART_STORAGE_KEY = "qx_chart_v1";
+const VALID_TF = new Set<string>(["5m", "15m", "1h", "4h", "1d"]);
+
 export default function GrafikPage() {
+  const theme = useSettingsStore((s) => s.theme);
+
   const [pair, setPair] = useState<Pair>("BTC");
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
   const [showEma20, setShowEma20] = useState(true);
@@ -40,10 +47,47 @@ export default function GrafikPage() {
   const [showVwap, setShowVwap] = useState(false);
   const [showSr, setShowSr] = useState(false);
 
+  // Load persisted settings on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(CHART_STORAGE_KEY);
+      if (!raw) return;
+      const s = JSON.parse(raw) as Record<string, unknown>;
+      if (typeof s.pair === "string" && (PAIRS as readonly string[]).includes(s.pair)) setPair(s.pair as Pair);
+      if (typeof s.tf === "string" && VALID_TF.has(s.tf)) setTimeframe(s.tf as Timeframe);
+      const o = s.o as Record<string, boolean> | undefined;
+      if (o) {
+        if (o.ema20 !== undefined) setShowEma20(o.ema20);
+        if (o.ema50 !== undefined) setShowEma50(o.ema50);
+        if (o.ema200 !== undefined) setShowEma200(o.ema200);
+        if (o.vol !== undefined) setShowVolume(o.vol);
+        if (o.rsi !== undefined) setShowRsi(o.rsi);
+        if (o.macd !== undefined) setShowMacd(o.macd);
+        if (o.bb !== undefined) setShowBb(o.bb);
+        if (o.vwap !== undefined) setShowVwap(o.vwap);
+        if (o.sr !== undefined) setShowSr(o.sr);
+        if (o.trades !== undefined) setShowTrades(o.trades);
+      }
+    } catch { /* ignore */ }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Persist settings on change
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHART_STORAGE_KEY, JSON.stringify({
+        pair, tf: timeframe,
+        o: { ema20: showEma20, ema50: showEma50, ema200: showEma200, vol: showVolume,
+             rsi: showRsi, macd: showMacd, bb: showBb, vwap: showVwap, sr: showSr, trades: showTrades },
+      }));
+    } catch { /* ignore */ }
+  }, [pair, timeframe, showEma20, showEma50, showEma200, showVolume, showRsi, showMacd, showBb, showVwap, showSr, showTrades]);
+
   const candlesRaw = useCandleStore((s) => s.candles[`${pair}_${timeframe}`]);
   const candles = candlesRaw ?? EMPTY_CANDLES;
   const trades = useTradesStore((s) => s.trades);
   const alarms = usePriceAlarmStore((s) => s.alarms);
+  const livePrice = useMarketStore((s) => s.prices[pair]?.last ?? null);
 
   const tradeLevels = useMemo<TradeLevelLine[]>(() => {
     const open = trades.filter((t) => t.status === "open" && t.pair === pair);
@@ -192,8 +236,8 @@ export default function GrafikPage() {
       ];
     }
 
-    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, bb: bbBands, vwap: vwapBands, alarmLevels, markers, srLevels, tradeLevels };
-  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd, showBb, showVwap, showSr, alarmLevels, tradeLevels]);
+    return { candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData, bb: bbBands, vwap: vwapBands, alarmLevels, markers, srLevels, tradeLevels, currentPrice: livePrice ?? undefined };
+  }, [candles, trades, pair, showEma20, showEma50, showEma200, showTrades, showVolume, showRsi, showMacd, showBb, showVwap, showSr, alarmLevels, tradeLevels, livePrice]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -235,7 +279,7 @@ export default function GrafikPage() {
         showVwap={showVwap}
         showSr={showSr}
       />
-      <PriceChart series={series} height={480} />
+      <PriceChart series={series} height={480} theme={theme} />
     </div>
   );
 }

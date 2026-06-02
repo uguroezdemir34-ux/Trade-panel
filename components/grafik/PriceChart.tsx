@@ -28,6 +28,7 @@ import type { ChartSeries } from "@/lib/chart/types";
 interface Props {
   series: ChartSeries;
   height?: number;
+  theme?: "dark" | "light";
 }
 
 const COLOR_UP       = "#22c55e";
@@ -40,8 +41,12 @@ const COLOR_BB       = "#06b6d4"; // cyan-500
 const COLOR_VWAP     = "#f97316"; // orange-500
 const COLOR_MACD     = "#3b82f6";
 const COLOR_SIGNAL   = "#f59e0b";
-const COLOR_GRID     = "#e5e5e5";
-const COLOR_TEXT     = "#525252";
+const COLOR_LIVE     = "#3b82f6"; // blue-500
+
+const THEME_COLORS = {
+  dark:  { grid: "#2d2d2d", text: "#a3a3a3", border: "#2d2d2d" },
+  light: { grid: "#e5e5e5", text: "#525252",  border: "#e5e5e5" },
+} as const;
 
 // Dynamic pane layout — each sub-panel gets PANEL_H of chart height
 const PANEL_H = 0.20;
@@ -68,7 +73,7 @@ function computeSlots(hasVol: boolean, hasRsi: boolean, hasMacd: boolean) {
   return slots;
 }
 
-export function PriceChart({ series, height = 400 }: Props): React.ReactElement {
+export function PriceChart({ series, height = 400, theme = "dark" }: Props): React.ReactElement {
   const containerRef  = useRef<HTMLDivElement>(null);
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -83,6 +88,7 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
   const alarmLinesRef = useRef<IPriceLine[]>([]);
   const srLinesRef = useRef<IPriceLine[]>([]);
   const tradeLinesRef = useRef<IPriceLine[]>([]);
+  const currentPriceLineRef = useRef<IPriceLine | null>(null);
   const bbUpperRef    = useRef<ISeriesApi<"Line"> | null>(null);
   const bbMiddleRef   = useRef<ISeriesApi<"Line"> | null>(null);
   const bbLowerRef    = useRef<ISeriesApi<"Line"> | null>(null);
@@ -95,24 +101,25 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
     const container = containerRef.current;
     if (!container) return;
 
+    const tc = THEME_COLORS[theme];
     const chart = createChart(container, {
       width: container.clientWidth,
       height,
       layout: {
         background: { color: "transparent" },
-        textColor: COLOR_TEXT,
+        textColor: tc.text,
         fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace",
       },
       grid: {
-        vertLines: { color: COLOR_GRID },
-        horzLines: { color: COLOR_GRID },
+        vertLines: { color: tc.grid },
+        horzLines: { color: tc.grid },
       },
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
-        borderColor: COLOR_GRID,
+        borderColor: tc.border,
       },
-      rightPriceScale: { borderColor: COLOR_GRID },
+      rightPriceScale: { borderColor: tc.border },
       crosshair: { mode: 1 },
     });
     chartRef.current = chart;
@@ -149,11 +156,25 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
       bbUpperRef.current   = null;
       bbMiddleRef.current  = null;
       bbLowerRef.current   = null;
-      vwapRef.current      = null;
-      vwapUpperRef.current = null;
-      vwapLowerRef.current = null;
+      vwapRef.current         = null;
+      vwapUpperRef.current    = null;
+      vwapLowerRef.current    = null;
+      currentPriceLineRef.current = null;
     };
   }, [height]);
+
+  // ─── Theme color update (no chart recreation) ───────────────────────────
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const tc = THEME_COLORS[theme];
+    chart.applyOptions({
+      layout: { textColor: tc.text },
+      grid: { vertLines: { color: tc.grid }, horzLines: { color: tc.grid } },
+      timeScale: { borderColor: tc.border },
+      rightPriceScale: { borderColor: tc.border },
+    });
+  }, [theme]);
 
   // ─── Data / visibility update ────────────────────────────────────────────
   useEffect(() => {
@@ -433,6 +454,22 @@ export function PriceChart({ series, height = 400 }: Props): React.ReactElement 
         });
         tradeLinesRef.current.push(line);
       }
+    }
+
+    // 10b. Current live price line
+    if (currentPriceLineRef.current) {
+      try { candle.removePriceLine(currentPriceLineRef.current); } catch { /* ignore */ }
+      currentPriceLineRef.current = null;
+    }
+    if (series.currentPrice && series.currentPrice > 0) {
+      currentPriceLineRef.current = candle.createPriceLine({
+        price: series.currentPrice,
+        color: COLOR_LIVE,
+        lineWidth: 1,
+        lineStyle: 3, // dotted
+        axisLabelVisible: true,
+        title: "LIVE",
+      });
     }
 
     // 11. Trade markers
