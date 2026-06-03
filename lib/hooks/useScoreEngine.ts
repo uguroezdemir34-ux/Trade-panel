@@ -19,6 +19,7 @@ import { useAccountStore } from "@/lib/store/accountStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
+import { useSettingsStore } from "@/lib/store/settingsStore";
 import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
 import { oiVelocityScoreOrZero } from "@/lib/market/oi-velocity";
@@ -47,6 +48,7 @@ export function useScoreEngine(): void {
     },
   );
   const setResult = useScoreStore((s) => s.setResult);
+  const scorerWeights = useSettingsStore((s) => s.scorerWeights);
 
   useEffect(() => {
     const now = Date.now();
@@ -127,9 +129,9 @@ export function useScoreEngine(): void {
       });
 
       if (input) {
-        const result = computeScore(input);
+        const result = computeScore({ ...input, scorerWeights: scorerWeights ?? null });
         setResult(pair as Pair, result, now);
       }
     }
-  }, [candles, setResult]);
+  }, [candles, setResult, scorerWeights]);
 }

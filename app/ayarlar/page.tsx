@@ -12,6 +12,7 @@ import { DangerZoneCard } from "@/components/ayarlar/DangerZoneCard";
 import { GoAlertsCard } from "@/components/ayarlar/GoAlertsCard";
 import { PriceAlarmsCard } from "@/components/ayarlar/PriceAlarmsCard";
 import { TvWebhookCard } from "@/components/ayarlar/TvWebhookCard";
+import { ScorerWeightsCard } from "@/components/ayarlar/ScorerWeightsCard";
 import BacktestPage from "@/app/backtest/page";
 
 type SubTab = "genel" | "backtest";
@@ -75,6 +76,7 @@ export default function AyarlarPage() {
             <DrawdownToggleCard />
             <DangerZoneCard />
           </div>
+          <ScorerWeightsCard />
         </div>
       )}
 

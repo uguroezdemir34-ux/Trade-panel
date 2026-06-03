@@ -16,6 +16,7 @@
 import { create } from "zustand";
 import { z } from "zod";
 import { loadFromStorage, saveToStorage } from "./persist";
+import type { ScorerWeights } from "@/lib/score/orchestrator";
 
 // ═══════════════════════════════════════════════════════════════════
 // TIP TANIMLARI
@@ -55,6 +56,7 @@ const settingsSchema = z.object({
   theme: themeSchema,
   goAlertsEnabled: z.boolean(),
   audioAlertsEnabled: z.boolean(),
+  scorerWeights: z.record(z.string(), z.number()).nullable(),
 });
 
 export type SettingsData = z.infer<typeof settingsSchema>;
@@ -76,6 +78,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   theme: "dark",
   goAlertsEnabled: false,
   audioAlertsEnabled: true,
+  scorerWeights: null,
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -95,6 +98,7 @@ const KEYS = {
   theme: "theme",
   goAlertsEnabled: "go_alerts_enabled",
   audioAlertsEnabled: "audio_alerts_enabled",
+  scorerWeights: "scorer_weights",
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -104,6 +108,7 @@ const KEYS = {
 interface SettingsStoreState extends SettingsData {
   // Actions
   setLastTab: (tab: TabId) => void;
+  setScorerWeights: (weights: ScorerWeights | null) => void;
   setDemoMode: (on: boolean) => void;
   setForwardTestMode: (on: boolean) => void;
   setWsUrl: (url: string | null) => void;
@@ -183,6 +188,11 @@ export function loadSettings(): SettingsData {
       DEFAULT_SETTINGS.audioAlertsEnabled,
       z.boolean(),
     ),
+    scorerWeights: loadFromStorage<ScorerWeights | null>(
+      KEYS.scorerWeights,
+      DEFAULT_SETTINGS.scorerWeights,
+      z.record(z.string(), z.number()).nullable(),
+    ),
   };
 }
 
@@ -260,6 +270,11 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ audioAlertsEnabled: on });
   },
 
+  setScorerWeights: (weights) => {
+    saveToStorage(KEYS.scorerWeights, weights);
+    set({ scorerWeights: weights });
+  },
+
   reset: () => {
     // Sadece state'i sıfırla, localStorage'a yaz
     saveToStorage(KEYS.lastTab, DEFAULT_SETTINGS.lastTab);
@@ -277,6 +292,7 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     saveToStorage(KEYS.theme, DEFAULT_SETTINGS.theme);
     saveToStorage(KEYS.goAlertsEnabled, DEFAULT_SETTINGS.goAlertsEnabled);
     saveToStorage(KEYS.audioAlertsEnabled, DEFAULT_SETTINGS.audioAlertsEnabled);
+    saveToStorage(KEYS.scorerWeights, DEFAULT_SETTINGS.scorerWeights);
     set({ ...DEFAULT_SETTINGS });
   },
 

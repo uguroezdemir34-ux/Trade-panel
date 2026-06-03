@@ -149,7 +149,29 @@ export interface ScoreInput {
    * null/undefined → 0 (tarafsız).
    */
   whaleInflowScore?: number | null;
+
+  /** Scorer ağırlık çarpanları — ayarlar sayfasından gelir. Default: tümü 1.0 */
+  scorerWeights?: ScorerWeights | null;
 }
+
+export interface ScorerWeights {
+  trend: number;
+  adx: number;
+  rsi: number;
+  vol: number;
+  bb: number;
+  vwap: number;
+  funding: number;
+  macro: number;
+}
+
+export const DEFAULT_SCORER_WEIGHTS: ScorerWeights = {
+  trend: 1, adx: 1, rsi: 1, vol: 1, bb: 1, vwap: 1, funding: 1, macro: 1,
+};
+
+const BASE_MAX: ScorerWeights = {
+  trend: 25, adx: 15, rsi: 10, vol: 15, bb: 10, vwap: 10, funding: 8, macro: 7,
+};
 
 export type Verdict = "go" | "wait" | "no";
 
@@ -313,8 +335,17 @@ export function computeScore(input: ScoreInput): ScoreResult {
     macro: macroResult.score,
   };
 
-  const baseScore =
-    sub.trend + sub.adx + sub.rsi + sub.vol + sub.bb + sub.vwap + sub.funding + sub.macro;
+  // Apply scorer weights and normalize back to 0-100 scale
+  const w = input.scorerWeights ?? DEFAULT_SCORER_WEIGHTS;
+  const maxWeighted =
+    BASE_MAX.trend * w.trend + BASE_MAX.adx * w.adx + BASE_MAX.rsi * w.rsi +
+    BASE_MAX.vol * w.vol + BASE_MAX.bb * w.bb + BASE_MAX.vwap * w.vwap +
+    BASE_MAX.funding * w.funding + BASE_MAX.macro * w.macro;
+  const rawWeighted =
+    sub.trend * w.trend + sub.adx * w.adx + sub.rsi * w.rsi +
+    sub.vol * w.vol + sub.bb * w.bb + sub.vwap * w.vwap +
+    sub.funding * w.funding + sub.macro * w.macro;
+  const baseScore = maxWeighted > 0 ? (rawWeighted / maxWeighted) * 100 : 0;
 
   // ───── 3. Sweep bonus ─────
   const sweepRes = scoreSweepBonus(sweep15m, direction, baseScore);
