@@ -31,6 +31,8 @@ export const zh: Dictionary = {
     settingsShort: "设置",
     analiz: "更多",
     analyzShort: "更多",
+    portfolio: "投资组合",
+    portfolioShort: "投资",
     ariaLabel: "主导航",
   },
 

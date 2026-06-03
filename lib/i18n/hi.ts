@@ -31,6 +31,8 @@ export const hi: Dictionary = {
     settingsShort: "सेट.",
     analiz: "अधिक",
     analyzShort: "अधिक",
+    portfolio: "पोर्टफोलियो",
+    portfolioShort: "पोर्ट.",
     ariaLabel: "मुख्य नेविगेशन",
   },
 

@@ -31,6 +31,8 @@ export const ar: Dictionary = {
     settingsShort: "إعداد",
     analiz: "المزيد",
     analyzShort: "المزيد",
+    portfolio: "المحفظة",
+    portfolioShort: "محفظة",
     ariaLabel: "التنقل الرئيسي",
   },
 

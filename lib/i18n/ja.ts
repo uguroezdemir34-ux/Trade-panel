@@ -31,6 +31,8 @@ export const ja: Dictionary = {
     settingsShort: "設定",
     analiz: "詳細",
     analyzShort: "詳細",
+    portfolio: "ポートフォリオ",
+    portfolioShort: "資産",
     ariaLabel: "メインナビゲーション",
   },
 

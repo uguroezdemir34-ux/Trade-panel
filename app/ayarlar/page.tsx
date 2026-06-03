@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { useT } from "@/lib/i18n/context";
 import { OkxCredsCard } from "@/components/ayarlar/OkxCredsCard";
 import { TelegramTestCard } from "@/components/ayarlar/TelegramTestCard";
 import { TradingLimitsCard } from "@/components/ayarlar/TradingLimitsCard";
@@ -8,39 +12,73 @@ import { DangerZoneCard } from "@/components/ayarlar/DangerZoneCard";
 import { GoAlertsCard } from "@/components/ayarlar/GoAlertsCard";
 import { PriceAlarmsCard } from "@/components/ayarlar/PriceAlarmsCard";
 import { TvWebhookCard } from "@/components/ayarlar/TvWebhookCard";
+import BacktestPage from "@/app/backtest/page";
+
+type SubTab = "genel" | "backtest";
 
 export default function AyarlarPage() {
+  const t = useT();
+  const [active, setActive] = useState<SubTab>("genel");
+
   return (
-    <div className="flex flex-col gap-3 p-4">
-      {/* Row 1: Bakiye + Mod */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <AccountBalanceCard />
-        <ModeToggleCard />
+    <div className="flex flex-col">
+      {/* Sub-tab bar */}
+      <div className="border-b border-border bg-bg-card sticky top-0 z-10">
+        <div className="flex">
+          <button
+            type="button"
+            onClick={() => setActive("genel")}
+            className={[
+              "flex-1 py-3 font-mono text-xs tracking-wider transition-colors",
+              active === "genel"
+                ? "text-brand border-b-2 border-brand"
+                : "text-text-t3 hover:text-text-t2",
+            ].join(" ")}
+          >
+            {t("nav.settings")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActive("backtest")}
+            className={[
+              "flex-1 py-3 font-mono text-xs tracking-wider transition-colors",
+              active === "backtest"
+                ? "text-brand border-b-2 border-brand"
+                : "text-text-t3 hover:text-text-t2",
+            ].join(" ")}
+          >
+            {t("nav.backtest")}
+          </button>
+        </div>
       </div>
 
-      {/* Row 2: OKX + Telegram */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <OkxCredsCard />
-        <TelegramTestCard />
-      </div>
+      {/* Sub-tab content */}
+      {active === "genel" && (
+        <div className="flex flex-col gap-3 p-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <AccountBalanceCard />
+            <ModeToggleCard />
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <OkxCredsCard />
+            <TelegramTestCard />
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <GoAlertsCard />
+            <PriceAlarmsCard />
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <TvWebhookCard />
+            <TradingLimitsCard />
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <DrawdownToggleCard />
+            <DangerZoneCard />
+          </div>
+        </div>
+      )}
 
-      {/* Row 3: GO Alerts + Fiyat Alarmları */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <GoAlertsCard />
-        <PriceAlarmsCard />
-      </div>
-
-      {/* Row 4: TV Webhook + Trading Limitleri */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <TvWebhookCard />
-        <TradingLimitsCard />
-      </div>
-
-      {/* Row 5: Drawdown + Tehlikeli Bölge */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <DrawdownToggleCard />
-        <DangerZoneCard />
-      </div>
+      {active === "backtest" && <BacktestPage />}
     </div>
   );
 }

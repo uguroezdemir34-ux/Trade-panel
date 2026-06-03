@@ -39,9 +39,9 @@ export function BottomNav(): React.ReactElement {
       }}
       aria-label={t("nav.ariaLabel")}
     >
-      <ul className="mx-auto grid max-w-2xl grid-cols-3 px-1">
+      <ul className="mx-auto grid max-w-2xl grid-cols-5">
         {TABS.map((tab) => {
-          const active = pathname === tab.path;
+          const active = pathname === tab.path || pathname.startsWith(tab.path + "/");
           return (
             <li key={tab.id}>
               <Link
@@ -51,7 +51,7 @@ export function BottomNav(): React.ReactElement {
                   if (hydrated) setLastTab(tab.id);
                 }}
                 className={[
-                  "flex h-16 flex-col items-center justify-center gap-1",
+                  "flex min-h-[44px] flex-col items-center justify-center gap-0.5 py-2",
                   "select-none transition-colors",
                   active
                     ? "text-brand"
@@ -63,20 +63,20 @@ export function BottomNav(): React.ReactElement {
                   router.refresh();
                 }}
               >
-                <span className="relative text-base leading-none" aria-hidden>
+                <span className="relative text-lg leading-none" aria-hidden>
                   {tab.icon}
-                  {tab.id === "analiz" && triggeredAlarmCount > 0 && (
+                  {tab.id === "ayarlar" && triggeredAlarmCount > 0 && (
                     <span className="absolute -top-1 -right-1.5 bg-amber-400 text-black font-mono font-bold rounded-full leading-none flex items-center justify-center" style={{ fontSize: 7, minWidth: 12, height: 12, padding: "0 2px" }}>
                       {triggeredAlarmCount > 9 ? "9+" : triggeredAlarmCount}
                     </span>
                   )}
                 </span>
-                <span className="font-mono text-2xs tracking-wider">
+                <span className="font-mono text-[9px] tracking-wide leading-none">
                   {t(tab.shortKey)}
                 </span>
                 {active && (
                   <span
-                    className="bg-brand absolute top-0 h-0.5 w-8 rounded-b-full"
+                    className="bg-brand absolute top-0 h-0.5 w-6 rounded-b-full"
                     aria-hidden
                   />
                 )}

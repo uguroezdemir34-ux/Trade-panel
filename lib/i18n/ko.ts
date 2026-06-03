@@ -31,6 +31,8 @@ export const ko: Dictionary = {
     settingsShort: "설정",
     analiz: "더보기",
     analyzShort: "더보기",
+    portfolio: "포트폴리오",
+    portfolioShort: "자산",
     ariaLabel: "주요 탐색",
   },
 

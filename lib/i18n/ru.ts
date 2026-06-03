@@ -31,6 +31,8 @@ export const ru: Dictionary = {
     settingsShort: "Наст.",
     analiz: "Ещё",
     analyzShort: "Ещё",
+    portfolio: "Портфель",
+    portfolioShort: "Порт.",
     ariaLabel: "Главная навигация",
   },
 

@@ -25,13 +25,15 @@ import { loadFromStorage, saveToStorage } from "./persist";
 export const TAB_IDS = [
   "karar",
   "grafik",
+  "piyasa",
+  "portfolyo",
+  "ayarlar",
+  // backward compat — eski localStorage değerleri için
   "analiz",
   "pozisyon",
-  "piyasa",
   "risk",
   "pnl",
   "backtest",
-  "ayarlar",
 ] as const;
 export type TabId = (typeof TAB_IDS)[number];
 

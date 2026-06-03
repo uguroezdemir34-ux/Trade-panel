@@ -31,6 +31,8 @@ export const tr: Dictionary = {
     settingsShort: "Ayr.",
     analiz: "Analiz",
     analyzShort: "Analiz",
+    portfolio: "Portföy",
+    portfolioShort: "Prt.",
     ariaLabel: "Ana navigasyon",
   },
 
