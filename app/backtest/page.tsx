@@ -1,6 +1,7 @@
 "use client";
 
 import { useT } from "@/lib/i18n/context";
+import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import { useBacktest } from "@/lib/hooks/useBacktest";
 import { BacktestConfigPanel } from "@/components/backtest/BacktestConfig";
 import { BacktestResults } from "@/components/backtest/BacktestResults";
@@ -10,7 +11,7 @@ import { BacktestTemporalCard } from "@/components/backtest/BacktestTemporalCard
 import type { BacktestConfig } from "@/lib/backtest/types";
 import type { ScanConfig } from "@/lib/store/backtestStore";
 
-export default function BacktestPage() {
+function BacktestPageInner() {
   const t = useT();
   const {
     run,
@@ -178,6 +179,14 @@ export default function BacktestPage() {
         />
       )}
     </div>
+  );
+}
+
+export default function BacktestPage() {
+  return (
+    <SubscriptionGate feature="backtest">
+      <BacktestPageInner />
+    </SubscriptionGate>
   );
 }
 

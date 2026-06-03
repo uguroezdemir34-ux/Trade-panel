@@ -4,6 +4,7 @@ import { useMemo, useEffect, useState } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useT } from "@/lib/i18n/context";
 import { PAIRS } from "@/lib/constants/pairs";
+import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import { PnlStatsCard } from "@/components/pnl/PnlStatsCard";
 import { PnlSummaryRow } from "@/components/pnl/PnlSummaryRow";
 import { PnlCalendar } from "@/components/pnl/PnlCalendar";
@@ -47,7 +48,7 @@ const DATE_RANGE_MS: Record<DateRange, number> = {
   all: 0,
 };
 
-export default function PnlPage() {
+function PnlPageInner() {
   const t = useT();
   const snapshots = useTradesStore((s) => s.trades);
   const archivedSnapshots = useTradesStore((s) => s.archivedTrades);
@@ -291,5 +292,13 @@ export default function PnlPage() {
 
       <ParameterAudit stats={calibrationStats} />
     </div>
+  );
+}
+
+export default function PnlPage() {
+  return (
+    <SubscriptionGate feature="pnlAnalytics">
+      <PnlPageInner />
+    </SubscriptionGate>
   );
 }
