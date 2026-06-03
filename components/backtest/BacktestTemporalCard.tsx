@@ -29,7 +29,7 @@ interface PeriodStats {
   avgR: number | null;
 }
 
-function computePeriods(trades: readonly BacktestTrade[]): PeriodStats[] | null {
+function computePeriods(trades: readonly BacktestTrade[], labels: [string, string, string]): PeriodStats[] | null {
   if (trades.length < 9) return null; // need at least 3 per period
 
   const sorted = [...trades].sort((a, b) => a.entryTs - b.entryTs);
@@ -41,7 +41,6 @@ function computePeriods(trades: readonly BacktestTrade[]): PeriodStats[] | null 
     sorted.slice(sliceSize, sliceSize * 2),
     sorted.slice(sliceSize * 2),
   ];
-  const labels = ["Early", "Middle", "Late"];
 
   return slices.map((slice, i) => {
     const wins = slice.filter((t) => t.rMultiple > 0).length;
@@ -65,7 +64,12 @@ function formatDate(ts: number): string {
 
 export function BacktestTemporalCard({ trades }: Props): React.ReactElement | null {
   const t = useT();
-  const periods = useMemo(() => computePeriods(trades), [trades]);
+  const periodLabels: [string, string, string] = [
+    t("backtest.temporalEarly"),
+    t("backtest.temporalMiddle"),
+    t("backtest.temporalLate"),
+  ];
+  const periods = useMemo(() => computePeriods(trades, periodLabels), [trades, t]);
 
   if (!periods) return null;
 

@@ -9,13 +9,14 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
   trades: readonly TradeRecord[];
 }
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+const DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"] as const;
 
 interface DayRow {
   label: string;
@@ -26,28 +27,29 @@ interface DayRow {
 }
 
 export function DayOfWeekCard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const rows = useMemo<DayRow[]>(() => {
     if (trades.length < 7) return [];
 
-    const byDay: { trades: TradeRecord[]; wins: number; total: number }[] = DAYS.map(() => ({
+    const byDay: { trades: TradeRecord[]; wins: number; total: number }[] = DAY_KEYS.map(() => ({
       trades: [],
       wins: 0,
       total: 0,
     }));
 
-    for (const t of trades) {
+    for (const tr of trades) {
       // getDay(): 0=Sun, 1=Mon ... 6=Sat → map to Mon-Sun (index 0-6)
-      const jsDay = new Date(t.closedAt).getDay();
+      const jsDay = new Date(tr.closedAt).getDay();
       const idx = jsDay === 0 ? 6 : jsDay - 1; // Mon=0 ... Sun=6
-      byDay[idx].trades.push(t);
-      if (t.pnlUsd > 0) byDay[idx].wins++;
-      byDay[idx].total += t.pnlUsd;
+      byDay[idx].trades.push(tr);
+      if (tr.pnlUsd > 0) byDay[idx].wins++;
+      byDay[idx].total += tr.pnlUsd;
     }
 
-    return DAYS.map((label, i) => {
+    return DAY_KEYS.map((key, i) => {
       const n = byDay[i].trades.length;
       return {
-        label,
+        label: key,
         trades: n,
         wins: byDay[i].wins,
         winRate: n === 0 ? 0 : (byDay[i].wins / n) * 100,
@@ -63,7 +65,7 @@ export function DayOfWeekCard({ trades }: Props): React.ReactElement | null {
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase mb-3">
-        📅 Day of Week
+        📅 {t("pnl.dayOfWeek.title")}
       </h3>
       <div className="flex flex-col gap-1.5">
         {rows.map((row) => {
@@ -82,7 +84,7 @@ export function DayOfWeekCard({ trades }: Props): React.ReactElement | null {
           return (
             <div key={row.label} className="flex items-center gap-2 font-mono text-xs">
               {/* Day label */}
-              <span className="text-text-t3 w-7 shrink-0">{row.label}</span>
+              <span className="text-text-t3 w-7 shrink-0">{t(`pnl.dayOfWeek.${row.label}`)}</span>
 
               {/* Bar */}
               <div className="flex-1 h-2 rounded-full bg-border/30 overflow-hidden">

@@ -293,7 +293,7 @@ export function BacktestCompare({
 
         {evA !== null && evB !== null && (
           <StatRow
-            label="EV/Trade"
+            label={t("backtest.evTrade")}
             valA={`${evA >= 0 ? "+" : ""}${evA.toFixed(3)}R`}
             valB={`${evB >= 0 ? "+" : ""}${evB.toFixed(3)}R`}
             delta={evB - evA}
@@ -303,7 +303,7 @@ export function BacktestCompare({
         )}
         {sA.sharpe !== null && sB.sharpe !== null && (
           <StatRow
-            label="Sharpe"
+            label={t("backtest.sharpe")}
             valA={sA.sharpe.toFixed(2)}
             valB={sB.sharpe.toFixed(2)}
             delta={sB.sharpe - sA.sharpe}
@@ -313,7 +313,7 @@ export function BacktestCompare({
         )}
         {sA.profitFactor !== null && sB.profitFactor !== null && (
           <StatRow
-            label="Prof. Factor"
+            label={t("backtest.profFactor")}
             valA={sA.profitFactor.toFixed(2)}
             valB={sB.profitFactor.toFixed(2)}
             delta={sB.profitFactor - sA.profitFactor}
@@ -331,7 +331,7 @@ export function BacktestCompare({
           return (
             <StatRow
               key={dir}
-              label={`${dir} WR`}
+              label={t("backtest.compareDirWr").replace("{dir}", dir)}
               valA={dsA.winRate !== null ? `${wrA.toFixed(0)}% (${dsA.count})` : "—"}
               valB={dsB.winRate !== null ? `${wrB.toFixed(0)}% (${dsB.count})` : "—"}
               delta={wrB - wrA}

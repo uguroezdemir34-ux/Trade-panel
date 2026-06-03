@@ -14,6 +14,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -30,16 +31,18 @@ function pct(n: number) {
   return `${Math.round(n * 100)}%`;
 }
 
-function computeInsights(trades: TradeRecord[]): Insight[] {
+type TFn = (key: string) => string;
+
+function computeInsights(trades: TradeRecord[], t: TFn): Insight[] {
   if (trades.length < 10) return [];
   const insights: Insight[] = [];
 
   // 1. Best pair by win rate (min 3 trades)
   const pairMap: Record<string, { wins: number; total: number }> = {};
-  for (const t of trades) {
-    if (!pairMap[t.pair]) pairMap[t.pair] = { wins: 0, total: 0 };
-    pairMap[t.pair].total++;
-    if (t.pnlUsd > 0) pairMap[t.pair].wins++;
+  for (const tr of trades) {
+    if (!pairMap[tr.pair]) pairMap[tr.pair] = { wins: 0, total: 0 };
+    pairMap[tr.pair].total++;
+    if (tr.pnlUsd > 0) pairMap[tr.pair].wins++;
   }
   const eligiblePairs = Object.entries(pairMap)
     .filter(([, v]) => v.total >= 3)
@@ -51,7 +54,10 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
     if (wr >= 0.55) {
       insights.push({
         icon: "🏆",
-        text: `${bestPair} is your best pair — ${pct(wr)} win rate (${best.total} trades)`,
+        text: t("pnl.insights.bestPair")
+          .replace("{pair}", bestPair)
+          .replace("{pct}", pct(wr))
+          .replace("{total}", String(best.total)),
         color: "text-green-400",
       });
     }
@@ -61,7 +67,10 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
       if (wr2 <= 0.40) {
         insights.push({
           icon: "⚠",
-          text: `${worstPair} is a difficult pair — ${pct(wr2)} win rate (${worst.total} trades). Consider reducing size.`,
+          text: t("pnl.insights.worstPair")
+            .replace("{pair}", worstPair)
+            .replace("{pct}", pct(wr2))
+            .replace("{total}", String(worst.total)),
           color: "text-amber-400",
         });
       }
@@ -71,13 +80,12 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
   // 2. Best 3-hour UTC window
   const hourMap: Record<number, { wins: number; total: number }> = {};
   for (let h = 0; h < 24; h++) hourMap[h] = { wins: 0, total: 0 };
-  for (const t of trades) {
-    if (!t.openedAt) continue;
-    const h = new Date(t.openedAt).getUTCHours();
+  for (const tr of trades) {
+    if (!tr.openedAt) continue;
+    const h = new Date(tr.openedAt).getUTCHours();
     hourMap[h].total++;
-    if (t.pnlUsd > 0) hourMap[h].wins++;
+    if (tr.pnlUsd > 0) hourMap[h].wins++;
   }
-  // Find best 3-hour window with at least 3 trades total
   let bestWindowWr = 0;
   let bestWindowStart = -1;
   for (let h = 0; h < 24; h++) {
@@ -92,17 +100,20 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
     const endH = (bestWindowStart + 3) % 24;
     insights.push({
       icon: "⏰",
-      text: `Your best time window is ${bestWindowStart}:00-${endH}:00 UTC — ${pct(bestWindowWr)} win rate`,
+      text: t("pnl.insights.bestWindow")
+        .replace("{start}", String(bestWindowStart))
+        .replace("{end}", String(endH))
+        .replace("{pct}", pct(bestWindowWr)),
       color: "text-blue-400",
     });
   }
 
   // 3. LONG vs SHORT comparison
-  const longs = trades.filter((t) => t.direction === "LONG");
-  const shorts = trades.filter((t) => t.direction === "SHORT");
+  const longs = trades.filter((tr) => tr.direction === "LONG");
+  const shorts = trades.filter((tr) => tr.direction === "SHORT");
   if (longs.length >= 3 && shorts.length >= 3) {
-    const longWr = longs.filter((t) => t.pnlUsd > 0).length / longs.length;
-    const shortWr = shorts.filter((t) => t.pnlUsd > 0).length / shorts.length;
+    const longWr = longs.filter((tr) => tr.pnlUsd > 0).length / longs.length;
+    const shortWr = shorts.filter((tr) => tr.pnlUsd > 0).length / shorts.length;
     const diff = Math.abs(longWr - shortWr);
     if (diff >= 0.15) {
       const better = longWr > shortWr ? "LONG" : "SHORT";
@@ -110,7 +121,11 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
       const worseWr = Math.min(longWr, shortWr);
       insights.push({
         icon: better === "LONG" ? "▲" : "▼",
-        text: `Your ${better} trades are stronger: ${pct(betterWr)} vs ${pct(worseWr)} (${better === "LONG" ? "SHORT" : "LONG"})`,
+        text: t("pnl.insights.dirStrong")
+          .replace("{dir}", better)
+          .replace("{pct}", pct(betterWr))
+          .replace("{pct2}", pct(worseWr))
+          .replace("{other}", better === "LONG" ? "SHORT" : "LONG"),
         color: better === "LONG" ? "text-green-400" : "text-red-400",
       });
     }
@@ -118,11 +133,11 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
 
   // 4. Score sweet spot — best avgR by score bucket
   const buckets: Record<string, number[]> = { "<80": [], "80-84": [], "85-89": [], "90-94": [], "95+": [] };
-  for (const t of trades) {
-    if (t.score == null || t.rMultiple == null) continue;
-    const s = t.score;
+  for (const tr of trades) {
+    if (tr.score == null || tr.rMultiple == null) continue;
+    const s = tr.score;
     const key = s < 80 ? "<80" : s <= 84 ? "80-84" : s <= 89 ? "85-89" : s <= 94 ? "90-94" : "95+";
-    buckets[key].push(t.rMultiple);
+    buckets[key].push(tr.rMultiple);
   }
   let bestBucket = "";
   let bestBucketAvgR = -Infinity;
@@ -134,7 +149,10 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
   if (bestBucket && bestBucketAvgR > 0.3) {
     insights.push({
       icon: "🎯",
-      text: `Score range ${bestBucket} is most efficient — avg +${bestBucketAvgR.toFixed(2)}R (${buckets[bestBucket].length} trades)`,
+      text: t("pnl.insights.scoreRange")
+        .replace("{range}", bestBucket)
+        .replace("{avgR}", bestBucketAvgR.toFixed(2))
+        .replace("{count}", String(buckets[bestBucket].length)),
       color: "text-purple-400",
     });
   }
@@ -143,14 +161,15 @@ function computeInsights(trades: TradeRecord[]): Insight[] {
 }
 
 export function TradeInsightsCard({ trades }: Props): React.ReactElement | null {
-  const insights = useMemo(() => computeInsights(trades), [trades]);
+  const t = useT();
+  const insights = useMemo(() => computeInsights(trades, t), [trades, t]);
 
   if (insights.length === 0) return null;
 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 mb-3 font-mono text-2xs tracking-widest uppercase">
-        💡 Trade Insights
+        💡 {t("pnl.insights.title")}
       </h3>
       <div className="flex flex-col gap-2.5">
         {insights.map((ins, i) => (

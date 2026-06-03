@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -25,6 +26,7 @@ const BUCKETS_DEF: Omit<Bucket, "count">[] = [
 ];
 
 export function PnlDistribution({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const { buckets, hasData } = useMemo(() => {
     const tradesWithPct = trades.filter((t) => typeof t.pnlPct === "number");
     if (tradesWithPct.length === 0) return { buckets: [], hasData: false };
@@ -53,10 +55,10 @@ export function PnlDistribution({ trades }: Props): React.ReactElement | null {
     <div className="bg-bg-card border-border rounded-lg border p-3">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          P&L Distribution
+          {t("pnl.distribution.title")}
         </span>
         <span className="text-text-t4 font-mono text-2xs">
-          {total} trades
+          {total} {t("pnl.distribution.trades")}
         </span>
       </div>
 

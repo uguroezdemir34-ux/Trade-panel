@@ -357,7 +357,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
             <Stat label={t("backtest.avgR")}
               value={`${dirStats.avgR > 0 ? "+" : ""}${dirStats.avgR.toFixed(2)}R`}
               color={dirStats.avgR > 0 ? "text-green-400" : "text-red-400"} />
-            <Stat label="Total R"
+            <Stat label={t("backtest.totalR")}
               value={`${dirStats.totalR > 0 ? "+" : ""}${dirStats.totalR.toFixed(2)}R`}
               color={dirStats.totalR > 0 ? "text-green-400" : "text-red-400"} />
           </div>
@@ -373,7 +373,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
               ? (stats.avgRMultiple !== null ? `${stats.avgRMultiple > 0 ? "+" : ""}${stats.avgRMultiple.toFixed(2)}R` : "—")
               : `${(dirStats?.avgR ?? 0) > 0 ? "+" : ""}${(dirStats?.avgR ?? 0).toFixed(2)}R`}
             color={(dirFilter === "ALL" ? stats.avgRMultiple ?? 0 : dirStats?.avgR ?? 0) > 0 ? "text-green-400" : "text-red-400"} />
-          <Stat label="W / L"
+          <Stat label={t("backtest.wl")}
             value={dirFilter === "ALL"
               ? `${stats.winCount} / ${stats.loseCount}`
               : `${dirStats?.wins ?? 0} / ${(dirStats?.total ?? 0) - (dirStats?.wins ?? 0)}`} />
@@ -381,7 +381,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
             color="text-red-400" />
           <Stat label={t("backtest.exits")}
             value={`${exitCounts.tp2}/${exitCounts.tp1}/${exitCounts.sl}/${exitCounts.timeout}`}
-            hint="tp2/tp1/sl/to" />
+            hint={t("backtest.exitHint")} />
           {dirFilter === "ALL" && stats.maxWinStreak > 0 && (
             <Stat label={t("backtest.winStreak")} value={`${stats.maxWinStreak}`}
               color="text-green-400" hint={t("backtest.streakHint")} />
@@ -391,35 +391,35 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
               color="text-red-400" hint={t("backtest.streakHint")} />
           )}
           {dirFilter === "ALL" && riskRatios?.sharpe !== null && riskRatios?.sharpe !== undefined && (
-            <Stat label="Sharpe"
+            <Stat label={t("backtest.sharpe")}
               value={riskRatios.sharpe.toFixed(2)}
               color={riskRatios.sharpe > 0.5 ? "text-green-400" : riskRatios.sharpe > 0 ? "text-yellow-400" : "text-red-400"} />
           )}
           {dirFilter === "ALL" && riskRatios?.sortino !== null && riskRatios?.sortino !== undefined && (
-            <Stat label="Sortino"
+            <Stat label={t("backtest.sortino")}
               value={riskRatios.sortino.toFixed(2)}
               color={riskRatios.sortino > 1 ? "text-green-400" : riskRatios.sortino > 0 ? "text-yellow-400" : "text-red-400"} />
           )}
           {dirFilter === "ALL" && stats.profitFactor !== null && stats.profitFactor !== undefined && (
-            <Stat label="Prof. Factor"
+            <Stat label={t("backtest.profFactor")}
               value={stats.profitFactor.toFixed(2)}
               color={stats.profitFactor >= 1.5 ? "text-green-400" : stats.profitFactor >= 1 ? "text-yellow-400" : "text-red-400"}
-              hint="grossWins/grossLoss" />
+              hint={t("backtest.profFactorHint")} />
           )}
           {kellyEv && (
-            <Stat label="EV/Trade"
+            <Stat label={t("backtest.evTrade")}
               value={`${kellyEv.ev > 0 ? "+" : ""}${kellyEv.ev.toFixed(3)}R`}
               color={kellyEv.ev > 0 ? "text-green-400" : "text-red-400"}
-              hint="wr×avgW − lr×avgL" />
+              hint={t("backtest.evTradeHint")} />
           )}
           {kellyEv && (
-            <Stat label="Kelly %"
+            <Stat label={t("backtest.kellyPct")}
               value={`${(kellyEv.kelly * 100).toFixed(1)}%`}
               color={kellyEv.kelly > 0.15 ? "text-green-400" : kellyEv.kelly > 0 ? "text-yellow-400" : "text-red-400"}
-              hint="optimal risk fraction" />
+              hint={t("backtest.kellyHint")} />
           )}
           {kellyEv && (
-            <Stat label="Payoff"
+            <Stat label={t("backtest.payoff")}
               value={`${kellyEv.payoff.toFixed(2)}×`}
               color={kellyEv.payoff >= 1.5 ? "text-green-400" : kellyEv.payoff >= 1 ? "text-yellow-400" : "text-red-400"}
               hint={`${kellyEv.avgWin.toFixed(2)}R / ${kellyEv.avgLoss.toFixed(2)}R`} />
@@ -457,7 +457,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
         </h3>
         <RCurve trades={filteredTrades} />
         <div className="mt-2">
-          <span className="text-text-t4 font-mono text-2xs tracking-wider uppercase">Drawdown</span>
+          <span className="text-text-t4 font-mono text-2xs tracking-wider uppercase">{t("backtest.drawdown")}</span>
           <DrawdownCurve trades={filteredTrades} />
         </div>
       </div>
@@ -473,7 +473,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
             <tr className="text-text-t4 border-b border-border">
               <th className="text-left py-1">{t("backtest.bucket")}</th>
               <th className="text-right py-1">{t("backtest.count")}</th>
-              <th className="text-right py-1">WR%</th>
+              <th className="text-right py-1">{t("backtest.wrPct")}</th>
               <th className="text-right py-1">{t("backtest.avgR")}</th>
             </tr>
           </thead>
@@ -514,11 +514,11 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
             <table className="w-full font-mono text-xs">
               <thead>
                 <tr className="text-text-t4 border-b border-border">
-                  <th className="text-left py-1">Exit</th>
-                  <th className="text-right py-1">Count</th>
-                  <th className="text-right py-1">WR%</th>
-                  <th className="text-right py-1">Avg R</th>
-                  <th className="text-right py-1">Total R</th>
+                  <th className="text-left py-1">{t("backtest.exitColExit")}</th>
+                  <th className="text-right py-1">{t("backtest.exitColCount")}</th>
+                  <th className="text-right py-1">{t("backtest.exitColWR")}</th>
+                  <th className="text-right py-1">{t("backtest.exitColAvgR")}</th>
+                  <th className="text-right py-1">{t("backtest.exitColTotalR")}</th>
                 </tr>
               </thead>
               <tbody>

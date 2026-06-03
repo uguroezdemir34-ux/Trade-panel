@@ -113,7 +113,7 @@ export function TradeConfirmModal({
         {/* Mental Checklist */}
         <div className="border-border mt-4 border-t pt-3">
           <div className="text-text-t4 mb-2 font-mono text-2xs tracking-widest uppercase">
-            Mental Kontrol
+            {t("confirm.mentalChecklist")}
           </div>
           <div className="flex flex-col gap-2">
             {CHECKLIST.map((item, i) => (

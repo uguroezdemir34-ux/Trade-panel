@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
+import { useT } from "@/lib/i18n/context";
 
 const MAX_ENTRIES = 20;
 
@@ -17,6 +18,7 @@ function timeAgo(ts: number): string {
 }
 
 export function GoSignalLog(): React.ReactElement | null {
+  const t = useT();
   const history = useScoreHistoryStore((s) => s.history);
 
   const goEntries = useMemo(() => {
@@ -38,7 +40,7 @@ export function GoSignalLog(): React.ReactElement | null {
     <div className="border-border bg-bg-card rounded-lg border overflow-hidden">
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/50">
         <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">
-          Recent GO Signals
+          {t("karar.goSignalTitle")}
         </span>
         <span className="text-green-400 font-mono text-2xs font-semibold">
           {goEntries.length}

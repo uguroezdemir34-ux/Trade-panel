@@ -116,14 +116,14 @@ export function PnlCalendar({
       <div className="text-text-t4 mt-3 flex items-center justify-between font-mono text-2xs tracking-wider">
         <div className="flex items-center gap-1">
           <div className="bg-signal-red h-3 w-3 rounded-sm" />
-          <span>Loss</span>
+          <span>{t("pnl.calendar.legendLoss")}</span>
         </div>
         <div className="flex items-center gap-1">
           <div className="bg-bg-page h-3 w-3 rounded-sm border border-border" />
           <span>0</span>
         </div>
         <div className="flex items-center gap-1">
-          <span>Win</span>
+          <span>{t("pnl.calendar.legendWin")}</span>
           <div className="bg-signal-green h-3 w-3 rounded-sm" />
         </div>
       </div>

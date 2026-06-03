@@ -179,7 +179,7 @@ export const de: Dictionary = {
     alarmToastAbove: "ABOVE",
     alarmToastBelow: "BELOW",
     alarmToastTarget: "Target",
-    alarmToastNow: "Now",
+    alarmToastNow: "Now", goSignalTitle: "Recent GO Signals", leaderboardTitle: "Top Scores",
   },
 
   settings: {
@@ -451,6 +451,30 @@ export const de: Dictionary = {
       lookback7d: "7 Tage",
       noTrades: "Keine Trades",
       tradesLabel: "Trades",
+      legendWin: "Win",
+      legendLoss: "Loss",
+    },
+    distribution: {
+      title: "P&L Distribution",
+      trades: "trades",
+    },
+    dayOfWeek: {
+      title: "Day of Week",
+      mon: "Mon",
+      tue: "Tue",
+      wed: "Wed",
+      thu: "Thu",
+      fri: "Fri",
+      sat: "Sat",
+      sun: "Sun",
+    },
+    insights: {
+      title: "Trade Insights",
+      bestPair: "{pair} is your best pair — {pct} win rate ({total} trades)",
+      worstPair: "{pair} is a difficult pair — {pct} win rate ({total} trades). Consider reducing size.",
+      bestWindow: "Your best time window is {start}:00–{end}:00 UTC — {pct} win rate",
+      dirStrong: "Your {dir} trades are stronger: {pct} vs {pct2} ({other})",
+      scoreRange: "Score range {range} is most efficient — avg +{avgR}R ({count} trades)",
     },
     summary: {
       title: "PERIODEN-ZUSAMMENFASSUNG",
@@ -714,6 +738,6 @@ export const de: Dictionary = {
     exitAnalysis: "Exit Analysis",
     entryHour: "Entry Hour · UTC",
     entryHourDesc: "green ≥60% WR · yellow ≥45% · red <45% · height = trade count",
-    downloadCsv: "↓ CSV",
+    downloadCsv: "↓ CSV", totalR: "Total R", wl: "W / L", exitHint: "tp2/tp1/sl/to", sharpe: "Sharpe", sortino: "Sortino", profFactor: "Prof. Factor", profFactorHint: "Gross wins / gross loss", evTrade: "EV/Trade", evTradeHint: "WR×AvgW − LR×AvgL", kellyPct: "Kelly %", kellyHint: "Optimal risk fraction", payoff: "Payoff", drawdown: "Drawdown", exitColExit: "Exit", exitColCount: "Count", exitColWR: "WR%", exitColAvgR: "Avg R", exitColTotalR: "Total R", wrPct: "WR%", temporalEarly: "Early", temporalMiddle: "Middle", temporalLate: "Late", compareDirWr: "{dir} WR",
   },
 };

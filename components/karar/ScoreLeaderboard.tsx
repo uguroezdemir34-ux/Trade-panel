@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ScoreResult } from "@/lib/score/orchestrator";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   results: Partial<Record<Pair, ScoreResult>>;
@@ -22,6 +23,7 @@ const VERDICT_BG: Record<string, string> = {
 };
 
 export function ScoreLeaderboard({ results, activePair, onSelect }: Props): React.ReactElement | null {
+  const t = useT();
   const rows = useMemo(() => {
     return PAIRS
       .map((p) => ({ pair: p, result: results[p] }))
@@ -39,7 +41,7 @@ export function ScoreLeaderboard({ results, activePair, onSelect }: Props): Reac
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border/50">
         <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">
-          Top Scores
+          {t("karar.leaderboardTitle")}
         </span>
         {goCount > 0 && (
           <span className="text-green-400 font-mono text-2xs font-semibold">
