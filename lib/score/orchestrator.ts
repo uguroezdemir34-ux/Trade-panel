@@ -336,7 +336,9 @@ export function computeScore(input: ScoreInput): ScoreResult {
   };
 
   // Apply scorer weights and normalize back to 0-100 scale
-  const w = input.scorerWeights ?? DEFAULT_SCORER_WEIGHTS;
+  const w = input.scorerWeights
+    ? { ...DEFAULT_SCORER_WEIGHTS, ...input.scorerWeights }
+    : DEFAULT_SCORER_WEIGHTS;
   const maxWeighted =
     BASE_MAX.trend * w.trend + BASE_MAX.adx * w.adx + BASE_MAX.rsi * w.rsi +
     BASE_MAX.vol * w.vol + BASE_MAX.bb * w.bb + BASE_MAX.vwap * w.vwap +

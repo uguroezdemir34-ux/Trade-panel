@@ -56,12 +56,15 @@ export default function PnlPage() {
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [pairFilter, setPairFilter] = useState<string>("ALL");
 
-  const DATE_RANGE_LABELS: Record<DateRange, string> = {
-    "7d": t("pnl.filter.days7"),
-    "30d": t("pnl.filter.days30"),
-    "90d": t("pnl.filter.days90"),
-    all: t("pnl.filter.allTime"),
-  };
+  const DATE_RANGE_LABELS = useMemo<Record<DateRange, string>>(
+    () => ({
+      "7d": t("pnl.filter.days7"),
+      "30d": t("pnl.filter.days30"),
+      "90d": t("pnl.filter.days90"),
+      all: t("pnl.filter.allTime"),
+    }),
+    [t],
+  );
 
   // Lazy-load archived trades from localStorage on first visit to this page
   useEffect(() => {

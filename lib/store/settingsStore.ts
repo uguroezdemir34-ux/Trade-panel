@@ -56,7 +56,10 @@ const settingsSchema = z.object({
   theme: themeSchema,
   goAlertsEnabled: z.boolean(),
   audioAlertsEnabled: z.boolean(),
-  scorerWeights: z.record(z.string(), z.number()).nullable(),
+  scorerWeights: z.object({
+    trend: z.number(), adx: z.number(), rsi: z.number(), vol: z.number(),
+    bb: z.number(), vwap: z.number(), funding: z.number(), macro: z.number(),
+  }).nullable(),
 });
 
 export type SettingsData = z.infer<typeof settingsSchema>;
@@ -191,7 +194,10 @@ export function loadSettings(): SettingsData {
     scorerWeights: loadFromStorage<ScorerWeights | null>(
       KEYS.scorerWeights,
       DEFAULT_SETTINGS.scorerWeights,
-      z.record(z.string(), z.number()).nullable(),
+      z.object({
+        trend: z.number(), adx: z.number(), rsi: z.number(), vol: z.number(),
+        bb: z.number(), vwap: z.number(), funding: z.number(), macro: z.number(),
+      }).nullable(),
     ),
   };
 }
