@@ -29,8 +29,8 @@ export const fr: Dictionary = {
     backtestShort: "BT",
     settings: "Paramètres",
     settingsShort: "Par.",
-    analiz: "More",
-    analyzShort: "More",
+    analiz: "Plus",
+    analyzShort: "Plus",
     ariaLabel: "Navigation principale",
   },
 

@@ -29,8 +29,8 @@ export const ko: Dictionary = {
     backtestShort: "BT",
     settings: "설정",
     settingsShort: "설정",
-    analiz: "More",
-    analyzShort: "More",
+    analiz: "더보기",
+    analyzShort: "더보기",
     ariaLabel: "주요 탐색",
   },
 

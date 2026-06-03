@@ -29,8 +29,8 @@ export const ja: Dictionary = {
     backtestShort: "BT",
     settings: "設定",
     settingsShort: "設定",
-    analiz: "More",
-    analyzShort: "More",
+    analiz: "詳細",
+    analyzShort: "詳細",
     ariaLabel: "メインナビゲーション",
   },
 
