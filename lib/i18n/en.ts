@@ -334,6 +334,18 @@ export const en: Dictionary = {
     },
   },
 
+  auth: {
+    upgradeTitle: "Pro Feature",
+    upgradePrompt: "This feature requires a Pro subscription. Upgrade to unlock {feature} and all advanced analytics.",
+    upgradeCta: "UPGRADE TO PRO",
+    plan: {
+      free: "Free",
+      pro: "Pro",
+      enterprise: "Enterprise",
+    },
+    planLabel: "Current Plan",
+  },
+
   placeholder: {
     inProgress: "IN PROGRESS",
   },

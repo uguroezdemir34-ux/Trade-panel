@@ -48,6 +48,8 @@ import { useScoreMomentumAlerts } from "@/lib/hooks/useScoreMomentumAlerts";
 import { useConsecutiveLossAlert } from "@/lib/hooks/useConsecutiveLossAlert";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
+import { useAuth } from "@clerk/nextjs";
+import { setCurrentUserId } from "@/lib/auth/scope";
 
 const SPLASH_DATE_KEY = "qx_splash_date";
 
@@ -75,6 +77,7 @@ export function AppShell({
   const rehydrateRisk = useRiskStore((s) => s.rehydrate);
   const rehydrateTrades = useTradesStore((s) => s.rehydrate);
   const loadCredentials = useCredentialStore((s) => s.load);
+  const { userId, isLoaded: authLoaded } = useAuth();
 
   // Splash: günde bir kez göster (localStorage tarih kontrolü)
   const [showSplash, setShowSplash] = useState(false);
@@ -112,17 +115,22 @@ export function AppShell({
   useLiqFeed();
 
   useEffect(() => {
+    if (!authLoaded) return;
+
+    // Scope localStorage to current user BEFORE rehydrating stores.
+    // This ensures each user reads/writes their own isolated data.
+    if (userId) setCurrentUserId(userId);
+
     rehydrateSettings();
     rehydrateAccount();
     rehydrateRisk();
     rehydrateTrades();
     void loadCredentials();
 
-    // Splash: bugün henüz gösterilmediyse aç
     if (!splashShownToday()) {
       setShowSplash(true);
     }
-  }, [rehydrateSettings, rehydrateAccount, rehydrateRisk, rehydrateTrades, loadCredentials]);
+  }, [authLoaded, userId, rehydrateSettings, rehydrateAccount, rehydrateRisk, rehydrateTrades, loadCredentials]);
 
   return (
     <div className="bg-bg text-text-t1 min-h-screen">

@@ -13,6 +13,8 @@ import { BrandHeader } from "@/components/brand/BrandHeader";
 import { LanguageDropdown } from "@/components/ui/LanguageDropdown";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { TABS } from "@/lib/nav/tabs";
+import { UserButton } from "@clerk/nextjs";
+import { dark } from "@clerk/themes";
 
 export function AppHeader(): React.ReactElement {
   const hydrated = useHydrated();
@@ -70,6 +72,19 @@ export function AppHeader(): React.ReactElement {
           <ThemeToggle />
           <LiqFeedBadge />
           <ConnectionBadge />
+          <UserButton
+            afterSignOutUrl="/sign-in"
+            appearance={{
+              baseTheme: dark,
+              elements: {
+                avatarBox: "w-7 h-7",
+                userButtonPopoverCard: "bg-bg-card border border-border shadow-xl",
+                userButtonPopoverActions: "bg-bg-card",
+                userButtonPopoverActionButton: "text-text-t2 hover:bg-surface-s1",
+                userButtonPopoverFooter: "hidden",
+              },
+            }}
+          />
           {hydrated && (
             <>
               {/* Open positions UPL badge */}

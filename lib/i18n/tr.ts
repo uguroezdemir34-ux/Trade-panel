@@ -334,6 +334,18 @@ export const tr: Dictionary = {
     },
   },
 
+  auth: {
+    upgradeTitle: "Pro Özelliği",
+    upgradePrompt: "Bu özellik Pro aboneliği gerektirir. {feature} ve tüm gelişmiş analizlere erişmek için yükseltin.",
+    upgradeCta: "PRO'YA YÜKSELİN",
+    plan: {
+      free: "Ücretsiz",
+      pro: "Pro",
+      enterprise: "Kurumsal",
+    },
+    planLabel: "Mevcut Plan",
+  },
+
   placeholder: {
     inProgress: "YAPIM AŞAMASINDA",
   },
