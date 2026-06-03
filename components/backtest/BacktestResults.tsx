@@ -364,7 +364,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
         )}
 
         {/* Stats grid */}
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Stat label={t("backtest.totalTrades")} value={dirFilter === "ALL" ? stats.totalTrades.toString() : filteredTrades.length.toString()} />
           <Stat label={t("backtest.winRate")} value={`${dirFilter === "ALL" ? stats.winRate.toFixed(1) : (dirStats?.wr.toFixed(1) ?? "0.0")}%`}
             color={(dirFilter === "ALL" ? stats.winRate : dirStats?.wr ?? 0) >= 55 ? "text-green-400" : (dirFilter === "ALL" ? stats.winRate : dirStats?.wr ?? 0) >= 45 ? "text-yellow-400" : "text-red-400"} />
