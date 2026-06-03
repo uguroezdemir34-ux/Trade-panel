@@ -456,6 +456,13 @@ export const ar: Dictionary = {
   pnl: {
     title: "💰 P&L",
     subtitle: "الأرباح والخسائر · التقويم اليومي · إحصاءات الاختبار المستقبلي",
+    filter: {
+      days7: "7D",
+      days30: "30D",
+      days90: "90D",
+      allTime: "All",
+      allPairs: "All Pairs",
+    },
     empty: {
       title: "لا توجد صفقات بعد",
       description: "افتح وأغلق صفقة لرؤية تفاصيل P&L.",

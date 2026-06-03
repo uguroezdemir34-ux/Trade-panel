@@ -456,6 +456,13 @@ export const ja: Dictionary = {
   pnl: {
     title: "💰 P&L",
     subtitle: "損益 · 日次カレンダー · フォワードテスト統計",
+    filter: {
+      days7: "7D",
+      days30: "30D",
+      days90: "90D",
+      allTime: "All",
+      allPairs: "All Pairs",
+    },
     empty: {
       title: "まだトレードがありません",
       description: "トレードを開いて決済すると、P&Lの詳細が表示されます。",

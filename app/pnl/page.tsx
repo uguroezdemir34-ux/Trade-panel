@@ -2,6 +2,8 @@
 
 import { useMemo, useEffect, useState } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
+import { useT } from "@/lib/i18n/context";
+import { PAIRS } from "@/lib/constants/pairs";
 import { PnlStatsCard } from "@/components/pnl/PnlStatsCard";
 import { PnlSummaryRow } from "@/components/pnl/PnlSummaryRow";
 import { PnlCalendar } from "@/components/pnl/PnlCalendar";
@@ -35,12 +37,31 @@ import { computeCalibrationStats } from "@/lib/pnl/calibration";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 type TradeFilter = "all" | "live" | "paper";
+type DateRange = "7d" | "30d" | "90d" | "all";
+
+const DATE_RANGES: DateRange[] = ["7d", "30d", "90d", "all"];
+const DATE_RANGE_MS: Record<DateRange, number> = {
+  "7d": 7 * 24 * 60 * 60 * 1000,
+  "30d": 30 * 24 * 60 * 60 * 1000,
+  "90d": 90 * 24 * 60 * 60 * 1000,
+  all: 0,
+};
 
 export default function PnlPage() {
+  const t = useT();
   const snapshots = useTradesStore((s) => s.trades);
   const archivedSnapshots = useTradesStore((s) => s.archivedTrades);
   const getArchivedTrades = useTradesStore((s) => s.getArchivedTrades);
   const [filter, setFilter] = useState<TradeFilter>("all");
+  const [dateRange, setDateRange] = useState<DateRange>("all");
+  const [pairFilter, setPairFilter] = useState<string>("ALL");
+
+  const DATE_RANGE_LABELS: Record<DateRange, string> = {
+    "7d": t("pnl.filter.days7"),
+    "30d": t("pnl.filter.days30"),
+    "90d": t("pnl.filter.days90"),
+    all: t("pnl.filter.allTime"),
+  };
 
   // Lazy-load archived trades from localStorage on first visit to this page
   useEffect(() => {
@@ -73,10 +94,15 @@ export default function PnlPage() {
   );
 
   const trades: TradeRecord[] = useMemo(() => {
-    if (filter === "live") return allTrades.filter((t) => !t.isPaper);
-    if (filter === "paper") return allTrades.filter((t) => t.isPaper === true);
-    return allTrades;
-  }, [allTrades, filter]);
+    const cutoff = dateRange !== "all" ? Date.now() - DATE_RANGE_MS[dateRange] : 0;
+    return allTrades.filter((tr) => {
+      if (filter === "live" && tr.isPaper) return false;
+      if (filter === "paper" && !tr.isPaper) return false;
+      if (dateRange !== "all" && tr.closedAt < cutoff) return false;
+      if (pairFilter !== "ALL" && tr.pair !== pairFilter) return false;
+      return true;
+    });
+  }, [allTrades, filter, dateRange, pairFilter]);
 
   const stats = useMemo(() => computePnlStats(trades), [trades]);
   const equityPoints = useMemo(() => computeEquityCurve(trades), [trades]);
@@ -132,25 +158,56 @@ export default function PnlPage() {
 
   return (
     <div className="flex flex-col gap-4 p-4">
-      {/* Filter tabs + export — header row */}
-      <div className="flex items-center gap-2">
+      {/* Filter bar */}
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Date range */}
+        <div className="flex gap-1">
+          {DATE_RANGES.map((dr) => (
+            <button
+              key={dr}
+              onClick={() => setDateRange(dr)}
+              className={`rounded px-2.5 py-1 font-mono text-xs tracking-wider transition-colors ${
+                dateRange === dr
+                  ? "bg-surface-s2 text-text-t1"
+                  : "text-text-t3 hover:text-text-t2"
+              }`}
+            >
+              {DATE_RANGE_LABELS[dr]}
+            </button>
+          ))}
+        </div>
+
+        {/* Pair filter */}
+        <select
+          value={pairFilter}
+          onChange={(e) => setPairFilter(e.target.value)}
+          className="bg-surface-s1 border border-border rounded px-2 py-1 font-mono text-xs text-text-t2 focus:outline-none focus:border-brand cursor-pointer"
+        >
+          <option value="ALL">{t("pnl.filter.allPairs")}</option>
+          {PAIRS.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+
+        {/* Paper/Live filter */}
         {hasPaperTrades && (
           <div className="flex gap-1">
             {(["all", "live", "paper"] as TradeFilter[]).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`rounded px-3 py-1 font-mono text-xs font-medium tracking-widest uppercase transition-colors ${
+                className={`rounded px-2.5 py-1 font-mono text-xs tracking-wider transition-colors ${
                   filter === f
                     ? "bg-surface-s2 text-text-t1"
                     : "text-text-t3 hover:text-text-t2"
                 }`}
               >
-                {f === "paper" ? "FWD Test" : f}
+                {f === "paper" ? "FWD" : f.toUpperCase()}
               </button>
             ))}
           </div>
         )}
+
         {trades.length > 0 && (
           <button
             onClick={downloadCsv}

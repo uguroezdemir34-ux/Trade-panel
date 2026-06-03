@@ -515,6 +515,13 @@ export const tr: Dictionary = {
   pnl: {
     title: "💰 P&L",
     subtitle: "Kar ve zarar · Günlük takvim · İleri test istatistikleri",
+    filter: {
+      days7: "7G",
+      days30: "30G",
+      days90: "90G",
+      allTime: "Tümü",
+      allPairs: "Tüm Pariteler",
+    },
     empty: {
       title: "Henüz işlem yok",
       description: "K/Z dökümünü görmek için bir işlem açın ve kapatın.",

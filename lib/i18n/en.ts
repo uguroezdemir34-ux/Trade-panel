@@ -515,6 +515,13 @@ export const en: Dictionary = {
   pnl: {
     title: "💰 P&L",
     subtitle: "Profit & loss · Daily calendar · Forward test stats",
+    filter: {
+      days7: "7D",
+      days30: "30D",
+      days90: "90D",
+      allTime: "All",
+      allPairs: "All Pairs",
+    },
     empty: {
       title: "No trades yet",
       description: "Open and close a trade to see P&L breakdown.",

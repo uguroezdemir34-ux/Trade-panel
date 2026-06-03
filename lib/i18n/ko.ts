@@ -456,6 +456,13 @@ export const ko: Dictionary = {
   pnl: {
     title: "💰 P&L",
     subtitle: "수익 & 손실 · 일별 캘린더 · 포워드 테스트 통계",
+    filter: {
+      days7: "7D",
+      days30: "30D",
+      days90: "90D",
+      allTime: "All",
+      allPairs: "All Pairs",
+    },
     empty: {
       title: "아직 거래 없음",
       description: "P&L 분석을 보려면 거래를 열고 닫으세요.",

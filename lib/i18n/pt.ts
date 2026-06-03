@@ -456,6 +456,13 @@ export const pt: Dictionary = {
   pnl: {
     title: "💰 P&L",
     subtitle: "Lucros e perdas · Calendário diário · Estatísticas de teste prospectivo",
+    filter: {
+      days7: "7D",
+      days30: "30D",
+      days90: "90D",
+      allTime: "All",
+      allPairs: "All Pairs",
+    },
     empty: {
       title: "Sem trades ainda",
       description: "Abra e feche um trade para ver o detalhamento do P&L.",

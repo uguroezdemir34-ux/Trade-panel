@@ -456,6 +456,13 @@ export const zh: Dictionary = {
   pnl: {
     title: "💰 P&L",
     subtitle: "盈亏 · 日历 · 前向测试统计",
+    filter: {
+      days7: "7D",
+      days30: "30D",
+      days90: "90D",
+      allTime: "All",
+      allPairs: "All Pairs",
+    },
     empty: {
       title: "暂无交易",
       description: "开仓并平仓后即可查看P&L详情。",

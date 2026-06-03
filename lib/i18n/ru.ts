@@ -456,6 +456,13 @@ export const ru: Dictionary = {
   pnl: {
     title: "💰 P&L",
     subtitle: "Прибыль и убытки · Дневной календарь · Статистика форвард-тестирования",
+    filter: {
+      days7: "7D",
+      days30: "30D",
+      days90: "90D",
+      allTime: "All",
+      allPairs: "All Pairs",
+    },
     empty: {
       title: "Пока нет сделок",
       description: "Откройте и закройте сделку, чтобы увидеть разбивку P&L.",
