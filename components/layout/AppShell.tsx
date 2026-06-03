@@ -50,6 +50,7 @@ import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
 import { useAuth } from "@clerk/nextjs";
 import { setCurrentUserId } from "@/lib/auth/scope";
+import { migrateStorageForUser } from "@/lib/auth/migrate";
 
 const SPLASH_DATE_KEY = "qx_splash_date";
 
@@ -118,8 +119,11 @@ export function AppShell({
     if (!authLoaded) return;
 
     // Scope localStorage to current user BEFORE rehydrating stores.
-    // This ensures each user reads/writes their own isolated data.
-    if (userId) setCurrentUserId(userId);
+    if (userId) {
+      // One-time migration: copy legacy ug52_* keys → ug52_{userId}_*
+      migrateStorageForUser(userId);
+      setCurrentUserId(userId);
+    }
 
     rehydrateSettings();
     rehydrateAccount();
