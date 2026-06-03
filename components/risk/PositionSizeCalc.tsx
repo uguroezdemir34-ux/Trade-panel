@@ -3,8 +3,10 @@
 import { useState, useMemo } from "react";
 import { useAccountStore } from "@/lib/store/accountStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useT } from "@/lib/i18n/context";
 
 export function PositionSizeCalc(): React.ReactElement {
+  const t = useT();
   const balance = useAccountStore((s) => s.balanceTotal);
   const defaultLev = useSettingsStore((s) => s.defaultLeverage);
   const defaultRiskPct = useSettingsStore((s) => s.defaultRiskPct);
@@ -45,7 +47,7 @@ export function PositionSizeCalc(): React.ReactElement {
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase mb-3">
-        ⚖️ Position Size Calculator
+        ⚖️ {t("risk.positionSizeCalc.title")}
       </h3>
 
       {/* Direction + Risk % row */}
@@ -63,12 +65,12 @@ export function PositionSizeCalc(): React.ReactElement {
                   : "border-border text-text-t4 hover:text-text-t2"
               }`}
             >
-              {d === "LONG" ? "▲ LONG" : "▼ SHORT"}
+              {d === "LONG" ? t("risk.positionSizeCalc.long") : t("risk.positionSizeCalc.short")}
             </button>
           ))}
         </div>
         <div className="flex items-center gap-1.5 ml-auto">
-          <span className="text-text-t4 font-mono text-2xs">Risk</span>
+          <span className="text-text-t4 font-mono text-2xs">{t("risk.positionSizeCalc.risk")}</span>
           <input
             type="number"
             min={0.1}
@@ -89,20 +91,20 @@ export function PositionSizeCalc(): React.ReactElement {
       {/* Price inputs */}
       <div className="grid grid-cols-1 gap-2 mb-3 sm:grid-cols-3">
         <LabeledInput
-          label="Entry"
+          label={t("risk.positionSizeCalc.entry")}
           value={entry}
           onChange={setEntry}
           placeholder="0.00"
         />
         <LabeledInput
-          label={`SL (${direction === "LONG" ? "< entry" : "> entry"})`}
+          label={direction === "LONG" ? t("risk.positionSizeCalc.slBelow") : t("risk.positionSizeCalc.slAbove")}
           value={sl}
           onChange={setSl}
           placeholder="0.00"
           warn={calc?.invalid}
         />
         <div className="flex flex-col gap-0.5">
-          <span className="text-text-t4 font-mono text-2xs tracking-wider">Leverage</span>
+          <span className="text-text-t4 font-mono text-2xs tracking-wider">{t("risk.positionSizeCalc.leverage")}</span>
           <div className="flex items-center gap-1">
             <input
               type="number"
@@ -121,34 +123,34 @@ export function PositionSizeCalc(): React.ReactElement {
       {/* Invalid warning */}
       {calc?.invalid && (
         <p className="text-amber-400 font-mono text-2xs mb-2">
-          ⚠ SL must be {direction === "LONG" ? "below" : "above"} entry
+          ⚠ {direction === "LONG" ? t("risk.positionSizeCalc.slValidBelow") : t("risk.positionSizeCalc.slValidAbove")}
         </p>
       )}
 
       {/* Balance hint */}
       <p className="text-text-t4 font-mono text-2xs mb-3">
-        Balance: <span className="text-text-t3">${balance.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
+        {t("risk.positionSizeCalc.balance")} <span className="text-text-t3">${balance.toLocaleString("en-US", { maximumFractionDigits: 2 })}</span>
       </p>
 
       {/* Results */}
       <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 pt-2 border-t border-border/40">
         <ResultRow
-          label="Risk $"
+          label={t("risk.positionSizeCalc.riskDollar")}
           value={calc && !calc.invalid ? `$${calc.riskUsd.toFixed(2)}` : "—"}
           color="text-text-t1"
         />
         <ResultRow
-          label="SL Distance"
+          label={t("risk.positionSizeCalc.slDist")}
           value={calc && !calc.invalid ? `${calc.slDistPct.toFixed(2)}%` : "—"}
           color="text-text-t3"
         />
         <ResultRow
-          label="Notional"
+          label={t("risk.positionSizeCalc.notional")}
           value={calc && !calc.invalid ? `$${calc.notional.toLocaleString("en-US", { maximumFractionDigits: 0 })}` : "—"}
           color="text-text-t3"
         />
         <ResultRow
-          label="Margin"
+          label={t("risk.positionSizeCalc.margin")}
           value={calc && !calc.invalid ? `$${calc.margin.toFixed(2)}` : "—"}
           color={
             calc && !calc.invalid
@@ -161,7 +163,7 @@ export function PositionSizeCalc(): React.ReactElement {
           }
         />
         <ResultRow
-          label="Size (coins)"
+          label={t("risk.positionSizeCalc.size")}
           value={calc && !calc.invalid ? fmtCoins(calc.coins) : "—"}
           color="text-text-t1"
           wide

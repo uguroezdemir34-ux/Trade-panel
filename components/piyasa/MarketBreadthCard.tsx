@@ -11,8 +11,10 @@
 import { useMemo } from "react";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { PAIRS } from "@/lib/constants/pairs";
+import { useT } from "@/lib/i18n/context";
 
 export function MarketBreadthCard(): React.ReactElement | null {
+  const t = useT();
   const results = useScoreStore((s) => s.results);
 
   const data = useMemo(() => {
@@ -52,7 +54,7 @@ export function MarketBreadthCard(): React.ReactElement | null {
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          📡 Market Breadth
+          📡 {t("piyasa.marketBreadth.title")}
         </h3>
         <span className="font-mono text-xs font-semibold" style={{ color: biasColor }}>
           {biasLabel}

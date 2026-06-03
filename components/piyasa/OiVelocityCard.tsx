@@ -9,6 +9,7 @@
 
 import type { OiVelocityResult } from "@/lib/market/oi-velocity";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   velocity: Partial<Record<Pair, OiVelocityResult>>;
@@ -35,22 +36,23 @@ function scoreColor(s: number): string {
 }
 
 export function OiVelocityCard({ velocity, loading }: Props): React.ReactElement {
+  const t = useT();
   const hasData = Object.keys(velocity).length > 0;
 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          OI Velocity
+          {t("piyasa.oiVelocity.title")}
         </span>
         {loading && !hasData && (
-          <span className="text-text-t4 animate-pulse font-mono text-2xs">~5dk</span>
+          <span className="text-text-t4 animate-pulse font-mono text-2xs">{t("piyasa.oiVelocity.loading")}</span>
         )}
       </div>
 
       {/* Header */}
       <div className="mb-0.5 grid grid-cols-[44px_1fr_40px_48px_48px] gap-x-2 px-1">
-        {["", "Regime", "Score", "OI%", "Price%"].map((h) => (
+        {["", t("piyasa.oiVelocity.colRegime"), t("piyasa.oiVelocity.colScore"), t("piyasa.oiVelocity.colOI"), t("piyasa.oiVelocity.colPrice")].map((h) => (
           <span key={h} className="text-text-t4 font-mono text-[9px] uppercase tracking-wider">
             {h}
           </span>

@@ -7,6 +7,7 @@
  * Metrikler: trade sayısı, win rate, avg PnL, toplam PnL.
  */
 
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -73,13 +74,14 @@ function StatCell({ label, value, color }: StatCellProps) {
 }
 
 export function FtComparison({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const liveGroup = computeGroup(
-    trades.filter((t) => !t.isPaper),
+    trades.filter((tr) => !tr.isPaper),
     "Live",
   );
   const paperGroup = computeGroup(
-    trades.filter((t) => t.isPaper === true),
-    "Forward Test",
+    trades.filter((tr) => tr.isPaper === true),
+    t("pnl.ftComparison.badge"),
   );
 
   // Only render when at least one group has data
@@ -93,10 +95,10 @@ export function FtComparison({ trades }: Props): React.ReactElement | null {
     <div className="bg-bg-card border-border rounded-lg border p-3">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          Forward Test vs Live
+          {t("pnl.ftComparison.title")}
         </span>
         <span className="rounded border border-[#22C55E]/30 bg-[#22C55E]/8 px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-widest text-[#22C55E]">
-          FWD TEST
+          {t("pnl.ftComparison.badge")}
         </span>
       </div>
 
@@ -111,28 +113,28 @@ export function FtComparison({ trades }: Props): React.ReactElement | null {
                 {g.label}
               </span>
               <span className="text-text-t4 font-mono text-[9px]">
-                {g.count} trades
+                {g.count} {t("pnl.ftComparison.tradesLabel")}
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-x-3 gap-y-2">
               <StatCell
-                label="Win%"
+                label={t("pnl.ftComparison.winPct")}
                 value={g.count > 0 ? pct(g.winRate) : "—"}
                 color={g.count > 0 ? winColor(g.winRate) : undefined}
               />
               <StatCell
-                label="Avg $"
+                label={t("pnl.ftComparison.avgPnl")}
                 value={g.count > 0 ? usd(g.avgPnlUsd) : "—"}
                 color={g.count > 0 ? pnlColor(g.avgPnlUsd) : undefined}
               />
               <StatCell
-                label="Total"
+                label={t("pnl.ftComparison.total")}
                 value={g.count > 0 ? usd(g.totalPnlUsd) : "—"}
                 color={g.count > 0 ? pnlColor(g.totalPnlUsd) : undefined}
               />
               <StatCell
-                label="Wins"
+                label={t("pnl.ftComparison.wins")}
                 value={g.count > 0 ? `${g.winCount}/${g.count}` : "—"}
               />
             </div>
@@ -144,7 +146,7 @@ export function FtComparison({ trades }: Props): React.ReactElement | null {
       {liveGroup.count > 0 && paperGroup.count > 0 && (
         <div className="mt-2 flex items-center justify-between rounded-md bg-bg-card2/50 px-2.5 py-1.5">
           <span className="text-text-t3 font-mono text-[9px] uppercase tracking-wider">
-            FT − Live delta
+            {t("pnl.ftComparison.deltaLabel")}
           </span>
           <div className="flex gap-4">
             <span
@@ -153,9 +155,9 @@ export function FtComparison({ trades }: Props): React.ReactElement | null {
                 color: pnlColor(paperGroup.winRate - liveGroup.winRate),
               }}
             >
-              Win%:{" "}
+              {t("pnl.ftComparison.deltaWR")}{" "}
               {(paperGroup.winRate - liveGroup.winRate) >= 0 ? "+" : ""}
-              {((paperGroup.winRate - liveGroup.winRate) * 100).toFixed(0)}pp
+              {((paperGroup.winRate - liveGroup.winRate) * 100).toFixed(0)}{t("pnl.ftComparison.pp")}
             </span>
             <span
               className="font-mono text-[9px] tabular-nums"
@@ -163,7 +165,7 @@ export function FtComparison({ trades }: Props): React.ReactElement | null {
                 color: pnlColor(paperGroup.avgPnlUsd - liveGroup.avgPnlUsd),
               }}
             >
-              Avg:{" "}
+              {t("pnl.ftComparison.deltaAvg")}{" "}
               {usd(paperGroup.avgPnlUsd - liveGroup.avgPnlUsd)}
             </span>
           </div>

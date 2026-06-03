@@ -212,6 +212,7 @@ function CvdChip({ label, window: w }: { label: string; window: CvdWindowLike })
 // ── Liq Magnet section ────────────────────────────────────────────────────────
 
 function LiqSection({ liqMap }: { liqMap: LiquidationMap }) {
+  const t = useT();
   const hasData = liqMap.nearestLongLiq !== null || liqMap.nearestShortLiq !== null;
   if (!hasData) return null;
 
@@ -220,7 +221,7 @@ function LiqSection({ liqMap }: { liqMap: LiquidationMap }) {
       <div className="flex items-center justify-between text-xs">
         <span className="text-text-t4">Liq Magnet</span>
         <span className="text-text-t3 text-[10px]">
-          {liqMap.magnetZones.length > 0 ? `${liqMap.magnetZones.length} magnet yakın` : "uzak"}
+          {liqMap.magnetZones.length > 0 ? t("karar.flowMagnetNear").replace("{n}", String(liqMap.magnetZones.length)) : t("karar.flowMagnetFar")}
         </span>
       </div>
 
@@ -274,18 +275,18 @@ function LiqLevelRow({ label, level, tone }: LiqLevelProps) {
 interface ExchangeCounts { okx: number; binance: number; bybit: number; unknown: number }
 
 function ExchangeBadgeRow({ counts, total }: { counts: ExchangeCounts; total: number }) {
+  const t = useT();
   if (total === 0) {
     return (
       <div className="pt-1 border-t border-border/50 flex items-center gap-1 text-[10px] text-text-t4 font-mono">
-        <span>Feed:</span>
-        <span>no events yet</span>
+        <span>{t("karar.flowNoEvents")}</span>
       </div>
     );
   }
 
   return (
     <div className="pt-1 border-t border-border/50 flex items-center gap-1 flex-wrap text-[10px] font-mono">
-      <span className="text-text-t4">Feed:</span>
+      <span className="text-text-t4">{t("karar.fundingLabel")}:</span>
       {counts.okx > 0 && (
         <ExBadge label="OKX" count={counts.okx} color="text-blue-400" />
       )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/context";
 import type { MonthlyAggregate } from "@/lib/pnl/monthly";
 
 interface Props {
@@ -16,6 +17,7 @@ function trendArrow(curr: number, prev: number | undefined): { symbol: string; c
 }
 
 export function MonthlyBreakdown({ months }: Props): React.ReactElement | null {
+  const t = useT();
   if (months.length === 0) return null;
 
   const maxAbs = months.reduce((m, mo) => Math.max(m, Math.abs(mo.totalPnlUsd)), 0.01);
@@ -24,10 +26,10 @@ export function MonthlyBreakdown({ months }: Props): React.ReactElement | null {
     <div className="bg-bg-card border-border rounded-lg border p-3">
       <div className="mb-3 flex items-center justify-between">
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          Monthly Breakdown
+          {t("pnl.monthlyBreakdownChart.title")}
         </span>
         <span className="text-text-t4 font-mono text-2xs">
-          {months.length} {months.length === 1 ? "month" : "months"}
+          {months.length} {months.length === 1 ? t("pnl.monthlyBreakdownChart.month") : t("pnl.monthlyBreakdownChart.months")}
         </span>
       </div>
 
@@ -117,10 +119,10 @@ export function MonthlyBreakdown({ months }: Props): React.ReactElement | null {
 
       {/* Legend */}
       <div className="mt-2 flex items-center gap-3 border-t border-border/30 pt-2">
-        <span className="text-text-t4 font-mono text-2xs">t = trades</span>
-        <span className="text-text-t4 font-mono text-2xs">% = win rate</span>
-        <span className="text-text-t4 font-mono text-2xs">R = avg R-multiple</span>
-        <span className="text-text-t4 font-mono text-2xs">↑↓ = vs prev month</span>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.monthlyBreakdownChart.legendTrades")}</span>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.monthlyBreakdownChart.legendWinRate")}</span>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.monthlyBreakdownChart.legendRMultiple")}</span>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.monthlyBreakdownChart.legendTrend")}</span>
       </div>
     </div>
   );

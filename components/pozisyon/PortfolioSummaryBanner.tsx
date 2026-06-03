@@ -9,12 +9,14 @@
 
 import { useMemo } from "react";
 import type { Position } from "@/lib/okx/positions";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   positions: Position[];
 }
 
 export function PortfolioSummaryBanner({ positions }: Props): React.ReactElement | null {
+  const t = useT();
   const summary = useMemo(() => {
     if (positions.length === 0) return null;
 
@@ -47,15 +49,15 @@ export function PortfolioSummaryBanner({ positions }: Props): React.ReactElement
             {uplSign}${Math.abs(totalUpl).toFixed(2)}
           </div>
           <div className="text-text-t4 font-mono text-2xs mt-0.5">
-            Unrealized P&L
+            {t("position.portfolioUnrealizedPnl")}
           </div>
         </div>
         <div className="flex flex-col items-end gap-1">
           <div className="text-text-t3 font-mono text-xs tabular-nums">
-            ${totalNotional.toFixed(0)} notional
+            ${totalNotional.toFixed(0)} {t("position.portfolioNotional")}
           </div>
           <div className="text-text-t4 font-mono text-2xs tabular-nums">
-            {avgLeverage.toFixed(0)}× avg leverage
+            {avgLeverage.toFixed(0)}{t("position.portfolioAvgLeverage")}
           </div>
           <div className="flex items-center gap-2 mt-1">
             {longs > 0 && (

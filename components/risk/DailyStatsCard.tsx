@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
+import { useT } from "@/lib/i18n/context";
 
 function todayBounds() {
   const d = new Date();
@@ -10,6 +11,7 @@ function todayBounds() {
 }
 
 export function DailyStatsCard(): React.ReactElement {
+  const t = useT();
   const trades = useTradesStore((s) => s.trades);
 
   const stats = useMemo(() => {
@@ -59,18 +61,18 @@ export function DailyStatsCard(): React.ReactElement {
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase mb-3">
-        📅 Today's Stats
+        📅 {t("risk.dailyStats.title")}
       </h3>
       <div className="grid grid-cols-4 gap-3">
-        <Stat label="Opened" value={stats.opened.toString()} />
-        <Stat label="Closed" value={stats.closed.toString()} />
+        <Stat label={t("risk.dailyStats.opened")} value={stats.opened.toString()} />
+        <Stat label={t("risk.dailyStats.closed")} value={stats.closed.toString()} />
         <Stat
           label="P&L"
           value={stats.closed > 0 ? `${pnlSign}$${Math.abs(stats.pnl).toFixed(2)}` : "—"}
           color={stats.closed > 0 ? pnlColor : undefined}
         />
         <Stat
-          label="Win Rate"
+          label={t("risk.dailyStats.winRate")}
           value={stats.wr !== null ? `${stats.wr.toFixed(0)}%` : "—"}
           color={stats.wr !== null ? wrColor : undefined}
           hint={stats.closed > 0 ? `${stats.wins}W/${stats.losses}L` : undefined}
@@ -78,7 +80,7 @@ export function DailyStatsCard(): React.ReactElement {
       </div>
       {stats.streak >= 2 && (
         <div className={`mt-2 pt-2 border-t border-border/30 font-mono text-xs ${streakColor}`}>
-          {streakLabel} streak
+          {streakLabel} {t("risk.dailyStats.streak")}
         </div>
       )}
     </div>

@@ -10,6 +10,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -36,6 +37,7 @@ const BUCKET_DEFS = [
 ];
 
 export function ScoreHeatmap({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const buckets = useMemo<ScoreBucket[]>(() => {
     const withScore = trades.filter((t) => typeof t.score === "number");
     if (withScore.length < 5) return [];
@@ -61,7 +63,7 @@ export function ScoreHeatmap({ trades }: Props): React.ReactElement | null {
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase mb-3">
-        📈 Score Heatmap
+        📈 {t("pnl.scoreHeatmap.title")}
       </h3>
       <div className="flex flex-col gap-2">
         {buckets.map((b) => {
@@ -107,9 +109,9 @@ export function ScoreHeatmap({ trades }: Props): React.ReactElement | null {
         })}
       </div>
       <div className="mt-2 flex justify-end gap-4 font-mono text-2xs text-text-t4">
-        <span>WR%</span>
-        <span className="w-14 text-right">Avg$</span>
-        <span className="w-8 text-right">N</span>
+        <span>{t("pnl.scoreHeatmap.colWR")}</span>
+        <span className="w-14 text-right">{t("pnl.scoreHeatmap.colAvgPnl")}</span>
+        <span className="w-8 text-right">{t("pnl.scoreHeatmap.colCount")}</span>
       </div>
     </div>
   );

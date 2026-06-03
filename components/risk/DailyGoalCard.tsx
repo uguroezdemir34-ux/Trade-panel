@@ -11,6 +11,7 @@
 import { useState, useMemo } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useT } from "@/lib/i18n/context";
 
 function todayBounds() {
   const d = new Date();
@@ -19,6 +20,7 @@ function todayBounds() {
 }
 
 export function DailyGoalCard(): React.ReactElement | null {
+  const t = useT();
   const trades = useTradesStore((s) => s.trades);
   const dailyGoalUsd = useSettingsStore((s) => s.dailyGoalUsd);
   const setDailyGoalUsd = useSettingsStore((s) => s.setDailyGoalUsd);
@@ -43,12 +45,12 @@ export function DailyGoalCard(): React.ReactElement | null {
   if (dailyGoalUsd === 0 && !editing) {
     return (
       <div className="border-border bg-bg-card rounded-lg border p-4 flex items-center justify-between gap-3">
-        <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">🎯 Daily Goal</span>
+        <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">🎯 {t("risk.dailyGoal.title")}</span>
         <button
           onClick={() => { setEditing(true); setInputVal(""); }}
           className="text-text-t4 font-mono text-2xs border border-border rounded px-2 py-1 hover:text-text-t2 transition-colors"
         >
-          Set Goal
+          {t("risk.dailyGoal.setButton")}
         </button>
       </div>
     );
@@ -63,7 +65,7 @@ export function DailyGoalCard(): React.ReactElement | null {
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          🎯 Daily Goal
+          🎯 {t("risk.dailyGoal.title")}
         </h3>
         {!editing ? (
           <button
@@ -113,11 +115,11 @@ export function DailyGoalCard(): React.ReactElement | null {
             </span>
             {reached ? (
               <span className="text-green-400 font-mono text-xs font-semibold">
-                ✓ Goal Reached!
+                ✓ {t("risk.dailyGoal.reached")}
               </span>
             ) : (
               <span className="text-text-t4 font-mono text-2xs tabular-nums">
-                {pct.toFixed(0)}% · ${(dailyGoalUsd - todayPnl).toFixed(2)} to go
+                {pct.toFixed(0)}% · ${(dailyGoalUsd - todayPnl).toFixed(2)} {t("risk.dailyGoal.toGo")}
               </span>
             )}
           </div>

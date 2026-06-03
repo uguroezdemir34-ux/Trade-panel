@@ -13,6 +13,7 @@
 import { useMemo } from "react";
 import { useMacroStore } from "@/lib/store/macroStore";
 import type { Pair } from "@/lib/constants/pairs";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   pair: Pair;
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function FundingBadge({ pair, direction }: Props): React.ReactElement | null {
+  const t = useT();
   const funding = useMacroStore((s) => s.funding);
   const fundingLoading = useMacroStore((s) => s.fundingLoading);
 
@@ -58,7 +60,7 @@ export function FundingBadge({ pair, direction }: Props): React.ReactElement | n
 
   return (
     <div className="flex items-center gap-2 rounded border border-border/50 bg-surface-s1 px-2.5 py-1.5 font-mono">
-      <span className="text-text-t4 text-2xs tracking-wider uppercase">Funding</span>
+      <span className="text-text-t4 text-2xs tracking-wider uppercase">{t("karar.fundingLabel")}</span>
       <span className={`text-xs font-semibold tabular-nums ${rateColor}`}>
         {rateSign}{ratePct}%
       </span>

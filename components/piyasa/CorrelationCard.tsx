@@ -8,6 +8,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 
@@ -58,6 +59,7 @@ function corrBar(r: number): { width: number; color: string } {
 }
 
 export function CorrelationCard(): React.ReactElement | null {
+  const t = useT();
   const allCandles = useCandleStore((s) => s.candles);
 
   const rows = useMemo(() => {
@@ -111,7 +113,7 @@ export function CorrelationCard(): React.ReactElement | null {
       </div>
 
       <p className="text-text-t4 font-mono text-2xs mt-3">
-        Yüksek korelasyon → benzer risk · yeşil=BTC ile aynı yön
+        {t("piyasa.correlationCard.desc")}
       </p>
     </div>
   );

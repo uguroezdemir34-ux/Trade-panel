@@ -11,6 +11,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -37,6 +38,7 @@ function fmtDuration(ms: number): string {
 }
 
 export function HoldingTimeCard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const data = useMemo(() => {
     const timed = trades.filter(
       (t) => typeof t.openedAt === "number" && typeof t.closedAt === "number" && t.closedAt > t.openedAt,
@@ -82,19 +84,19 @@ export function HoldingTimeCard({ trades }: Props): React.ReactElement | null {
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          ⏱ Holding Time
+          ⏱ {t("pnl.holdingTime.title")}
         </h3>
         <span className="text-text-t4 font-mono text-2xs">{timed} trades</span>
       </div>
 
       {/* Avg stats row */}
       <div className="flex gap-4 mb-4 flex-wrap">
-        <Stat label="All" value={avgAll ? fmtDuration(avgAll) : "—"} color="text-text-t2" />
-        <Stat label="Winners" value={avgWin ? fmtDuration(avgWin) : "—"} color="text-green-400" />
-        <Stat label="Losers"  value={avgLoss ? fmtDuration(avgLoss) : "—"} color="text-red-400" />
+        <Stat label={t("pnl.holdingTime.all")} value={avgAll ? fmtDuration(avgAll) : "—"} color="text-text-t2" />
+        <Stat label={t("pnl.holdingTime.winners")} value={avgWin ? fmtDuration(avgWin) : "—"} color="text-green-400" />
+        <Stat label={t("pnl.holdingTime.losers")}  value={avgLoss ? fmtDuration(avgLoss) : "—"} color="text-red-400" />
         {avgWin !== null && avgLoss !== null && (
           <Stat
-            label="W/L Ratio"
+            label={t("pnl.holdingTime.wlRatio")}
             value={`${(avgWin / avgLoss).toFixed(2)}×`}
             color={avgWin > avgLoss ? "text-green-400" : "text-red-400"}
           />

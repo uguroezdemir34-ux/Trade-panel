@@ -13,6 +13,7 @@
  */
 
 import { useMemo, useState } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -130,6 +131,7 @@ function usd(v: number) {
 }
 
 export function MonteCarloCard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const [fwdTrades, setFwdTrades] = useState(FWD_TRADES);
 
   const sim = useMemo(() => runMonteCarlo(trades, fwdTrades), [trades, fwdTrades]);
@@ -145,7 +147,7 @@ export function MonteCarloCard({ trades }: Props): React.ReactElement | null {
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          🎲 Monte Carlo — Sonraki
+          {t("pnl.monteCarlo.title")}
         </h3>
         {/* Forward trade count selector */}
         <div className="flex items-center gap-1">
@@ -177,9 +179,9 @@ export function MonteCarloCard({ trades }: Props): React.ReactElement | null {
       {/* Percentile bands */}
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {[
-          { label: "P10 (Worst)", value: sim.p10, color: "text-signal-red" },
-          { label: "P50 (Median)", value: sim.p50, color: "text-amber-400" },
-          { label: "P90 (Best)", value: sim.p90, color: "text-signal-green" },
+          { label: t("pnl.monteCarlo.p10"), value: sim.p10, color: "text-signal-red" },
+          { label: t("pnl.monteCarlo.p50"), value: sim.p50, color: "text-amber-400" },
+          { label: t("pnl.monteCarlo.p90"), value: sim.p90, color: "text-signal-green" },
         ].map(({ label, value, color }) => (
           <div key={label} className="bg-surface-s1 rounded p-2 text-center">
             <div className={`font-mono text-sm font-bold tabular-nums ${color}`}>
@@ -192,21 +194,21 @@ export function MonteCarloCard({ trades }: Props): React.ReactElement | null {
 
       {/* P(positive) */}
       <div className="flex items-center justify-between border-t border-border pt-2">
-        <span className="text-text-t4 font-mono text-2xs">Pozitif olasılığı</span>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.monteCarlo.probLabel")}</span>
         <span className={`font-mono text-sm font-bold tabular-nums ${probColor}`}>
           {sim.positivePct.toFixed(0)}%
         </span>
       </div>
 
       <div className="mt-1 flex items-center justify-between">
-        <span className="text-text-t4 font-mono text-2xs">İnterquartile aralık</span>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.monteCarlo.iqrLabel")}</span>
         <span className="text-text-t3 font-mono text-xs tabular-nums">
           {usd(sim.p25)} ~ {usd(sim.p75)}
         </span>
       </div>
 
       <div className="mt-2 text-text-t4 font-mono text-2xs leading-relaxed">
-        {SIM_COUNT.toLocaleString()} simülasyon · {trades.length} geçmiş trade · bootstrap yöntemi
+        {t("pnl.monteCarlo.desc").replace("{n}", SIM_COUNT.toLocaleString()).replace("{trades}", String(trades.length))}
       </div>
     </div>
   );

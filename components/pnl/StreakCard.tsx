@@ -12,6 +12,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -49,6 +50,7 @@ function computeStreaks(trades: readonly TradeRecord[]): StreakStats {
 }
 
 export function StreakCard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const stats = useMemo(() => {
     if (trades.length < 5) return null;
     return computeStreaks(trades);
@@ -62,20 +64,20 @@ export function StreakCard({ trades }: Props): React.ReactElement | null {
 
   const streakColor = isWinStreak ? "text-signal-green" : "text-signal-red";
   const streakBg   = isWinStreak ? "bg-soft-green border-signal-green/30" : "bg-soft-red border-signal-red/30";
-  const streakLabel = isWinStreak ? "WIN STREAK" : "LOSS STREAK";
+  const streakLabel = isWinStreak ? t("pnl.streak.winStreak") : t("pnl.streak.lossStreak");
   const streakIcon  = isWinStreak ? "🔥" : "🌧";
 
   const hint =
     !isWinStreak && streakLen >= 5
-      ? { text: "5+ consecutive losses — stop trading today.", color: "text-signal-red" }
+      ? { text: t("pnl.streak.hint5plus"), color: "text-signal-red" }
       : !isWinStreak && streakLen >= 3
-      ? { text: "3+ consecutive losses — consider a break.", color: "text-amber-400" }
+      ? { text: t("pnl.streak.hint3plus"), color: "text-amber-400" }
       : null;
 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 mb-3 font-mono text-2xs tracking-widest uppercase">
-        {streakIcon} Current Streak
+        {streakIcon} {t("pnl.streak.title")}
       </h3>
 
       <div className="flex items-start gap-4">
@@ -95,13 +97,13 @@ export function StreakCard({ trades }: Props): React.ReactElement | null {
             <div className="text-signal-green font-mono text-lg font-bold tabular-nums leading-none">
               {maxWin}
             </div>
-            <div className="text-text-t4 font-mono text-2xs tracking-wider">Best Win</div>
+            <div className="text-text-t4 font-mono text-2xs tracking-wider">{t("pnl.streak.bestWin")}</div>
           </div>
           <div>
             <div className="text-signal-red font-mono text-lg font-bold tabular-nums leading-none">
               {maxLoss}
             </div>
-            <div className="text-text-t4 font-mono text-2xs tracking-wider">Worst Loss</div>
+            <div className="text-text-t4 font-mono text-2xs tracking-wider">{t("pnl.streak.worstLoss")}</div>
           </div>
         </div>
       </div>
@@ -119,7 +121,7 @@ export function StreakCard({ trades }: Props): React.ReactElement | null {
               title={`${t.pnlUsd > 0 ? "W" : "L"} ${t.pnlUsd.toFixed(2)}`}
             />
           ))}
-        <span className="text-text-t4 font-mono text-2xs ml-1">← last 10</span>
+        <span className="text-text-t4 font-mono text-2xs ml-1">{t("pnl.streak.last10")}</span>
       </div>
 
       {/* Discipline hint */}

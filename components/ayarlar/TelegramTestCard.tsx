@@ -72,7 +72,7 @@ export function TelegramTestCard(): React.ReactElement {
         data = await res.json();
       } catch {
         setStatus("error");
-        setErrorDetail(`HTTP ${res.status} — sunucu JSON dönmedi`);
+        setErrorDetail(t("settings.telegram.jsonError").replace("{status}", String(res.status)));
         return;
       }
 
@@ -222,16 +222,16 @@ export function TelegramTestCard(): React.ReactElement {
 
       {status === "not_configured" && (
         <div className="mt-3 rounded border border-amber-400/30 bg-amber-400/8 px-3 py-2 font-mono text-2xs leading-relaxed text-signal-amber">
-          ⚠ Bot token veya Chat ID girilmedi.
+          ⚠ {t("settings.telegram.notConfiguredTitle")}
           <div className="text-text-t3 mt-1">
-            Formu doldurup önce &ldquo;SAVE&rdquo; tuşuna bas, sonra tekrar dene.
+            {t("settings.telegram.notConfiguredHint")}
           </div>
         </div>
       )}
 
       {status === "error" && (
         <div className="mt-3 rounded border border-red-500/30 bg-red-500/8 px-3 py-2 font-mono text-xs leading-relaxed text-signal-red">
-          ✗ Telegram API hatası
+          ✗ {t("settings.telegram.apiError")}
           {errorDetail && (
             <div className="mt-1 break-all font-mono text-2xs text-text-t3">
               {errorDetail}

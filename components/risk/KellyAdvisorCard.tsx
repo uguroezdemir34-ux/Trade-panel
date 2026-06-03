@@ -20,12 +20,14 @@
 import { useMemo } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useT } from "@/lib/i18n/context";
 
 function fmt(pct: number) {
   return `${pct.toFixed(2)}%`;
 }
 
 export function KellyAdvisorCard(): React.ReactElement | null {
+  const t = useT();
   const trades = useTradesStore((s) => s.trades);
   const currentRiskPct = useSettingsStore((s) => s.defaultRiskPct);
 
@@ -76,16 +78,16 @@ export function KellyAdvisorCard(): React.ReactElement | null {
     : ratio <= 1.2 ? "text-amber-400"
     : "text-signal-red";
   const statusText =
-    ratio <= 0.8  ? "Conservative — good discipline"
-    : ratio <= 1.2 ? "Near optimal"
-    : ratio <= 2   ? "Above Half-Kelly — consider reducing"
-    : "Significantly over-risked";
+    ratio <= 0.8  ? t("risk.kellyAdvisor.statusConservative")
+    : ratio <= 1.2 ? t("risk.kellyAdvisor.statusOptimal")
+    : ratio <= 2   ? t("risk.kellyAdvisor.statusAboveHalf")
+    : t("risk.kellyAdvisor.statusOverRisked");
 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <div className="mb-3 flex items-center justify-between">
         <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          📐 Kelly Criterion
+          📐 {t("risk.kellyAdvisor.title")}
         </h3>
         <span className="text-text-t4 font-mono text-2xs">
           n={kelly.sampleSize}
@@ -95,13 +97,13 @@ export function KellyAdvisorCard(): React.ReactElement | null {
       {/* Inputs */}
       <div className="mb-3 grid grid-cols-2 gap-2">
         <div className="bg-surface-s1 rounded p-2">
-          <div className="text-text-t4 font-mono text-2xs tracking-wider">Win Rate</div>
+          <div className="text-text-t4 font-mono text-2xs tracking-wider">{t("risk.kellyAdvisor.winRate")}</div>
           <div className="text-text-t1 font-mono text-sm font-bold tabular-nums">
             {Math.round(kelly.winRate * 100)}%
           </div>
         </div>
         <div className="bg-surface-s1 rounded p-2">
-          <div className="text-text-t4 font-mono text-2xs tracking-wider">Payoff Ratio</div>
+          <div className="text-text-t4 font-mono text-2xs tracking-wider">{t("risk.kellyAdvisor.payoffRatio")}</div>
           <div className="text-text-t1 font-mono text-sm font-bold tabular-nums">
             {kelly.payoff.toFixed(2)}:1
           </div>
@@ -111,9 +113,9 @@ export function KellyAdvisorCard(): React.ReactElement | null {
       {/* Kelly levels */}
       <div className="mb-3 flex flex-col gap-1.5">
         {[
-          { label: "Full Kelly", value: kelly.full, desc: "Max growth (volatile)" },
-          { label: "Half-Kelly", value: kelly.half, desc: "Recommended for live trading" },
-          { label: "Quarter-Kelly", value: kelly.quarter, desc: "Very conservative" },
+          { label: t("risk.kellyAdvisor.fullKelly"), value: kelly.full, desc: t("risk.kellyAdvisor.fullKellyDesc") },
+          { label: t("risk.kellyAdvisor.halfKelly"), value: kelly.half, desc: t("risk.kellyAdvisor.halfKellyDesc") },
+          { label: t("risk.kellyAdvisor.quarterKelly"), value: kelly.quarter, desc: t("risk.kellyAdvisor.quarterKellyDesc") },
         ].map(({ label, value, desc }) => (
           <div key={label} className="flex items-center justify-between gap-2">
             <div>
@@ -130,7 +132,7 @@ export function KellyAdvisorCard(): React.ReactElement | null {
       {/* Bar: current vs half-Kelly */}
       <div className="mb-2">
         <div className="mb-1 flex items-center justify-between">
-          <span className="text-text-t4 font-mono text-2xs">Your current risk</span>
+          <span className="text-text-t4 font-mono text-2xs">{t("risk.kellyAdvisor.currentRisk")}</span>
           <span className="text-text-t2 font-mono text-xs font-bold tabular-nums">
             {fmt(currentRiskPct)}
           </span>
@@ -153,7 +155,7 @@ export function KellyAdvisorCard(): React.ReactElement | null {
         </div>
         <div className="mt-0.5 flex justify-end">
           <span className="text-text-t4 font-mono text-2xs">
-            ← Half-Kelly marker
+            {t("risk.kellyAdvisor.markerLabel")}
           </span>
         </div>
       </div>

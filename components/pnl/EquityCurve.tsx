@@ -11,6 +11,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { EquityPoint } from "@/lib/pnl/equity";
 
 interface Props {
@@ -25,6 +26,7 @@ const CHART_W = W - PAD.left - PAD.right;
 const CHART_H = H - PAD.top - PAD.bottom;
 
 export function EquityCurve({ points }: Props): React.ReactElement {
+  const t = useT();
   const isEmpty = points.length < 2;
 
   const { linePath, drawdownPath, zeroY, lastX, lastY, isProfit, minPnl, maxPnl } =
@@ -98,7 +100,7 @@ export function EquityCurve({ points }: Props): React.ReactElement {
       {/* Header */}
       <div className="mb-2 flex items-center justify-between">
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          Equity Curve
+          {t("pnl.equityCurve.title")}
         </span>
         {!isEmpty && (
           <span
@@ -113,7 +115,7 @@ export function EquityCurve({ points }: Props): React.ReactElement {
       {isEmpty ? (
         <div className="flex h-[100px] items-center justify-center">
           <span className="text-text-t4 font-mono text-2xs tracking-wider">
-            No closed trades yet
+            {t("pnl.equityCurve.noData")}
           </span>
         </div>
       ) : (

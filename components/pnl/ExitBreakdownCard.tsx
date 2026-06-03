@@ -12,6 +12,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -55,6 +56,7 @@ function buildRows(groups: Map<string, TradeRecord[]>, keys: readonly string[], 
 }
 
 function BreakdownTable({ title, rows }: { title: string; rows: SegmentRow[] }) {
+  const t = useT();
   if (rows.length === 0) return null;
 
   return (
@@ -63,10 +65,10 @@ function BreakdownTable({ title, rows }: { title: string; rows: SegmentRow[] }) 
       <table className="w-full font-mono text-xs">
         <thead>
           <tr className="text-text-t4 border-b border-border">
-            <th className="text-left py-1 pr-2">Exit</th>
-            <th className="text-right py-1 pr-2">N</th>
-            <th className="text-right py-1 pr-2">WR%</th>
-            <th className="text-right py-1">Avg $</th>
+            <th className="text-left py-1 pr-2">{t("pnl.exitBreakdown.colExit")}</th>
+            <th className="text-right py-1 pr-2">{t("pnl.exitBreakdown.colN")}</th>
+            <th className="text-right py-1 pr-2">{t("pnl.exitBreakdown.colWR")}</th>
+            <th className="text-right py-1">{t("pnl.exitBreakdown.colAvgPnl")}</th>
           </tr>
         </thead>
         <tbody>
@@ -98,6 +100,7 @@ function BreakdownTable({ title, rows }: { title: string; rows: SegmentRow[] }) 
 }
 
 export function ExitBreakdownCard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const { reasonRows, directionRows } = useMemo(() => {
     if (trades.length < 3) return { reasonRows: [], directionRows: [] };
 
@@ -124,11 +127,11 @@ export function ExitBreakdownCard({ trades }: Props): React.ReactElement | null 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase mb-3">
-        🔬 Exit Analysis
+        🔬 {t("pnl.exitBreakdown.title")}
       </h3>
       <div className="flex gap-6 flex-wrap">
-        <BreakdownTable title="By Exit Reason" rows={reasonRows} />
-        <BreakdownTable title="By Direction" rows={directionRows} />
+        <BreakdownTable title={t("pnl.exitBreakdown.byReason")} rows={reasonRows} />
+        <BreakdownTable title={t("pnl.exitBreakdown.byDirection")} rows={directionRows} />
       </div>
     </div>
   );

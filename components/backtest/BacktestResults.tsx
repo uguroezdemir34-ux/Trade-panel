@@ -508,7 +508,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
         return (
           <div className="border-border bg-surface rounded-lg border p-4">
             <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-3">
-              Exit Analysis{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
+              {t("backtest.exitAnalysis")}{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
             </h3>
             <div className="overflow-x-auto">
             <table className="w-full font-mono text-xs">
@@ -587,11 +587,11 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
       {filteredTrades.length >= 5 && (
         <div className="border-border bg-surface rounded-lg border p-4">
           <h3 className="text-text-t3 font-mono text-xs tracking-wider uppercase mb-3">
-            Entry Hour · UTC{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
+            {t("backtest.entryHour")}{dirFilter !== "ALL" ? ` · ${dirFilter}` : ""}
           </h3>
           <HourHeatmap trades={filteredTrades} />
           <p className="text-text-t4 font-mono text-2xs mt-2">
-            green ≥60% WR · yellow ≥45% · red &lt;45% · height = trade count
+            {t("backtest.entryHourDesc")}
           </p>
         </div>
       )}
@@ -607,7 +607,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
               onClick={() => downloadCsv(filteredTrades, pair)}
               className="font-mono text-2xs border border-border text-text-t4 hover:text-text-t2 rounded px-2 py-0.5 transition-colors"
             >
-              ↓ CSV
+              {t("backtest.downloadCsv")}
             </button>
           </div>
           <div className="flex flex-col gap-0.5 max-h-64 overflow-y-auto">

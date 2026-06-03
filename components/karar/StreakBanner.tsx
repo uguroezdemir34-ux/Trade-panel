@@ -10,8 +10,10 @@
 
 import { useMemo } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
+import { useT } from "@/lib/i18n/context";
 
 export function StreakBanner(): React.ReactElement | null {
+  const t = useT();
   const trades = useTradesStore((s) => s.trades);
 
   const streak = useMemo(() => {
@@ -44,10 +46,10 @@ export function StreakBanner(): React.ReactElement | null {
     return (
       <div className="flex items-center gap-2 rounded-lg border border-green-500/30 bg-green-500/8 px-3 py-2">
         <span className="text-green-400 font-mono text-2xs font-bold tracking-widest shrink-0">
-          🔥 HOT STREAK
+          🔥 {t("karar.streakBannerHot")}
         </span>
         <span className="text-text-t2 font-mono text-xs">
-          {streak.streak} consecutive wins — stay disciplined, avoid FOMO sizing
+          {t("karar.streakBannerHotDesc").replace("{n}", String(streak.streak))}
         </span>
       </div>
     );
@@ -56,10 +58,10 @@ export function StreakBanner(): React.ReactElement | null {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/8 px-3 py-2">
       <span className="text-red-400 font-mono text-2xs font-bold tracking-widest shrink-0">
-        ⚠ LOSS STREAK
+        ⚠ {t("karar.streakBannerLoss")}
       </span>
       <span className="text-text-t2 font-mono text-xs">
-        {streak.streak} consecutive losses — consider reducing size or pausing
+        {t("karar.streakBannerLossDesc").replace("{n}", String(streak.streak))}
       </span>
     </div>
   );

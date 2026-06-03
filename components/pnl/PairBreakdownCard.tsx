@@ -8,6 +8,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 import type { Pair } from "@/lib/constants/pairs";
 
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export function PairBreakdownCard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const rows = useMemo<PairRow[]>(() => {
     const map = new Map<Pair, TradeRecord[]>();
     for (const t of trades) {
@@ -57,16 +59,16 @@ export function PairBreakdownCard({ trades }: Props): React.ReactElement | null 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase mb-3">
-        📊 Performance by Pair
+        📊 {t("pnl.pairBreakdown.title")}
       </h3>
       <table className="w-full font-mono text-xs">
         <thead>
           <tr className="text-text-t4 border-b border-border">
-            <th className="text-left py-1 pr-2">Pair</th>
-            <th className="text-right py-1 pr-2">Trades</th>
-            <th className="text-right py-1 pr-2">WR%</th>
-            <th className="text-right py-1 pr-2">Avg $</th>
-            <th className="text-right py-1">Total</th>
+            <th className="text-left py-1 pr-2">{t("pnl.pairBreakdown.colPair")}</th>
+            <th className="text-right py-1 pr-2">{t("pnl.pairBreakdown.colTrades")}</th>
+            <th className="text-right py-1 pr-2">{t("pnl.pairBreakdown.colWR")}</th>
+            <th className="text-right py-1 pr-2">{t("pnl.pairBreakdown.colAvgPnl")}</th>
+            <th className="text-right py-1">{t("pnl.pairBreakdown.colTotal")}</th>
           </tr>
         </thead>
         <tbody>

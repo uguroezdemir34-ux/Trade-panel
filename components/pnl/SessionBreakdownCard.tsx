@@ -15,6 +15,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -44,6 +45,7 @@ function pct(n: number) {
 }
 
 export function SessionBreakdownCard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const rows = useMemo(() => {
     const map = Object.fromEntries(
       SESSIONS.map((s) => [s.key, { wins: 0, total: 0, pnlUsd: 0 }]),
@@ -75,15 +77,15 @@ export function SessionBreakdownCard({ trades }: Props): React.ReactElement | nu
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 mb-3 font-mono text-2xs tracking-widest uppercase">
-        🕐 Session Breakdown
+        🕐 {t("pnl.sessionBreakdown.title")}
       </h3>
 
       {/* Column headers */}
       <div className="mb-1 grid grid-cols-[1fr_auto_auto_auto] gap-x-3 text-right">
         <span />
-        <span className="text-text-t4 font-mono text-2xs w-12">WR</span>
-        <span className="text-text-t4 font-mono text-2xs w-16">P&L</span>
-        <span className="text-text-t4 font-mono text-2xs w-6">N</span>
+        <span className="text-text-t4 font-mono text-2xs w-12">{t("pnl.sessionBreakdown.colWR")}</span>
+        <span className="text-text-t4 font-mono text-2xs w-16">{t("pnl.sessionBreakdown.colPnl")}</span>
+        <span className="text-text-t4 font-mono text-2xs w-6">{t("pnl.sessionBreakdown.colN")}</span>
       </div>
 
       <div className="flex flex-col gap-2.5">

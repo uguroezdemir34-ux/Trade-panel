@@ -11,6 +11,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -26,6 +27,7 @@ const BUCKETS = [
 ];
 
 export function EntryQualityChart({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const data = useMemo(() => {
     const withScore = trades.filter((t) => typeof t.score === "number");
     if (withScore.length < 5) return null;
@@ -55,7 +57,7 @@ export function EntryQualityChart({ trades }: Props): React.ReactElement | null 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase mb-3">
-        🎯 Entry Quality by Score
+        🎯 {t("pnl.entryQuality.title")}
       </h3>
 
       <div className="flex flex-col gap-2">
@@ -105,8 +107,8 @@ export function EntryQualityChart({ trades }: Props): React.ReactElement | null 
       </div>
 
       <div className="mt-2 flex gap-4 text-text-t4 font-mono text-2xs">
-        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 bg-green-500/60 rounded-sm" />Wins</span>
-        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 bg-red-500/60 rounded-sm" />Losses</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 bg-green-500/60 rounded-sm" />{t("pnl.entryQuality.wins")}</span>
+        <span className="flex items-center gap-1"><span className="inline-block w-2 h-2 bg-red-500/60 rounded-sm" />{t("pnl.entryQuality.losses")}</span>
       </div>
     </div>
   );

@@ -9,6 +9,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { TradeRecord } from "@/lib/pnl/types";
 
@@ -26,6 +27,7 @@ interface PairEv {
 }
 
 export function PairEvLeaderboard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const rows = useMemo<PairEv[]>(() => {
     const result: PairEv[] = [];
 
@@ -57,7 +59,7 @@ export function PairEvLeaderboard({ trades }: Props): React.ReactElement | null 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase mb-3">
-        📊 Pair EV Leaderboard
+        📊 {t("pnl.pairEv.title")}
       </h3>
 
       <div className="flex flex-col gap-1.5">
@@ -110,8 +112,8 @@ export function PairEvLeaderboard({ trades }: Props): React.ReactElement | null 
       </div>
 
       <div className="mt-2 flex justify-end gap-4">
-        <span className="text-text-t4 font-mono text-2xs">WR%</span>
-        <span className="text-text-t4 font-mono text-2xs">Trades</span>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.pairEv.colWR")}</span>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.pairEv.colTrades")}</span>
       </div>
     </div>
   );

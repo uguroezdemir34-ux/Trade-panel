@@ -16,6 +16,7 @@
  */
 
 import { useState, useEffect } from "react";
+import { useT } from "@/lib/i18n/context";
 
 interface Session {
   name: string;
@@ -58,6 +59,7 @@ function utcTimeStr(): string {
 }
 
 export function MarketSessionsCard(): React.ReactElement {
+  const t = useT();
   const [utcHour, setUtcHour] = useState(() => getUtcHour());
   const [utcStr, setUtcStr] = useState(() => utcTimeStr());
 
@@ -77,7 +79,7 @@ export function MarketSessionsCard(): React.ReactElement {
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          🕐 Market Sessions
+          🕐 {t("piyasa.marketSessions.title")}
         </h3>
         <span className="text-text-t4 font-mono text-2xs tabular-nums">{utcStr}</span>
       </div>
@@ -85,10 +87,10 @@ export function MarketSessionsCard(): React.ReactElement {
       {overlapCount >= 2 && (
         <div className="mb-2 flex items-center gap-1.5 rounded bg-brand/10 border border-brand/20 px-2 py-1">
           <span className="text-brand font-mono text-2xs font-semibold">
-            ⚡ Session Overlap
+            ⚡ {t("piyasa.marketSessions.overlap")}
           </span>
           <span className="text-text-t4 font-mono text-2xs">
-            — higher liquidity &amp; volatility
+            — {t("piyasa.marketSessions.overlapDesc")}
           </span>
         </div>
       )}
@@ -127,12 +129,12 @@ export function MarketSessionsCard(): React.ReactElement {
                     border: `1px solid ${active ? `${session.color}40` : "var(--color-border)"}`,
                   }}
                 >
-                  {active ? "OPEN" : "CLOSED"}
+                  {active ? t("piyasa.marketSessions.open") : t("piyasa.marketSessions.closed")}
                 </span>
               </div>
               {/* Line 2: cities + timing */}
               <div className="pl-3.5 text-text-t4 font-mono text-2xs">
-                {session.cities} · {active ? `closes in ${until}` : `opens in ${until}`}
+                {session.cities} · {active ? `${t("piyasa.marketSessions.closesIn")} ${until}` : `${t("piyasa.marketSessions.opensIn")} ${until}`}
               </div>
               {/* Timeline bar */}
               <div className="relative h-1.5 w-full rounded-full bg-border/30 overflow-hidden">

@@ -10,6 +10,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -26,6 +27,7 @@ const BUCKETS = [
 ];
 
 export function RMultipleChart({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const data = useMemo(() => {
     const withR = trades.filter((t) => typeof t.rMultiple === "number");
     if (withR.length < 5) return null;
@@ -58,14 +60,14 @@ export function RMultipleChart({ trades }: Props): React.ReactElement | null {
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          📉 R-Multiple Distribution
+          📉 {t("pnl.rMultipleChart.title")}
         </h3>
         <div className="flex items-center gap-2 font-mono text-xs">
-          <span className="text-text-t4">Avg R:</span>
+          <span className="text-text-t4">{t("pnl.rMultipleChart.avgR")}</span>
           <span className={avgR >= 0 ? "text-green-400 font-semibold" : "text-red-400 font-semibold"}>
             {avgR >= 0 ? "+" : ""}{avgR.toFixed(2)}R
           </span>
-          <span className="text-text-t4">{total} trades</span>
+          <span className="text-text-t4">{total} {t("pnl.rMultipleChart.trades")}</span>
         </div>
       </div>
 

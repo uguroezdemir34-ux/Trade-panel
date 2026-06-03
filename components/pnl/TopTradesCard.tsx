@@ -5,6 +5,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export function TopTradesCard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const { winners, losers } = useMemo(() => {
     const sorted = [...trades].sort((a, b) => b.pnlUsd - a.pnlUsd);
     return {
@@ -28,7 +30,7 @@ export function TopTradesCard({ trades }: Props): React.ReactElement | null {
       {winners.length > 0 && (
         <div className="border border-green-500/20 bg-green-500/5 rounded-lg p-3">
           <h3 className="text-green-400 font-mono text-2xs tracking-widest uppercase mb-2">
-            🏆 Best Trades
+            🏆 {t("pnl.topTrades.winners")}
           </h3>
           <div className="flex flex-col gap-1.5">
             {winners.map((t, i) => (
@@ -42,7 +44,7 @@ export function TopTradesCard({ trades }: Props): React.ReactElement | null {
       {losers.length > 0 && (
         <div className="border border-red-500/20 bg-red-500/5 rounded-lg p-3">
           <h3 className="text-red-400 font-mono text-2xs tracking-widest uppercase mb-2">
-            💀 Worst Trades
+            💀 {t("pnl.topTrades.losers")}
           </h3>
           <div className="flex flex-col gap-1.5">
             {losers.map((t, i) => (

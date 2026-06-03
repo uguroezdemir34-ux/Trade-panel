@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import type { PriceAlarm } from "@/lib/store/priceAlarmStore";
 import { useMarketStore } from "@/lib/store/marketStore";
+import { useT } from "@/lib/i18n/context";
 
 interface Toast {
   alarm: PriceAlarm;
@@ -65,6 +66,7 @@ function AlarmToast({
   currentPrice: number | null;
   onDismiss: () => void;
 }) {
+  const t = useT();
   useEffect(() => {
     const id = setTimeout(onDismiss, 5000);
     return () => clearTimeout(id);
@@ -84,17 +86,17 @@ function AlarmToast({
               {alarm.pair}/USDT
             </span>
             <span className="text-amber-400/70 font-mono text-2xs">
-              {alarm.condition === "above" ? "▲ ABOVE" : "▼ BELOW"}
+              {alarm.condition === "above" ? `▲ ${t("karar.alarmToastAbove")}` : `▼ ${t("karar.alarmToastBelow")}`}
             </span>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-text-t4 font-mono text-2xs">Target</span>
+            <span className="text-text-t4 font-mono text-2xs">{t("karar.alarmToastTarget")}</span>
             <span className="text-amber-300 font-mono text-xs tabular-nums font-semibold">
               {alarm.targetPrice.toLocaleString("en-US", { maximumFractionDigits: 6 })}
             </span>
             {currentPrice !== null && (
               <>
-                <span className="text-text-t4 font-mono text-2xs">Now</span>
+                <span className="text-text-t4 font-mono text-2xs">{t("karar.alarmToastNow")}</span>
                 <span className="text-text-t3 font-mono text-xs tabular-nums">
                   {currentPrice.toLocaleString("en-US", { maximumFractionDigits: 6 })}
                 </span>

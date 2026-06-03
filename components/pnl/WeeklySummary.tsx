@@ -11,6 +11,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { WeeklyAggregate } from "@/lib/pnl/weekly";
 
 interface Props {
@@ -21,6 +22,7 @@ const BAR_GAP = 4;
 const MIN_BAR_H = 2; // işlem olan haftalar için minimum bar yüksekliği
 
 export function WeeklySummary({ weeks }: Props): React.ReactElement {
+  const t = useT();
   const hasData = weeks.some((w) => w.tradeCount > 0);
 
   const { bars, totalPnl } = useMemo(() => {
@@ -55,7 +57,7 @@ export function WeeklySummary({ weeks }: Props): React.ReactElement {
       {/* Header */}
       <div className="mb-3 flex items-center justify-between">
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          Weekly Performance
+          {t("pnl.weeklySummary.title")}
         </span>
         {hasData && (
           <span
@@ -70,7 +72,7 @@ export function WeeklySummary({ weeks }: Props): React.ReactElement {
       {!hasData ? (
         <div className="flex h-[88px] items-center justify-center">
           <span className="text-text-t4 font-mono text-2xs tracking-wider">
-            No weekly data
+            {t("pnl.weeklySummary.noData")}
           </span>
         </div>
       ) : (

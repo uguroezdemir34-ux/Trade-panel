@@ -14,8 +14,10 @@ import { useMarketStore } from "@/lib/store/marketStore";
 import { PAIRS } from "@/lib/constants/pairs";
 import { atr } from "@/lib/indicators/atr";
 import { toIndicatorCandle } from "@/lib/okx/candles";
+import { useT } from "@/lib/i18n/context";
 
 export function VolatilityRankCard(): React.ReactElement | null {
+  const t = useT();
   const allCandles = useCandleStore((s) => s.candles);
   const prices = useMarketStore((s) => s.prices);
 
@@ -48,7 +50,7 @@ export function VolatilityRankCard(): React.ReactElement | null {
     <div className="border-border bg-bg-card rounded-lg border p-3">
       <div className="mb-2">
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          📊 Volatility Rank (ATR%)
+          📊 {t("piyasa.volatilityRank.title")}
         </span>
       </div>
       <div className="flex flex-col gap-1">
@@ -75,7 +77,7 @@ export function VolatilityRankCard(): React.ReactElement | null {
           );
         })}
       </div>
-      <p className="text-text-t4 font-mono text-2xs mt-2">ATR(14) / price · 1h candles</p>
+      <p className="text-text-t4 font-mono text-2xs mt-2">{t("piyasa.volatilityRank.desc")}</p>
     </div>
   );
 }

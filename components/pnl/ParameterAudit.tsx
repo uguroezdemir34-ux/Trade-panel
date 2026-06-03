@@ -10,6 +10,7 @@
  *  4. Macro Context — F&G zonu, counter-trend etkisi
  */
 
+import { useT } from "@/lib/i18n/context";
 import type { CalibrationStats } from "@/lib/pnl/calibration";
 
 interface Props {
@@ -80,23 +81,24 @@ function WinBar({ rate, count }: { rate: number; count: number }) {
 // ── Score Bucket Table ────────────────────────────────────────────────────────
 
 function ScoreBucketSection({ buckets }: { buckets: CalibrationStats["scoreBuckets"] }) {
+  const t = useT();
   const active = buckets.filter((b) => b.tradeCount > 0);
   const maxCount = Math.max(...buckets.map((b) => b.tradeCount), 1);
 
   return (
     <div className="bg-bg-card border-border rounded-lg border p-3">
       <div className="mb-3 flex items-center justify-between">
-        <SectionTitle>Score Bucket Analysis</SectionTitle>
-        <span className="text-text-t4 font-mono text-2xs">win rate per range</span>
+        <SectionTitle>{t("pnl.parameterAudit.scoreBuckets")}</SectionTitle>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.parameterAudit.scoreBucketsDesc")}</span>
       </div>
 
       {active.length === 0 ? (
-        <EmptyNote label="No scored trades yet" />
+        <EmptyNote label={t("pnl.parameterAudit.noScoredTrades")} />
       ) : (
         <div className="flex flex-col gap-1.5">
           {/* Header */}
           <div className="grid grid-cols-[56px_1fr_52px_52px_52px] gap-x-2 pb-1">
-            {["Range", "Trades", "Win%", "Avg $", "Avg R"].map((h) => (
+            {[t("pnl.parameterAudit.colRange"), t("pnl.parameterAudit.colTrades"), t("pnl.parameterAudit.colWR"), t("pnl.parameterAudit.colAvgUsd"), t("pnl.parameterAudit.colAvgR")].map((h) => (
               <span key={h} className="text-text-t4 font-mono text-[9px] uppercase tracking-wider">
                 {h}
               </span>
@@ -178,6 +180,7 @@ function SegmentCard({
   title: string;
   segments: CalibrationStats["directionStats"] | CalibrationStats["pairStats"];
 }) {
+  const t = useT();
   return (
     <div className="bg-bg-card border-border rounded-lg border p-3">
       <div className="mb-2.5">
@@ -185,7 +188,7 @@ function SegmentCard({
       </div>
 
       {segments.length === 0 ? (
-        <EmptyNote label="No data" />
+        <EmptyNote label={t("pnl.parameterAudit.noData")} />
       ) : (
         <div className="flex flex-col gap-2">
           {segments.map((s) => (
@@ -195,7 +198,7 @@ function SegmentCard({
                   {s.label}
                 </span>
                 <span className="text-text-t3 font-mono text-[9px]">
-                  {s.tradeCount} trades
+                  {s.tradeCount} {t("pnl.parameterAudit.colTrades")}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -226,16 +229,17 @@ const EXIT_COLORS: Record<string, string> = {
 };
 
 function ExitDistSection({ buckets }: { buckets: CalibrationStats["exitBuckets"] }) {
+  const t = useT();
   const maxCount = Math.max(...buckets.map((b) => b.count), 1);
 
   return (
     <div className="bg-bg-card border-border rounded-lg border p-3">
       <div className="mb-3">
-        <SectionTitle>Exit Distribution</SectionTitle>
+        <SectionTitle>{t("pnl.parameterAudit.exitDist")}</SectionTitle>
       </div>
 
       {buckets.length === 0 ? (
-        <EmptyNote label="No exit data" />
+        <EmptyNote label={t("pnl.parameterAudit.noData")} />
       ) : (
         <div className="flex flex-col gap-2">
           {buckets.map((b) => (
@@ -293,20 +297,21 @@ function MacroSection({
   CalibrationStats,
   "fgZones" | "counterTrendStats" | "avgRMultiple" | "positiveRCount" | "positiveRPct" | "totalTrades"
 >) {
+  const t = useT();
   return (
     <div className="bg-bg-card border-border rounded-lg border p-3">
       <div className="mb-3">
-        <SectionTitle>Macro Context & R-Multiple</SectionTitle>
+        <SectionTitle>{t("pnl.parameterAudit.macroContext")}</SectionTitle>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         {/* F&G Zones */}
         <div>
           <span className="text-text-t3 mb-1.5 block font-mono text-[9px] uppercase tracking-wider">
-            Fear &amp; Greed Zone
+            {t("pnl.parameterAudit.fgZone")}
           </span>
           {fgZones.length === 0 ? (
-            <span className="text-text-t4 font-mono text-2xs">No F&G data</span>
+            <span className="text-text-t4 font-mono text-2xs">{t("pnl.parameterAudit.noFgData")}</span>
           ) : (
             <div className="flex flex-col gap-1">
               {fgZones.map((z) => (
@@ -332,10 +337,10 @@ function MacroSection({
         {/* Counter-Trend */}
         <div>
           <span className="text-text-t3 mb-1.5 block font-mono text-[9px] uppercase tracking-wider">
-            Trend Alignment
+            {t("pnl.parameterAudit.trendAlignment")}
           </span>
           {counterTrendStats.length === 0 ? (
-            <span className="text-text-t4 font-mono text-2xs">No data</span>
+            <span className="text-text-t4 font-mono text-2xs">{t("pnl.parameterAudit.noData")}</span>
           ) : (
             <div className="flex flex-col gap-2">
               {counterTrendStats.map((s) => (
@@ -356,14 +361,14 @@ function MacroSection({
         {/* R-Multiple */}
         <div>
           <span className="text-text-t3 mb-1.5 block font-mono text-[9px] uppercase tracking-wider">
-            R-Multiple
+            {t("pnl.parameterAudit.rMultiple")}
           </span>
           {avgRMultiple == null ? (
-            <span className="text-text-t4 font-mono text-2xs">No R data</span>
+            <span className="text-text-t4 font-mono text-2xs">{t("pnl.parameterAudit.noRData")}</span>
           ) : (
             <div className="flex flex-col gap-1">
               <div className="flex items-center justify-between">
-                <span className="text-text-t3 font-mono text-[9px]">Avg R</span>
+                <span className="text-text-t3 font-mono text-[9px]">{t("pnl.parameterAudit.colAvgR")}</span>
                 <span
                   className="font-mono text-xs font-bold tabular-nums"
                   style={{ color: pnlColor(avgRMultiple) }}
@@ -372,7 +377,7 @@ function MacroSection({
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-text-t3 font-mono text-[9px]">+R trades</span>
+                <span className="text-text-t3 font-mono text-[9px]">{t("pnl.parameterAudit.colTrades")}</span>
                 <span className="text-text-t2 font-mono text-xs tabular-nums">
                   {positiveRCount} / {totalTrades} ({pct(positiveRPct)})
                 </span>
@@ -388,15 +393,16 @@ function MacroSection({
 // ── Main Component ────────────────────────────────────────────────────────────
 
 export function ParameterAudit({ stats }: Props): React.ReactElement {
+  const t = useT();
   return (
     <div className="flex flex-col gap-3">
       {/* Header row */}
       <div className="flex items-center justify-between">
         <span className="text-text-t1 font-mono text-sm font-semibold tracking-wide">
-          Parameter Audit
+          {t("pnl.parameterAudit.title")}
         </span>
         <span className="text-text-t4 font-mono text-2xs">
-          {stats.totalTrades} closed trade{stats.totalTrades !== 1 ? "s" : ""} analyzed
+          {t("pnl.parameterAudit.analyzed").replace("{n}", String(stats.totalTrades))}
         </span>
       </div>
 
@@ -405,8 +411,8 @@ export function ParameterAudit({ stats }: Props): React.ReactElement {
 
       {/* Direction + Pair — side by side */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <SegmentCard title="Direction Breakdown" segments={stats.directionStats} />
-        <SegmentCard title="Pair Breakdown" segments={stats.pairStats} />
+        <SegmentCard title={t("pnl.parameterAudit.dirBreakdown")} segments={stats.directionStats} />
+        <SegmentCard title={t("pnl.pairBreakdown.title")} segments={stats.pairStats} />
       </div>
 
       {/* Exit distribution */}

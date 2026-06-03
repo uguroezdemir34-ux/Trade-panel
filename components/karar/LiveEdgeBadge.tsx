@@ -12,6 +12,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import type { Pair } from "@/lib/constants/pairs";
 
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export function LiveEdgeBadge({ pair }: Props): React.ReactElement | null {
+  const t = useT();
   const trades = useTradesStore((s) => s.trades);
 
   const edge = useMemo(() => {
@@ -76,7 +78,7 @@ export function LiveEdgeBadge({ pair }: Props): React.ReactElement | null {
     >
       <div className="flex flex-col gap-0.5 flex-1">
         <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">
-          Live Edge ({n} trades)
+          {t("karar.liveEdgeTitle").replace("{n}", String(n))}
         </span>
         <div className="flex items-baseline gap-3 flex-wrap">
           <span className="font-mono text-sm font-bold tabular-nums" style={{ color }}>

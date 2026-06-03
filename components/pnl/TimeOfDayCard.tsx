@@ -8,6 +8,7 @@
  */
 
 import { useMemo } from "react";
+import { useT } from "@/lib/i18n/context";
 import type { TradeRecord } from "@/lib/pnl/types";
 
 interface Props {
@@ -24,6 +25,7 @@ const SESSIONS = [
 ];
 
 export function TimeOfDayCard({ trades }: Props): React.ReactElement | null {
+  const t = useT();
   const data = useMemo(() => {
     if (trades.length < 5) return null;
 
@@ -54,7 +56,7 @@ export function TimeOfDayCard({ trades }: Props): React.ReactElement | null {
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase mb-3">
-        ⏰ Time of Day
+        ⏰ {t("pnl.timeOfDay.title")}
       </h3>
 
       <div className="flex flex-col gap-2">
@@ -104,8 +106,8 @@ export function TimeOfDayCard({ trades }: Props): React.ReactElement | null {
       </div>
 
       <div className="mt-2 flex justify-end gap-4">
-        <span className="text-text-t4 font-mono text-2xs">WR%</span>
-        <span className="text-text-t4 font-mono text-2xs">Trades</span>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.timeOfDay.colWR")}</span>
+        <span className="text-text-t4 font-mono text-2xs">{t("pnl.timeOfDay.colTrades")}</span>
       </div>
     </div>
   );
