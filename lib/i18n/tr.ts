@@ -29,6 +29,8 @@ export const tr: Dictionary = {
     backtestShort: "BT",
     settings: "Ayarlar",
     settingsShort: "Ayr.",
+    analiz: "Analiz",
+    analyzShort: "Analiz",
     ariaLabel: "Ana navigasyon",
   },
 

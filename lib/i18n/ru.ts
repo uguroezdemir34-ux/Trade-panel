@@ -29,6 +29,8 @@ export const ru: Dictionary = {
     backtestShort: "BT",
     settings: "Настройки",
     settingsShort: "Наст.",
+    analiz: "More",
+    analyzShort: "More",
     ariaLabel: "Главная навигация",
   },
 

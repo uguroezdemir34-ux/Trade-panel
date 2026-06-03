@@ -29,6 +29,8 @@ export const ar: Dictionary = {
     backtestShort: "BT",
     settings: "الإعدادات",
     settingsShort: "إعداد",
+    analiz: "More",
+    analyzShort: "More",
     ariaLabel: "التنقل الرئيسي",
   },
 

@@ -21,11 +21,12 @@ import { loadFromStorage, saveToStorage } from "./persist";
 // TIP TANIMLARI
 // ═══════════════════════════════════════════════════════════════════
 
-/** v2 panelin tab kimlikleri (8 sekme) */
+/** v2 panelin tab kimlikleri (3 ana sekme + eski ID'ler backward compat) */
 export const TAB_IDS = [
   "karar",
-  "pozisyon",
   "grafik",
+  "analiz",
+  "pozisyon",
   "piyasa",
   "risk",
   "pnl",

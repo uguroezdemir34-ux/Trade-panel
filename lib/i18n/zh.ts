@@ -29,6 +29,8 @@ export const zh: Dictionary = {
     backtestShort: "BT",
     settings: "设置",
     settingsShort: "设置",
+    analiz: "More",
+    analyzShort: "More",
     ariaLabel: "主导航",
   },
 

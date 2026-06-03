@@ -39,7 +39,7 @@ export function BottomNav(): React.ReactElement {
       }}
       aria-label={t("nav.ariaLabel")}
     >
-      <ul className="mx-auto grid max-w-2xl grid-cols-8 px-1">
+      <ul className="mx-auto grid max-w-2xl grid-cols-3 px-1">
         {TABS.map((tab) => {
           const active = pathname === tab.path;
           return (
@@ -65,7 +65,7 @@ export function BottomNav(): React.ReactElement {
               >
                 <span className="relative text-base leading-none" aria-hidden>
                   {tab.icon}
-                  {tab.id === "ayarlar" && triggeredAlarmCount > 0 && (
+                  {tab.id === "analiz" && triggeredAlarmCount > 0 && (
                     <span className="absolute -top-1 -right-1.5 bg-amber-400 text-black font-mono font-bold rounded-full leading-none flex items-center justify-center" style={{ fontSize: 7, minWidth: 12, height: 12, padding: "0 2px" }}>
                       {triggeredAlarmCount > 9 ? "9+" : triggeredAlarmCount}
                     </span>

@@ -34,13 +34,6 @@ export const TABS: readonly TabConfig[] = [
     icon: "🎯",
   },
   {
-    id: "pozisyon",
-    path: "/pozisyon",
-    labelKey: "nav.position",
-    shortKey: "nav.positionShort",
-    icon: "💼",
-  },
-  {
     id: "grafik",
     path: "/grafik",
     labelKey: "nav.chart",
@@ -48,39 +41,11 @@ export const TABS: readonly TabConfig[] = [
     icon: "📈",
   },
   {
-    id: "piyasa",
-    path: "/piyasa",
-    labelKey: "nav.market",
-    shortKey: "nav.market",
-    icon: "🌐",
-  },
-  {
-    id: "risk",
-    path: "/risk",
-    labelKey: "nav.risk",
-    shortKey: "nav.risk",
-    icon: "🛡️",
-  },
-  {
-    id: "pnl",
-    path: "/pnl",
-    labelKey: "nav.pnl",
-    shortKey: "nav.pnl",
-    icon: "💰",
-  },
-  {
-    id: "backtest",
-    path: "/backtest",
-    labelKey: "nav.backtest",
-    shortKey: "nav.backtestShort",
-    icon: "🔬",
-  },
-  {
-    id: "ayarlar",
-    path: "/ayarlar",
-    labelKey: "nav.settings",
-    shortKey: "nav.settingsShort",
-    icon: "⚙️",
+    id: "analiz",
+    path: "/analiz",
+    labelKey: "nav.analiz",
+    shortKey: "nav.analyzShort",
+    icon: "📊",
   },
 ] as const;
 
