@@ -160,16 +160,22 @@ useLiqFeed()             // OKX+Binance+Bybit liq feed → liqFeedStore
 | `dbbad53` | Parameter Audit / Score Calibration (PnL sayfası) |
 | `8ecc454` | Equity Curve + Weekly Summary |
 | `e3e35b3` | Telegram sinyal firehose |
+| `b03a286` | Risk sayfası: drawdown/session cards + scorer weight editor |
+| `6ec2e19` | PnL sayfası: tarih aralığı + parite filtresi |
+| `f8c782d` | Clerk auth — çok kullanıcılı kimlik doğrulama + abonelik katmanı |
+| `d3a72e5` | localStorage kullanıcı bazlı — ug52_ → ug52_{userId}_ migrasyonu |
+| `ef6ef45` | SubscriptionGate — backtest/pnl/telegramSignals/scorerWeights feature gate |
+| `85737be` | Stripe ödeme UI — pricing sayfası, checkout API, webhook, PlanStatusCard |
+| `3d1557e` | fix: upgrade sayfası useSearchParams Suspense boundary |
 
 ---
 
 ## 9. Bilinen Açık Hatalar (Düzeltilmemiş)
 
-**Durum (2026-06-02 doğrulandı):** Filtreli TS kontrolü sıfır hata veriyor.
-Önceki session'larda listelenen 8 hata tamamen düzeltilmiş.
+**Durum (2026-06-04 doğrulandı):** Filtreli TS kontrolü sıfır hata veriyor.
 
-Kalan `npx tsc --noEmit` hataları (4324 adet) **yalnızca** node_modules
-eksikliğinden kaynaklanıyor (react, zustand, next yüklü değil).
+Kalan `npx tsc --noEmit` hataları **yalnızca** node_modules eksikliğinden
+kaynaklanıyor (react, zustand, next yüklü değil).
 Runtime'da Next.js bundler çözer — gerçek mantık hatası yok.
 
 > Yeni gerçek hata tespit edilirse buraya ekle, node_modules hataları ekleme.
@@ -247,14 +253,27 @@ function Toggle({ active, onClick, children }: React.PropsWithChildren<{
 
 ## 13. Öncelikli Sıradaki İşler
 
-**Durum (2026-06-02):** Önceki tüm roadmap öğeleri tamamlandı veya önceden mevcuttu.
-Yeni geliştirme fırsatları (öncelik sırasına göre):
+**Durum (2026-06-04):** Section 13 roadmap + 4 auth eksikliği tamamlandı.
 
-1. **WebSocket bağlantı sağlığı göstergesi** — AppShell'de WS durumu (OKX/Binance/Bybit) yeşil/kırmızı göster
-2. **Fiyat alarm bildirimleri UI** — Karar sayfasında alarm ekleme/listeleme kartı
-3. **Risk sayfası geliştirme** — Drawdown protokolü detayları, session risk metrikleri
-4. **Karar motoru ağırlık düzenleyici** — Ayarlar sayfasında scorer ağırlıklarını ayarlama
-5. **Trade geçmişi filtreleme** — PnL sayfasında tarih aralığı + pair filtresi
+Tamamlanan (bu session):
+- ✅ WS bağlantı sağlığı — `ConnectionBadge` (OKX/BN) + `LiqFeedBadge` (OKX/BIN/BBT) header'da
+- ✅ Fiyat alarm UI — `QuickAlarm` (karar accordion) + `PriceAlarmsCard` (ayarlar)
+- ✅ Risk sayfası — drawdown protokolü + session metrikleri (`b03a286`)
+- ✅ Scorer ağırlık düzenleyici — `ScorerWeightsCard` ayarlarda, Pro gate'li
+- ✅ Trade geçmişi filtreleme — PnL'de 7d/30d/90d/all + parite filtresi
+- ✅ Clerk auth + localStorage migration
+- ✅ SubscriptionGate — backtest/pnl/telegramSignals/scorerWeights
+- ✅ Stripe payment UI — `/upgrade` sayfası, checkout API, webhook
+
+Kullanıcı aksiyonu bekleyen:
+- ⏳ Clerk env vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` → Vercel
+- ⏳ Stripe env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` → Vercel
+
+Sonraki geliştirme fırsatları:
+1. **Pozisyon sayfası** — açık pozisyonlar için daha detaylı P&L + TP/SL yönetimi
+2. **Karar sayfası keyboard shortcuts** — tam kısayol listesi (? tuşu ile modal)
+3. **Bildirim geçmişi** — GO alert'lerinin log sayfası (GoSignalLog genişletme)
+4. **Portfolio sayfası** — tamamlanmamış placeholder'ı gerçek içerikle doldur
 
 ---
 
