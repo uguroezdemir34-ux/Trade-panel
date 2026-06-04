@@ -29,6 +29,7 @@ export const PLAN_FEATURES = {
     telegramSignals: false,
     scorerWeights: false,
     riskAdvanced: false,
+    botMode: false,
     maxPairs: 3,
   },
   pro: {
@@ -40,6 +41,7 @@ export const PLAN_FEATURES = {
     telegramSignals: true,
     scorerWeights: true,
     riskAdvanced: true,
+    botMode: true,
     maxPairs: 15,
   },
   enterprise: {
@@ -51,6 +53,7 @@ export const PLAN_FEATURES = {
     telegramSignals: true,
     scorerWeights: true,
     riskAdvanced: true,
+    botMode: true,
     maxPairs: -1,
   },
 } as const satisfies Record<PlanTier, Record<string, boolean | number>>;

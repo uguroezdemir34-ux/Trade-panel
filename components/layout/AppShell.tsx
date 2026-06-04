@@ -48,6 +48,7 @@ import { useScoreMomentumAlerts } from "@/lib/hooks/useScoreMomentumAlerts";
 import { useConsecutiveLossAlert } from "@/lib/hooks/useConsecutiveLossAlert";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
+import { useBotMode } from "@/lib/hooks/useBotMode";
 import { useAuth } from "@clerk/nextjs";
 import { setCurrentUserId } from "@/lib/auth/scope";
 import { migrateStorageForUser } from "@/lib/auth/migrate";
@@ -116,6 +117,8 @@ export function AppShell({
   useConsecutiveLossAlert();
   // Gerçek OKX liquidation-orders feed — liq haritası için (OHLCV tahmininin yerini alır)
   useLiqFeed();
+  // Bot modu — GO sinyalinde otomatik emir açar (Pro özelliği, ayarlardan açılır)
+  useBotMode();
 
   useEffect(() => {
     if (!authLoaded) return;
