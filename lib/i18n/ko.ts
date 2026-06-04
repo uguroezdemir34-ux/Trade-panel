@@ -791,6 +791,7 @@ export const ko: Dictionary = {
     hline: "H-LINE",
     priceMode: "PRICE",
     clearLines: "Clear lines",
+    flow: "FLOW",
     legend: {
       candleUp: "상승 캔들",
       candleDown: "하락 캔들",

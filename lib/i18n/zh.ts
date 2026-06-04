@@ -791,6 +791,7 @@ export const zh: Dictionary = {
     hline: "H-LINE",
     priceMode: "PRICE",
     clearLines: "Clear lines",
+    flow: "FLOW",
     legend: {
       candleUp: "阳线",
       candleDown: "阴线",

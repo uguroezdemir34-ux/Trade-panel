@@ -987,6 +987,7 @@ export const en: Dictionary = {
     hline: "H-LINE",
     priceMode: "PRICE",
     clearLines: "Clear lines",
+    flow: "FLOW",
     legend: {
       candleUp: "Up candle",
       candleDown: "Down candle",

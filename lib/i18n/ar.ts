@@ -791,6 +791,7 @@ export const ar: Dictionary = {
     hline: "H-LINE",
     priceMode: "PRICE",
     clearLines: "Clear lines",
+    flow: "FLOW",
     legend: {
       candleUp: "شمعة صاعدة",
       candleDown: "شمعة هابطة",

@@ -791,6 +791,7 @@ export const ja: Dictionary = {
     hline: "H-LINE",
     priceMode: "PRICE",
     clearLines: "Clear lines",
+    flow: "FLOW",
     legend: {
       candleUp: "陽線",
       candleDown: "陰線",

@@ -24,6 +24,7 @@ interface Props {
   showVwap: boolean;
   showSr: boolean;
   showSplit: boolean;
+  showFlow: boolean;
   clickMode: ChartClickMode;
   hasDrawnLines: boolean;
   onPairChange: (p: Pair) => void;
@@ -39,6 +40,7 @@ interface Props {
   onToggleVwap: () => void;
   onToggleSr: () => void;
   onToggleSplit: () => void;
+  onToggleFlow: () => void;
   onSetClickMode: (mode: ChartClickMode) => void;
   onClearDrawnLines: () => void;
 }
@@ -59,6 +61,7 @@ export function ChartControls({
   showVwap,
   showSr,
   showSplit,
+  showFlow,
   clickMode,
   hasDrawnLines,
   onPairChange,
@@ -74,6 +77,7 @@ export function ChartControls({
   onToggleVwap,
   onToggleSr,
   onToggleSplit,
+  onToggleFlow,
   onSetClickMode,
   onClearDrawnLines,
 }: Props): React.ReactElement {
@@ -173,6 +177,11 @@ export function ChartControls({
           {/* Split view */}
           <Toggle active={showSplit} onClick={onToggleSplit} accent="#6366f1">
             {t("grafik.split")}
+          </Toggle>
+
+          {/* Order flow panel */}
+          <Toggle active={showFlow} onClick={onToggleFlow} accent="#8b5cf6">
+            {t("grafik.flow")}
           </Toggle>
 
           {/* Draw horizontal line */}

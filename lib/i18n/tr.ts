@@ -987,6 +987,7 @@ export const tr: Dictionary = {
     hline: "Y-ÇİZGİ",
     priceMode: "FİYAT",
     clearLines: "Çizgileri sil",
+    flow: "FLOW",
     legend: {
       candleUp: "Yükseliş mumu",
       candleDown: "Düşüş mumu",

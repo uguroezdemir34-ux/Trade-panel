@@ -8,6 +8,7 @@ import { useMarketStore } from "@/lib/store/marketStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { ChartControls, type ChartClickMode } from "@/components/grafik/ChartControls";
 import { ChartLegend } from "@/components/grafik/ChartLegend";
+import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
 import { emaSeries } from "@/lib/indicators/ema";
 import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
@@ -180,6 +181,7 @@ export default function GrafikPage() {
 
   // New tool state (not persisted — session only)
   const [showSplit, setShowSplit]       = useState(false);
+  const [showFlow, setShowFlow]         = useState(false);
   const [clickMode, setClickMode]       = useState<ChartClickMode>("none");
   const [drawnLines, setDrawnLines]     = useState<DrawnLine[]>([]);
   const [capturedPrice, setCapturedPrice] = useState<number | null>(null);
@@ -349,6 +351,8 @@ export default function GrafikPage() {
         onToggleVwap={() => setShowVwap((v) => !v)}
         onToggleSr={() => setShowSr((v) => !v)}
         onToggleSplit={() => setShowSplit((v) => !v)}
+        showFlow={showFlow}
+        onToggleFlow={() => setShowFlow((v) => !v)}
         onSetClickMode={handleSetClickMode}
         onClearDrawnLines={() => setDrawnLines([])}
       />
@@ -464,6 +468,9 @@ export default function GrafikPage() {
           </div>
         )}
       </div>
+
+      {/* Order Flow Panel */}
+      {showFlow && <OrderFlowPanel pair={pair} />}
 
       {/* Drawn lines list */}
       {drawnLines.length > 0 && (

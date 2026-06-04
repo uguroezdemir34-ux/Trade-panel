@@ -789,6 +789,7 @@ export const fr: Dictionary = {
     hline: "H-LINE",
     priceMode: "PRICE",
     clearLines: "Clear lines",
+    flow: "FLOW",
     legend: {
       candleUp: "Bougie haussière",
       candleDown: "Bougie baissière",

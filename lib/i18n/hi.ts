@@ -791,6 +791,7 @@ export const hi: Dictionary = {
     hline: "H-LINE",
     priceMode: "PRICE",
     clearLines: "Clear lines",
+    flow: "FLOW",
     legend: {
       candleUp: "बुलिश कैंडल",
       candleDown: "बेयरिश कैंडल",
