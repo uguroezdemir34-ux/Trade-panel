@@ -29,6 +29,7 @@ import { SessionBreakdownCard } from "@/components/pnl/SessionBreakdownCard";
 import { StreakCard } from "@/components/pnl/StreakCard";
 import { MonteCarloCard } from "@/components/pnl/MonteCarloCard";
 import { TradeJournalCard } from "@/components/pnl/TradeJournalCard";
+import { ReconcileCard } from "@/components/pnl/ReconcileCard";
 import { computePnlStats } from "@/lib/pnl/stats";
 import { computeDailyAggregates, fillMissingDays } from "@/lib/pnl/compute";
 import { computeEquityCurve } from "@/lib/pnl/equity";
@@ -221,6 +222,8 @@ function PnlPageInner() {
           </button>
         )}
       </div>
+
+      <ReconcileCard />
 
       <PnlSummaryRow trades={trades} />
 

@@ -1141,4 +1141,20 @@ export const tr: Dictionary = {
     avgNetPnl: "Ort. Net K/Z",
     avgNetPnlHint: "Komisyon sonrası",
   },
+
+  reconcile: {
+    title: "OKX UZLAŞTIRMA",
+    subtitle: "Yerel trade'leri OKX emir geçmişiyle eşleştir",
+    syncNow: "SENKRONIZE ET",
+    syncing: "SENKRONIZE EDİLİYOR…",
+    matched: "Eşleşen",
+    needsUpdate: "Güncelleme",
+    orphans: "Sahipsiz",
+    matchedOrders: "Eşleşen emirler",
+    orphanOrders: "Sadece OKX emirleri",
+    orphanHint: "Yerel kayıt olmayan emirler (manuel veya harici işlemler)",
+    applyUpdates: "{count} güncelleme uygula",
+    allClear: "Uyumsuzluk bulunamadı",
+    lastSync: "Son senkronizasyon",
+  },
 };

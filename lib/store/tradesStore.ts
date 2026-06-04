@@ -20,6 +20,7 @@ import type {
   CloseTradeInput,
   TradeStatus,
 } from "@/lib/trades/types";
+import type { ReconcileMatch } from "@/lib/reconcile/reconciler";
 import {
   createPendingTrade,
   confirmOpen,
@@ -129,6 +130,13 @@ interface TradesStoreState {
    * Called by AppShell after auth is loaded.
    */
   mergeFromDb: (dbTrades: TradeSnapshot[]) => void;
+
+  /**
+   * Apply reconciliation patches from OKX order history.
+   * For open trades matched to a closing order: marks them closed with OKX data.
+   * For closed trades with P&L delta > $0.01: updates pnlUsd.
+   */
+  patchFromReconcile: (patches: ReconcileMatch[]) => void;
 
   // Test/debug
   _reset: () => void;
@@ -289,6 +297,61 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
     saveToStorage(STORAGE_KEY, trimmedLive);
     saveArchive(mergedArchive, MAX_ARCHIVE_SIZE);
     set({ trades: trimmedLive, archivedTrades: mergedArchive });
+  },
+
+  patchFromReconcile: (patches) => {
+    if (patches.length === 0) return;
+    const current = get().trades;
+    let changed = false;
+
+    const next = current.map((t) => {
+      const patch = patches.find((p) => p.tradeId === t.id && p.needsUpdate);
+      if (!patch) return t;
+
+      changed = true;
+      const isOpen = t.status === "open" || t.status === "pending";
+
+      if (isOpen) {
+        const closedAt = patch.okxFilledAtMs || Date.now();
+        const holdingSec = Math.round((closedAt - t.openedAt) / 1000);
+        const pnlPct =
+          t.entryPrice > 0
+            ? ((patch.okxExitPrice - t.entryPrice) / t.entryPrice) *
+              (t.direction === "LONG" ? 1 : -1) *
+              100
+            : 0;
+        const rMultiple =
+          t.riskAmountUsd > 0
+            ? patch.okxPnlUsd / t.riskAmountUsd
+            : undefined;
+        return {
+          ...t,
+          orderId: t.orderId ?? patch.okxOrderId,
+          status: "closed" as const,
+          exit: {
+            closedAt,
+            exitPrice: patch.okxExitPrice,
+            reason: "manual" as const,
+            pnlUsd: patch.okxPnlUsd,
+            pnlPct,
+            holdingSec,
+            rMultiple,
+          },
+        };
+      }
+
+      // Closed trade — only update pnlUsd
+      if (!t.exit) return t;
+      return {
+        ...t,
+        exit: { ...t.exit, pnlUsd: patch.okxPnlUsd },
+      };
+    });
+
+    if (changed) {
+      saveToStorage(STORAGE_KEY, next);
+      set({ trades: next });
+    }
   },
 
   _reset: () => {
