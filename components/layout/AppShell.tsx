@@ -51,6 +51,7 @@ import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
 import { useAuth } from "@clerk/nextjs";
 import { setCurrentUserId } from "@/lib/auth/scope";
 import { migrateStorageForUser } from "@/lib/auth/migrate";
+import { fetchTradesFromServer, bulkSyncTradesToServer } from "@/lib/db/tradeSync";
 
 const SPLASH_DATE_KEY = "qx_splash_date";
 
@@ -77,6 +78,7 @@ export function AppShell({
   const rehydrateAccount = useAccountStore((s) => s.rehydrate);
   const rehydrateRisk = useRiskStore((s) => s.rehydrate);
   const rehydrateTrades = useTradesStore((s) => s.rehydrate);
+  const mergeTradesFromDb = useTradesStore((s) => s.mergeFromDb);
   const loadCredentials = useCredentialStore((s) => s.load);
   const { userId, isLoaded: authLoaded } = useAuth();
 
@@ -134,7 +136,28 @@ export function AppShell({
     if (!splashShownToday()) {
       setShowSplash(true);
     }
-  }, [authLoaded, userId, rehydrateSettings, rehydrateAccount, rehydrateRisk, rehydrateTrades, loadCredentials]);
+
+    // DB sync — only for logged-in users (guests skip)
+    if (userId) {
+      void (async () => {
+        const dbTrades = await fetchTradesFromServer();
+        if (dbTrades && dbTrades.length > 0) {
+          mergeTradesFromDb(dbTrades);
+        }
+        // One-time bulk sync: push any localStorage trades not yet in DB
+        // Use getState() to read current store after rehydration (avoids stale closure)
+        const storeState = useTradesStore.getState();
+        const localTrades = [
+          ...storeState.trades,
+          ...storeState.archivedTrades,
+        ].filter((t) => t.status === "closed");
+        if (localTrades.length > 0) {
+          void bulkSyncTradesToServer(localTrades);
+        }
+      })();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoaded, userId]);
 
   return (
     <div className="bg-bg text-text-t1 min-h-screen">

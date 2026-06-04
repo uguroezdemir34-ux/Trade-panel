@@ -123,6 +123,13 @@ interface TradesStoreState {
   // Persistence
   rehydrate: () => void;
 
+  /**
+   * Merge trades fetched from the server DB into local state.
+   * DB data wins on conflict (same id). Skips trades already in localStorage.
+   * Called by AppShell after auth is loaded.
+   */
+  mergeFromDb: (dbTrades: TradeSnapshot[]) => void;
+
   // Test/debug
   _reset: () => void;
 }
@@ -160,6 +167,13 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
     });
     saveToStorage(STORAGE_KEY, next);
     set({ trades: next });
+    // Fire-and-forget DB sync — non-blocking, silent on failure
+    const closed = next.find((t) => t.id === input.id);
+    if (closed?.status === "closed") {
+      void import("@/lib/db/tradeSync").then(({ syncTradeToServer }) =>
+        syncTradeToServer(closed),
+      );
+    }
   },
 
   checkTpSl: (pair, high, low, now) => {
@@ -225,6 +239,56 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
       tradesArraySchema,
     );
     set({ trades: loaded });
+  },
+
+  mergeFromDb: (dbTrades) => {
+    if (dbTrades.length === 0) return;
+    const current = get().trades;
+    const archive = get().archivedTrades;
+
+    // Build lookup by id for O(1) access
+    const localById = new Map(current.map((t) => [t.id, t]));
+    const archiveById = new Map(archive.map((t) => [t.id, t]));
+
+    let changed = false;
+    const incoming: TradeSnapshot[] = [];
+
+    for (const dbTrade of dbTrades) {
+      const localVersion = localById.get(dbTrade.id) ?? archiveById.get(dbTrade.id);
+      // DB wins: if not present locally, or DB has a closed version and local has open
+      if (!localVersion || (dbTrade.status === "closed" && localVersion.status !== "closed")) {
+        incoming.push(dbTrade);
+        changed = true;
+      }
+    }
+
+    if (!changed) return;
+
+    // Separate incoming into live (open/pending or recent closed) and archive candidates
+    const cutoff = Date.now() - 48 * 60 * 60 * 1000;
+    const incomingLive = incoming.filter(
+      (t) => t.status !== "closed" || (t.exit?.closedAt ?? 0) > cutoff,
+    );
+    const incomingArchive = incoming.filter(
+      (t) => t.status === "closed" && (t.exit?.closedAt ?? 0) <= cutoff,
+    );
+
+    // Merge live trades (DB incoming + current, deduped by id, DB wins)
+    const mergedLive = [
+      ...current.filter((t) => !incoming.some((d) => d.id === t.id)),
+      ...incomingLive,
+    ].sort((a, b) => a.openedAt - b.openedAt);
+
+    // Merge archive (same dedup logic)
+    const mergedArchive = [
+      ...archive.filter((t) => !incoming.some((d) => d.id === t.id)),
+      ...incomingArchive,
+    ].sort((a, b) => (a.exit?.closedAt ?? 0) - (b.exit?.closedAt ?? 0));
+
+    const trimmedLive = trimToMax(mergedLive);
+    saveToStorage(STORAGE_KEY, trimmedLive);
+    saveArchive(mergedArchive, MAX_ARCHIVE_SIZE);
+    set({ trades: trimmedLive, archivedTrades: mergedArchive });
   },
 
   _reset: () => {
