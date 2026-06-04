@@ -29,6 +29,7 @@ import { findSwingLevels } from "@/lib/sr/swing";
 import { computeStructuralStop } from "@/lib/sizer/stop";
 import { computeAdaptiveTPs } from "@/lib/sizer/take-profit";
 import type { NotifyMessage } from "@/lib/notify/types";
+import { sendDiscordMessage } from "@/lib/notify/discord/channel";
 
 const SIGNAL_COOLDOWN_MS = 2 * 60 * 1000; // 2 dakika
 
@@ -149,24 +150,34 @@ async function fireSignal(
     return;
   }
 
-  try {
-    const payload: Record<string, unknown> = { msg };
-    if (tgCreds) {
-      payload.botToken = tgCreds.botToken;
-      payload.chatId = tgCreds.chatId;
-    }
+  // Send to Telegram and Discord in parallel
+  const discordUrl = useSettingsStore.getState().discordWebhookUrl;
 
-    const res = await fetch("/api/telegram/signal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const data = (await res.json()) as { error?: string };
-      console.warn("[QUANTIX] Telegram sinyal başarısız:", data.error);
-    }
-  } catch (e) {
-    console.warn("[QUANTIX] Telegram sinyal ağ hatası:", e);
-  }
+  await Promise.allSettled([
+    (async () => {
+      try {
+        const payload: Record<string, unknown> = { msg };
+        if (tgCreds) {
+          payload.botToken = tgCreds.botToken;
+          payload.chatId = tgCreds.chatId;
+        }
+        const res = await fetch("/api/telegram/signal", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const data = (await res.json()) as { error?: string };
+          console.warn("[QUANTIX] Telegram sinyal başarısız:", data.error);
+        }
+      } catch (e) {
+        console.warn("[QUANTIX] Telegram sinyal ağ hatası:", e);
+      }
+    })(),
+    discordUrl
+      ? sendDiscordMessage(discordUrl, msg).catch((e) => {
+          console.warn("[QUANTIX] Discord sinyal hatası:", e);
+        })
+      : Promise.resolve(),
+  ]);
 }

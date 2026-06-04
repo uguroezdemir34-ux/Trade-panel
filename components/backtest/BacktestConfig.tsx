@@ -153,6 +153,11 @@ export function BacktestConfigPanel({ onRun, onScan, disabled }: Props): React.R
         </div>
       </div>
 
+      {/* Fee model note */}
+      <div className="border-border/30 rounded bg-surface-s1 px-3 py-2 font-mono text-2xs text-text-t4">
+        {t("backtest.feeNote")}
+      </div>
+
       <button
         onClick={() => {
           if (mode === "scan") {

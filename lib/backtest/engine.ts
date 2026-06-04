@@ -274,6 +274,14 @@ export async function runBacktest(
     const rMultiple = sl.stopDistance > 0 ? priceDelta / sl.stopDistance : 0;
     const pnlPct = entryPrice > 0 ? (priceDelta / entryPrice) * 100 : 0;
 
+    // Fee model: both entry and exit use taker rate (market orders)
+    const takerFee = config.takerFee ?? 0.0005;
+    const fundingRateHourly = config.fundingRateHourly ?? 0;
+    const roundTripFeePct = takerFee * (1 + exit.exitPrice / entryPrice) * 100;
+    const fundingCostPct = fundingRateHourly * exit.barsHeld * 100;
+    const feesPct = roundTripFeePct + fundingCostPct;
+    const netPnlPct = pnlPct - feesPct;
+
     trades.push({
       pair: config.pair,
       direction,
@@ -289,6 +297,8 @@ export async function runBacktest(
       rMultiple,
       pnlPct,
       barsHeld: exit.barsHeld,
+      feesPct,
+      netPnlPct,
     });
   }
 

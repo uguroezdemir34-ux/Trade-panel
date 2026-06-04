@@ -12,6 +12,7 @@ import { useEffect, useRef } from "react";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
+import { sendDiscordMessage } from "@/lib/notify/discord/channel";
 import { browserNotify } from "@/lib/notify/browser";
 import { playGoAlert } from "@/lib/notify/audio";
 import type { Pair } from "@/lib/constants/pairs";
@@ -97,4 +98,17 @@ async function sendGoAlert(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ pair, score, direction }),
   }).catch(() => { /* ignore */ });
+
+  // Discord webhook — parallel, silent on failure
+  const discordUrl = useSettingsStore.getState().discordWebhookUrl;
+  if (discordUrl) {
+    void sendDiscordMessage(discordUrl, {
+      kind: "go_signal",
+      pair,
+      direction,
+      score,
+      reasonText: `Score ${score} — GO threshold crossed`,
+      timestamp: Date.now(),
+    }).catch(() => { /* ignore */ });
+  }
 }

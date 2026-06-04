@@ -12,6 +12,10 @@ export interface BacktestConfig {
   frozenFg: number;
   /** Minimum score filter — only enter if score >= this value (0 = no filter) */
   minScore?: number;
+  /** Taker fee rate for both entry and exit. Default: 0.0005 (OKX Futures 0.05%) */
+  takerFee?: number;
+  /** Hourly funding rate cost as a fraction. Default: 0 (not modelled) */
+  fundingRateHourly?: number;
 }
 
 export interface BacktestTrade {
@@ -32,6 +36,10 @@ export interface BacktestTrade {
   /** pnl as % of entry price × direction */
   pnlPct: number;
   barsHeld: number;
+  /** Round-trip fees + funding cost as % of entry price (always positive) */
+  feesPct?: number;
+  /** pnlPct minus feesPct — undefined for results cached before fee model was added */
+  netPnlPct?: number;
 }
 
 export interface ScoreBucket {

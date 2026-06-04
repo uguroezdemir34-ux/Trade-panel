@@ -267,6 +267,13 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
   // Monthly performance buckets
   const monthlyBuckets = useMemo(() => computeMonthlyBuckets(filteredTrades), [filteredTrades]);
 
+  // Net P&L (after fees) — only for results that include feesPct
+  const avgNetPnlPct = useMemo(() => {
+    const withFees = filteredTrades.filter((t) => t.netPnlPct !== undefined);
+    if (withFees.length === 0) return null;
+    return withFees.reduce((s, t) => s + (t.netPnlPct ?? 0), 0) / withFees.length;
+  }, [filteredTrades]);
+
   // Direction-filtered score buckets
   const filteredBuckets = useMemo(() => {
     if (dirFilter === "ALL") return stats.byScoreBucket;
@@ -423,6 +430,12 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
               value={`${kellyEv.payoff.toFixed(2)}×`}
               color={kellyEv.payoff >= 1.5 ? "text-green-400" : kellyEv.payoff >= 1 ? "text-yellow-400" : "text-red-400"}
               hint={`${kellyEv.avgWin.toFixed(2)}R / ${kellyEv.avgLoss.toFixed(2)}R`} />
+          )}
+          {avgNetPnlPct !== null && (
+            <Stat label={t("backtest.avgNetPnl")}
+              value={`${avgNetPnlPct > 0 ? "+" : ""}${avgNetPnlPct.toFixed(3)}%`}
+              color={avgNetPnlPct > 0 ? "text-green-400" : "text-red-400"}
+              hint={t("backtest.avgNetPnlHint")} />
           )}
         </div>
 

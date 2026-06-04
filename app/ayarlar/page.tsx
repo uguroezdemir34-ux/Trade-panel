@@ -16,6 +16,7 @@ import { ScorerWeightsCard } from "@/components/ayarlar/ScorerWeightsCard";
 import { BotModeCard } from "@/components/ayarlar/BotModeCard";
 import { BinanceCredsCard } from "@/components/ayarlar/BinanceCredsCard";
 import { PwaCard } from "@/components/ayarlar/PwaCard";
+import { DiscordWebhookCard } from "@/components/ayarlar/DiscordWebhookCard";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import { PlanStatusCard } from "@/components/ayarlar/PlanStatusCard";
 import BacktestPage from "@/app/backtest/page";
@@ -72,6 +73,7 @@ export default function AyarlarPage() {
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <TelegramTestCard />
+            <DiscordWebhookCard />
           </div>
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <SubscriptionGate feature="telegramSignals">

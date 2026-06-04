@@ -66,6 +66,7 @@ const settingsSchema = z.object({
   botModeEnabled: z.boolean(),
   botModeMinScore: z.number().int().min(50).max(100),
   activeExchange: exchangeSchema,
+  discordWebhookUrl: z.string().nullable(),
 });
 
 export type SettingsData = z.infer<typeof settingsSchema>;
@@ -91,6 +92,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   botModeEnabled: false,
   botModeMinScore: 80,
   activeExchange: "okx" as ActiveExchange,
+  discordWebhookUrl: null,
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -114,6 +116,7 @@ const KEYS = {
   botModeEnabled: "bot_mode_enabled",
   botModeMinScore: "bot_mode_min_score",
   activeExchange: "active_exchange",
+  discordWebhookUrl: "discord_webhook_url",
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -138,6 +141,7 @@ interface SettingsStoreState extends SettingsData {
   setBotModeEnabled: (on: boolean) => void;
   setBotModeMinScore: (n: number) => void;
   setActiveExchange: (e: ActiveExchange) => void;
+  setDiscordWebhookUrl: (url: string | null) => void;
   /** Tüm ayarları varsayılana sıfırla */
   reset: () => void;
   /** localStorage'tan tekrar yükle (SSR sonrası hydrate için) */
@@ -228,6 +232,11 @@ export function loadSettings(): SettingsData {
       KEYS.activeExchange,
       DEFAULT_SETTINGS.activeExchange,
       exchangeSchema,
+    ),
+    discordWebhookUrl: loadFromStorage<string | null>(
+      KEYS.discordWebhookUrl,
+      DEFAULT_SETTINGS.discordWebhookUrl,
+      z.string().nullable(),
     ),
   };
 }
@@ -327,6 +336,11 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ activeExchange: e });
   },
 
+  setDiscordWebhookUrl: (url) => {
+    saveToStorage(KEYS.discordWebhookUrl, url);
+    set({ discordWebhookUrl: url });
+  },
+
   reset: () => {
     // Sadece state'i sıfırla, localStorage'a yaz
     saveToStorage(KEYS.lastTab, DEFAULT_SETTINGS.lastTab);
@@ -348,6 +362,7 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     saveToStorage(KEYS.botModeEnabled, DEFAULT_SETTINGS.botModeEnabled);
     saveToStorage(KEYS.botModeMinScore, DEFAULT_SETTINGS.botModeMinScore);
     saveToStorage(KEYS.activeExchange, DEFAULT_SETTINGS.activeExchange);
+    saveToStorage(KEYS.discordWebhookUrl, DEFAULT_SETTINGS.discordWebhookUrl);
     set({ ...DEFAULT_SETTINGS });
   },
 
