@@ -26,7 +26,7 @@ import { sendTelegramMessage } from "@/lib/notify/telegram/client";
 import { escapeMarkdownV2, bold } from "@/lib/notify/telegram/escape";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 10;
 
 function isCronAuthorized(req: Request): boolean {
   const secret = process.env.CRON_SECRET;
