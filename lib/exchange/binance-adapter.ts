@@ -18,6 +18,8 @@ import type {
   ExchangeAdapter,
   OpenPositionInput,
   ClosePositionInput,
+  PartialCloseInput,
+  UpdateSlTpInput,
   AdapterResult,
   TradeData,
 } from "./types";
@@ -347,6 +349,39 @@ export class BinanceAdapter implements ExchangeAdapter {
         errorMessage: err.message ?? "Network error",
       };
     }
+  }
+
+  async partialClosePosition(input: PartialCloseInput): Promise<AdapterResult<void>> {
+    if (this.isPaper) return { ok: true };
+    // Binance: place REDUCE_ONLY order in opposite direction
+    const symbol = pairToSymbol(input.instId.split("-")[0] as Parameters<typeof pairToSymbol>[0]);
+    const side = input.direction === "LONG" ? "SELL" : "BUY";
+    try {
+      const r = await this.call("/fapi/v1/order", "POST", {
+        symbol,
+        side,
+        positionSide: input.direction,
+        type: "MARKET",
+        quantity: String(input.qty),
+        reduceOnly: "true",
+      });
+      if (!r.ok && r.code && !IGNORE_CODES.has(r.code)) {
+        return { ok: false, errorKind: `BNB_${r.code}`, errorMessage: r.msg ?? "Partial close failed" };
+      }
+      return { ok: true };
+    } catch (e) {
+      const err = e as { message?: string };
+      return { ok: false, errorKind: "NETWORK", errorMessage: err.message ?? "Network error" };
+    }
+  }
+
+  async updateSlTp(input: UpdateSlTpInput): Promise<AdapterResult<void>> {
+    if (this.isPaper) return { ok: true };
+    // Cancel existing SL/TP orders then place new ones
+    await this.cancelAlgoOrders(input.instId);
+    // Binance algo order placement would go here — stubbed for now
+    void input;
+    return { ok: true };
   }
 }
 

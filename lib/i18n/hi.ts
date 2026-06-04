@@ -792,6 +792,9 @@ export const hi: Dictionary = {
     priceMode: "PRICE",
     clearLines: "Clear lines",
     flow: "FLOW",
+    quickTrade: "Quick Trade",
+    holdConfirm: "Hold to confirm",
+    quickSuccess: "Order placed",
     legend: {
       candleUp: "बुलिश कैंडल",
       candleDown: "बेयरिश कैंडल",

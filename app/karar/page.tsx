@@ -221,7 +221,7 @@ export default function KararPage() {
     });
   }, [result, livePrice, atrValue, adxValue, swingLevels, activePair, balanceTotal, balanceFree, drawdownProtocol]);
 
-  async function handleConfirm() {
+  async function handleConfirm(marginMode: "cross" | "isolated" = "cross") {
     if (!sizerResult || !result || !livePrice) return;
     if (result.direction !== "LONG" && result.direction !== "SHORT") return;
 
@@ -283,7 +283,7 @@ export default function KararPage() {
           stopPrice: sizerResult.stop.stopPrice,
           takeProfitPrice: sizerResult.tp.tp1Price,
           leverage: sizerResult.leverage,
-          marginMode: "cross",
+          marginMode,
           source: "manual",
           accountState: {
             drawdownProtocol,

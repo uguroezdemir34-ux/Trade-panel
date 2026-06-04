@@ -792,6 +792,9 @@ export const ar: Dictionary = {
     priceMode: "PRICE",
     clearLines: "Clear lines",
     flow: "FLOW",
+    quickTrade: "Quick Trade",
+    holdConfirm: "Hold to confirm",
+    quickSuccess: "Order placed",
     legend: {
       candleUp: "شمعة صاعدة",
       candleDown: "شمعة هابطة",

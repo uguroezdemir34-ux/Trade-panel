@@ -6,8 +6,10 @@
  * Yapı:
  *   Header: pair + LONG/SHORT badge + holding süresi
  *   Stats: Entry / Mark / UPL / ROE (live updated)
- *   SL/TP: Stop Loss + Take Profit fiyatları
+ *   SL/TP: Stop Loss + Take Profit — inline editable
  *   TP1 progress bar (varsa)
+ *   Liq Price: Prominence based on distance from current price
+ *   Scale-In / Scale-Out controls
  *   Close button
  */
 
@@ -30,17 +32,22 @@ export function PositionCard({
   position,
   onClose,
   isClosing,
+  onScaleIn,
+  onScaleOut,
+  onUpdateSlTp,
 }: {
   position: Position;
   onClose: () => void;
   isClosing: boolean;
+  onScaleIn?: (qty: number) => Promise<void>;
+  onScaleOut?: (qty: number) => Promise<void>;
+  onUpdateSlTp?: (slPrice: number | null, tp1Price: number | null) => Promise<void>;
 }): React.ReactElement {
   const t = useT();
   const locale = useLocale();
   const tick = useMarketStore((s) => s.prices[position.pair]);
   const scoreResult = useScoreStore((s) => s.results[position.pair]);
 
-  // Trail stop durumu — 3 saniyede bir yenile (manager dışarıdan event yayınlamıyor)
   const [trailDurum, setTrailDurum] = useState<TrailUiDurum | null>(null);
   const trailIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
@@ -54,6 +61,24 @@ export function PositionCard({
       if (trailIntervalRef.current) clearInterval(trailIntervalRef.current);
     };
   }, [position.instId]);
+
+  // Scale-in state
+  const [showScaleIn, setShowScaleIn] = useState(false);
+  const [scaleInQty, setScaleInQty] = useState("");
+  const [scaleInLoading, setScaleInLoading] = useState(false);
+  const [scaleInError, setScaleInError] = useState<string | null>(null);
+
+  // Scale-out state
+  const [showScaleOut, setShowScaleOut] = useState(false);
+  const [scaleOutLoading, setScaleOutLoading] = useState(false);
+  const [scaleOutError, setScaleOutError] = useState<string | null>(null);
+
+  // SL/TP edit state
+  const [editingSlTp, setEditingSlTp] = useState(false);
+  const [editSl, setEditSl] = useState(String(position.slTriggerPx ?? ""));
+  const [editTp, setEditTp] = useState(String(position.tpTriggerPx ?? ""));
+  const [slTpLoading, setSlTpLoading] = useState(false);
+  const [slTpError, setSlTpError] = useState<string | null>(null);
 
   const currentPx = tick?.last ?? position.markPx;
   const liveUpl = computeLiveUpl(position, currentPx);
@@ -83,6 +108,53 @@ export function PositionCard({
     }
   })();
 
+  async function handleScaleIn() {
+    const qty = parseFloat(scaleInQty);
+    if (!onScaleIn || isNaN(qty) || qty <= 0) return;
+    setScaleInLoading(true);
+    setScaleInError(null);
+    try {
+      await onScaleIn(qty);
+      setShowScaleIn(false);
+      setScaleInQty("");
+    } catch (e) {
+      setScaleInError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setScaleInLoading(false);
+    }
+  }
+
+  async function handleScaleOut(pct: number) {
+    if (!onScaleOut) return;
+    const qty = position.size * pct;
+    setScaleOutLoading(true);
+    setScaleOutError(null);
+    try {
+      await onScaleOut(qty);
+      setShowScaleOut(false);
+    } catch (e) {
+      setScaleOutError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setScaleOutLoading(false);
+    }
+  }
+
+  async function handleUpdateSlTp() {
+    if (!onUpdateSlTp) return;
+    setSlTpLoading(true);
+    setSlTpError(null);
+    try {
+      const sl = editSl ? parseFloat(editSl) : null;
+      const tp = editTp ? parseFloat(editTp) : null;
+      await onUpdateSlTp(sl, tp);
+      setEditingSlTp(false);
+    } catch (e) {
+      setSlTpError(e instanceof Error ? e.message : "Failed");
+    } finally {
+      setSlTpLoading(false);
+    }
+  }
+
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       {/* Header */}
@@ -99,6 +171,10 @@ export function PositionCard({
           </span>
           <span className="text-text-t4 font-mono text-2xs tracking-wider">
             {position.leverage}x
+          </span>
+          {/* Margin mode badge */}
+          <span className="text-text-t4 font-mono text-2xs border border-border/50 rounded px-1 py-0.5 uppercase tracking-wider">
+            {position.mgnMode}
           </span>
           {scoreResult && (
             <span
@@ -162,25 +238,86 @@ export function PositionCard({
         />
       </div>
 
-      {/* SL/TP row */}
-      <div className="border-border mt-3 grid grid-cols-2 gap-x-3 gap-y-2 border-t pt-3 text-xs">
-        <SlTpStat
-          label={t("position.stopLoss")}
-          value={position.slTriggerPx}
-          fallback={t("position.noSlSet")}
-          locale={locale}
-          color="text-signal-red"
-        />
-        <SlTpStat
-          label={t("position.takeProfit")}
-          value={position.tpTriggerPx}
-          fallback={t("position.noTpSet")}
-          locale={locale}
-          color="text-signal-green"
-        />
+      {/* SL/TP row — editable */}
+      <div className="border-border mt-3 border-t pt-3">
+        {!editingSlTp ? (
+          <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
+            <SlTpStat
+              label={t("position.stopLoss")}
+              value={position.slTriggerPx}
+              fallback={t("position.noSlSet")}
+              locale={locale}
+              color="text-signal-red"
+            />
+            <SlTpStat
+              label={t("position.takeProfit")}
+              value={position.tpTriggerPx}
+              fallback={t("position.noTpSet")}
+              locale={locale}
+              color="text-signal-green"
+            />
+            {onUpdateSlTp && (
+              <div className="col-span-2 mt-1">
+                <button
+                  onClick={() => {
+                    setEditSl(String(position.slTriggerPx ?? ""));
+                    setEditTp(String(position.tpTriggerPx ?? ""));
+                    setEditingSlTp(true);
+                  }}
+                  className="text-text-t4 hover:text-brand font-mono text-2xs tracking-wider transition-colors"
+                >
+                  ✎ {t("position.editSlTp")}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="font-mono text-2xs text-signal-red mb-1">{t("position.stopLoss")}</div>
+                <input
+                  type="number"
+                  value={editSl}
+                  onChange={(e) => setEditSl(e.target.value)}
+                  placeholder="0"
+                  className="w-full bg-surface-s1 border border-signal-red/30 rounded px-2 py-1 font-mono text-xs text-text-t1"
+                />
+              </div>
+              <div>
+                <div className="font-mono text-2xs text-signal-green mb-1">{t("position.takeProfit")}</div>
+                <input
+                  type="number"
+                  value={editTp}
+                  onChange={(e) => setEditTp(e.target.value)}
+                  placeholder="0"
+                  className="w-full bg-surface-s1 border border-signal-green/30 rounded px-2 py-1 font-mono text-xs text-text-t1"
+                />
+              </div>
+            </div>
+            {slTpError && (
+              <div className="text-signal-red font-mono text-2xs">{slTpError}</div>
+            )}
+            <div className="flex gap-2">
+              <button
+                onClick={handleUpdateSlTp}
+                disabled={slTpLoading}
+                className="flex-1 rounded border border-brand/50 bg-brand/10 py-1.5 font-mono text-2xs font-bold text-brand transition-colors hover:bg-brand/20 disabled:opacity-50"
+              >
+                {slTpLoading ? "..." : t("position.updateSlTp")}
+              </button>
+              <button
+                onClick={() => { setEditingSlTp(false); setSlTpError(null); }}
+                className="rounded border border-border px-3 py-1.5 font-mono text-2xs text-text-t3"
+              >
+                {t("position.cancelEdit")}
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Trailing stop satırı (ralli aktifleşince görünür) */}
+      {/* Trailing stop */}
       {trailDurum && (
         <div className="border-border mt-3 border-t pt-3">
           <div className="flex items-center justify-between text-xs">
@@ -219,7 +356,6 @@ export function PositionCard({
               </span>
             )}
           </div>
-          {/* Trail stop mesafe barı — stop ne kadar yakın? */}
           {trailDurum.aktif_stop && currentPx > 0 && (
             <TrailDistanceBar
               stopPx={trailDurum.aktif_stop}
@@ -231,7 +367,7 @@ export function PositionCard({
         </div>
       )}
 
-      {/* TP1 progress bar (only if TP set) */}
+      {/* TP1 progress bar */}
       {tpProgress !== null && (
         <div className="mt-3">
           <div className="text-text-t3 mb-1 flex justify-between font-mono text-2xs tracking-wider">
@@ -247,10 +383,100 @@ export function PositionCard({
         </div>
       )}
 
-      {/* Liquidation warning (if liq close) */}
-      {position.liqPx && (
-        <div className="text-text-t4 mt-3 font-mono text-2xs tracking-wider">
-          {t("position.liqPrice")}: {formatPrice(position.liqPx, locale)}
+      {/* Liquidation price — prominent warning */}
+      {position.liqPx && currentPx > 0 && (
+        <LiqWarning
+          liqPx={position.liqPx}
+          currentPx={currentPx}
+          isLong={isLong}
+          locale={locale}
+          t={t}
+        />
+      )}
+
+      {/* Scale-in panel */}
+      {onScaleIn && (
+        <div className="mt-3 border-t border-border pt-3">
+          {!showScaleIn ? (
+            <button
+              onClick={() => setShowScaleIn(true)}
+              className="font-mono text-2xs text-text-t4 hover:text-brand tracking-wider transition-colors"
+            >
+              + {t("position.scaleIn")}
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <div className="font-mono text-2xs text-text-t3 tracking-wider">{t("position.scaleInLabel")}</div>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  value={scaleInQty}
+                  onChange={(e) => setScaleInQty(e.target.value)}
+                  placeholder="0.001"
+                  className="flex-1 bg-surface-s1 border border-border rounded px-2 py-1 font-mono text-xs text-text-t1"
+                />
+                <button
+                  onClick={handleScaleIn}
+                  disabled={scaleInLoading}
+                  className={`rounded border px-3 py-1 font-mono text-2xs font-bold tracking-wider transition-colors disabled:opacity-50 ${
+                    isLong
+                      ? "border-signal-green/50 text-signal-green hover:bg-signal-green/10"
+                      : "border-signal-red/50 text-signal-red hover:bg-signal-red/10"
+                  }`}
+                >
+                  {scaleInLoading ? "..." : t("position.scaleInSubmit")}
+                </button>
+                <button
+                  onClick={() => { setShowScaleIn(false); setScaleInError(null); }}
+                  className="rounded border border-border px-2 py-1 font-mono text-2xs text-text-t4"
+                >
+                  ✕
+                </button>
+              </div>
+              {scaleInError && (
+                <div className="text-signal-red font-mono text-2xs">{scaleInError}</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Scale-out / Partial close */}
+      {onScaleOut && (
+        <div className="mt-2">
+          {!showScaleOut ? (
+            <button
+              onClick={() => setShowScaleOut(true)}
+              className="font-mono text-2xs text-text-t4 hover:text-warning tracking-wider transition-colors"
+            >
+              ~ {t("position.scaleOut")}
+            </button>
+          ) : (
+            <div className="space-y-1.5">
+              <div className="font-mono text-2xs text-text-t3 tracking-wider">{t("position.scaleOut")}</div>
+              <div className="flex gap-1.5">
+                {[0.25, 0.5, 0.75].map((pct) => (
+                  <button
+                    key={pct}
+                    onClick={() => handleScaleOut(pct)}
+                    disabled={scaleOutLoading}
+                    className="flex-1 rounded border border-warning/40 bg-warning/5 py-1.5 font-mono text-2xs font-bold text-warning/80 hover:bg-warning/15 transition-colors disabled:opacity-50"
+                  >
+                    {(pct * 100).toFixed(0)}%
+                  </button>
+                ))}
+                <button
+                  onClick={() => { setShowScaleOut(false); setScaleOutError(null); }}
+                  className="rounded border border-border px-2 py-1 font-mono text-2xs text-text-t4"
+                >
+                  ✕
+                </button>
+              </div>
+              {scaleOutError && (
+                <div className="text-signal-red font-mono text-2xs">{scaleOutError}</div>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -270,6 +496,54 @@ export function PositionCard({
     </div>
   );
 }
+
+// ─── Liq Warning ─────────────────────────────────────────────────────────────
+
+function LiqWarning({
+  liqPx,
+  currentPx,
+  isLong,
+  locale,
+  t,
+}: {
+  liqPx: number;
+  currentPx: number;
+  isLong: boolean;
+  locale: import("@/lib/i18n/types").Locale;
+  t: (key: string) => string;
+}) {
+  const distPct = Math.abs((currentPx - liqPx) / currentPx) * 100;
+  const isDanger = distPct < 3;
+  const isWarning = distPct < 10;
+  const isNotice = distPct < 25;
+
+  const colorClass = isDanger
+    ? "text-signal-red border-signal-red/60 bg-signal-red/10"
+    : isWarning
+    ? "text-orange-400 border-orange-400/40 bg-orange-400/8"
+    : isNotice
+    ? "text-yellow-400/80 border-yellow-400/30 bg-yellow-400/5"
+    : "text-text-t4 border-border bg-transparent";
+
+  return (
+    <div className={`mt-3 rounded border px-3 py-2 flex items-center justify-between ${colorClass} ${isDanger ? "animate-pulse" : ""}`}>
+      <div className="flex items-center gap-1.5">
+        {isDanger && <span className="text-sm">⚠</span>}
+        <span className="font-mono text-2xs font-bold tracking-widest uppercase">
+          {t("position.liqDanger")}
+        </span>
+        <span className="font-mono text-xs tabular-nums font-semibold">
+          {formatPrice(liqPx, locale)}
+        </span>
+      </div>
+      <span className="font-mono text-2xs tabular-nums">
+        {distPct.toFixed(1)}% {isLong ? "↓" : "↑"} {t("position.liqFrom")}
+      </span>
+    </div>
+  );
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function Stat({
   label,
@@ -291,11 +565,6 @@ function Stat({
   );
 }
 
-/**
- * Trail stop'un güncel fiyata olan mesafesini görselleştirir.
- * Bar doluluk oranı: stop ne kadar yakınsa bar o kadar dolu (kırmızı).
- * Referans: entry → stop aralığının %100'ü = tam dolu = stop tetiklendi.
- */
 function TrailDistanceBar({
   stopPx,
   currentPx,
@@ -307,8 +576,6 @@ function TrailDistanceBar({
   entryPx: number;
   isLong: boolean;
 }) {
-  // LONG: stop altında → mesafe = (current - stop) / (current - entry + stop_dist)
-  // Basit görsel: stop distance / entry_distance × 100 (0=uzak, 100=stop seviyesinde)
   const totalRange = Math.abs(currentPx - entryPx) + Math.abs(currentPx - stopPx);
   if (totalRange <= 0) return null;
   const stopDist = isLong ? currentPx - stopPx : stopPx - currentPx;

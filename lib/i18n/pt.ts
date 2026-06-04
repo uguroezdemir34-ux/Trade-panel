@@ -790,6 +790,9 @@ export const pt: Dictionary = {
     priceMode: "PRICE",
     clearLines: "Clear lines",
     flow: "FLOW",
+    quickTrade: "Quick Trade",
+    holdConfirm: "Hold to confirm",
+    quickSuccess: "Order placed",
     legend: {
       candleUp: "Vela de alta",
       candleDown: "Vela de baixa",

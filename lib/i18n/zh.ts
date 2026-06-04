@@ -792,6 +792,9 @@ export const zh: Dictionary = {
     priceMode: "PRICE",
     clearLines: "Clear lines",
     flow: "FLOW",
+    quickTrade: "Quick Trade",
+    holdConfirm: "Hold to confirm",
+    quickSuccess: "Order placed",
     legend: {
       candleUp: "阳线",
       candleDown: "阴线",

@@ -17,13 +17,14 @@ export function TradeConfirmModal({
   onClose,
 }: {
   result: PositionSizerResult;
-  onConfirm: () => void;
+  onConfirm: (marginMode: "cross" | "isolated") => void;
   onClose: () => void;
 }): React.ReactElement {
   const t = useT();
   const locale = useLocale();
   const isLong = result.direction === "LONG";
   const dirCls = isLong ? "text-signal-green" : "text-signal-red";
+  const [marginMode, setMarginMode] = useState<"cross" | "isolated">("cross");
 
   const CHECKLIST = [
     t("confirm.check1"),
@@ -110,6 +111,28 @@ export function TradeConfirmModal({
           />
         </div>
 
+        {/* Margin Mode */}
+        <div className="border-border mt-3 border-t pt-3">
+          <div className="text-text-t4 mb-2 font-mono text-2xs tracking-widest uppercase">
+            {t("confirm.marginMode")}
+          </div>
+          <div className="flex gap-2">
+            {(["cross", "isolated"] as const).map((m) => (
+              <button
+                key={m}
+                onClick={() => setMarginMode(m)}
+                className={`flex-1 rounded border py-1.5 font-mono text-2xs font-bold tracking-widest uppercase transition-colors ${
+                  marginMode === m
+                    ? "border-brand/60 bg-brand/10 text-brand"
+                    : "border-border text-text-t4 hover:text-text-t2"
+                }`}
+              >
+                {m === "cross" ? t("confirm.cross") : t("confirm.isolated")}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Mental Checklist */}
         <div className="border-border mt-4 border-t pt-3">
           <div className="text-text-t4 mb-2 font-mono text-2xs tracking-widest uppercase">
@@ -149,7 +172,7 @@ export function TradeConfirmModal({
           </button>
           <button
             type="button"
-            onClick={onConfirm}
+            onClick={() => onConfirm(marginMode)}
             disabled={!allChecked}
             className={`flex-1 rounded-md py-2 font-mono text-sm font-bold tracking-wider transition-all ${
               allChecked

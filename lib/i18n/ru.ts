@@ -792,6 +792,9 @@ export const ru: Dictionary = {
     priceMode: "PRICE",
     clearLines: "Clear lines",
     flow: "FLOW",
+    quickTrade: "Quick Trade",
+    holdConfirm: "Hold to confirm",
+    quickSuccess: "Order placed",
     legend: {
       candleUp: "Бычья свеча",
       candleDown: "Медвежья свеча",

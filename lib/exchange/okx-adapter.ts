@@ -21,6 +21,8 @@ import type {
   ExchangeAdapter,
   OpenPositionInput,
   ClosePositionInput,
+  PartialCloseInput,
+  UpdateSlTpInput,
   AdapterResult,
   TradeData,
 } from "./types";
@@ -491,6 +493,136 @@ export class OkxAdapter implements ExchangeAdapter {
         errorMessage: e instanceof Error ? e.message : "Network error",
       };
     }
+  }
+
+  /**
+   * Pozisyonun bir kısmını kapat.
+   * OKX hedge modunda: ters tarafta market order açarak pozisyonu azaltır.
+   */
+  async partialClosePosition(
+    input: PartialCloseInput,
+  ): Promise<AdapterResult<void>> {
+    await this.tradeLimiter.acquire();
+    // LONG'u azaltmak için: side=sell, posSide=long
+    // SHORT'u azaltmak için: side=buy, posSide=short
+    const side = input.direction === "LONG" ? "sell" : "buy";
+    const posSide = input.direction === "LONG" ? "long" : "short";
+    try {
+      const raw = await withNetworkRetry(() =>
+        proxyPost(
+          "/api/v5/trade/order",
+          {
+            instId: input.instId,
+            tdMode: input.mgnMode,
+            side,
+            posSide,
+            ordType: "market",
+            sz: String(input.qty),
+          },
+          this.isDemo,
+          this.timeoutMs,
+          this.fetchFn,
+        ),
+      );
+      const check = checkProxyResponse(raw);
+      if (!check.ok) {
+        return {
+          ok: false,
+          errorKind: `OKX_${check.errorCode ?? "ERR"}`,
+          errorMessage: check.errorMessage,
+        };
+      }
+      return { ok: true };
+    } catch (e) {
+      if (isTimeoutError(e)) {
+        return {
+          ok: false,
+          errorKind: "TIMEOUT_UNKNOWN",
+          errorMessage: `partialClosePosition timeout after ${this.timeoutMs}ms`,
+        };
+      }
+      return {
+        ok: false,
+        errorKind: "NETWORK",
+        errorMessage: e instanceof Error ? e.message : "Network error",
+      };
+    }
+  }
+
+  /**
+   * SL/TP algo emirlerini güncelle.
+   * Akış: mevcut algo emirleri iptal → yeni SL → yeni TP.
+   */
+  async updateSlTp(input: UpdateSlTpInput): Promise<AdapterResult<void>> {
+    const cancelResult = await this.cancelAlgoOrders(input.instId);
+    if (!cancelResult.ok) return cancelResult;
+
+    const side = input.direction === "LONG" ? "sell" : "buy";
+    const posSide = input.direction === "LONG" ? "long" : "short";
+
+    if (input.slPrice && input.slPrice > 0) {
+      await this.algoLimiter.acquire();
+      try {
+        await withNetworkRetry(() =>
+          proxyPost(
+            "/api/v5/trade/order-algo",
+            {
+              instId: input.instId,
+              tdMode: input.mgnMode,
+              side,
+              posSide,
+              ordType: "conditional",
+              sz: String(input.qty),
+              slTriggerPx: String(input.slPrice),
+              slOrdPx: "-1",
+              slTriggerPxType: "last",
+            },
+            this.isDemo,
+            this.timeoutMs,
+            this.fetchFn,
+          ),
+        );
+      } catch {
+        console.warn(`[OkxAdapter] SL update failed for ${input.instId}`);
+      }
+    }
+
+    const tpTargets: Array<{ price: number; qty: number }> = [];
+    if (input.tp1Price && input.tp1Price > 0) {
+      tpTargets.push({ price: input.tp1Price, qty: input.qty / 2 });
+    }
+    if (input.tp2Price && input.tp2Price > 0) {
+      tpTargets.push({ price: input.tp2Price, qty: input.qty / 2 });
+    }
+
+    for (const tp of tpTargets) {
+      await this.algoLimiter.acquire();
+      try {
+        await withNetworkRetry(() =>
+          proxyPost(
+            "/api/v5/trade/order-algo",
+            {
+              instId: input.instId,
+              tdMode: input.mgnMode,
+              side,
+              posSide,
+              ordType: "conditional",
+              sz: String(tp.qty),
+              tpTriggerPx: String(tp.price),
+              tpOrdPx: "-1",
+              tpTriggerPxType: "last",
+            },
+            this.isDemo,
+            this.timeoutMs,
+            this.fetchFn,
+          ),
+        );
+      } catch {
+        console.warn(`[OkxAdapter] TP update failed for ${input.instId}`);
+      }
+    }
+
+    return { ok: true };
   }
 
   /** Idempotency guard'a erişim (test/debug için) */

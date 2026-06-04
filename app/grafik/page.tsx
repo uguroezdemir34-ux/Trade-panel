@@ -9,6 +9,7 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 import { ChartControls, type ChartClickMode } from "@/components/grafik/ChartControls";
 import { ChartLegend } from "@/components/grafik/ChartLegend";
 import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
+import { QuickTradePanel } from "@/components/grafik/QuickTradePanel";
 import { emaSeries } from "@/lib/indicators/ema";
 import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
@@ -182,6 +183,7 @@ export default function GrafikPage() {
   // New tool state (not persisted — session only)
   const [showSplit, setShowSplit]       = useState(false);
   const [showFlow, setShowFlow]         = useState(false);
+  const [showQuick, setShowQuick]       = useState(false);
   const [clickMode, setClickMode]       = useState<ChartClickMode>("none");
   const [drawnLines, setDrawnLines]     = useState<DrawnLine[]>([]);
   const [capturedPrice, setCapturedPrice] = useState<number | null>(null);
@@ -353,6 +355,8 @@ export default function GrafikPage() {
         onToggleSplit={() => setShowSplit((v) => !v)}
         showFlow={showFlow}
         onToggleFlow={() => setShowFlow((v) => !v)}
+        showQuick={showQuick}
+        onToggleQuick={() => setShowQuick((v) => !v)}
         onSetClickMode={handleSetClickMode}
         onClearDrawnLines={() => setDrawnLines([])}
       />
@@ -471,6 +475,9 @@ export default function GrafikPage() {
 
       {/* Order Flow Panel */}
       {showFlow && <OrderFlowPanel pair={pair} />}
+
+      {/* Quick Trade Panel */}
+      {showQuick && <QuickTradePanel pair={pair} />}
 
       {/* Drawn lines list */}
       {drawnLines.length > 0 && (
