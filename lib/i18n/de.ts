@@ -786,6 +786,11 @@ export const de: Dictionary = {
     showTrades: "Trades anzeigen",
     showVwap: "VWAP",
     showSr: "S/R",
+    tools: "Tools",
+    split: "SPLIT",
+    hline: "H-LINE",
+    priceMode: "PRICE",
+    clearLines: "Clear lines",
     legend: {
       candleUp: "Aufwärtskerze",
       candleDown: "Abwärtskerze",

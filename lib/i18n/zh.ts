@@ -786,6 +786,11 @@ export const zh: Dictionary = {
     showTrades: "显示交易",
     showVwap: "VWAP",
     showSr: "S/R",
+    tools: "Tools",
+    split: "SPLIT",
+    hline: "H-LINE",
+    priceMode: "PRICE",
+    clearLines: "Clear lines",
     legend: {
       candleUp: "阳线",
       candleDown: "阴线",

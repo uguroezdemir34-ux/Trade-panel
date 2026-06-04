@@ -784,6 +784,11 @@ export const fr: Dictionary = {
     showTrades: "Afficher les trades",
     showVwap: "VWAP",
     showSr: "S/R",
+    tools: "Tools",
+    split: "SPLIT",
+    hline: "H-LINE",
+    priceMode: "PRICE",
+    clearLines: "Clear lines",
     legend: {
       candleUp: "Bougie haussière",
       candleDown: "Bougie baissière",

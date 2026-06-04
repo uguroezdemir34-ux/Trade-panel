@@ -786,6 +786,11 @@ export const hi: Dictionary = {
     showTrades: "ट्रेड दिखाएं",
     showVwap: "VWAP",
     showSr: "S/R",
+    tools: "Tools",
+    split: "SPLIT",
+    hline: "H-LINE",
+    priceMode: "PRICE",
+    clearLines: "Clear lines",
     legend: {
       candleUp: "बुलिश कैंडल",
       candleDown: "बेयरिश कैंडल",

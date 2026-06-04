@@ -786,6 +786,11 @@ export const ko: Dictionary = {
     showTrades: "거래 표시",
     showVwap: "VWAP",
     showSr: "S/R",
+    tools: "Tools",
+    split: "SPLIT",
+    hline: "H-LINE",
+    priceMode: "PRICE",
+    clearLines: "Clear lines",
     legend: {
       candleUp: "상승 캔들",
       candleDown: "하락 캔들",

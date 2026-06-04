@@ -1,12 +1,14 @@
 "use client";
 
 /**
- * CHART CONTROLS — Pair + Timeframe + Overlay seçici.
+ * CHART CONTROLS — Pair + Timeframe + Overlay + Tool seçici.
  */
 
 import { useT } from "@/lib/i18n/context";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
+
+export type ChartClickMode = "none" | "hline" | "price";
 
 interface Props {
   pair: Pair;
@@ -21,6 +23,9 @@ interface Props {
   showBb: boolean;
   showVwap: boolean;
   showSr: boolean;
+  showSplit: boolean;
+  clickMode: ChartClickMode;
+  hasDrawnLines: boolean;
   onPairChange: (p: Pair) => void;
   onTimeframeChange: (tf: Timeframe) => void;
   onToggleEma20: () => void;
@@ -33,6 +38,9 @@ interface Props {
   onToggleBb: () => void;
   onToggleVwap: () => void;
   onToggleSr: () => void;
+  onToggleSplit: () => void;
+  onSetClickMode: (mode: ChartClickMode) => void;
+  onClearDrawnLines: () => void;
 }
 
 const TIMEFRAMES: Timeframe[] = ["5m", "15m", "1h", "4h", "1d"];
@@ -50,6 +58,9 @@ export function ChartControls({
   showBb,
   showVwap,
   showSr,
+  showSplit,
+  clickMode,
+  hasDrawnLines,
   onPairChange,
   onTimeframeChange,
   onToggleEma20,
@@ -62,6 +73,9 @@ export function ChartControls({
   onToggleBb,
   onToggleVwap,
   onToggleSr,
+  onToggleSplit,
+  onSetClickMode,
+  onClearDrawnLines,
 }: Props): React.ReactElement {
   const t = useT();
 
@@ -146,6 +160,46 @@ export function ChartControls({
           </Toggle>
           <Toggle active={showSr} onClick={onToggleSr} accent="#a3e635">
             {t("grafik.showSr")}
+          </Toggle>
+        </div>
+      </div>
+
+      {/* Tools */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
+          {t("grafik.tools")}
+        </span>
+        <div className="flex gap-1">
+          {/* Split view */}
+          <Toggle active={showSplit} onClick={onToggleSplit} accent="#6366f1">
+            {t("grafik.split")}
+          </Toggle>
+
+          {/* Draw horizontal line */}
+          <Toggle
+            active={clickMode === "hline"}
+            onClick={() => onSetClickMode(clickMode === "hline" ? "none" : "hline")}
+            accent="#f59e0b"
+          >
+            {t("grafik.hline")}
+          </Toggle>
+          {hasDrawnLines && (
+            <button
+              onClick={onClearDrawnLines}
+              className="rounded border border-border px-2 py-1 font-mono text-2xs text-text-t4 hover:text-red-400 hover:border-red-400 transition-colors shrink-0"
+              title={t("grafik.clearLines")}
+            >
+              ✕
+            </button>
+          )}
+
+          {/* Price capture mode */}
+          <Toggle
+            active={clickMode === "price"}
+            onClick={() => onSetClickMode(clickMode === "price" ? "none" : "price")}
+            accent="#22c55e"
+          >
+            {t("grafik.priceMode")}
           </Toggle>
         </div>
       </div>

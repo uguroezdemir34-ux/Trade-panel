@@ -29,6 +29,8 @@ interface Props {
   series: ChartSeries;
   height?: number;
   theme?: "dark" | "light";
+  /** Called when user clicks on the chart (y-coordinate → price) */
+  onPriceClick?: (price: number) => void;
 }
 
 const COLOR_UP       = "#22c55e";
@@ -73,10 +75,14 @@ function computeSlots(hasVol: boolean, hasRsi: boolean, hasMacd: boolean) {
   return slots;
 }
 
-export function PriceChart({ series, height = 400, theme = "dark" }: Props): React.ReactElement {
+export function PriceChart({ series, height = 400, theme = "dark", onPriceClick }: Props): React.ReactElement {
   const containerRef  = useRef<HTMLDivElement>(null);
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  // Drawn lines (horizontal user-placed lines) — keyed by DrawnLine.id
+  const drawnLinesMapRef = useRef<Map<string, IPriceLine>>(new Map());
+  // Stable ref for the click callback to avoid recreating chart on callback change
+  const onPriceClickRef = useRef(onPriceClick);
   const ema20Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema200Ref     = useRef<ISeriesApi<"Line"> | null>(null);
@@ -140,9 +146,19 @@ export function PriceChart({ series, height = 400, theme = "dark" }: Props): Rea
     });
     ro.observe(container);
 
+    // Wire click → price callback
+    chart.subscribeClick((param) => {
+      if (!param.point || !candleRef.current) return;
+      const price = candleRef.current.coordinateToPrice(param.point.y);
+      if (price !== null && price > 0) {
+        onPriceClickRef.current?.(price);
+      }
+    });
+
     return () => {
       ro.disconnect();
       chart.remove();
+      drawnLinesMapRef.current.clear();
       chartRef.current  = null;
       candleRef.current = null;
       ema20Ref.current  = null;
@@ -162,6 +178,41 @@ export function PriceChart({ series, height = 400, theme = "dark" }: Props): Rea
       currentPriceLineRef.current = null;
     };
   }, [height]);
+
+  // ─── Keep click callback ref fresh ─────────────────────────────────────
+  useEffect(() => {
+    onPriceClickRef.current = onPriceClick;
+  }, [onPriceClick]);
+
+  // ─── Sync drawn horizontal lines ────────────────────────────────────────
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    const incoming = series.drawnLines ?? [];
+    const incomingIds = new Set(incoming.map((l) => l.id));
+
+    // Remove stale
+    for (const [id, priceLine] of drawnLinesMapRef.current) {
+      if (!incomingIds.has(id)) {
+        try { candle.removePriceLine(priceLine); } catch { /* ignore */ }
+        drawnLinesMapRef.current.delete(id);
+      }
+    }
+    // Add new
+    for (const dl of incoming) {
+      if (!drawnLinesMapRef.current.has(dl.id)) {
+        const pl = candle.createPriceLine({
+          price: dl.price,
+          color: dl.color,
+          lineWidth: 1,
+          lineStyle: 0,
+          axisLabelVisible: true,
+          title: dl.label ?? "",
+        });
+        drawnLinesMapRef.current.set(dl.id, pl);
+      }
+    }
+  }, [series.drawnLines]);
 
   // ─── Theme color update (no chart recreation) ───────────────────────────
   useEffect(() => {

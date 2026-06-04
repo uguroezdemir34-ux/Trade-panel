@@ -786,6 +786,11 @@ export const ru: Dictionary = {
     showTrades: "Показать сделки",
     showVwap: "VWAP",
     showSr: "S/R",
+    tools: "Tools",
+    split: "SPLIT",
+    hline: "H-LINE",
+    priceMode: "PRICE",
+    clearLines: "Clear lines",
     legend: {
       candleUp: "Бычья свеча",
       candleDown: "Медвежья свеча",

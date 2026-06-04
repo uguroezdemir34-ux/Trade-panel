@@ -982,6 +982,11 @@ export const tr: Dictionary = {
     showBb: "BB(20)",
     showVwap: "VWAP",
     showSr: "D/D",
+    tools: "Araç",
+    split: "BÖLDÜR",
+    hline: "Y-ÇİZGİ",
+    priceMode: "FİYAT",
+    clearLines: "Çizgileri sil",
     legend: {
       candleUp: "Yükseliş mumu",
       candleDown: "Düşüş mumu",

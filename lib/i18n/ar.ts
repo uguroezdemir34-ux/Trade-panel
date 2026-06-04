@@ -786,6 +786,11 @@ export const ar: Dictionary = {
     showTrades: "عرض الصفقات",
     showVwap: "VWAP",
     showSr: "S/R",
+    tools: "Tools",
+    split: "SPLIT",
+    hline: "H-LINE",
+    priceMode: "PRICE",
+    clearLines: "Clear lines",
     legend: {
       candleUp: "شمعة صاعدة",
       candleDown: "شمعة هابطة",

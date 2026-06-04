@@ -982,6 +982,11 @@ export const en: Dictionary = {
     showBb: "BB(20)",
     showVwap: "VWAP",
     showSr: "S/R",
+    tools: "Tools",
+    split: "SPLIT",
+    hline: "H-LINE",
+    priceMode: "PRICE",
+    clearLines: "Clear lines",
     legend: {
       candleUp: "Up candle",
       candleDown: "Down candle",

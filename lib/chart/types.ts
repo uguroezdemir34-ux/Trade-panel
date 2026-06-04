@@ -61,6 +61,13 @@ export interface TradeLevelLine {
   direction: "LONG" | "SHORT";
 }
 
+export interface DrawnLine {
+  id: string;
+  price: number;
+  color: string;
+  label?: string;
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
@@ -75,6 +82,7 @@ export interface ChartSeries {
   markers?: ChartMarker[];
   srLevels?: SrLevel[];
   tradeLevels?: TradeLevelLine[];
+  drawnLines?: DrawnLine[];
   /** Canlı fiyat — grafik üzerinde mavi kesikli "LIVE" çizgisi */
   currentPrice?: number;
 }

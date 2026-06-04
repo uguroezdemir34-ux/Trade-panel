@@ -786,6 +786,11 @@ export const ja: Dictionary = {
     showTrades: "トレードを表示",
     showVwap: "VWAP",
     showSr: "S/R",
+    tools: "Tools",
+    split: "SPLIT",
+    hline: "H-LINE",
+    priceMode: "PRICE",
+    clearLines: "Clear lines",
     legend: {
       candleUp: "陽線",
       candleDown: "陰線",
