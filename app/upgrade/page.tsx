@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useUser } from "@clerk/nextjs";
 import { useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n/context";
@@ -22,7 +22,7 @@ function Cell({ value }: { value: string | boolean }) {
   return <span className="text-text-t2 font-mono text-xs">{value}</span>;
 }
 
-export default function UpgradePage() {
+function UpgradePageInner() {
   const t = useT();
   const { user, isLoaded } = useUser();
   const params = useSearchParams();
@@ -218,5 +218,13 @@ export default function UpgradePage() {
       </div>
 
     </div>
+  );
+}
+
+export default function UpgradePage() {
+  return (
+    <Suspense>
+      <UpgradePageInner />
+    </Suspense>
   );
 }
