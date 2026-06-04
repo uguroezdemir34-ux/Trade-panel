@@ -90,4 +90,11 @@ async function sendGoAlert(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+
+  // Web push trigger — fire-and-forget, silent on failure
+  void fetch("/api/push/trigger", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ pair, score, direction }),
+  }).catch(() => { /* ignore */ });
 }

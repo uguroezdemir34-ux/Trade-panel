@@ -49,6 +49,7 @@ import { useConsecutiveLossAlert } from "@/lib/hooks/useConsecutiveLossAlert";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
 import { useBotMode } from "@/lib/hooks/useBotMode";
+import { usePwaSetup } from "@/lib/hooks/usePwaSetup";
 import { useAuth } from "@clerk/nextjs";
 import { setCurrentUserId } from "@/lib/auth/scope";
 import { migrateStorageForUser } from "@/lib/auth/migrate";
@@ -119,6 +120,8 @@ export function AppShell({
   useLiqFeed();
   // Bot modu — GO sinyalinde otomatik emir açar (Pro özelliği, ayarlardan açılır)
   useBotMode();
+  // PWA kurulumu — SW kayıt + install prompt yakalama
+  usePwaSetup();
 
   useEffect(() => {
     if (!authLoaded) return;

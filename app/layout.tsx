@@ -10,6 +10,12 @@ export const metadata: Metadata = {
   title: BRAND_META.title,
   description: BRAND_META.description,
   keywords: BRAND_META.keywords,
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "QUANTIX",
+  },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
