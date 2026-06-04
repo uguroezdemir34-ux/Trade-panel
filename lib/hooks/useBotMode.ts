@@ -23,7 +23,7 @@ import { useScoreStore } from "@/lib/store/scoreStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCandleStore } from "@/lib/store/candleStore";
 import { orchestrate } from "@/lib/orchestrator/router";
-import { getOkxAdapter } from "@/lib/exchange/okx-adapter";
+import { getAdapter } from "@/lib/exchange";
 import { createChannel } from "@/lib/notify/registry";
 import { getGlobalDedupeStore } from "@/lib/orchestrator/dedupe";
 import { computePositionSize } from "@/lib/sizer/position";
@@ -194,7 +194,7 @@ async function runBotExecution(
         },
       },
       {
-        adapter: getOkxAdapter(demoMode),
+        adapter: getAdapter(demoMode),
         channels: [createChannel("telegram")],
         dedupeStore: getGlobalDedupeStore(),
         now,

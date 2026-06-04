@@ -35,7 +35,7 @@ import { adx } from "@/lib/indicators/adx";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import { findSwingLevels } from "@/lib/sr/swing";
 import { orchestrate } from "@/lib/orchestrator/router";
-import { getOkxAdapter } from "@/lib/exchange/okx-adapter";
+import { getAdapter } from "@/lib/exchange";
 import { createChannel } from "@/lib/notify/registry";
 import { getGlobalDedupeStore } from "@/lib/orchestrator/dedupe";
 import type { PositionSizerResult } from "@/lib/sizer/types";
@@ -294,7 +294,7 @@ export default function KararPage() {
           },
         },
         {
-          adapter: getOkxAdapter(demoMode),
+          adapter: getAdapter(demoMode),
           channels: [createChannel("telegram")],
           dedupeStore: getGlobalDedupeStore(),
         },

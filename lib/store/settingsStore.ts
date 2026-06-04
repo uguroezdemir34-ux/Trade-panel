@@ -43,6 +43,9 @@ const tabIdSchema = z.enum(TAB_IDS);
 const themeSchema = z.enum(["dark", "light"]);
 export type Theme = z.infer<typeof themeSchema>;
 
+const exchangeSchema = z.enum(["okx", "binance"]);
+export type ActiveExchange = z.infer<typeof exchangeSchema>;
+
 const settingsSchema = z.object({
   lastTab: tabIdSchema,
   demoMode: z.boolean(),
@@ -62,6 +65,7 @@ const settingsSchema = z.object({
   }).nullable(),
   botModeEnabled: z.boolean(),
   botModeMinScore: z.number().int().min(50).max(100),
+  activeExchange: exchangeSchema,
 });
 
 export type SettingsData = z.infer<typeof settingsSchema>;
@@ -86,6 +90,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   scorerWeights: null,
   botModeEnabled: false,
   botModeMinScore: 80,
+  activeExchange: "okx" as ActiveExchange,
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -108,6 +113,7 @@ const KEYS = {
   scorerWeights: "scorer_weights",
   botModeEnabled: "bot_mode_enabled",
   botModeMinScore: "bot_mode_min_score",
+  activeExchange: "active_exchange",
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -131,6 +137,7 @@ interface SettingsStoreState extends SettingsData {
   setAudioAlertsEnabled: (on: boolean) => void;
   setBotModeEnabled: (on: boolean) => void;
   setBotModeMinScore: (n: number) => void;
+  setActiveExchange: (e: ActiveExchange) => void;
   /** Tüm ayarları varsayılana sıfırla */
   reset: () => void;
   /** localStorage'tan tekrar yükle (SSR sonrası hydrate için) */
@@ -216,6 +223,11 @@ export function loadSettings(): SettingsData {
       KEYS.botModeMinScore,
       DEFAULT_SETTINGS.botModeMinScore,
       z.number().int().min(50).max(100),
+    ),
+    activeExchange: loadFromStorage<ActiveExchange>(
+      KEYS.activeExchange,
+      DEFAULT_SETTINGS.activeExchange,
+      exchangeSchema,
     ),
   };
 }
@@ -310,6 +322,11 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ botModeMinScore: safe });
   },
 
+  setActiveExchange: (e) => {
+    saveToStorage(KEYS.activeExchange, e);
+    set({ activeExchange: e });
+  },
+
   reset: () => {
     // Sadece state'i sıfırla, localStorage'a yaz
     saveToStorage(KEYS.lastTab, DEFAULT_SETTINGS.lastTab);
@@ -330,6 +347,7 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     saveToStorage(KEYS.scorerWeights, DEFAULT_SETTINGS.scorerWeights);
     saveToStorage(KEYS.botModeEnabled, DEFAULT_SETTINGS.botModeEnabled);
     saveToStorage(KEYS.botModeMinScore, DEFAULT_SETTINGS.botModeMinScore);
+    saveToStorage(KEYS.activeExchange, DEFAULT_SETTINGS.activeExchange);
     set({ ...DEFAULT_SETTINGS });
   },
 
