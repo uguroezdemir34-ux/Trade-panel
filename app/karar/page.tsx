@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
@@ -10,6 +10,16 @@ import { useRiskStore } from "@/lib/store/riskStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
+import { useWatchlistStore } from "@/lib/store/watchlistStore";
+import { useT } from "@/lib/i18n/context";
+
+const PAIR_GROUPS: Record<string, readonly Pair[]> = {
+  all:    PAIRS,
+  majors: ["BTC", "ETH", "BNB", "XRP", "SOL"],
+  alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "FET", "SUI"],
+  meme:   ["DOGE", "SHIB"],
+};
+type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreBar } from "@/components/karar/ScoreBar";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
@@ -25,50 +35,128 @@ import { adx } from "@/lib/indicators/adx";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import { findSwingLevels } from "@/lib/sr/swing";
 import { orchestrate } from "@/lib/orchestrator/router";
-import { getOkxAdapter } from "@/lib/exchange/okx-adapter";
+import { getAdapter } from "@/lib/exchange";
 import { createChannel } from "@/lib/notify/registry";
 import { getGlobalDedupeStore } from "@/lib/orchestrator/dedupe";
 import type { PositionSizerResult } from "@/lib/sizer/types";
 import { useFlowIntelligence } from "@/lib/hooks/useFlowIntelligence";
 import { getBucketStats } from "@/lib/bucket/stats";
+import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
+import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
+import { ScoreLeaderboard } from "@/components/karar/ScoreLeaderboard";
+import { QuickAlarm } from "@/components/karar/QuickAlarm";
+import { StreakBanner } from "@/components/karar/StreakBanner";
+import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
+import { GoSignalLog } from "@/components/karar/GoSignalLog";
+import { HistoricalEdge } from "@/components/karar/HistoricalEdge";
+import { FundingBadge } from "@/components/karar/FundingBadge";
+import { CorrelationWarning } from "@/components/karar/CorrelationWarning";
+import { CandlePatternBadge } from "@/components/karar/CandlePatternBadge";
+import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
+import { RegimeBadge } from "@/components/karar/RegimeBadge";
 
 export default function KararPage() {
+  const t = useT();
   const [activePair, setActivePair] = useState<Pair>("BTC");
+  const [pairGroup, setPairGroup] = useState<PairGroup>("all");
+  const watchlistPairs = useWatchlistStore((s) => s.pairs);
+  const watchlistToggle = useWatchlistStore((s) => s.toggle);
+  const watchlistLoad = useWatchlistStore((s) => s.load);
+
+  useEffect(() => { watchlistLoad(); }, [watchlistLoad]);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [execError, setExecError] = useState<string | null>(null);
+  const [showDetails, setShowDetails] = useState(false);
 
   const result = useScoreStore((s) => s.results[activePair]);
+  const allResults = useScoreStore((s) => s.results);
+  const computedAt = useScoreStore((s) => s.computedAt);
   const computing = useScoreStore((s) => s.computing);
+  const scoreHistory = useScoreHistoryStore((s) => s.history);
   const candles1hRaw = useCandleStore((s) => s.candles[`${activePair}_1h`]);
   const candles4hRaw = useCandleStore((s) => s.candles[`${activePair}_4h`]);
   const candles1h = candles1hRaw ?? EMPTY_CANDLES;
   const candles4h = candles4hRaw ?? EMPTY_CANDLES;
   const livePrice = useMarketStore((s) => s.prices[activePair]?.last ?? null);
+  const allTicks = useMarketStore((s) => s.prices);
   const balanceTotal = useAccountStore((s) => s.balanceTotal);
   const balanceFree = useAccountStore((s) => s.balanceFree);
   const drawdownProtocol = useAccountStore((s) => s.drawdownProtocol);
   const maxTradesPerDay = useSettingsStore((s) => s.maxTradesPerDay);
   const demoMode = useSettingsStore((s) => s.demoMode);
+  const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
   const btcCooldownUntil = useRiskStore((s) => s.btcCooldownUntil);
   const btcSelfCooldownUntil = useRiskStore((s) => s.btcSelfCooldownUntil);
   const logEvent = useRiskStore((s) => s.logEvent);
   const trades = useTradesStore((s) => s.trades);
   const openPending = useTradesStore((s) => s.openPending);
-  const fundingBtc = useMacroStore((s) => s.fundingBtc);
-  const fundingEth = useMacroStore((s) => s.fundingEth);
+  const funding = useMacroStore((s) => s.funding);
   const fgValue = useMacroStore((s) => s.fgValue);
 
-  // Bucket istatistikleri — geçmiş trade'lerden score bazlı performans
+  // Keyboard shortcuts: 1-9 → select pair by index, G → next GO pair
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.target as HTMLElement).tagName === "INPUT") return;
+      if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
+      const digit = parseInt(e.key);
+      if (!isNaN(digit) && digit >= 1 && digit <= 9) {
+        const target = PAIRS[digit - 1];
+        if (target) setActivePair(target);
+        return;
+      }
+      if (e.key === "g" || e.key === "G") {
+        const goList = PAIRS.filter((p) => allResults[p]?.verdict === "go");
+        if (goList.length === 0) return;
+        const currentIdx = goList.indexOf(activePair);
+        setActivePair(goList[(currentIdx + 1) % goList.length]);
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [allResults, activePair]);
+
+  const goPairs = useMemo(
+    () => PAIRS.filter((p) => allResults[p]?.verdict === "go"),
+    [allResults],
+  );
+
+  const alarms = usePriceAlarmStore((s) => s.alarms);
+  const alarmedPairs = useMemo(
+    () => new Set(alarms.filter((a) => a.status === "active").map((a) => a.pair)),
+    [alarms],
+  );
+
+  const displayPairs = useMemo<readonly Pair[]>(() => {
+    if (pairGroup === "go") return goPairs.length > 0 ? goPairs : PAIRS;
+    if (pairGroup === "watch") return watchlistPairs.length > 0 ? watchlistPairs : PAIRS;
+    return PAIR_GROUPS[pairGroup] ?? PAIRS;
+  }, [pairGroup, goPairs, watchlistPairs]);
+
+  const pairMomentum = useMemo<Partial<Record<Pair, number>>>(() => {
+    const out: Partial<Record<Pair, number>> = {};
+    for (const p of PAIRS) {
+      const snaps = scoreHistory[p];
+      if (!snaps || snaps.length < 4) continue;
+      const recent = snaps.slice(-4);
+      out[p] = recent[recent.length - 1].score - recent[0].score;
+    }
+    return out;
+  }, [scoreHistory]);
+
+  const latestScoreTime = useMemo(() => {
+    const times = Object.values(computedAt).filter((v): v is number => v !== undefined);
+    return times.length > 0 ? Math.max(...times) : null;
+  }, [computedAt]);
+
   const bucketStats = useMemo(() => {
     if (!result) return null;
     const closedTrades = trades
-      .filter((t) => t.status === "closed" && t.exit != null && t.pair === activePair)
-      .map((t) => ({ score: t.entryContext.score, pnlUsd: t.exit!.pnlUsd }));
+      .filter((tr) => tr.status === "closed" && tr.exit != null && tr.pair === activePair)
+      .map((tr) => ({ score: tr.entryContext.score, pnlUsd: tr.exit!.pnlUsd }));
     return getBucketStats(result.score, closedTrades);
   }, [result, trades, activePair]);
 
-  // Signal direction for flow intelligence (uppercase: "LONG" | "SHORT")
   const signalDir: "LONG" | "SHORT" =
     result?.direction === "SHORT" ? "SHORT" : "LONG";
 
@@ -79,14 +167,11 @@ export default function KararPage() {
     return atr(candles1h.map(toIndicatorCandle), { period: 14 });
   }, [candles1h]);
 
-  // ADX ham değeri — TP modunu belirlemek için (weak/healthy/strong)
   const adxValue = useMemo(() => {
     if (candles1h.length < 29) return null;
     return adx(candles1h.map(toIndicatorCandle), 14)?.adx ?? null;
   }, [candles1h]);
 
-  // Swing seviyeleri — yapısal stop için
-  // 4h öncelikli (daha anlamlı yapı), 1h fallback
   const swingLevels = useMemo(() => {
     const sw4h =
       candles4h.length >= 10
@@ -96,7 +181,6 @@ export default function KararPage() {
       candles1h.length >= 10
         ? findSwingLevels(candles1h.map(toIndicatorCandle), 30, 2)
         : { swingLow: null, swingHigh: null };
-    // 4h varsa kullan, yoksa 1h'a düş
     return {
       swingLow: sw4h.swingLow ?? sw1h.swingLow,
       swingHigh: sw4h.swingHigh ?? sw1h.swingHigh,
@@ -138,7 +222,7 @@ export default function KararPage() {
     });
   }, [result, livePrice, atrValue, adxValue, swingLevels, activePair, balanceTotal, balanceFree, drawdownProtocol]);
 
-  async function handleConfirm() {
+  async function handleConfirm(marginMode: "cross" | "isolated" = "cross") {
     if (!sizerResult || !result || !livePrice) return;
     if (result.direction !== "LONG" && result.direction !== "SHORT") return;
 
@@ -146,8 +230,8 @@ export default function KararPage() {
     setExecError(null);
 
     const today = new Date();
-    const todayTrades = trades.filter((t) => {
-      const d = new Date(t.openedAt);
+    const todayTrades = trades.filter((tr) => {
+      const d = new Date(tr.openedAt);
       return (
         d.getFullYear() === today.getFullYear() &&
         d.getMonth() === today.getMonth() &&
@@ -155,8 +239,40 @@ export default function KararPage() {
       );
     });
 
-    const fundingResult =
-      activePair === "BTC" ? fundingBtc : fundingEth;
+    const fundingResult = funding[activePair] ?? null;
+
+    if (forwardTestMode) {
+      openPending({
+        pair: activePair,
+        direction: result.direction,
+        entryPrice: livePrice,
+        qty: sizerResult.qty,
+        leverage: sizerResult.leverage,
+        stopPrice: sizerResult.stop.stopPrice,
+        takeProfit1: sizerResult.tp.tp1Price,
+        takeProfit2: sizerResult.tp.tp2Price,
+        riskAmountUsd: sizerResult.risk.riskUsd,
+        isPaper: true,
+        entryContext: {
+          score: result.score,
+          verdict: result.verdict,
+          fgValue: fgValue ?? undefined,
+          fundingRate: fundingResult?.fundingRate ?? undefined,
+          drawdownTier: drawdownProtocol.tier,
+        },
+      });
+      logEvent("trade_open", {
+        pair: activePair,
+        direction: result.direction,
+        score: result.score,
+        decision: "go",
+        source: "manual",
+        reason: "forward_test",
+      });
+      setShowConfirm(false);
+      setIsExecuting(false);
+      return;
+    }
 
     try {
       const output = await orchestrate(
@@ -168,7 +284,7 @@ export default function KararPage() {
           stopPrice: sizerResult.stop.stopPrice,
           takeProfitPrice: sizerResult.tp.tp1Price,
           leverage: sizerResult.leverage,
-          marginMode: "cross",
+          marginMode,
           source: "manual",
           accountState: {
             drawdownProtocol,
@@ -179,13 +295,12 @@ export default function KararPage() {
           },
         },
         {
-          adapter: getOkxAdapter(demoMode),
+          adapter: getAdapter(demoMode),
           channels: [createChannel("telegram")],
           dedupeStore: getGlobalDedupeStore(),
         },
       );
 
-      // Disiplin logu — her durumda kayıt
       const je = output.journalEntry;
       logEvent(je.type as Parameters<typeof logEvent>[0], {
         pair: je.pair,
@@ -207,7 +322,7 @@ export default function KararPage() {
           takeProfit1: sizerResult.tp.tp1Price,
           takeProfit2: sizerResult.tp.tp2Price,
           riskAmountUsd: sizerResult.risk.riskUsd,
-          isPaper: settings.demoMode,
+          isPaper: demoMode,
           entryContext: {
             score: result.score,
             verdict: result.verdict,
@@ -222,79 +337,307 @@ export default function KararPage() {
         setExecError(output.reasonHuman);
       }
     } catch (e) {
-      setExecError(e instanceof Error ? e.message : "Bilinmeyen hata");
+      setExecError(e instanceof Error ? e.message : t("karar.unknownError"));
     } finally {
       setIsExecuting(false);
     }
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      {/* Pair seçici */}
-      <div className="flex gap-2">
-        {PAIRS.map((p) => (
-          <button
-            key={p}
-            onClick={() => setActivePair(p)}
-            className={`flex-1 rounded-md py-2 font-mono text-sm font-semibold tracking-wider transition-colors ${
-              activePair === p
-                ? "bg-surface-s2 text-text-t1"
-                : "text-text-t3 hover:text-text-t2"
-            }`}
-          >
-            {p}
-          </button>
-        ))}
-      </div>
-
-      {/* Yükleniyor */}
-      {!result && (
-        <div className="bg-surface-s1 rounded-lg p-6 text-center font-mono text-sm text-text-t3">
-          {computing ? "Hesaplanıyor..." : "Mum verisi bekleniyor..."}
+    <div className="flex flex-col gap-3">
+      {/* Forward Test Mode banner */}
+      {forwardTestMode && (
+        <div className="flex items-center gap-2 rounded-lg border border-[#22C55E]/30 bg-[#22C55E]/8 px-3 py-2">
+          <span className="font-mono text-xs font-bold tracking-widest text-[#22C55E]">
+            FWD TEST
+          </span>
+          <span className="text-text-t2 font-mono text-xs">
+            {t("karar.fwdTestActive")}
+          </span>
         </div>
       )}
 
-      {/* Sonuç */}
-      {result && (
-        <>
-          <VerdictBadge
-            verdict={result.verdict}
-            signalType={result.pullbackActive ? "pullback" : "classic"}
-          />
-          <DirectionBadge
-            direction={result.direction}
-            confidence={result.dirConfidence}
-          />
-          <ScoreBar
-            score={result.score}
-            threshold={result.effectiveThreshold}
-            goThreshold={result.goThreshold}
-          />
-          <FlowAlignmentRow flow={flowResult} />
-          <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
-          <BlocksList
-            hardBlocks={result.blocks}
-            softBlocks={result.softBlocks}
-          />
-          <ReasonsList reasons={result.reasons} />
+      <StreakBanner />
 
-          {sizerResult && (
-            <PositionSizer
-              result={sizerResult}
-              onTrade={() => {
-                setExecError(null);
-                setShowConfirm(true);
-              }}
-            />
-          )}
+      {/* Desktop 2-column layout */}
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
 
-          {execError && (
-            <div className="bg-soft-red text-signal-red rounded-lg p-3 font-mono text-xs">
-              {execError}
+        {/* LEFT SIDEBAR — pair selection */}
+        <div className="flex flex-col gap-3 lg:w-72 lg:shrink-0">
+          {/* Score freshness */}
+          <div className="flex items-center justify-between">
+            <span className="text-text-t4 font-mono text-2xs tracking-wider">
+              {latestScoreTime !== null
+                ? `${t("karar.scoresUpdated")} · ${scoreAge(latestScoreTime)} ${t("karar.scoresAgo")}`
+                : t("karar.scoresNever")}
+            </span>
+            {computing && (
+              <span className="text-brand font-mono text-2xs animate-pulse">⟳</span>
+            )}
+          </div>
+
+          <ScoreLeaderboard
+            results={allResults}
+            activePair={activePair}
+            onSelect={setActivePair}
+          />
+
+          <GoSignalLog />
+
+          {/* Pair group filter */}
+          <div className="flex flex-wrap gap-1">
+            {(["all", "majors", "alts", "meme", "go", "watch"] as PairGroup[]).map((g) => {
+              const label =
+                g === "all" ? t("karar.groupAll") :
+                g === "majors" ? "Majors" :
+                g === "alts" ? "Alts" :
+                g === "meme" ? "Meme" :
+                g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
+                `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
+              const isActive = pairGroup === g;
+              const isGo = g === "go";
+              const isWatch = g === "watch";
+              return (
+                <button
+                  key={g}
+                  onClick={() => {
+                    setPairGroup(g);
+                    const target = g === "go" ? goPairs : g === "watch" ? watchlistPairs : PAIR_GROUPS[g] ?? PAIRS;
+                    if (target.length > 0 && !target.includes(activePair)) {
+                      setActivePair(target[0] as Pair);
+                    }
+                  }}
+                  className={[
+                    "px-2.5 py-1 rounded font-mono text-2xs font-medium transition-colors",
+                    isActive
+                      ? isGo
+                        ? "bg-green-500/20 text-green-400"
+                        : isWatch
+                        ? "bg-amber-500/20 text-amber-400"
+                        : "bg-surface-s2 text-text-t1"
+                      : isGo && goPairs.length > 0
+                      ? "text-green-400/70 hover:text-green-400"
+                      : isWatch && watchlistPairs.length > 0
+                      ? "text-amber-400/70 hover:text-amber-400"
+                      : "text-text-t4 hover:text-text-t2",
+                  ].join(" ")}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Pair grid */}
+          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(displayPairs.length, 5)}, 1fr)` }}>
+            {displayPairs.map((p) => {
+              const pr = allResults[p];
+              const v = pr?.verdict;
+              const score = pr?.score;
+              const dir = pr?.direction;
+              const isActive = activePair === p;
+
+              const verdictBorder =
+                v === "go"
+                  ? "border-b-2 border-green-400"
+                  : v === "wait"
+                  ? "border-b-2 border-yellow-400"
+                  : v === "no"
+                  ? "border-b-2 border-red-400/50"
+                  : "border-b-2 border-transparent";
+
+              const scoreColor =
+                v === "go"
+                  ? "text-green-400"
+                  : v === "wait"
+                  ? "text-yellow-400"
+                  : "text-text-t4";
+
+              const dirArrow =
+                dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
+
+              const pairChg = allTicks[p]?.chg ?? null;
+              const chgColor =
+                pairChg === null ? "text-text-t4"
+                : pairChg > 0 ? "text-signal-up"
+                : pairChg < 0 ? "text-signal-down"
+                : "text-text-t4";
+
+              const momentum = pairMomentum[p];
+              const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
+              const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
+
+              const isWatched = watchlistPairs.includes(p);
+              return (
+                <div key={p} className="relative group">
+                  <button
+                    onClick={() => setActivePair(p as Pair)}
+                    className={[
+                      "w-full flex flex-col items-center rounded pt-1.5 pb-0.5 font-mono transition-colors",
+                      verdictBorder,
+                      isActive
+                        ? "bg-surface-s2 text-text-t1"
+                        : "text-text-t3 hover:text-text-t2",
+                    ].join(" ")}
+                  >
+                    <div className="relative flex items-center justify-center">
+                      <span className="text-xs font-semibold tracking-wide">{p}</span>
+                      {alarmedPairs.has(p) && (
+                        <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-amber-400" />
+                      )}
+                    </div>
+                    <div className="flex items-center gap-0.5">
+                      <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
+                        {score !== undefined ? `${score}${dirArrow}` : "·"}
+                      </span>
+                      {showMom && (
+                        <span className={`text-[8px] tabular-nums leading-none ${momColor}`}>
+                          {(momentum ?? 0) > 0 ? "▲" : "▼"}
+                        </span>
+                      )}
+                    </div>
+                    {pairChg !== null && (
+                      <div className={`text-[8px] tabular-nums leading-none ${chgColor}`}>
+                        {pairChg >= 0 ? "+" : ""}{pairChg.toFixed(1)}%
+                      </div>
+                    )}
+                    <div className="mt-0.5 h-[10px]">
+                      <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
+                    </div>
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); watchlistToggle(p as Pair); }}
+                    className={`absolute top-0 right-0 px-0.5 py-0.5 font-mono text-[9px] transition-opacity ${
+                      isWatched
+                        ? "opacity-100 text-amber-400"
+                        : "opacity-0 group-hover:opacity-60 text-text-t4"
+                    }`}
+                    title={isWatched ? t("karar.watchRemove") : t("karar.watchAdd")}
+                  >
+                    ★
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* RIGHT MAIN — active pair details */}
+        <div className="flex flex-col gap-3 lg:flex-1 lg:min-w-0">
+          {!result && (
+            <div className="bg-surface-s1 rounded-lg p-6 text-center font-mono text-sm text-text-t3">
+              {computing ? t("karar.computing") : t("karar.waitingData")}
             </div>
           )}
-        </>
-      )}
+
+          {result && (
+            <>
+              {/* Price header */}
+              <PairPriceHeader
+                pair={activePair}
+                price={livePrice}
+                chg={allTicks[activePair]?.chg ?? null}
+              />
+
+              {/* HERO: Verdict + Direction + Funding */}
+              <div className="flex flex-wrap items-center gap-2">
+                <VerdictBadge
+                  verdict={result.verdict}
+                  signalType={result.pullbackActive ? "pullback" : "classic"}
+                />
+                <DirectionBadge
+                  direction={result.direction}
+                  confidence={result.dirConfidence}
+                />
+                <FundingBadge
+                  pair={activePair}
+                  direction={result.direction !== "NEUTRAL" ? result.direction : undefined}
+                />
+                <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
+              </div>
+
+              {/* Score bar */}
+              <ScoreBar
+                score={result.score}
+                threshold={result.effectiveThreshold}
+                goThreshold={result.goThreshold}
+              />
+
+              {/* Flow summary — single line */}
+              <FlowAlignmentRow flow={flowResult} />
+
+              {/* Details accordion — hidden by default */}
+              <div>
+                <button
+                  onClick={() => setShowDetails((v) => !v)}
+                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-surface-s1 font-mono text-2xs text-text-t3 hover:text-text-t2 transition-colors"
+                >
+                  <span>{showDetails ? t("karar.hideDetails") : t("karar.showDetails")}</span>
+                </button>
+
+                {showDetails && (
+                  <div className="flex flex-col gap-3 mt-3">
+                    {/* Alarm + Candle patterns */}
+                    <div className="flex flex-wrap items-start gap-2">
+                      <div className="flex-1 min-w-[180px]">
+                        <QuickAlarm
+                          pair={activePair}
+                          livePrice={livePrice}
+                          direction={result.direction}
+                        />
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        <CandlePatternBadge pair={activePair} />
+                      </div>
+                    </div>
+
+                    {/* Historical edge + Live edge */}
+                    <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+                      <HistoricalEdge pair={activePair} />
+                      <LiveEdgeBadge pair={activePair} />
+                    </div>
+
+                    {/* Score trend chart */}
+                    <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} t={t} />
+
+                    {/* Score breakdown + Blocks + Reasons */}
+                    <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                      <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
+                      <div className="flex flex-col gap-3">
+                        <BlocksList
+                          hardBlocks={result.blocks}
+                          softBlocks={result.softBlocks}
+                        />
+                        <ReasonsList reasons={result.reasons} />
+                      </div>
+                    </div>
+
+                    {sizerResult && result.direction !== "NEUTRAL" && (
+                      <CorrelationWarning pair={activePair} direction={result.direction} />
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {sizerResult && (
+                <PositionSizer
+                  result={sizerResult}
+                  onTrade={() => {
+                    setExecError(null);
+                    setShowConfirm(true);
+                  }}
+                />
+              )}
+
+              {execError && (
+                <div className="bg-soft-red text-signal-red rounded-lg p-3 font-mono text-xs">
+                  {execError}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
 
       {showConfirm && sizerResult && (
         <TradeConfirmModal
@@ -307,10 +650,120 @@ export default function KararPage() {
       {isExecuting && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
           <div className="bg-bg-card rounded-lg p-6 font-mono text-sm text-text-t1">
-            Emir gönderiliyor...
+            {t("karar.sendingOrder")}
           </div>
         </div>
       )}
     </div>
   );
+}
+
+function ScoreHistoryChart({
+  snapshots,
+  t,
+}: {
+  snapshots: import("@/lib/store/scoreHistoryStore").ScoreSnapshot[];
+  t: (key: string) => string;
+}) {
+  const pts = snapshots.slice(-40);
+  if (pts.length < 2) return null;
+
+  const W = 320;
+  const H = 36;
+  const PAD = 2;
+  const n = pts.length;
+  const xStep = (W - PAD * 2) / (n - 1);
+
+  function xOf(i: number) { return PAD + i * xStep; }
+  function yOf(s: number) { return PAD + ((100 - s) / 100) * (H - PAD * 2); }
+
+  const segments: { d: string; color: string }[] = [];
+  for (let i = 1; i < pts.length; i++) {
+    const p = pts[i];
+    const color = p.verdict === "go" ? "#22c55e" : p.verdict === "wait" ? "#f59e0b" : "#ef4444";
+    segments.push({
+      d: `M${xOf(i - 1).toFixed(1)},${yOf(pts[i-1].score).toFixed(1)}L${xOf(i).toFixed(1)},${yOf(p.score).toFixed(1)}`,
+      color,
+    });
+  }
+
+  const yGo = yOf(90);
+  const latest = pts[pts.length - 1];
+
+  return (
+    <div className="border-border bg-bg-card rounded-lg border px-3 pt-2 pb-1">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">{t("karar.scoreTrend")}</span>
+        <span className="text-text-t4 font-mono text-2xs">{pts.length} {t("karar.snapshots")}</span>
+      </div>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+        <line x1={PAD} y1={yGo} x2={W - PAD} y2={yGo}
+          stroke="#22c55e" strokeWidth="0.5" strokeDasharray="3,3" strokeOpacity="0.35" />
+        {segments.map((seg, i) => (
+          <path key={i} d={seg.d} fill="none" stroke={seg.color} strokeWidth="1.5" strokeOpacity="0.8" />
+        ))}
+        <circle
+          cx={xOf(n - 1)}
+          cy={yOf(latest.score)}
+          r="2.5"
+          fill={latest.verdict === "go" ? "#22c55e" : latest.verdict === "wait" ? "#f59e0b" : "#ef4444"}
+        />
+      </svg>
+      <div className="flex justify-between mt-0.5">
+        <span className="text-text-t4 font-mono text-2xs">{pts[0].ts ? new Date(pts[0].ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
+        <span className="text-text-t4 font-mono text-2xs">{latest.ts ? new Date(latest.ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
+      </div>
+    </div>
+  );
+}
+
+function fmtPrice(price: number): string {
+  if (price >= 10_000) return "$" + price.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  if (price >= 100)    return "$" + price.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  if (price >= 1)      return "$" + price.toFixed(4);
+  if (price >= 0.001)  return "$" + price.toFixed(5);
+  return "$" + price.toPrecision(4);
+}
+
+function PairPriceHeader({
+  pair,
+  price,
+  chg,
+}: {
+  pair: import("@/lib/constants/pairs").Pair;
+  price: number | null;
+  chg: number | null;
+}) {
+  const chgColor =
+    chg === null ? "text-text-t3"
+    : chg > 0 ? "text-signal-up"
+    : chg < 0 ? "text-signal-down"
+    : "text-text-t3";
+
+  return (
+    <div className="flex items-center justify-between bg-surface-s1 rounded-lg px-3 py-2">
+      <span className="font-mono text-sm font-bold text-text-t1 tracking-wide">{pair}</span>
+      <div className="flex items-center gap-3">
+        {price !== null && (
+          <span className="font-mono text-sm font-semibold text-text-t1 tabular-nums">
+            {fmtPrice(price)}
+          </span>
+        )}
+        {chg !== null && (
+          <span className={`font-mono text-xs font-medium tabular-nums ${chgColor}`}>
+            {chg >= 0 ? "+" : ""}{chg.toFixed(2)}%
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function scoreAge(epochMs: number): string {
+  const diffMs = Date.now() - epochMs;
+  const secs = Math.floor(diffMs / 1000);
+  if (secs < 60) return `${secs}s`;
+  const mins = Math.floor(secs / 60);
+  if (mins < 60) return `${mins}m`;
+  return `${Math.floor(mins / 60)}h`;
 }

@@ -3,5 +3,15 @@
   "framework": "nextjs",
   "regions": ["fra1"],
   "buildCommand": "npm run build",
-  "installCommand": "npm install --legacy-peer-deps"
+  "installCommand": "npm install --legacy-peer-deps",
+  "crons": [
+    {
+      "path": "/api/cron/signal-check",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/daily-summary",
+      "schedule": "0 0 * * *"
+    }
+  ]
 }

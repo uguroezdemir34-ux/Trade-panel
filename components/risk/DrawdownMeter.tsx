@@ -71,10 +71,10 @@ export function DrawdownMeter(): React.ReactElement {
         />
       </div>
       <div className="text-text-t4 mt-1 flex justify-between font-mono text-2xs tracking-wider">
-        <span>Normal</span>
-        <span>Caution</span>
-        <span>Restricted</span>
-        <span>Locked</span>
+        <span className="whitespace-nowrap">{t("risk.drawdownTiers.normal")}</span>
+        <span className="whitespace-nowrap">{t("risk.drawdownTiers.caution")}</span>
+        <span className="whitespace-nowrap">{t("risk.drawdownTiers.restricted")}</span>
+        <span className="whitespace-nowrap">{t("risk.drawdownTiers.locked")}</span>
       </div>
     </div>
   );

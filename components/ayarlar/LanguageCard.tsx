@@ -39,7 +39,7 @@ export function LanguageCard(): React.ReactElement {
           {t("settings.language.description")}
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
         {SUPPORTED_LOCALES.map((loc) => {
           const meta = LOCALE_META[loc];
           return (

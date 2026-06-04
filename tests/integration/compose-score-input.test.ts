@@ -46,9 +46,8 @@ const defaultDrawdown: ComposeInput["drawdownProtocol"] = {
 };
 
 const noSweep: ComposeInput["sweep15m"] = {
-  type: "none",
+  type: null,
   strength: 0,
-  direction: "LONG",
 };
 
 const fullQuality: ComposeInput["timeQuality"] = {

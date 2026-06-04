@@ -76,6 +76,12 @@ function makeMockAdapter(
     async cancelAlgoOrders() {
       return { ok: true };
     },
+    async partialClosePosition() {
+      return { ok: true };
+    },
+    async updateSlTp() {
+      return { ok: true };
+    },
   } as ExchangeAdapter & { callCount: number; callTimestamps: number[] };
 }
 
@@ -439,6 +445,8 @@ describe("Parallel Execution — Concurrency", () => {
         },
         async closePosition() { return { ok: true }; },
         async cancelAlgoOrders() { return { ok: true }; },
+        async partialClosePosition() { return { ok: true }; },
+        async updateSlTp() { return { ok: true }; },
       } as ExchangeAdapter);
     }
 
@@ -593,6 +601,8 @@ describe("Per-Tenant Rate Limiter — Isolation", () => {
       },
       async closePosition() { return { ok: true }; },
       async cancelAlgoOrders() { return { ok: true }; },
+      async partialClosePosition() { return { ok: true }; },
+      async updateSlTp() { return { ok: true }; },
     } as ExchangeAdapter);
 
     const executor = new MultiTenantExecutor(registry, factory, {

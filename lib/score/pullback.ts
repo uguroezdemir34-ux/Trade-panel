@@ -213,7 +213,7 @@ export function detectPullbackSetup(input: PullbackInput): PullbackResult {
       signalType: "pullback",
       reason:
         `🔄 Pullback setup · 4H trend ✓ (ADX ${adx4h.toFixed(0)}) · ` +
-        `RSI ${rsi1h.toFixed(0)} cool · Hacim canlandı · F&G ${fg}`,
+        `RSI ${rsi1h.toFixed(0)} cool · Volume reviving · F&G ${fg}`,
       diagnostics,
     };
   }
@@ -221,8 +221,8 @@ export function detectPullbackSetup(input: PullbackInput): PullbackResult {
   // Pullback geometrisi var ama bir şart kaçırıldı — bilgi mesajı
   if (trend4hOK && adx4hOK && pullbackTouch) {
     const missing: string[] = [];
-    if (!rsiOK) missing.push(`RSI ${rsi1h.toFixed(0)} cool zone dışı`);
-    if (!volReviving) missing.push("hacim sönük");
+    if (!rsiOK) missing.push(`RSI ${rsi1h.toFixed(0)} outside cool zone`);
+    if (!volReviving) missing.push("volume weak");
     if (sweepAgainst) missing.push("ters sweep");
     if (!fgOK) missing.push(`F&G ${fg} (panik)`);
     if (!baseOK) missing.push(`baseScore ${baseScore}<65`);

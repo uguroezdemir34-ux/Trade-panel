@@ -11,8 +11,12 @@ export function TradingLimitsCard(): React.ReactElement {
   const t = useT();
   const maxTradesPerDay = useSettingsStore((s) => s.maxTradesPerDay);
   const defaultLeverage = useSettingsStore((s) => s.defaultLeverage);
+  const defaultRiskPct = useSettingsStore((s) => s.defaultRiskPct);
+  const dailyGoalUsd = useSettingsStore((s) => s.dailyGoalUsd);
   const setMaxTradesPerDay = useSettingsStore((s) => s.setMaxTradesPerDay);
   const setDefaultLeverage = useSettingsStore((s) => s.setDefaultLeverage);
+  const setDefaultRiskPct = useSettingsStore((s) => s.setDefaultRiskPct);
+  const setDailyGoalUsd = useSettingsStore((s) => s.setDailyGoalUsd);
 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
@@ -46,6 +50,30 @@ export function TradingLimitsCard(): React.ReactElement {
           step={1}
           suffix="x"
           onChange={setDefaultLeverage}
+        />
+
+        {/* Default risk % */}
+        <NumberControl
+          label="Default Risk %"
+          description="Used as starting value in the position size calculator"
+          value={defaultRiskPct}
+          min={0.1}
+          max={5}
+          step={0.1}
+          suffix="%"
+          onChange={setDefaultRiskPct}
+        />
+
+        {/* Daily goal */}
+        <NumberControl
+          label="Daily Goal ($)"
+          description="P&L target for today — tracked on the Risk page"
+          value={dailyGoalUsd}
+          min={0}
+          max={10000}
+          step={10}
+          suffix="$"
+          onChange={setDailyGoalUsd}
         />
       </div>
     </div>

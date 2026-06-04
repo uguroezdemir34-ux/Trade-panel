@@ -34,13 +34,6 @@ export const TABS: readonly TabConfig[] = [
     icon: "🎯",
   },
   {
-    id: "pozisyon",
-    path: "/pozisyon",
-    labelKey: "nav.position",
-    shortKey: "nav.positionShort",
-    icon: "💼",
-  },
-  {
     id: "grafik",
     path: "/grafik",
     labelKey: "nav.chart",
@@ -55,18 +48,11 @@ export const TABS: readonly TabConfig[] = [
     icon: "🌐",
   },
   {
-    id: "risk",
-    path: "/risk",
-    labelKey: "nav.risk",
-    shortKey: "nav.risk",
-    icon: "🛡️",
-  },
-  {
-    id: "pnl",
-    path: "/pnl",
-    labelKey: "nav.pnl",
-    shortKey: "nav.pnl",
-    icon: "💰",
+    id: "portfolyo",
+    path: "/portfolyo",
+    labelKey: "nav.portfolio",
+    shortKey: "nav.portfolioShort",
+    icon: "💼",
   },
   {
     id: "ayarlar",

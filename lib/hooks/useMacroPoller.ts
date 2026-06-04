@@ -13,17 +13,21 @@ import { useMacroStore } from "@/lib/store/macroStore";
 
 const POLL_INTERVAL_MS = 5 * 60_000; // 5 dakika
 
-export function useMacroPoller(): void {
+export function useMacroPoller(delayMs = 0): void {
   const refreshAll = useMacroStore((s) => s.refreshAll);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    refreshAll();
-    timerRef.current = setInterval(() => {
+    startTimerRef.current = setTimeout(() => {
       refreshAll();
-    }, POLL_INTERVAL_MS);
+      timerRef.current = setInterval(refreshAll, POLL_INTERVAL_MS);
+    }, delayMs);
     return () => {
+      if (startTimerRef.current) clearTimeout(startTimerRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
     };
+  // delayMs is a mount-time constant, safe to omit from deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [refreshAll]);
 }

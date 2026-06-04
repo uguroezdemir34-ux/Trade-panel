@@ -305,9 +305,7 @@ describe("detectTpSlHit()", () => {
   });
 
   it("TP/SL yok → null bile fiyat uysa", () => {
-    const noLevels = makeOpen({ stopPrice: 0, takeProfit1: undefined, takeProfit2: undefined });
-    // stopPrice=0, low=0 → LONG low<=stop: 0<=0 → hit
-    // Sıfır stop edge case — bu sistemde geçerli stop her zaman > 0
+    // stopPrice=0 edge case — bu sistemde geçerli stop her zaman > 0
     // Bu testi pratik tutmak için: gerçekçi değer
     const noTp = makeOpen({ stopPrice: 49000, takeProfit1: undefined });
     expect(detectTpSlHit(noTp, 52000, 50000)).toBeNull(); // SL yok, TP yok

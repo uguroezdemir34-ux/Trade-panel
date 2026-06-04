@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ClerkProvider } from "@clerk/nextjs";
 import { AppShell } from "@/components/layout/AppShell";
 import { I18nProvider } from "@/lib/i18n/context";
 import { LocaleHtmlSync } from "@/components/layout/LocaleHtmlSync";
@@ -9,6 +10,12 @@ export const metadata: Metadata = {
   title: BRAND_META.title,
   description: BRAND_META.description,
   keywords: BRAND_META.keywords,
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "QUANTIX",
+  },
   icons: {
     icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
     apple: [{ url: "/apple-icon.svg", type: "image/svg+xml" }],
@@ -45,8 +52,15 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" dir="ltr">
+    <ClerkProvider>
+    <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
+        {/* Prevent theme FOUC — reads localStorage before React hydrates */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `try{var t=localStorage.getItem('ug52_theme');var v=t?JSON.parse(t):'dark';document.documentElement.setAttribute('data-theme',v);document.documentElement.style.colorScheme=v;}catch(e){}`,
+          }}
+        />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"
@@ -66,5 +80,6 @@ export default function RootLayout({
         </I18nProvider>
       </body>
     </html>
+    </ClerkProvider>
   );
 }

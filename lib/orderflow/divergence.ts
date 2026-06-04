@@ -127,7 +127,7 @@ export function detectDivergence(
       priceChangePct,
       cvdUsd: cvdWindow.cvdUsd,
       windowMs,
-      humanReason: "Hareket gürültü seviyesinde",
+      humanReason: "Move at noise level",
     };
   }
 
@@ -143,8 +143,8 @@ export function detectDivergence(
       cvdUsd: cvdWindow.cvdUsd,
       windowMs,
       humanReason: priceUp
-        ? "Fiyat yukarı, CVD destekliyor (uyumlu)"
-        : "Fiyat aşağı, CVD destekliyor (uyumlu)",
+        ? "Price up, CVD confirming (aligned)"
+        : "Price down, CVD confirming (aligned)",
     };
   }
 
@@ -157,7 +157,7 @@ export function detectDivergence(
       cvdUsd: cvdWindow.cvdUsd,
       windowMs,
       humanReason:
-        "Fiyat yukarı ama büyük market sell — smart money satıyor",
+        "Price up but large market sell — smart money selling",
     };
   }
 
@@ -167,7 +167,7 @@ export function detectDivergence(
     priceChangePct,
     cvdUsd: cvdWindow.cvdUsd,
     windowMs,
-    humanReason: "Fiyat aşağı ama büyük market buy — smart money alıyor",
+    humanReason: "Price down but large market buy — smart money buying",
   };
 }
 

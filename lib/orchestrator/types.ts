@@ -203,5 +203,7 @@ export function signalToOrderInput(
     qty: input.qty,
     leverage: input.leverage,
     marginMode: input.marginMode,
+    slPrice: input.stopPrice > 0 ? input.stopPrice : undefined,
+    tp1Price: input.takeProfitPrice ? input.takeProfitPrice : undefined,
   };
 }

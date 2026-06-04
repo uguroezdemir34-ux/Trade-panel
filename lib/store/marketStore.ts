@@ -57,7 +57,7 @@ const initialConnection: ConnectionState = {
   connectedAt: null,
 };
 
-export const useMarketStore = create<MarketStoreState>((set, get) => ({
+export const useMarketStore = create<MarketStoreState>((set) => ({
   prices: {},
   connection: initialConnection,
   tickCount: {},

@@ -25,7 +25,7 @@ import {
 function main(): void {
   console.log("Running next build for bundle analysis...");
 
-  let stdout: string;
+  let stdout = "";
   try {
     stdout = execSync("npx next build", {
       encoding: "utf-8",

@@ -32,6 +32,26 @@ export interface ClosePositionInput {
   posSide?: "long" | "short";
 }
 
+export interface PartialCloseInput {
+  instId: string;
+  mgnMode: "cross" | "isolated";
+  /** Current position direction (determines which side to reduce) */
+  direction: "LONG" | "SHORT";
+  /** Qty to close in coin units */
+  qty: number;
+}
+
+export interface UpdateSlTpInput {
+  instId: string;
+  direction: "LONG" | "SHORT";
+  mgnMode: "cross" | "isolated";
+  /** Full position size (for algo order sizing) */
+  qty: number;
+  slPrice?: number;
+  tp1Price?: number;
+  tp2Price?: number;
+}
+
 // ═══════════════ RESULT TYPES ═══════════════
 
 export interface TradeData {
@@ -61,4 +81,8 @@ export interface ExchangeAdapter {
   closePosition(input: ClosePositionInput): Promise<AdapterResult<void>>;
   /** Bekleyen algo emirlerini (SL/TP) iptal et */
   cancelAlgoOrders(instId: string): Promise<AdapterResult<void>>;
+  /** Pozisyonun bir kısmını kapat (hedge modda ters taraf market order) */
+  partialClosePosition(input: PartialCloseInput): Promise<AdapterResult<void>>;
+  /** Mevcut algo emirlerini iptal edip yeni SL/TP koy */
+  updateSlTp(input: UpdateSlTpInput): Promise<AdapterResult<void>>;
 }

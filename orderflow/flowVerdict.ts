@@ -152,9 +152,9 @@ export function computeFlowVerdict(
       vetoed: true,
       vetoReason:
         divergence.confluenceType === "bearish_divergence"
-          ? "Çoklu pencerede bearish divergence — smart money satıyor"
-          : "Çoklu pencerede bullish divergence — smart money alıyor",
-      humanSummary: "VETO — Smart money ters yönde",
+          ? "Multi-frame bearish divergence — smart money selling"
+          : "Multi-frame bullish divergence — smart money buying",
+      humanSummary: "VETO — Smart money in opposite direction",
     };
   }
 
@@ -178,27 +178,27 @@ export function computeFlowVerdict(
     alignment = "strong_align";
     scoreAdjustment = 10;
     confidenceMultiplier = 1.5;
-    humanSummary = "GÜÇLÜ ONAY — Flow tüm pencerelerde uyumlu";
+    humanSummary = "STRONG CONFIRM — Flow aligned across all windows";
   } else if (alignCount >= 2) {
     alignment = "weak_align";
     scoreAdjustment = 5;
     confidenceMultiplier = 1.2;
-    humanSummary = "HAFİF ONAY — Flow çoğunlukla uyumlu";
+    humanSummary = "WEAK CONFIRM — Flow mostly aligned";
   } else if (opposeCount === totalFrames) {
     alignment = "strong_oppose";
     scoreAdjustment = -10;
     confidenceMultiplier = 0.5;
-    humanSummary = "GÜÇLÜ ÇELİŞKİ — Flow tamamen ters";
+    humanSummary = "STRONG CONFLICT — Flow fully opposed";
   } else if (opposeCount >= 2) {
     alignment = "weak_oppose";
     scoreAdjustment = -5;
     confidenceMultiplier = 0.7;
-    humanSummary = "HAFİF ÇELİŞKİ — Flow çoğunlukla ters";
+    humanSummary = "WEAK CONFLICT — Flow mostly opposed";
   } else {
     alignment = "neutral";
     scoreAdjustment = 0;
     confidenceMultiplier = 1.0;
-    humanSummary = "NÖTR — Flow belirsiz";
+    humanSummary = "NEUTRAL — Flow unclear";
   }
 
   // VPIN multiplier uygula (varsa)

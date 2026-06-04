@@ -67,6 +67,7 @@ export const useTradeFeedStore = create<TradeFeedStoreState>((set, get) => ({
 
   ingest: (pair, raws, now) => {
     const current = get().feeds[pair];
+    if (!current) return;
     const next = ingestTrades(current, raws, now);
     set((s) => ({
       feeds: { ...s.feeds, [pair]: next },
@@ -75,6 +76,7 @@ export const useTradeFeedStore = create<TradeFeedStoreState>((set, get) => ({
 
   setConnection: (pair, state, error) => {
     const current = get().feeds[pair];
+    if (!current) return;
     const next = setConnectionState(current, state, error);
     set((s) => ({
       feeds: { ...s.feeds, [pair]: next },

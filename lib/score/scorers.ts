@@ -2,7 +2,7 @@
  * SKOR HESAPLAYICILARI — v55.51 panel ile birebir.
  * Kaynak: panel_v55_51.html satır 7335-7592.
  *
- * 8 ana kategori (toplam 100 puan):
+ * 8 ana kategori (toplam 100 pts):
  *   A) Trend (25)    — MTF EMA alignment, dirConfidence'a bağlı
  *   B) ADX   (15)    — 1H ADX gücü
  *   C) RSI   (10)    — Momentum, direction-aware
@@ -42,13 +42,13 @@ export function scoreTrend(
 
   if (dirConfidence === 3) {
     score = 25;
-    reason = direction === "LONG" ? "Tam Yükseliş (4H+1H+15M)" : "Tam Düşüş (4H+1H+15M)";
+    reason = direction === "LONG" ? "Full Bull (4H+1H+15M)" : "Full Bear (4H+1H+15M)";
   } else if (dirConfidence === 2) {
     score = 18;
-    reason = direction === "LONG" ? "Yükseliş (4H+1H)" : "Düşüş (4H+1H)";
+    reason = direction === "LONG" ? "Bull (4H+1H)" : "Bear (4H+1H)";
   } else if (direction === "NEUTRAL") {
     score = 0;
-    reason = "Karışık / Yatay";
+    reason = "Mixed / Sideways";
   }
 
   // 4H EMA200 counter-trend tespiti
@@ -56,12 +56,12 @@ export function scoreTrend(
     const above200 = px4h > ema200_4h;
     if (direction === "LONG" && !above200) {
       counterTrend = true;
-      reason = `${reason} 🚫 4H EMA200 altında (counter-trend)`;
+      reason = `${reason} 🚫 4H EMA200 below (counter-trend)`;
     } else if (direction === "SHORT" && above200) {
       counterTrend = true;
-      reason = `${reason} 🚫 4H EMA200 üstünde (counter-trend)`;
+      reason = `${reason} 🚫 4H EMA200 above (counter-trend)`;
     } else {
-      reason = `${reason} ✓ 4H EMA200 uyumlu`;
+      reason = `${reason} ✓ 4H EMA200 aligned`;
     }
   }
   return { score, reason, counterTrend };
@@ -72,13 +72,13 @@ export function scoreTrend(
 export function scoreAdx(adx: number | null): ScoreReason {
   if (adx === null) return { score: 0, reason: "—" };
   if (adx >= 25 && adx <= 40)
-    return { score: 15, reason: `Sağlam (${adx.toFixed(0)})` };
+    return { score: 15, reason: `Strong (${adx.toFixed(0)})` };
   if (adx >= 20 && adx < 25)
-    return { score: 9, reason: `Gelişiyor (${adx.toFixed(0)})` };
+    return { score: 9, reason: `Developing (${adx.toFixed(0)})` };
   if (adx > 40 && adx <= 50)
-    return { score: 0, reason: `⚠️ Yorgun (${adx.toFixed(0)}) - geç` };
-  if (adx < 20) return { score: 0, reason: `Zayıf (${adx.toFixed(0)}) - range` };
-  return { score: 0, reason: `⚠️ Aşırı yorgun (${adx.toFixed(0)})` };
+    return { score: 0, reason: `⚠️ Tired (${adx.toFixed(0)}) - late` };
+  if (adx < 20) return { score: 0, reason: `Weak (${adx.toFixed(0)}) - range` };
+  return { score: 0, reason: `⚠️ Over-extended (${adx.toFixed(0)})` };
 }
 
 // ───────── C) RSI (10 pts, direction-aware) ─────────
@@ -93,37 +93,37 @@ export function scoreRsi(
 
   if (isLong) {
     if (rsi >= 50 && rsi <= 60)
-      return { score: 10, reason: `Sağlıklı (${rsi.toFixed(0)})` };
+      return { score: 10, reason: `Healthy (${rsi.toFixed(0)})` };
     if (rsi > 60 && rsi <= 65)
-      return { score: 7, reason: `Güçlü (${rsi.toFixed(0)})` };
+      return { score: 7, reason: `Strong (${rsi.toFixed(0)})` };
     if (rsi >= 45 && rsi < 50)
-      return { score: 6, reason: `Yorgun (${rsi.toFixed(0)})` };
+      return { score: 6, reason: `Tired (${rsi.toFixed(0)})` };
     if (rsi > 65 && rsi <= 70)
-      return { score: 3, reason: `Aşırıya yakın (${rsi.toFixed(0)})` };
+      return { score: 3, reason: `Near extreme (${rsi.toFixed(0)})` };
     if (rsi > 70)
-      return { score: 0, reason: `⚠️ Aşırı alım (${rsi.toFixed(0)}) - geç` };
+      return { score: 0, reason: `⚠️ Overbought (${rsi.toFixed(0)}) - late` };
     if (rsi < 45 && rsi >= 35)
-      return { score: 4, reason: `Zayıf (${rsi.toFixed(0)})` };
-    return { score: 0, reason: `Yön çelişkisi (${rsi.toFixed(0)})` };
+      return { score: 4, reason: `Weak (${rsi.toFixed(0)})` };
+    return { score: 0, reason: `Direction conflict (${rsi.toFixed(0)})` };
   }
 
   if (isShort) {
     if (rsi >= 40 && rsi <= 50)
-      return { score: 10, reason: `Sağlıklı (${rsi.toFixed(0)})` };
+      return { score: 10, reason: `Healthy (${rsi.toFixed(0)})` };
     if (rsi >= 35 && rsi < 40)
-      return { score: 7, reason: `Güçlü (${rsi.toFixed(0)})` };
+      return { score: 7, reason: `Strong (${rsi.toFixed(0)})` };
     if (rsi > 50 && rsi <= 55)
-      return { score: 6, reason: `Yorgun (${rsi.toFixed(0)})` };
+      return { score: 6, reason: `Tired (${rsi.toFixed(0)})` };
     if (rsi >= 30 && rsi < 35)
-      return { score: 3, reason: `Aşırıya yakın (${rsi.toFixed(0)})` };
+      return { score: 3, reason: `Near extreme (${rsi.toFixed(0)})` };
     if (rsi < 30)
-      return { score: 0, reason: `⚠️ Aşırı satım (${rsi.toFixed(0)}) - geç` };
+      return { score: 0, reason: `⚠️ Oversold (${rsi.toFixed(0)}) - late` };
     if (rsi > 55 && rsi <= 65)
-      return { score: 4, reason: `Zayıf (${rsi.toFixed(0)})` };
-    return { score: 0, reason: `Yön çelişkisi (${rsi.toFixed(0)})` };
+      return { score: 4, reason: `Weak (${rsi.toFixed(0)})` };
+    return { score: 0, reason: `Direction conflict (${rsi.toFixed(0)})` };
   }
 
-  return { score: 0, reason: `Yön belirsiz (${rsi.toFixed(0)})` };
+  return { score: 0, reason: `Direction unclear (${rsi.toFixed(0)})` };
 }
 
 // ───────── D) VOLUME (15 pts) ─────────
@@ -131,12 +131,12 @@ export function scoreRsi(
 export function scoreVolume(volRatio: number | null): ScoreReason {
   if (volRatio === null) return { score: 0, reason: "—" };
   if (volRatio >= 1.5)
-    return { score: 15, reason: `Güçlü (${volRatio.toFixed(2)}x)` };
+    return { score: 15, reason: `Strong (${volRatio.toFixed(2)}x)` };
   if (volRatio >= 1.0)
-    return { score: 10, reason: `Sağlıklı (${volRatio.toFixed(2)}x)` };
+    return { score: 10, reason: `Healthy (${volRatio.toFixed(2)}x)` };
   if (volRatio >= 0.7)
-    return { score: 3, reason: `Düşük (${volRatio.toFixed(2)}x)` };
-  return { score: 0, reason: `⚠️ Çok Düşük (${volRatio.toFixed(2)}x) - teyitsiz` };
+    return { score: 3, reason: `Low (${volRatio.toFixed(2)}x)` };
+  return { score: 0, reason: `⚠️ Very Low (${volRatio.toFixed(2)}x) - unconfirmed` };
 }
 
 // ───────── E) BB POSITION (10 pts, direction-aware) ─────────
@@ -149,20 +149,20 @@ export function scoreBb(
   const isLong = direction === "LONG";
   const isShort = direction === "SHORT";
 
-  if (bbPct >= 0.35 && bbPct <= 0.65) return { score: 10, reason: "Orta Bant" };
+  if (bbPct >= 0.35 && bbPct <= 0.65) return { score: 10, reason: "Mid Band" };
   if (isLong && bbPct >= 0.15 && bbPct < 0.35)
-    return { score: 8, reason: "Alt-Orta (LONG iyi)" };
+    return { score: 8, reason: "Lower-Mid (LONG good)" };
   if (isShort && bbPct > 0.65 && bbPct <= 0.85)
-    return { score: 8, reason: "Üst-Orta (SHORT iyi)" };
+    return { score: 8, reason: "Upper-Mid (SHORT good)" };
   if (isLong && bbPct > 0.65 && bbPct <= 0.8)
-    return { score: 4, reason: "Üst-Orta (LONG geç)" };
+    return { score: 4, reason: "Upper-Mid (LONG late)" };
   if (isShort && bbPct < 0.35 && bbPct >= 0.2)
-    return { score: 4, reason: "Alt-Orta (SHORT geç)" };
+    return { score: 4, reason: "Lower-Mid (SHORT late)" };
   if (isLong && bbPct > 0.8 && bbPct < 0.97)
-    return { score: 0, reason: "⚠️ Üst Bant Yakın (LONG geç)" };
+    return { score: 0, reason: "⚠️ Near Upper Band (LONG late)" };
   if (isShort && bbPct < 0.2 && bbPct > 0.03)
-    return { score: 0, reason: "⚠️ Alt Bant Yakın (SHORT geç)" };
-  return { score: 0, reason: "Band Dışı (risk)" };
+    return { score: 0, reason: "⚠️ Near Lower Band (SHORT late)" };
+  return { score: 0, reason: "Out of Band (risk)" };
 }
 
 // ───────── F) VWAP (10 pts) ─────────
@@ -185,26 +185,26 @@ export function scoreVwap(
   const isShort = direction === "SHORT";
 
   if (isLong && above) {
-    if (distSigma <= 1.0) return { score: 10, reason: "VWAP üstü (sağlıklı)" };
+    if (distSigma <= 1.0) return { score: 10, reason: "VWAP above (healthy)" };
     if (distSigma <= 1.3)
       return { score: 5, reason: `VWAP +${distSigma.toFixed(1)}σ` };
     if (distSigma <= 2.0)
-      return { score: 0, reason: `⚠️ Aşırı uzak +${distSigma.toFixed(1)}σ` };
-    return { score: 0, reason: `🚫 Çok uzak +${distSigma.toFixed(1)}σ` };
+      return { score: 0, reason: `⚠️ Too far +${distSigma.toFixed(1)}σ` };
+    return { score: 0, reason: `🚫 Very far +${distSigma.toFixed(1)}σ` };
   }
   if (isShort && !above) {
-    if (distSigma <= 1.0) return { score: 10, reason: "VWAP altı (sağlıklı)" };
+    if (distSigma <= 1.0) return { score: 10, reason: "VWAP below (healthy)" };
     if (distSigma <= 1.3)
       return { score: 5, reason: `VWAP -${distSigma.toFixed(1)}σ` };
     if (distSigma <= 2.0)
-      return { score: 0, reason: `⚠️ Aşırı uzak -${distSigma.toFixed(1)}σ` };
-    return { score: 0, reason: `🚫 Çok uzak -${distSigma.toFixed(1)}σ` };
+      return { score: 0, reason: `⚠️ Too far -${distSigma.toFixed(1)}σ` };
+    return { score: 0, reason: `🚫 Very far -${distSigma.toFixed(1)}σ` };
   }
   if (direction === "NEUTRAL") {
-    return { score: 0, reason: above ? "VWAP üstü" : "VWAP altı" };
+    return { score: 0, reason: above ? "VWAP above" : "VWAP below" };
   }
   // Direction VWAP ile çelişiyor
-  return { score: 0, reason: "Yön VWAP'la çelişiyor" };
+  return { score: 0, reason: "Direction conflicts with VWAP" };
 }
 
 // ───────── G) FUNDING (8 pts, contrarian) ─────────
@@ -213,7 +213,7 @@ export function scoreFunding(
   fundingRate: number | null,
   direction: Direction,
 ): ScoreReason {
-  if (fundingRate === null) return { score: 0, reason: "Yok" };
+  if (fundingRate === null) return { score: 0, reason: "N/A" };
   const fr = fundingRate * 100; // percent
   const absFr = Math.abs(fr);
   const isLong = direction === "LONG";
@@ -222,26 +222,26 @@ export function scoreFunding(
   if (absFr <= 0.02) {
     return {
       score: 8,
-      reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (sağlıklı)`,
+      reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (healthy)`,
     };
   }
   // Contrarian (avantaj)
   if (isLong && fr < -0.02) {
-    return { score: 8, reason: `${fr.toFixed(3)}% (LONG fırsatı, contrarian)` };
+    return { score: 8, reason: `${fr.toFixed(3)}% (LONG opportunity, contrarian)` };
   }
   if (isShort && fr > 0.04) {
-    return { score: 8, reason: `+${fr.toFixed(3)}% (SHORT fırsatı, contrarian)` };
+    return { score: 8, reason: `+${fr.toFixed(3)}% (SHORT opportunity, contrarian)` };
   }
   // Kalabalığa katılma (cezalı)
   if (isLong && fr > 0.04) {
-    return { score: 1, reason: `+${fr.toFixed(3)}% (LONG kalabalık)` };
+    return { score: 1, reason: `+${fr.toFixed(3)}% (LONG crowded)` };
   }
   if (isShort && fr < -0.03) {
-    return { score: 1, reason: `${fr.toFixed(3)}% (SHORT kalabalık)` };
+    return { score: 1, reason: `${fr.toFixed(3)}% (SHORT crowded)` };
   }
   return {
     score: 5,
-    reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (nötr)`,
+    reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (neutral)`,
   };
 }
 
@@ -254,19 +254,19 @@ export function scoreMacro(
   const isLong = direction === "LONG";
   const isShort = direction === "SHORT";
 
-  if (fg >= 30 && fg <= 60) return { score: 7, reason: `F&G ${fg} (sağlıklı)` };
+  if (fg >= 30 && fg <= 60) return { score: 7, reason: `F&G ${fg} (healthy)` };
   if (fg < 20)
     return {
       score: isLong ? 5 : 2,
-      reason: `F&G ${fg} (aşırı korku)`,
+      reason: `F&G ${fg} (extreme fear)`,
     };
   if (fg > 80)
     return {
       score: isShort ? 5 : 2,
-      reason: `F&G ${fg} (aşırı açgözlü)`,
+      reason: `F&G ${fg} (extreme greed)`,
     };
-  if (fg >= 20 && fg < 30) return { score: 4, reason: `F&G ${fg} (korku)` };
-  if (fg > 60 && fg <= 80) return { score: 4, reason: `F&G ${fg} (açgözlü)` };
+  if (fg >= 20 && fg < 30) return { score: 4, reason: `F&G ${fg} (fear)` };
+  if (fg > 60 && fg <= 80) return { score: 4, reason: `F&G ${fg} (greed)` };
   // Tam 20 değeri yukarıdaki dallara düşmez — panel davranışını koru, 0
   return { score: 0, reason: `F&G ${fg}` };
 }
@@ -298,17 +298,17 @@ export function scoreSweepBonus(
   if (sweepDirOk && sweepStrengthOk && sweepBaseOk && sweepConfirmed) {
     const bonus = Math.round(3 * sweep15m.strength);
     const reason = isLong
-      ? `Aşağı süpürme (15m, str ${sweep15m.strength.toFixed(2)}, +${bonus} puan)`
-      : `Yukarı süpürme (15m, str ${sweep15m.strength.toFixed(2)}, +${bonus} puan)`;
+      ? `Downward sweep (15m, str ${sweep15m.strength.toFixed(2)}, +${bonus} pts)`
+      : `Upward sweep (15m, str ${sweep15m.strength.toFixed(2)}, +${bonus} pts)`;
     return { bonus, reason, counted: true };
   }
   if (sweepDirOk && (!sweepStrengthOk || !sweepBaseOk)) {
     const why = !sweepBaseOk
-      ? `skor ${baseScore}<75`
-      : `wick zayıf str ${sweep15m.strength.toFixed(2)}<0.5`;
+      ? `score ${baseScore}<75`
+      : `weak wick str ${sweep15m.strength.toFixed(2)}<0.5`;
     const reason = isLong
-      ? `Aşağı süpürme 15m (${why}, bonus yok)`
-      : `Yukarı süpürme 15m (${why}, bonus yok)`;
+      ? `Downward sweep 15m (${why}, bonus yok)`
+      : `Upward sweep 15m (${why}, bonus yok)`;
     return { bonus: 0, reason, counted: false };
   }
   return { bonus: 0, reason: null, counted: false };
@@ -351,14 +351,14 @@ export function scoreRegimeBonus(input: RegimeInput): {
     return {
       regime: "trending_strong",
       bonus: 3,
-      reason: `🔥 Trending strong (ADX ${adx.toFixed(0)}, 3TF aligned) · +3 sinerji`,
+      reason: `🔥 Trending strong (ADX ${adx.toFixed(0)}, 3TF aligned) · +3 synergy`,
     };
   }
   if (adx >= 20 && adx < 30 && dirConfidence >= 2 && !counterTrend) {
     return {
       regime: "trending_weak",
       bonus: 1,
-      reason: `📈 Trending weak (ADX ${adx.toFixed(0)}) · +1 sinerji`,
+      reason: `📈 Trending weak (ADX ${adx.toFixed(0)}) · +1 synergy`,
     };
   }
   if (adx < 20 && bbPct !== null) {
@@ -374,15 +374,15 @@ export function scoreRegimeBonus(input: RegimeInput): {
     return {
       regime: "ranging",
       bonus: 0,
-      reason: `↔️ Ranging (ADX ${adx.toFixed(0)}) · BB orta, bonus yok`,
+      reason: `↔️ Ranging (ADX ${adx.toFixed(0)}) · BB mid, no bonus`,
     };
   }
   if (adx >= 20 && adx < 25 && dirConfidence < 2) {
     return {
       regime: "transitioning",
       bonus: 0,
-      reason: `🔄 Transitioning (ADX ${adx.toFixed(0)}, yön belirsiz) · bonus yok`,
+      reason: `🔄 Transitioning (ADX ${adx.toFixed(0)}) · direction unclear, no bonus`,
     };
   }
-  return { regime: "mixed", bonus: 0, reason: "⚪ Mixed regime · bonus yok" };
+  return { regime: "mixed", bonus: 0, reason: "⚪ Mixed regime · no bonus" };
 }

@@ -43,7 +43,7 @@ export function generateClientOrderId(): string {
   if (
     typeof globalThis !== "undefined" &&
     typeof (globalThis as Record<string, unknown>).crypto === "object" &&
-    typeof (globalThis.crypto as Record<string, unknown>).randomUUID === "function"
+    typeof ((globalThis.crypto as unknown) as Record<string, unknown>).randomUUID === "function"
   ) {
     uuid = globalThis.crypto.randomUUID();
   } else {

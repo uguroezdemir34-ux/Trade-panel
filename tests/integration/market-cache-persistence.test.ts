@@ -274,6 +274,7 @@ describe("saveTrails()", () => {
     const s = {
       getItem: (k: string) => store[k] ?? null,
       setItem: (k: string, v: string) => { store[k] = v; },
+      removeItem: (k: string) => { delete store[k]; },
     };
     const r = saveTrails({}, s, false);
     expect(r).toBe(true);
@@ -284,6 +285,7 @@ describe("saveTrails()", () => {
     const broken = {
       getItem: () => null,
       setItem: () => { throw new Error("quota"); },
+      removeItem: () => {},
     };
     expect(saveTrails({}, broken, false)).toBe(false);
   });
@@ -294,6 +296,7 @@ describe("loadTrails()", () => {
     return {
       getItem: (k: string) => data[k] ?? null,
       setItem: () => {},
+      removeItem: () => {},
     };
   }
 

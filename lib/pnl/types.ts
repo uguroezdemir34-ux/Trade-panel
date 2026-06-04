@@ -29,6 +29,8 @@ export interface TradeRecord {
   score?: number;
   /** Kapanış sebebi */
   closeReason?: "tp1" | "tp2" | "sl" | "manual" | "trail";
+  /** R-multiple — pnlUsd / riskAmountUsd (computed at close) */
+  rMultiple?: number;
   /** Forward test (kağıt) mı, gerçek mi? */
   isPaper?: boolean;
 }
@@ -85,6 +87,10 @@ export interface PnlStats {
   profitFactor: number | null;
   /** Max drawdown USDT (peak-to-trough) */
   maxDrawdownUsd: number;
+  /** Sharpe ratio (mean R / std R) — null if < 5 trades with rMultiple */
+  sharpe: number | null;
+  /** Sortino ratio (mean R / downside std R) — null if < 5 trades with rMultiple */
+  sortino: number | null;
   /** En iyi gün */
   bestDay: DailyAggregate | null;
   /** En kötü gün */

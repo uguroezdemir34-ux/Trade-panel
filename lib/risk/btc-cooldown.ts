@@ -7,9 +7,9 @@
  *   2. Self cooldown  (30dk) → BTC kendi spike sonrası kendisine kısa soğuma
  *
  * Tetik koşulları (panel satır 7236-7240):
- *   - 1H mum kapanış değişimi  > %2.0
- *   - 1H intra-bar aralık      > %2.5
- *   - 4H mum değişimi          > %3.0
+ *   - 1H candle close change  > %2.0
+ *   - 1H intra-bar range      > %2.5
+ *   - 4H candle change          > %3.0
  *
  * Yenileme: süre dolmadan tekrar hot ise süre uzar (max alınır), sıfırlanmaz.
  *
@@ -61,19 +61,19 @@ export function evaluateBtcMovement(
   if (input.lastClosePct > LS_THRESHOLD_1H_CLOSE) {
     return {
       triggered: true,
-      reason: `1H mum kapanış değişimi ${input.lastClosePct.toFixed(2)}%`,
+      reason: `1H candle close change ${input.lastClosePct.toFixed(2)}%`,
     };
   }
   if (input.lastRangePct > LS_THRESHOLD_1H_RANGE) {
     return {
       triggered: true,
-      reason: `1H intra-bar aralık ${input.lastRangePct.toFixed(2)}%`,
+      reason: `1H intra-bar range ${input.lastRangePct.toFixed(2)}%`,
     };
   }
   if (input.last4hPct > LS_THRESHOLD_4H) {
     return {
       triggered: true,
-      reason: `4H mum değişimi ${input.last4hPct.toFixed(2)}%`,
+      reason: `4H candle change ${input.last4hPct.toFixed(2)}%`,
     };
   }
   return { triggered: false, reason: "" };

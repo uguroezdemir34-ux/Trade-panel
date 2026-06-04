@@ -4,6 +4,68 @@
 
 :root {
   color-scheme: dark;
+
+  /* ── Theme tokens (dark default) — space-separated RGB for Tailwind opacity modifiers */
+  --bg: 10 10 10;
+  --bg-card: 20 20 20;
+  --bg-card2: 28 28 28;
+  --border: 42 42 42;
+  --border-strong: 58 58 58;
+  --text-t1: 245 245 245;
+  --text-t2: 184 184 184;
+  --text-t3: 112 112 112;
+  --text-t4: 74 74 74;
+  /* Surface elevation layers */
+  --surface-s1: 17 17 17;
+  --surface-s2: 24 24 24;
+  --surface-s3: 34 34 34;
+  /* Signal & brand colors — dark mode defaults */
+  --signal-green: 34 197 94;
+  --signal-red: 239 68 68;
+  --signal-amber: 245 158 11;
+  --signal-blue: 59 130 246;
+  --brand: 255 107 26;
+  --brand-accent: 255 140 66;
+}
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg: 247 248 250;
+  --bg-card: 255 255 255;
+  --bg-card2: 240 241 243;
+  /* Borders — made visible (was 220/196, barely distinguishable from bg) */
+  --border: 180 180 192;
+  --border-strong: 136 136 152;
+  --text-t1: 10 10 10;
+  --text-t2: 56 56 64;
+  /* Labels — darkened for WCAG AA on white (was 112 → ~4.4:1, now ~5.8:1) */
+  --text-t3: 80 80 90;
+  /* Hints/timestamps — darkened (was 168 → ~2.2:1, now ~4.4:1) */
+  --text-t4: 112 112 120;
+  /* Surface elevation layers — more distinct from bg-card */
+  --surface-s1: 234 235 239;
+  --surface-s2: 224 225 230;
+  --surface-s3: 210 211 216;
+  /* Signal colors — darkened for WCAG AA on white backgrounds */
+  --signal-green: 21 128 61;     /* #157d3d — 4.71:1 on white */
+  --signal-red: 185 28 28;       /* #b91c1c — 6.06:1 on white */
+  --signal-amber: 180 83 9;      /* #b45309 — 4.59:1 on white */
+  --signal-blue: 29 78 216;      /* #1d4ed8 — 6.17:1 on white */
+  --brand: 184 68 0;             /* #b84400 — 4.99:1 on white */
+  --brand-accent: 192 64 0;      /* #c04000 — 4.89:1 on white */
+}
+
+/* Soft tint backgrounds — brighter in light mode (8% of bright color is invisible on white) */
+[data-theme="light"] .bg-soft-green  { background-color: rgb(21 128 61 / 0.12); }
+[data-theme="light"] .bg-soft-red    { background-color: rgb(185 28 28 / 0.12); }
+[data-theme="light"] .bg-soft-amber  { background-color: rgb(180 83 9 / 0.12); }
+[data-theme="light"] .bg-soft-blue   { background-color: rgb(29 78 216 / 0.12); }
+
+/* Smooth transitions — enabled after initial paint to avoid FOUC */
+.theme-ready,
+.theme-ready * {
+  transition: background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease !important;
 }
 
 html,
@@ -28,10 +90,21 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Tüm monospace sayısal değerler ekran dışına çıkmasın */
+/* Gerçekten uzun string'ler (adres, hash) için overflow koruması.
+   word-break: break-word kaldırıldı — kısa etiketleri (OKX, NEAR) harf harf kırıyordu. */
 .font-mono {
-  word-break: break-word;
   overflow-wrap: break-word;
+}
+
+/* Main content bottom padding: mobile = bottom nav height + safe area, desktop = standard */
+.app-main {
+  padding-bottom: calc(64px + env(safe-area-inset-bottom) + 16px);
+}
+
+@media (min-width: 1024px) {
+  .app-main {
+    padding-bottom: 24px;
+  }
 }
 
 /* iOS input zoom koruması — 16px'in altındaki input'lar zoom tetikler */

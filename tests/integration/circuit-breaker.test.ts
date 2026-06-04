@@ -31,6 +31,7 @@ import {
 } from "@/lib/orchestrator/circuit-breaker";
 import { runPreflightChecks } from "@/lib/orchestrator/preflight";
 import type { OrchestrateInput, AccountStateSnapshot } from "@/lib/orchestrator/types";
+import type { ScoreResult } from "@/lib/score/orchestrator";
 
 const NOW = 1_700_000_000_000;
 const { PRICE_FROZEN_MS, STALE_WARN_MS } = CIRCUIT_BREAKER_CONSTANTS;
@@ -207,7 +208,7 @@ describe("checkDataHealth() — frozen alanı her zaman dolu", () => {
 // ─────────────────────────────────────────────────────────────
 
 // Minimal ScoreResult mock
-function makeSignal(verdict: "go" | "wait" | "no" = "go") {
+function makeSignal(verdict: "go" | "wait" | "no" = "go"): ScoreResult {
   return {
     verdict,
     direction: "LONG" as const,
@@ -217,7 +218,7 @@ function makeSignal(verdict: "go" | "wait" | "no" = "go") {
     scorers: [],
     humanSummary: "test",
     pair: "BTC" as const,
-  };
+  } as unknown as ScoreResult;
 }
 
 function makeAccount(overrides: Partial<AccountStateSnapshot> = {}): AccountStateSnapshot {

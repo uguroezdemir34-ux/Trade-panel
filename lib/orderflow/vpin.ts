@@ -323,19 +323,19 @@ export function computeVpinResult(state: VpinState): VpinResult {
 }
 
 function humanReasonForVpin(vpin: number, ready: boolean): string {
-  if (!ready) return "VPIN ısınıyor (veri yetersiz)";
+  if (!ready) return "VPIN warming up (insufficient data)";
   const tox = classifyToxicity(vpin);
   switch (tox) {
     case "normal":
-      return "Piyasa normal — flow dengeli";
+      return "Market normal — flow balanced";
     case "elevated":
-      return "Flow asimetrik — dikkat";
+      return "Flow asymmetric — caution";
     case "warning":
-      return "Bilgilenmiş aktivite başladı";
+      return "Informed activity started";
     case "toxic":
-      return "Smart money aktif — büyük hareket yaklaşıyor";
+      return "Smart money active — large move approaching";
     case "extreme":
-      return "Maksimum toksisite — şiddetli hareket loading";
+      return "Maximum toxicity — violent move loading";
   }
 }
 

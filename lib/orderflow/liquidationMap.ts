@@ -28,6 +28,7 @@
 
 import type { Pair } from "@/lib/constants/pairs";
 import type { Candle } from "./smc";
+import type { LiqEvent } from "@/lib/store/liqFeedStore";
 
 /**
  * Liquidation tahmin parametreleri.
@@ -322,7 +323,7 @@ export function liquidationScoreAdjustment(
   signalDirection: "LONG" | "SHORT",
 ): { adjustment: number; reason: string } {
   if (!map.nearestLongLiq && !map.nearestShortLiq) {
-    return { adjustment: 0, reason: "Liq map verisi yok" };
+    return { adjustment: 0, reason: "No liq map data" };
   }
 
   const longLiqDist = map.nearestLongLiq
@@ -367,5 +368,134 @@ export function liquidationScoreAdjustment(
     }
   }
 
-  return { adjustment: 0, reason: "Yakın magnet zone yok" };
+  return { adjustment: 0, reason: "No nearby magnet zone" };
+}
+
+// ════════════════════ GERÇEK LIQ FEED'DEN HARİTA ════════════════════
+
+const MIN_EVENTS_FOR_REAL_MAP = 20;
+const ONE_HOUR_MS = 60 * 60 * 1000;
+const FOUR_HOURS_MS = 4 * ONE_HOUR_MS;
+const REAL_MAP_BUCKET_COUNT = 20;
+
+/**
+ * Gerçek OKX liquidation-orders event'lerinden liq haritası oluştur.
+ *
+ * OHLCV tahmini yerine gerçekleşmiş tasfiye pozisyonlarını kullanır:
+ *   - Son 1 saat: 3x ağırlık (güncel, yüksek önem)
+ *   - Son 4 saat: 2x ağırlık
+ *   - 4-24 saat: 1x ağırlık
+ *
+ * MIN_EVENTS_FOR_REAL_MAP event yoksa boş map döner → caller fallback yapar.
+ */
+export function buildLiquidationMapFromEvents(
+  pair: Pair,
+  events: readonly LiqEvent[],
+  currentPrice: number,
+): LiquidationMap {
+  if (events.length < MIN_EVENTS_FOR_REAL_MAP || currentPrice <= 0) {
+    return {
+      pair,
+      currentPrice,
+      levels: [],
+      nearestLongLiq: null,
+      nearestShortLiq: null,
+      magnetZones: [],
+    };
+  }
+
+  const now = Date.now();
+  const prices = events.map((e) => e.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const bucketSize = (maxPrice - minPrice) / REAL_MAP_BUCKET_COUNT;
+  if (bucketSize <= 0) {
+    return {
+      pair,
+      currentPrice,
+      levels: [],
+      nearestLongLiq: null,
+      nearestShortLiq: null,
+      magnetZones: [],
+    };
+  }
+
+  const longBuckets = new Float64Array(REAL_MAP_BUCKET_COUNT);
+  const shortBuckets = new Float64Array(REAL_MAP_BUCKET_COUNT);
+
+  for (const ev of events) {
+    const age = now - ev.ts;
+    const recencyWeight =
+      age < ONE_HOUR_MS ? 3.0 : age < FOUR_HOURS_MS ? 2.0 : 1.0;
+    const idx = Math.min(
+      REAL_MAP_BUCKET_COUNT - 1,
+      Math.max(0, Math.floor((ev.price - minPrice) / bucketSize)),
+    );
+    const weighted = ev.notionalUsd * recencyWeight;
+    if (ev.side === "long") longBuckets[idx] += weighted;
+    else shortBuckets[idx] += weighted;
+  }
+
+  const rawLevels: LiquidationLevel[] = [];
+  for (let i = 0; i < REAL_MAP_BUCKET_COUNT; i++) {
+    const price = minPrice + (i + 0.5) * bucketSize;
+    if (longBuckets[i] > 0) {
+      rawLevels.push({
+        price,
+        side: "long",
+        intensity: longBuckets[i],
+        contributingTiers: 1,
+        estimatedEntryPrice: price,
+        label: `Long liq ${price.toFixed(2)}`,
+      });
+    }
+    if (shortBuckets[i] > 0) {
+      rawLevels.push({
+        price,
+        side: "short",
+        intensity: shortBuckets[i],
+        contributingTiers: 1,
+        estimatedEntryPrice: price,
+        label: `Short liq ${price.toFixed(2)}`,
+      });
+    }
+  }
+
+  if (rawLevels.length === 0) {
+    return {
+      pair,
+      currentPrice,
+      levels: [],
+      nearestLongLiq: null,
+      nearestShortLiq: null,
+      magnetZones: [],
+    };
+  }
+
+  const maxIntensity = Math.max(...rawLevels.map((l) => l.intensity), 1);
+  const normalized = rawLevels.map((l) => ({
+    ...l,
+    intensity: l.intensity / maxIntensity,
+  }));
+
+  const longLiqs = normalized
+    .filter((l) => l.side === "long" && l.price < currentPrice)
+    .sort((a, b) => b.price - a.price);
+  const shortLiqs = normalized
+    .filter((l) => l.side === "short" && l.price > currentPrice)
+    .sort((a, b) => a.price - b.price);
+  const magnetZones = normalized.filter(
+    (l) =>
+      l.intensity > 0.5 &&
+      Math.abs(l.price - currentPrice) / currentPrice < 0.03,
+  );
+
+  return {
+    pair,
+    currentPrice,
+    levels: normalized,
+    nearestLongLiq: longLiqs[0] ?? null,
+    nearestShortLiq: shortLiqs[0] ?? null,
+    magnetZones,
+  };
 }

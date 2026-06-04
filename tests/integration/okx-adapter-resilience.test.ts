@@ -422,8 +422,6 @@ describe("Crash Sim — Network error", () => {
       timeoutMs: 200,
     });
     await adapter.openPosition(makeOpenInput());
-    // Son kaydı bul
-    const records = [...Array(guard.size())].map((_, i) => i); // workaround: guard has no iterator
     // Guard içindeki kaydın state'ini doğrula — sadece size > 0 yeterli
     expect(guard.size()).toBeGreaterThan(0);
   });

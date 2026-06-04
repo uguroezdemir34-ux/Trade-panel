@@ -382,6 +382,7 @@ describe("BtcCooldown storage", () => {
     const storageMock = {
       getItem: (k: string) => store[k] ?? null,
       setItem: (k: string, v: string) => { store[k] = v; },
+      removeItem: (k: string) => { delete store[k]; },
     };
     const cd1 = new BtcCooldown(storageMock);
     cd1.applyMovement({ lastClosePct: 2.1, lastRangePct: 0, last4hPct: 0 }, NOW);
@@ -397,6 +398,7 @@ describe("BtcCooldown storage", () => {
     const storageMock = {
       getItem: () => "BOZUK{{{",
       setItem: (_k: string, _v: string) => {},
+      removeItem: (_k: string) => {},
     };
     const cd = new BtcCooldown(storageMock);
     expect(cd.getState().altUntil).toBe(0); // varsayılan

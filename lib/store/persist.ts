@@ -17,8 +17,9 @@
  */
 
 import type { z } from "zod";
+import { getUserStoragePrefix } from "@/lib/auth/scope";
 
-/** Tüm v2 storage key'leri 'ug52_' prefix'iyle başlar (panel ile uyumlu) */
+/** Statik prefix — harici kod veya eski veri göçü için hâlâ dışa açık */
 export const STORAGE_PREFIX = "ug52_";
 
 /**
@@ -53,7 +54,7 @@ export function loadFromStorage<T>(
   schema?: z.ZodType<T>,
 ): T {
   if (!isStorageAvailable()) return defaultValue;
-  const fullKey = STORAGE_PREFIX + key;
+  const fullKey = getUserStoragePrefix() + key;
 
   try {
     const raw = window.localStorage.getItem(fullKey);
@@ -84,7 +85,7 @@ export function loadFromStorage<T>(
  */
 export function saveToStorage<T>(key: string, value: T): boolean {
   if (!isStorageAvailable()) return false;
-  const fullKey = STORAGE_PREFIX + key;
+  const fullKey = getUserStoragePrefix() + key;
   try {
     window.localStorage.setItem(fullKey, JSON.stringify(value));
     return true;
@@ -101,7 +102,7 @@ export function saveToStorage<T>(key: string, value: T): boolean {
  */
 export function removeFromStorage(key: string): boolean {
   if (!isStorageAvailable()) return false;
-  const fullKey = STORAGE_PREFIX + key;
+  const fullKey = getUserStoragePrefix() + key;
   try {
     window.localStorage.removeItem(fullKey);
     return true;
@@ -116,13 +117,13 @@ export function removeFromStorage(key: string): boolean {
  */
 export function listStorageKeys(): string[] {
   if (!isStorageAvailable()) return [];
+  const prefix = getUserStoragePrefix();
   const keys: string[] = [];
   try {
     for (let i = 0; i < window.localStorage.length; i++) {
       const k = window.localStorage.key(i);
-      if (k && k.startsWith(STORAGE_PREFIX)) {
-        // Prefix'i kaldırıp döndür (kullanım kolaylığı için)
-        keys.push(k.slice(STORAGE_PREFIX.length));
+      if (k && k.startsWith(prefix)) {
+        keys.push(k.slice(prefix.length));
       }
     }
   } catch {

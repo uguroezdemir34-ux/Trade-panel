@@ -54,20 +54,27 @@ export function TelegramTestCard(): React.ReactElement {
     setErrorDetail(null);
     try {
       const body: Record<string, string> = {};
-      if (telegram?.botToken) body.botToken = telegram.botToken;
-      if (telegram?.chatId) body.chatId = telegram.chatId;
+
+      // Prefer stored credentials; fall back to current form values (unsaved)
+      const resolvedToken = telegram?.botToken?.trim() || botToken.trim();
+      const resolvedChatId = telegram?.chatId?.trim() || chatId.trim();
+      if (resolvedToken) body.botToken = resolvedToken;
+      if (resolvedChatId) body.chatId = resolvedChatId;
 
       const res = await fetch("/api/telegram/test", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json()) as {
-        ok: boolean;
-        error?: string;
-        message?: string;
-        messageId?: string;
-      };
+
+      let data: { ok: boolean; error?: string; errorCode?: number };
+      try {
+        data = await res.json();
+      } catch {
+        setStatus("error");
+        setErrorDetail(t("settings.telegram.jsonError").replace("{status}", String(res.status)));
+        return;
+      }
 
       if (data.ok) {
         setStatus("success");
@@ -75,7 +82,8 @@ export function TelegramTestCard(): React.ReactElement {
         setStatus("not_configured");
       } else {
         setStatus("error");
-        setErrorDetail(data.error ?? data.message ?? null);
+        const code = data.errorCode ? ` (${data.errorCode})` : "";
+        setErrorDetail((data.error ?? "Telegram API error") + code);
       }
     } catch (e) {
       setStatus("error");
@@ -213,16 +221,21 @@ export function TelegramTestCard(): React.ReactElement {
       )}
 
       {status === "not_configured" && (
-        <div className="text-signal-amber mt-3 font-mono text-2xs leading-relaxed">
-          ⚠ {t("settings.telegram.notConfigured")}
+        <div className="mt-3 rounded border border-amber-400/30 bg-amber-400/8 px-3 py-2 font-mono text-2xs leading-relaxed text-signal-amber">
+          ⚠ {t("settings.telegram.notConfiguredTitle")}
+          <div className="text-text-t3 mt-1">
+            {t("settings.telegram.notConfiguredHint")}
+          </div>
         </div>
       )}
 
       {status === "error" && (
-        <div className="text-signal-red mt-3 font-mono text-2xs leading-relaxed">
-          ✗ {t("settings.telegram.sendError")}
+        <div className="mt-3 rounded border border-red-500/30 bg-red-500/8 px-3 py-2 font-mono text-xs leading-relaxed text-signal-red">
+          ✗ {t("settings.telegram.apiError")}
           {errorDetail && (
-            <div className="text-text-t4 mt-1 text-2xs">{errorDetail}</div>
+            <div className="mt-1 break-all font-mono text-2xs text-text-t3">
+              {errorDetail}
+            </div>
           )}
         </div>
       )}

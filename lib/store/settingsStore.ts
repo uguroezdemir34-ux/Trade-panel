@@ -16,24 +16,35 @@
 import { create } from "zustand";
 import { z } from "zod";
 import { loadFromStorage, saveToStorage } from "./persist";
+import type { ScorerWeights } from "@/lib/score/orchestrator";
 
 // ═══════════════════════════════════════════════════════════════════
 // TIP TANIMLARI
 // ═══════════════════════════════════════════════════════════════════
 
-/** v2 panelin tab kimlikleri (7 sekme, paket #5'te detay) */
+/** v2 panelin tab kimlikleri (3 ana sekme + eski ID'ler backward compat) */
 export const TAB_IDS = [
   "karar",
-  "pozisyon",
   "grafik",
   "piyasa",
+  "portfolyo",
+  "ayarlar",
+  // backward compat — eski localStorage değerleri için
+  "analiz",
+  "pozisyon",
   "risk",
   "pnl",
-  "ayarlar",
+  "backtest",
 ] as const;
 export type TabId = (typeof TAB_IDS)[number];
 
 const tabIdSchema = z.enum(TAB_IDS);
+
+const themeSchema = z.enum(["dark", "light"]);
+export type Theme = z.infer<typeof themeSchema>;
+
+const exchangeSchema = z.enum(["okx", "binance"]);
+export type ActiveExchange = z.infer<typeof exchangeSchema>;
 
 const settingsSchema = z.object({
   lastTab: tabIdSchema,
@@ -42,7 +53,20 @@ const settingsSchema = z.object({
   wsUrl: z.string().nullable(),
   maxTradesPerDay: z.number().int().min(1).max(20),
   defaultLeverage: z.number().int().min(1).max(125),
+  defaultRiskPct: z.number().min(0.1).max(5),
+  dailyGoalUsd: z.number().min(0).max(100000),
   drawdownProtocolEnabled: z.boolean(),
+  theme: themeSchema,
+  goAlertsEnabled: z.boolean(),
+  audioAlertsEnabled: z.boolean(),
+  scorerWeights: z.object({
+    trend: z.number(), adx: z.number(), rsi: z.number(), vol: z.number(),
+    bb: z.number(), vwap: z.number(), funding: z.number(), macro: z.number(),
+  }).nullable(),
+  botModeEnabled: z.boolean(),
+  botModeMinScore: z.number().int().min(50).max(100),
+  activeExchange: exchangeSchema,
+  discordWebhookUrl: z.string().nullable(),
 });
 
 export type SettingsData = z.infer<typeof settingsSchema>;
@@ -58,7 +82,17 @@ export const DEFAULT_SETTINGS: SettingsData = {
   wsUrl: null,
   maxTradesPerDay: 2,
   defaultLeverage: 10,
+  defaultRiskPct: 1,
+  dailyGoalUsd: 0,
   drawdownProtocolEnabled: true,
+  theme: "dark",
+  goAlertsEnabled: false,
+  audioAlertsEnabled: true,
+  scorerWeights: null,
+  botModeEnabled: false,
+  botModeMinScore: 80,
+  activeExchange: "okx" as ActiveExchange,
+  discordWebhookUrl: null,
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -72,7 +106,17 @@ const KEYS = {
   wsUrl: "ws_url",
   maxTradesPerDay: "max_trades_per_day",
   defaultLeverage: "default_leverage",
+  defaultRiskPct: "default_risk_pct",
+  dailyGoalUsd: "daily_goal_usd",
   drawdownProtocolEnabled: "dd_protocol_enabled",
+  theme: "theme",
+  goAlertsEnabled: "go_alerts_enabled",
+  audioAlertsEnabled: "audio_alerts_enabled",
+  scorerWeights: "scorer_weights",
+  botModeEnabled: "bot_mode_enabled",
+  botModeMinScore: "bot_mode_min_score",
+  activeExchange: "active_exchange",
+  discordWebhookUrl: "discord_webhook_url",
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -82,12 +126,22 @@ const KEYS = {
 interface SettingsStoreState extends SettingsData {
   // Actions
   setLastTab: (tab: TabId) => void;
+  setScorerWeights: (weights: ScorerWeights | null) => void;
   setDemoMode: (on: boolean) => void;
   setForwardTestMode: (on: boolean) => void;
   setWsUrl: (url: string | null) => void;
   setMaxTradesPerDay: (n: number) => void;
   setDefaultLeverage: (n: number) => void;
+  setDefaultRiskPct: (n: number) => void;
+  setDailyGoalUsd: (n: number) => void;
   setDrawdownProtocolEnabled: (on: boolean) => void;
+  setTheme: (theme: Theme) => void;
+  setGoAlertsEnabled: (on: boolean) => void;
+  setAudioAlertsEnabled: (on: boolean) => void;
+  setBotModeEnabled: (on: boolean) => void;
+  setBotModeMinScore: (n: number) => void;
+  setActiveExchange: (e: ActiveExchange) => void;
+  setDiscordWebhookUrl: (url: string | null) => void;
   /** Tüm ayarları varsayılana sıfırla */
   reset: () => void;
   /** localStorage'tan tekrar yükle (SSR sonrası hydrate için) */
@@ -130,10 +184,59 @@ export function loadSettings(): SettingsData {
       DEFAULT_SETTINGS.defaultLeverage,
       z.number().int().min(1).max(125),
     ),
+    defaultRiskPct: loadFromStorage<number>(
+      KEYS.defaultRiskPct,
+      DEFAULT_SETTINGS.defaultRiskPct,
+      z.number().min(0.1).max(5),
+    ),
+    dailyGoalUsd: loadFromStorage<number>(
+      KEYS.dailyGoalUsd,
+      DEFAULT_SETTINGS.dailyGoalUsd,
+      z.number().min(0).max(100000),
+    ),
     drawdownProtocolEnabled: loadFromStorage<boolean>(
       KEYS.drawdownProtocolEnabled,
       DEFAULT_SETTINGS.drawdownProtocolEnabled,
       z.boolean(),
+    ),
+    theme: loadFromStorage<Theme>(KEYS.theme, DEFAULT_SETTINGS.theme, themeSchema),
+    goAlertsEnabled: loadFromStorage<boolean>(
+      KEYS.goAlertsEnabled,
+      DEFAULT_SETTINGS.goAlertsEnabled,
+      z.boolean(),
+    ),
+    audioAlertsEnabled: loadFromStorage<boolean>(
+      KEYS.audioAlertsEnabled,
+      DEFAULT_SETTINGS.audioAlertsEnabled,
+      z.boolean(),
+    ),
+    scorerWeights: loadFromStorage<ScorerWeights | null>(
+      KEYS.scorerWeights,
+      DEFAULT_SETTINGS.scorerWeights,
+      z.object({
+        trend: z.number(), adx: z.number(), rsi: z.number(), vol: z.number(),
+        bb: z.number(), vwap: z.number(), funding: z.number(), macro: z.number(),
+      }).nullable(),
+    ),
+    botModeEnabled: loadFromStorage<boolean>(
+      KEYS.botModeEnabled,
+      DEFAULT_SETTINGS.botModeEnabled,
+      z.boolean(),
+    ),
+    botModeMinScore: loadFromStorage<number>(
+      KEYS.botModeMinScore,
+      DEFAULT_SETTINGS.botModeMinScore,
+      z.number().int().min(50).max(100),
+    ),
+    activeExchange: loadFromStorage<ActiveExchange>(
+      KEYS.activeExchange,
+      DEFAULT_SETTINGS.activeExchange,
+      exchangeSchema,
+    ),
+    discordWebhookUrl: loadFromStorage<string | null>(
+      KEYS.discordWebhookUrl,
+      DEFAULT_SETTINGS.discordWebhookUrl,
+      z.string().nullable(),
     ),
   };
 }
@@ -180,9 +283,62 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ defaultLeverage: safe });
   },
 
+  setDefaultRiskPct: (n) => {
+    const safe = Math.max(0.1, Math.min(5, Math.round(n * 10) / 10));
+    saveToStorage(KEYS.defaultRiskPct, safe);
+    set({ defaultRiskPct: safe });
+  },
+
+  setDailyGoalUsd: (n) => {
+    const safe = Math.max(0, Math.min(100000, Math.round(n)));
+    saveToStorage(KEYS.dailyGoalUsd, safe);
+    set({ dailyGoalUsd: safe });
+  },
+
   setDrawdownProtocolEnabled: (on) => {
     saveToStorage(KEYS.drawdownProtocolEnabled, on);
     set({ drawdownProtocolEnabled: on });
+  },
+
+  setTheme: (theme) => {
+    saveToStorage(KEYS.theme, theme);
+    set({ theme });
+  },
+
+  setGoAlertsEnabled: (on) => {
+    saveToStorage(KEYS.goAlertsEnabled, on);
+    set({ goAlertsEnabled: on });
+  },
+
+  setAudioAlertsEnabled: (on) => {
+    saveToStorage(KEYS.audioAlertsEnabled, on);
+    set({ audioAlertsEnabled: on });
+  },
+
+  setScorerWeights: (weights) => {
+    saveToStorage(KEYS.scorerWeights, weights);
+    set({ scorerWeights: weights });
+  },
+
+  setBotModeEnabled: (on) => {
+    saveToStorage(KEYS.botModeEnabled, on);
+    set({ botModeEnabled: on });
+  },
+
+  setBotModeMinScore: (n) => {
+    const safe = Math.max(50, Math.min(100, Math.round(n)));
+    saveToStorage(KEYS.botModeMinScore, safe);
+    set({ botModeMinScore: safe });
+  },
+
+  setActiveExchange: (e) => {
+    saveToStorage(KEYS.activeExchange, e);
+    set({ activeExchange: e });
+  },
+
+  setDiscordWebhookUrl: (url) => {
+    saveToStorage(KEYS.discordWebhookUrl, url);
+    set({ discordWebhookUrl: url });
   },
 
   reset: () => {
@@ -193,10 +349,20 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     saveToStorage(KEYS.wsUrl, DEFAULT_SETTINGS.wsUrl);
     saveToStorage(KEYS.maxTradesPerDay, DEFAULT_SETTINGS.maxTradesPerDay);
     saveToStorage(KEYS.defaultLeverage, DEFAULT_SETTINGS.defaultLeverage);
+    saveToStorage(KEYS.defaultRiskPct, DEFAULT_SETTINGS.defaultRiskPct);
+    saveToStorage(KEYS.dailyGoalUsd, DEFAULT_SETTINGS.dailyGoalUsd);
     saveToStorage(
       KEYS.drawdownProtocolEnabled,
       DEFAULT_SETTINGS.drawdownProtocolEnabled,
     );
+    saveToStorage(KEYS.theme, DEFAULT_SETTINGS.theme);
+    saveToStorage(KEYS.goAlertsEnabled, DEFAULT_SETTINGS.goAlertsEnabled);
+    saveToStorage(KEYS.audioAlertsEnabled, DEFAULT_SETTINGS.audioAlertsEnabled);
+    saveToStorage(KEYS.scorerWeights, DEFAULT_SETTINGS.scorerWeights);
+    saveToStorage(KEYS.botModeEnabled, DEFAULT_SETTINGS.botModeEnabled);
+    saveToStorage(KEYS.botModeMinScore, DEFAULT_SETTINGS.botModeMinScore);
+    saveToStorage(KEYS.activeExchange, DEFAULT_SETTINGS.activeExchange);
+    saveToStorage(KEYS.discordWebhookUrl, DEFAULT_SETTINGS.discordWebhookUrl);
     set({ ...DEFAULT_SETTINGS });
   },
 

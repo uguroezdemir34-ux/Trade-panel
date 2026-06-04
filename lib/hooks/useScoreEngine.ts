@@ -19,14 +19,36 @@ import { useAccountStore } from "@/lib/store/accountStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
+import { useSettingsStore } from "@/lib/store/settingsStore";
 import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
+import { oiVelocityScoreOrZero } from "@/lib/market/oi-velocity";
 import type { Pair } from "@/lib/constants/pairs";
 
 export function useScoreEngine(): void {
-  // Tek trigger: mum verisi değişimi (~30s). Diğer store'lar getState() ile okunur.
-  const candles = useCandleStore((s) => s.candles);
+  // Trigger: only when 15m/1h/4h last candle timestamps/confirm flags change.
+  // Prevents score recomputation on 1d-only polls or identity-equal updates.
+  const candles = useCandleStore(
+    (s) => s.candles,
+    (prev, next) => {
+      for (const pair of PAIRS) {
+        for (const tf of ["15m", "1h", "4h"] as const) {
+          const key = `${pair}_${tf}` as const;
+          const p = prev[key];
+          const n = next[key];
+          if (p === n) continue;
+          if (!p || !n || p.length !== n.length) return false;
+          const pL = p[p.length - 1];
+          const nL = n[n.length - 1];
+          if (!pL || !nL) return false;
+          if (pL.ts !== nL.ts || pL.confirm !== nL.confirm) return false;
+        }
+      }
+      return true;
+    },
+  );
   const setResult = useScoreStore((s) => s.setResult);
+  const scorerWeights = useSettingsStore((s) => s.scorerWeights);
 
   useEffect(() => {
     const now = Date.now();
@@ -46,9 +68,11 @@ export function useScoreEngine(): void {
 
       const livePrice = marketStore.prices[pair]?.last ?? null;
       const fg = macroStore.fgValue ?? 50;
-      const fundingResult =
-        pair === "BTC" ? macroStore.fundingBtc : macroStore.fundingEth;
+      const fundingResult = macroStore.funding[pair as Pair] ?? null;
       const fundingRate = fundingResult?.fundingRate ?? null;
+
+      const oiVelocityResult = macroStore.oiVelocity[pair as Pair] ?? null;
+      const oiVelocityScore = oiVelocityScoreOrZero(oiVelocityResult);
 
       const openPositions = positionStore.positions.map((p) => ({
         pair: p.pair,
@@ -97,6 +121,7 @@ export function useScoreEngine(): void {
         drawdownProtocol,
         trades,
         fundingRate,
+        oiVelocityScore,
         srModifier: 0,
         sweep15m: { type: null, strength: 0 },
         timeQuality: { quality: 1, reason: "" },
@@ -104,9 +129,9 @@ export function useScoreEngine(): void {
       });
 
       if (input) {
-        const result = computeScore(input);
+        const result = computeScore({ ...input, scorerWeights: scorerWeights ?? null });
         setResult(pair as Pair, result, now);
       }
     }
-  }, [candles, setResult]);
+  }, [candles, setResult, scorerWeights]);
 }

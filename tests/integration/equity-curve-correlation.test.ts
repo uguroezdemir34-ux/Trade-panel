@@ -34,15 +34,12 @@ import {
   getDayStart,
   getWeekStart,
   getMonthStart,
-  EQUITY_THRESHOLDS,
 } from "@/lib/risk/equity-curve";
-import {
-  checkCorrelationLimit,
-  DEFAULT_CORRELATION_CONFIG,
-} from "@/lib/risk/correlation";
+import { checkCorrelationLimit } from "@/lib/risk/correlation";
 import type { OpenPositionSummary } from "@/lib/risk/correlation";
 import { runPreflightChecks } from "@/lib/orchestrator/preflight";
 import type { OrchestrateInput, AccountStateSnapshot } from "@/lib/orchestrator/types";
+import type { ScoreResult } from "@/lib/score/orchestrator";
 
 const NOW = 1_700_000_000_000; // Pazartesi sabahı
 
@@ -325,7 +322,7 @@ describe("checkCorrelationLimit() — custom maxSameDirection=2", () => {
 // Preflight entegrasyonu
 // ─────────────────────────────────────────────────────────────
 
-function makeSignal(verdict: "go" | "wait" | "no" = "go") {
+function makeSignal(verdict: "go" | "wait" | "no" = "go"): ScoreResult {
   return {
     verdict,
     direction: "LONG" as const,
@@ -335,7 +332,7 @@ function makeSignal(verdict: "go" | "wait" | "no" = "go") {
     scorers: [],
     humanSummary: "test",
     pair: "ETH" as const,
-  };
+  } as unknown as ScoreResult;
 }
 
 function makeAccount(overrides: Partial<AccountStateSnapshot> = {}): AccountStateSnapshot {

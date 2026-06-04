@@ -149,7 +149,29 @@ export interface ScoreInput {
    * null/undefined → 0 (tarafsız).
    */
   whaleInflowScore?: number | null;
+
+  /** Scorer ağırlık çarpanları — ayarlar sayfasından gelir. Default: tümü 1.0 */
+  scorerWeights?: ScorerWeights | null;
 }
+
+export interface ScorerWeights {
+  trend: number;
+  adx: number;
+  rsi: number;
+  vol: number;
+  bb: number;
+  vwap: number;
+  funding: number;
+  macro: number;
+}
+
+export const DEFAULT_SCORER_WEIGHTS: ScorerWeights = {
+  trend: 1, adx: 1, rsi: 1, vol: 1, bb: 1, vwap: 1, funding: 1, macro: 1,
+};
+
+const BASE_MAX: ScorerWeights = {
+  trend: 25, adx: 15, rsi: 10, vol: 15, bb: 10, vwap: 10, funding: 8, macro: 7,
+};
 
 export type Verdict = "go" | "wait" | "no";
 
@@ -313,8 +335,19 @@ export function computeScore(input: ScoreInput): ScoreResult {
     macro: macroResult.score,
   };
 
-  const baseScore =
-    sub.trend + sub.adx + sub.rsi + sub.vol + sub.bb + sub.vwap + sub.funding + sub.macro;
+  // Apply scorer weights and normalize back to 0-100 scale
+  const w = input.scorerWeights
+    ? { ...DEFAULT_SCORER_WEIGHTS, ...input.scorerWeights }
+    : DEFAULT_SCORER_WEIGHTS;
+  const maxWeighted =
+    BASE_MAX.trend * w.trend + BASE_MAX.adx * w.adx + BASE_MAX.rsi * w.rsi +
+    BASE_MAX.vol * w.vol + BASE_MAX.bb * w.bb + BASE_MAX.vwap * w.vwap +
+    BASE_MAX.funding * w.funding + BASE_MAX.macro * w.macro;
+  const rawWeighted =
+    sub.trend * w.trend + sub.adx * w.adx + sub.rsi * w.rsi +
+    sub.vol * w.vol + sub.bb * w.bb + sub.vwap * w.vwap +
+    sub.funding * w.funding + sub.macro * w.macro;
+  const baseScore = maxWeighted > 0 ? (rawWeighted / maxWeighted) * 100 : 0;
 
   // ───── 3. Sweep bonus ─────
   const sweepRes = scoreSweepBonus(sweep15m, direction, baseScore);
@@ -352,7 +385,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
   if (sweepRes.reason) reasons.sweep = sweepRes.reason;
   if (regimeRes.reason) reasons.regime = regimeRes.reason;
   if (regimeRes.regime === "trending_strong" && (direction === "LONG" || direction === "SHORT")) {
-    reasons.regimeRelax = `🔥 Trending strong rejim · RSI eşiği ${direction === "LONG" ? "75→80" : "25→20"} gevşedi`;
+    reasons.regimeRelax = `🔥 Trending strong regime · RSI threshold ${direction === "LONG" ? "75→80" : "25→20"} relaxed`;
   }
 
   // ───── 7. VolBreakout override (BB hard iptal için) ─────
@@ -441,7 +474,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
   if (drawdownProtocol.tier !== "normal" && drawdownProtocol.minScore > goThreshold) {
     const oldThreshold = goThreshold;
     goThreshold = Math.min(96, drawdownProtocol.minScore);
-    reasons.drawdownGate = `${drawdownProtocol.label} ${drawdownProtocol.reason} → eşik ${oldThreshold}→${goThreshold}`;
+    reasons.drawdownGate = `${drawdownProtocol.label} ${drawdownProtocol.reason} → threshold ${oldThreshold}→${goThreshold}`;
   }
 
   // ───── 10b. Pullback engine (paket #5e) ─────
@@ -477,7 +510,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
           (lockRamp.active ? 5 : 0),
       ),
     );
-    reasons.pullbackThreshold = `🔄 Pullback eşiği ${pullbackThreshold} (klasik ${goThreshold})`;
+    reasons.pullbackThreshold = `🔄 Pullback threshold ${pullbackThreshold} (classic ${goThreshold})`;
   }
 
   // Etkin eşik
@@ -504,7 +537,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
     baseScore < goThreshold &&
     bucket.wr !== null
   ) {
-    reasons.adaptiveCut = `Skor ${baseScore} ama ${bucket.min}-${bucket.max} bucket WR ${bucket.wr.toFixed(0)}% (n=${bucket.n}) zayıf → ${goThreshold}+ bekle`;
+    reasons.adaptiveCut = `Skor ${baseScore} ama ${bucket.min}-${bucket.max} bucket WR ${bucket.wr.toFixed(0)}% (n=${bucket.n}) weak → ${goThreshold}+ needed`;
   }
 
   // Soft block summary
@@ -515,7 +548,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
   // Lock ramp mesajı (panel satır 7997-8000) — düşük skorda da göster
   if (lockRamp.active && lockReleasedAt !== null) {
     const hoursSince = ((now - lockReleasedAt) / 3600000).toFixed(1);
-    reasons.lockRamp = `🔓 Kilit kalkalı ${hoursSince}sa — skor ${goThreshold}+ gerek (normal: 80, ramp: +5)`;
+    reasons.lockRamp = `🔓 Lock released ${hoursSince}h ago — score ${goThreshold}+ needed (normal: 80, ramp: +5)`;
   }
 
   // Overextended detail (UI gösterim için)

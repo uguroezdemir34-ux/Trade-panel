@@ -344,14 +344,14 @@ export class TrailingManager {
       if (r.ok) {
         const pfx = this.deps.isDemoMode() ? "🧪 DEMO · " : "";
         this.deps.sendTelegram?.(
-          `${pfx}🛑 TRAILING STOP TETİK\n${instId}\nMum kapanış: ${kapanis.toFixed(4)}\nStop: ${stopPx.toFixed(4)}\nOtomatik kapatıldı.`,
+          `${pfx}🛑 TRAILING STOP TRIGGERED\n${instId}\nCandle close: ${kapanis.toFixed(4)}\nStop: ${stopPx.toFixed(4)}\nAuto-closed.`,
         );
-        this.deps.toast?.(`✓ Trail çıkış: ${instId}`, "ok");
+        this.deps.toast?.(`✓ Trail exit: ${instId}`, "ok");
         delete this.trails[instId];
         this.save();
       } else {
         // Başarısız → bir sonraki tick'te tekrar dene (cikis_tetiklendi reset)
-        this.deps.toast?.(`✗ Trail çıkış başarısız: ${r.err}`, "err");
+        this.deps.toast?.(`✗ Trail exit failed: ${r.err}`, "err");
         if (this.trails[instId]) {
           this.trails[instId].instance.cikis_tetiklendi = false;
           this.save();

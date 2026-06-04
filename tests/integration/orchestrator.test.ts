@@ -101,6 +101,8 @@ function makeDeps(overrides?: Partial<OrchestratorDeps>): OrchestratorDeps {
     openPosition: vi.fn<[], Promise<AdapterResult<TradeData>>>().mockResolvedValue({ ok: true, data: { orderId: "test-123" } }),
     closePosition: vi.fn(),
     cancelAlgoOrders: vi.fn(),
+    partialClosePosition: vi.fn().mockResolvedValue({ ok: true }),
+    updateSlTp: vi.fn().mockResolvedValue({ ok: true }),
   };
   return {
     adapter,
@@ -186,6 +188,8 @@ describe("orchestrate()", () => {
       }),
       closePosition: vi.fn(),
       cancelAlgoOrders: vi.fn(),
+      partialClosePosition: vi.fn().mockResolvedValue({ ok: true }),
+      updateSlTp: vi.fn().mockResolvedValue({ ok: true }),
     };
     const result = await orchestrate(makeInput(), { ...deps, adapter: failingAdapter });
     expect(result.ok).toBe(false);

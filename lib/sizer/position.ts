@@ -82,7 +82,7 @@ export function computePositionSize(
   if (input.drawdownProtocol.tier === "locked") {
     warnLevel = "blocked";
     warnKind = "locked";
-    warnMessage = "🔒 Hesap kilitli — drawdown protokolü";
+    warnMessage = "🔒 Account locked — drawdown protocol";
   } else if (!canAfford) {
     warnLevel = "blocked";
     warnKind = "insufficient_margin";
@@ -90,7 +90,7 @@ export function computePositionSize(
   } else if (!minSizeOK) {
     warnLevel = "warning";
     warnKind = "below_min_size";
-    warnMessage = `⚠️ Pozisyon OKX min altında ($${notional.toFixed(2)} < $${SIZER_CONFIG.MIN_NOTIONAL_USD}). Stop daralt veya bakiye artır.`;
+    warnMessage = `⚠️ Position below OKX min ($${notional.toFixed(2)} < $${SIZER_CONFIG.MIN_NOTIONAL_USD}). Tighten stop or increase balance.`;
   }
 
   return {

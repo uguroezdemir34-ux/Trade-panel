@@ -1,2 +1,19 @@
-export const PAIRS = ["BTC", "ETH"] as const;
-export type Pair = typeof PAIRS[number];
+export const PAIRS = [
+  "BTC",  // Bitcoin — market anchor
+  "ETH",  // Ethereum — DeFi anchor
+  "XRP",  // Ripple — global liquidity
+  "SOL",  // Solana — high-vol technicals
+  "BNB",  // Binance Coin — exchange locomotive
+  "ADA",  // Cardano — long-term trend
+  "AVAX", // Avalanche — cycle patterns
+  "DOT",  // Polkadot — clean structure
+  "LINK", // Chainlink — AI/data aligned
+  "POL",  // Polygon — L2 volume
+  "DOGE", // Dogecoin — momentum spikes
+  "SHIB", // Shiba Inu — whale flows
+  "SUI",  // Sui — emerging breakouts
+  "NEAR", // Near Protocol — AI-aligned
+  "FET",  // Artificial Superintelligence — AI narrative
+] as const;
+
+export type Pair = (typeof PAIRS)[number];

@@ -13,6 +13,54 @@
 
 import type { Candle } from "@/types/candle";
 
+export interface VwapSeriesPoint {
+  vwap: number;
+  upper: number;
+  lower: number;
+}
+
+/**
+ * Daily-anchored VWAP series — returns one value per candle.
+ * Resets at each UTC midnight. Bands = ±1σ (volume-weighted).
+ */
+export function vwapSeries(
+  closes: number[],
+  highs: number[],
+  lows: number[],
+  volumes: number[],
+  timesMs: number[],
+): (VwapSeriesPoint | null)[] {
+  const result: (VwapSeriesPoint | null)[] = [];
+  let dayBars: Array<{ tp: number; v: number }> = [];
+  let currentDay = -1;
+  let cumPV = 0;
+  let cumV = 0;
+
+  for (let i = 0; i < closes.length; i++) {
+    const dayUTC = Math.floor(timesMs[i] / 86400000);
+    if (dayUTC !== currentDay) {
+      currentDay = dayUTC;
+      dayBars = [];
+      cumPV = 0;
+      cumV = 0;
+    }
+    const tp = (highs[i] + lows[i] + closes[i]) / 3;
+    const v = volumes[i] || 1;
+    cumPV += tp * v;
+    cumV += v;
+    dayBars.push({ tp, v });
+    if (dayBars.length < 2) { result.push(null); continue; }
+    const vwapVal = cumPV / cumV;
+    let varSum = 0;
+    for (const { tp: btp, v: bv } of dayBars) {
+      varSum += bv * Math.pow(btp - vwapVal, 2);
+    }
+    const std = Math.sqrt(varSum / cumV);
+    result.push({ vwap: vwapVal, upper: vwapVal + std, lower: vwapVal - std });
+  }
+  return result;
+}
+
 export interface VwapResult {
   vwap: number;
   upperBand: number;

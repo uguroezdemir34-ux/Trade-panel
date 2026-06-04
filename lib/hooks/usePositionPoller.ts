@@ -14,9 +14,10 @@ import { usePositionStore } from "@/lib/store/positionStore";
 
 const POLL_INTERVAL_MS = 10_000;
 
-export function usePositionPoller(): void {
+export function usePositionPoller(delayMs = 0): void {
   const setPositions = usePositionStore((s) => s.setPositions);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function fetchAll(): Promise<void> {
     const positions = await fetchPositions();
@@ -26,10 +27,14 @@ export function usePositionPoller(): void {
   }
 
   useEffect(() => {
-    fetchAll();
-    timerRef.current = setInterval(fetchAll, POLL_INTERVAL_MS);
+    startTimerRef.current = setTimeout(() => {
+      fetchAll();
+      timerRef.current = setInterval(fetchAll, POLL_INTERVAL_MS);
+    }, delayMs);
     return () => {
+      if (startTimerRef.current) clearTimeout(startTimerRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 }

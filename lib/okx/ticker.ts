@@ -11,8 +11,21 @@ import type { Pair } from "@/lib/constants/pairs";
 import type { Tick } from "@/lib/ws/types";
 
 const PAIR_TO_INST: Record<Pair, string> = {
-  BTC: "BTC-USDT-SWAP",
-  ETH: "ETH-USDT-SWAP",
+  BTC:  "BTC-USDT-SWAP",
+  ETH:  "ETH-USDT-SWAP",
+  XRP:  "XRP-USDT-SWAP",
+  SOL:  "SOL-USDT-SWAP",
+  BNB:  "BNB-USDT-SWAP",
+  ADA:  "ADA-USDT-SWAP",
+  AVAX: "AVAX-USDT-SWAP",
+  DOT:  "DOT-USDT-SWAP",
+  LINK: "LINK-USDT-SWAP",
+  POL:  "POL-USDT-SWAP",
+  DOGE: "DOGE-USDT-SWAP",
+  SHIB: "SHIB-USDT-SWAP",
+  SUI:  "SUI-USDT-SWAP",
+  NEAR: "NEAR-USDT-SWAP",
+  FET:  "FET-USDT-SWAP",
 };
 
 /**

@@ -1,27 +1,18 @@
 /**
  * WS URLS — Endpoint listesi ve rotasyon mantığı.
- * Kaynak: panel_v55_51.html satır 6079-6094.
  *
- * Sıralama: OKX 3 endpoint (TR'de denenmiş + çalışan) ÖNCE,
- *          Binance 2 endpoint sonra (TR ISP'ları bazen Binance'ı sessizce
- *          drop edip "açılı kabul ediyor ama veri yok" gönderiyor).
- *
- * Sadece BTC + ETH subscribe ediyoruz (v2 strategy: 2 pair).
+ * Sıralama: OKX 3 endpoint ÖNCE, Binance 2 endpoint sonra.
+ * 15 pair subscribe: PAIRS sabitinden dinamik olarak türetilir.
  */
 
 import type { WsEndpoint } from "./types";
+import { PAIRS } from "@/lib/constants/pairs";
 
-/**
- * Subscribe edilecek instrument'lar (OKX format).
- * BTC + ETH SWAP — paneldeki v2 strategy.
- */
-const OKX_INSTRUMENTS = ["BTC-USDT-SWAP", "ETH-USDT-SWAP"] as const;
+/** OKX SWAP instrument ID'leri — PAIRS'ten otomatik oluşturulur */
+const OKX_INSTRUMENTS = PAIRS.map((p) => `${p}-USDT-SWAP`);
 
-/**
- * Binance stream URL parametresi (combined stream).
- * Lowercase + @ticker format.
- */
-const BINANCE_STREAMS = "btcusdt@ticker/ethusdt@ticker";
+/** Binance combined stream parametresi — PAIRS'ten otomatik oluşturulur */
+const BINANCE_STREAMS = PAIRS.map((p) => `${p.toLowerCase()}usdt@ticker`).join("/");
 
 /**
  * Tüm WS endpoint'leri, deneme sırasına göre.

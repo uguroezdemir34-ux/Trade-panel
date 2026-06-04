@@ -15,37 +15,50 @@ const config: Config = {
     extend: {
       colors: {
         bg: {
-          DEFAULT: "#0A0A0A",
-          card: "#141414",
-          card2: "#1C1C1C",
+          DEFAULT: "rgb(var(--bg) / <alpha-value>)",
+          card: "rgb(var(--bg-card) / <alpha-value>)",
+          card2: "rgb(var(--bg-card2) / <alpha-value>)",
         },
         border: {
-          DEFAULT: "#2A2A2A",
-          strong: "#3A3A3A",
+          DEFAULT: "rgb(var(--border) / <alpha-value>)",
+          strong: "rgb(var(--border-strong) / <alpha-value>)",
         },
         text: {
-          t1: "#F5F5F5", // primary
-          t2: "#B8B8B8", // secondary
-          t3: "#707070", // muted
-          t4: "#4A4A4A", // disabled
+          t1: "rgb(var(--text-t1) / <alpha-value>)",
+          t2: "rgb(var(--text-t2) / <alpha-value>)",
+          t3: "rgb(var(--text-t3) / <alpha-value>)",
+          t4: "rgb(var(--text-t4) / <alpha-value>)",
         },
-        // Marka turuncu — Uğur Panel kimliği (OKX yeşili DEĞİL)
+        // Marka turuncu — CSS var → light mode'da WCAG AA için koyulaşır
         brand: {
-          DEFAULT: "#FF6B1A",
-          light: "#FF8C42",
+          DEFAULT: "rgb(var(--brand) / <alpha-value>)",
+          light: "rgb(var(--brand-accent) / <alpha-value>)",
         },
         signal: {
-          green: "#22C55E",
-          red: "#EF4444",
-          amber: "#F59E0B",
-          blue: "#3B82F6",
+          green: "rgb(var(--signal-green) / <alpha-value>)",
+          red: "rgb(var(--signal-red) / <alpha-value>)",
+          amber: "rgb(var(--signal-amber) / <alpha-value>)",
+          blue: "rgb(var(--signal-blue) / <alpha-value>)",
+          // Aliases: text-signal-up / text-signal-down
+          up: "rgb(var(--signal-green) / <alpha-value>)",
+          down: "rgb(var(--signal-red) / <alpha-value>)",
         },
         soft: {
-          green: "rgba(34,197,94,0.08)",
-          red: "rgba(239,68,68,0.08)",
-          amber: "rgba(245,158,11,0.08)",
-          blue: "rgba(59,130,246,0.08)",
+          green: "rgb(var(--signal-green) / 0.08)",
+          red: "rgb(var(--signal-red) / 0.08)",
+          amber: "rgb(var(--signal-amber) / 0.08)",
+          blue: "rgb(var(--signal-blue) / 0.08)",
         },
+        // Surface layers — card elevations (theme-aware via CSS vars)
+        surface: {
+          s1: "rgb(var(--surface-s1) / <alpha-value>)",
+          s2: "rgb(var(--surface-s2) / <alpha-value>)",
+          s3: "rgb(var(--surface-s3) / <alpha-value>)",
+        },
+        // Warning (amber alias — theme-aware)
+        warning: "rgb(var(--signal-amber) / <alpha-value>)",
+        // Text on colored backgrounds (matches bg color for contrast)
+        "bg-page": "rgb(var(--bg) / <alpha-value>)",
       },
       fontFamily: {
         sans: [

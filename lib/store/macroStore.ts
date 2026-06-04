@@ -1,15 +1,12 @@
 /**
- * MACRO STORE — Piyasa sekmesi için snapshot (F&G, dominance, funding).
+ * MACRO STORE — Piyasa sekmesi için snapshot (F&G, dominance, funding, OI).
  *
+ * 15 pair desteği: funding ve OI verileri artık Partial<Record<Pair, ...>> map'lerde.
  * Refresh stratejisi:
  *   - F&G: macro/cache layer (30dk TTL)
  *   - Dominance: macro/cache layer (30dk TTL)
- *   - Funding: 5dk TTL — store level
- *
- * Store sadece state tutar — fetch'leri kendi tetiklemiyor.
- * UI veya hook tetikler (refreshAll()).
- *
- * NOT: WS price tick'leri için ayrı store var (`marketStore.ts`).
+ *   - Funding: 5dk TTL, tüm PAIRS
+ *   - OI: 5dk TTL, tüm PAIRS (+ velocity snapshot geçmişi)
  */
 
 import { create } from "zustand";
@@ -27,6 +24,13 @@ import {
   fetchOpenInterest,
   type OpenInterestResult,
 } from "@/lib/market/openInterest";
+import {
+  computeOiVelocityWindow,
+  type OiSnapshot,
+  type OiVelocityResult,
+} from "@/lib/market/oi-velocity";
+import { useMarketStore } from "@/lib/store/marketStore";
+import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type {
   FgInfo,
   DominanceInfo,
@@ -35,6 +39,21 @@ import type {
 
 const FUNDING_TTL_MS = 5 * 60_000;
 const OI_TTL_MS = 5 * 60_000;
+const MAX_OI_HISTORY = 10;
+
+function appendOiSnapshot(
+  history: OiSnapshot[] | undefined,
+  oi: OpenInterestResult,
+  price: number,
+  ts: number,
+): OiSnapshot[] {
+  const prev = history ?? [];
+  if (price <= 0) return prev;
+  const oiVal = oi.oiCcy > 0 ? oi.oiCcy : oi.oi;
+  if (oiVal <= 0) return prev;
+  const snap: OiSnapshot = { timestamp: ts, openInterest: oiVal, price };
+  return [...prev.slice(-(MAX_OI_HISTORY - 1)), snap];
+}
 
 interface MacroStoreState {
   // F&G (raw value + computed info)
@@ -50,17 +69,19 @@ interface MacroStoreState {
   domFetchedAt: number;
   domLoading: boolean;
 
-  // Funding (BTC + ETH)
-  fundingBtc: FundingRateResult | null;
-  fundingEth: FundingRateResult | null;
+  // Funding — all pairs
+  funding: Partial<Record<Pair, FundingRateResult>>;
   fundingFetchedAt: number;
   fundingLoading: boolean;
 
-  // Open Interest (BTC + ETH)
-  oiBtc: OpenInterestResult | null;
-  oiEth: OpenInterestResult | null;
+  // Open Interest — all pairs
+  oi: Partial<Record<Pair, OpenInterestResult>>;
   oiFetchedAt: number;
   oiLoading: boolean;
+  // OI snapshot history per pair (for velocity computation)
+  oiSnapshots: Partial<Record<Pair, OiSnapshot[]>>;
+  // Computed OI velocity per pair
+  oiVelocity: Partial<Record<Pair, OiVelocityResult>>;
 
   // Computed: market summary
   marketSummary: MarketSummary | null;
@@ -95,14 +116,14 @@ const initialState = {
   dominance: null,
   domFetchedAt: 0,
   domLoading: false,
-  fundingBtc: null,
-  fundingEth: null,
+  funding: {} as Partial<Record<Pair, FundingRateResult>>,
   fundingFetchedAt: 0,
   fundingLoading: false,
-  oiBtc: null,
-  oiEth: null,
+  oi: {} as Partial<Record<Pair, OpenInterestResult>>,
   oiFetchedAt: 0,
   oiLoading: false,
+  oiSnapshots: {} as Partial<Record<Pair, OiSnapshot[]>>,
+  oiVelocity: {} as Partial<Record<Pair, OiVelocityResult>>,
   marketSummary: null,
 };
 
@@ -157,16 +178,14 @@ export const useMacroStore = create<MacroStoreState>((set, get) => ({
 
     set({ fundingLoading: true });
     try {
-      const [btc, eth] = await Promise.all([
-        fetchFundingRate("BTC", fetchFn),
-        fetchFundingRate("ETH", fetchFn),
-      ]);
-      set({
-        fundingBtc: btc,
-        fundingEth: eth,
-        fundingFetchedAt: now,
-        fundingLoading: false,
-      });
+      const results = await Promise.all(
+        PAIRS.map((pair) => fetchFundingRate(pair, fetchFn).then((r) => [pair, r] as const)),
+      );
+      const funding: Partial<Record<Pair, FundingRateResult>> = {};
+      for (const [pair, result] of results) {
+        funding[pair] = result;
+      }
+      set({ funding, fundingFetchedAt: now, fundingLoading: false });
     } catch {
       set({ fundingLoading: false });
     }
@@ -179,15 +198,32 @@ export const useMacroStore = create<MacroStoreState>((set, get) => ({
 
     set({ oiLoading: true });
     try {
-      const [btc, eth] = await Promise.all([
-        fetchOpenInterest("BTC", fetchFn),
-        fetchOpenInterest("ETH", fetchFn),
-      ]);
+      const results = await Promise.all(
+        PAIRS.map((pair) => fetchOpenInterest(pair, fetchFn).then((r) => [pair, r] as const)),
+      );
+
+      const prices = useMarketStore.getState().prices;
+      const prevSnapshots = get().oiSnapshots;
+
+      const newOi: Partial<Record<Pair, OpenInterestResult>> = {};
+      const newSnapshots: Partial<Record<Pair, OiSnapshot[]>> = { ...prevSnapshots };
+      const newVelocity: Partial<Record<Pair, OiVelocityResult>> = {};
+
+      for (const [pair, oiResult] of results) {
+        newOi[pair] = oiResult;
+        const price = prices[pair]?.last ?? 0;
+        const snaps = appendOiSnapshot(prevSnapshots[pair], oiResult, price, now);
+        newSnapshots[pair] = snaps;
+        const vel = computeOiVelocityWindow(snaps, pair, 5);
+        if (vel) newVelocity[pair] = vel;
+      }
+
       set({
-        oiBtc: btc,
-        oiEth: eth,
+        oi: newOi,
         oiFetchedAt: now,
         oiLoading: false,
+        oiSnapshots: newSnapshots,
+        oiVelocity: newVelocity,
       });
     } catch {
       set({ oiLoading: false });

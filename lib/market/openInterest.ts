@@ -145,14 +145,14 @@ export function describeOiSignal(signal: OiPriceSignal): {
 } {
   switch (signal) {
     case "strong_up":
-      return { label: "Sağlam yükseliş (yeni alım)", tone: "bull" };
+      return { label: "Strong rise (new longs)", tone: "bull" };
     case "weak_up":
-      return { label: "Zayıf yükseliş (short squeeze)", tone: "neutral" };
+      return { label: "Weak rise (short squeeze)", tone: "neutral" };
     case "strong_down":
-      return { label: "Sağlam düşüş (yeni satış)", tone: "bear" };
+      return { label: "Strong drop (new shorts)", tone: "bear" };
     case "weak_down":
-      return { label: "Zayıf düşüş (long kapanışı)", tone: "neutral" };
+      return { label: "Weak drop (long unwind)", tone: "neutral" };
     case "neutral":
-      return { label: "Belirgin akış yok", tone: "neutral" };
+      return { label: "No clear flow", tone: "neutral" };
   }
 }

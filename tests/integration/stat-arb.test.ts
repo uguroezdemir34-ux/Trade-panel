@@ -79,6 +79,8 @@ function makeAdapter(opts: {
       return { ok: true };
     },
     async cancelAlgoOrders() { return { ok: true }; },
+    async partialClosePosition() { return { ok: true }; },
+    async updateSlTp() { return { ok: true }; },
   } as ExchangeAdapter & { openCallCount: number; closeCallCount: number; openTimestamps: number[] };
 }
 

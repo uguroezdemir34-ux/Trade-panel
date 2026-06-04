@@ -70,7 +70,7 @@ export function checkCorrelationLimit(
     const pairList = sameDirection.map((p) => p.pair).join(", ");
     return {
       blocked: true,
-      reason: `Korelasyon limiti: ${sameDirection.length} ${direction} pozisyon zaten açık (${pairList}). Max: ${config.maxSameDirection}`,
+      reason: `Correlation limit: ${sameDirection.length} ${direction} position(s) already open (${pairList}). Max: ${config.maxSameDirection}`,
       conflictingPositions: sameDirection,
     };
   }

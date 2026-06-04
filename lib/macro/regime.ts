@@ -21,11 +21,11 @@ import type {
  * F&G değerini etikete ve CSS sınıfına çevir.
  *
  * Eşikler panel 8411-8416 ile birebir:
- *   <25:  AŞIRI KORKU    (fear)
+ *   <25:  EXTREME FEAR    (fear)
  *   <45:  KORKU          (caution)
- *   <55:  NÖTR           (neutral)
- *   <75:  AÇGÖZLÜ        (greed)
- *   ≥75:  AŞIRI AÇGÖZLÜ  (extreme-greed)
+ *   <55:  NEUTRAL           (neutral)
+ *   <75:  GREED        (greed)
+ *   ≥75:  EXTREME GREED  (extreme-greed)
  */
 export function getFgInfo(value: number): FgInfo {
   // 0-100 aralığına clamp
@@ -35,19 +35,19 @@ export function getFgInfo(value: number): FgInfo {
   let cssClass: FgClass;
 
   if (v < MACRO_CONSTANTS.FG_THRESHOLD_FEAR) {
-    label = "AŞIRI KORKU";
+    label = "EXTREME FEAR";
     cssClass = "fear";
   } else if (v < MACRO_CONSTANTS.FG_THRESHOLD_CAUTION) {
-    label = "KORKU";
+    label = "FEAR";
     cssClass = "caution";
   } else if (v < MACRO_CONSTANTS.FG_THRESHOLD_NEUTRAL) {
-    label = "NÖTR";
+    label = "NEUTRAL";
     cssClass = "neutral";
   } else if (v < MACRO_CONSTANTS.FG_THRESHOLD_GREED) {
-    label = "AÇGÖZLÜ";
+    label = "GREED";
     cssClass = "greed";
   } else {
-    label = "AŞIRI AÇGÖZLÜ";
+    label = "EXTREME GREED";
     cssClass = "extreme-greed";
   }
 
@@ -81,13 +81,13 @@ export function getDominancePhase(
 
   if (usdtD >= MACRO_CONSTANTS.USDT_HIGH) {
     phase = "risk_off_usdt";
-    label = "Risk-Off · USDT'ye kaçış";
+    label = "Risk-Off · Flight to USDT";
   } else if (
     btcD >= MACRO_CONSTANTS.BTC_DOMINANT_MIN &&
     usdtD < MACRO_CONSTANTS.USDT_HEALTHY_MAX
   ) {
     phase = "btc_trend";
-    label = "BTC ağırlıklı trend";
+    label = "BTC-dominated trend";
   } else if (
     btcD < MACRO_CONSTANTS.BTC_DOMINANT_MAX &&
     usdtD < MACRO_CONSTANTS.USDT_HEALTHY_MAX
@@ -124,14 +124,14 @@ export function getMarketSummary(
   if (fg >= MACRO_CONSTANTS.FG_THRESHOLD_GREED && usdtD < MACRO_CONSTANTS.USDT_HEALTHY_MAX) {
     cls = "risk_on_caution";
     icon = "⚠️";
-    text = "Risk-On · Aşırı iyimserlik (zirve riski)";
+    text = "Risk-On · Extreme optimism (peak risk)";
   } else if (
     fg <= MACRO_CONSTANTS.FG_THRESHOLD_FEAR ||
     usdtD >= MACRO_CONSTANTS.USDT_EXTREME
   ) {
     cls = "risk_off";
     icon = "🔻";
-    text = "Risk-Off · Korku/USDT'ye kaçış";
+    text = "Risk-Off · Fear/flight to USDT";
   } else if (
     fg >= MACRO_CONSTANTS.FG_THRESHOLD_NEUTRAL &&
     fg < MACRO_CONSTANTS.FG_THRESHOLD_GREED &&
@@ -139,15 +139,15 @@ export function getMarketSummary(
   ) {
     cls = "risk_on_healthy";
     icon = "🟢";
-    text = "Risk-On · Sağlıklı iştah";
+    text = "Risk-On · Healthy appetite";
   } else if (fg >= 30 && fg < MACRO_CONSTANTS.FG_THRESHOLD_NEUTRAL) {
     cls = "neutral";
     icon = "⚖️";
-    text = "Nötr piyasa · Temkinli";
+    text = "Neutral market · Cautious";
   } else {
     cls = "undecided";
     icon = "🟡";
-    text = "Piyasa kararsız · Bekleme önerilir";
+    text = "Market indecisive · Wait recommended";
   }
 
   return { cls, icon, text };
