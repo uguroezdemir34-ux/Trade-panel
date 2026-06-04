@@ -3,6 +3,7 @@
  */
 
 import type { Pair } from "@/lib/constants/pairs";
+import type { ScorerWeights } from "@/lib/score/orchestrator";
 
 export interface BacktestConfig {
   pair: Pair;
@@ -16,6 +17,11 @@ export interface BacktestConfig {
   takerFee?: number;
   /** Hourly funding rate cost as a fraction. Default: 0 (not modelled) */
   fundingRateHourly?: number;
+  /**
+   * Scorer ağırlıkları — null/undefined ise varsayılan (tümü 1.0) kullanılır.
+   * Bu alan sayesinde farklı ağırlık konfigürasyonları backtest edilebilir.
+   */
+  scorerWeights?: ScorerWeights | null;
 }
 
 export interface BacktestTrade {
@@ -87,4 +93,6 @@ export interface BacktestResult {
   runAt: number;
   dataMonths: number;
   totalBarsScanned: number;
+  /** Hangi ağırlıklarla çalıştırıldı — null ise varsayılan */
+  scorerWeights?: ScorerWeights | null;
 }

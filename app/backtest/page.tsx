@@ -8,6 +8,8 @@ import { BacktestResults } from "@/components/backtest/BacktestResults";
 import { BacktestCompare } from "@/components/backtest/BacktestCompare";
 import { MultiScanResults } from "@/components/backtest/MultiScanResults";
 import { BacktestTemporalCard } from "@/components/backtest/BacktestTemporalCard";
+import { ThresholdOptimizerCard } from "@/components/backtest/ThresholdOptimizerCard";
+import { PatternDiscoveryCard } from "@/components/backtest/PatternDiscoveryCard";
 import type { BacktestConfig } from "@/lib/backtest/types";
 import type { ScanConfig } from "@/lib/store/backtestStore";
 
@@ -163,6 +165,11 @@ function BacktestPageInner() {
             isPinned={pinnedResult?.runAt === result?.runAt}
           />
           <BacktestTemporalCard trades={result!.trades} />
+          <ThresholdOptimizerCard
+            result={result!}
+            currentThreshold={config?.minScore ?? 70}
+          />
+          <PatternDiscoveryCard result={result!} />
         </>
       ) : null}
 

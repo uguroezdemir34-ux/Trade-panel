@@ -240,7 +240,10 @@ export async function runBacktest(
     });
     if (!composed) continue;
 
-    const result = computeScore(composed);
+    const result = computeScore({
+      ...composed,
+      scorerWeights: config.scorerWeights ?? null,
+    });
     if (result.verdict !== "go") continue;
     if (config.minScore && result.score < config.minScore) continue;
 
@@ -310,5 +313,6 @@ export async function runBacktest(
     runAt: Date.now(),
     dataMonths: config.dataMonths,
     totalBarsScanned: total,
+    scorerWeights: config.scorerWeights ?? null,
   };
 }

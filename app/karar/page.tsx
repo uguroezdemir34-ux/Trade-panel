@@ -53,6 +53,7 @@ import { FundingBadge } from "@/components/karar/FundingBadge";
 import { CorrelationWarning } from "@/components/karar/CorrelationWarning";
 import { CandlePatternBadge } from "@/components/karar/CandlePatternBadge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
+import { RegimeBadge } from "@/components/karar/RegimeBadge";
 
 export default function KararPage() {
   const t = useT();
@@ -552,6 +553,7 @@ export default function KararPage() {
                   pair={activePair}
                   direction={result.direction !== "NEUTRAL" ? result.direction : undefined}
                 />
+                <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
               </div>
 
               {/* Score bar */}
