@@ -122,7 +122,7 @@ export default function StatArbPage() {
 
   // Position management (paper mode — no live execution without OKX API)
   const handleOpenPosition = useCallback(() => {
-    if (!currentZScore || executorState !== "flat") return;
+    if (currentZScore === null || executorState !== "flat") return;
     const side = currentZScore >= config.entryThreshold
       ? "short_A_long_B" as const
       : "long_A_short_B" as const;
@@ -149,10 +149,9 @@ export default function StatArbPage() {
 
   const handleClosePosition = useCallback(() => {
     if (!position || executorState !== "open") return;
-    setPosition({ ...position, closedAt: Date.now(), exitZScore: currentZScore });
     setExecutorState("flat");
     setPosition(null);
-  }, [position, executorState, currentZScore, setPosition, setExecutorState]);
+  }, [position, executorState, setPosition, setExecutorState]);
 
   const handleReset = useCallback(() => {
     setExecutorState("flat");

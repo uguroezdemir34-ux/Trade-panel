@@ -37,7 +37,8 @@ function isCronAuthorized(req: Request): boolean {
 function formatPrice(n: number): string {
   if (n >= 10000) return `$${n.toLocaleString("en", { maximumFractionDigits: 0 })}`;
   if (n >= 100) return `$${n.toFixed(2)}`;
-  return `$${n.toFixed(4)}`;
+  if (n >= 0.01) return `$${n.toFixed(4)}`;
+  return `$${n.toFixed(8)}`; // SHIB/FET gibi çok küçük fiyatlar için
 }
 
 function buildSignalMessage(

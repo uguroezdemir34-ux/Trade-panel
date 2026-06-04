@@ -183,9 +183,13 @@ export function runStatArbBacktest(
       }
 
       if (shouldExit) {
+        // long_A_short_B: z <= -threshold (spread çok negatif) → mean reversion → spread artar
+        //   profit = spread arttı = exit_spread - entry_spread > 0
+        // short_A_long_B: z >= +threshold (spread çok pozitif) → mean reversion → spread azalır
+        //   profit = spread azaldı = entry_spread - exit_spread > 0
         const spreadPnl = positionSide === "long_A_short_B"
-          ? entrySpread - spread  // long A: giriş spread küçük, çıkış büyük iyi değil; spread küçüldü = iyi
-          : spread - entrySpread; // short A: giriş spread büyük, küçüldü = iyi
+          ? spread - entrySpread   // spread artması kazanç
+          : entrySpread - spread;  // spread azalması kazanç
 
         // Yaklaşık % return: spreadPnl / spreadStd
         const returnPct = spreadStd > 0 ? (spreadPnl / spreadStd) * 100 : 0;
