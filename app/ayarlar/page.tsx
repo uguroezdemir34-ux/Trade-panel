@@ -14,6 +14,7 @@ import { PriceAlarmsCard } from "@/components/ayarlar/PriceAlarmsCard";
 import { TvWebhookCard } from "@/components/ayarlar/TvWebhookCard";
 import { ScorerWeightsCard } from "@/components/ayarlar/ScorerWeightsCard";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
+import { PlanStatusCard } from "@/components/ayarlar/PlanStatusCard";
 import BacktestPage from "@/app/backtest/page";
 
 type SubTab = "genel" | "backtest";
@@ -57,6 +58,7 @@ export default function AyarlarPage() {
       {/* Sub-tab content */}
       {active === "genel" && (
         <div className="flex flex-col gap-3 p-4">
+          <PlanStatusCard />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <AccountBalanceCard />
             <ModeToggleCard />

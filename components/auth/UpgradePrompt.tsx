@@ -19,7 +19,7 @@ export function UpgradePrompt({ feature }: Props): React.ReactElement {
         {t("auth.upgradePrompt").replace("{feature}", feature)}
       </p>
       <a
-        href="/ayarlar"
+        href="/upgrade"
         className="bg-brand text-white rounded px-4 py-2 font-mono text-xs tracking-widest hover:bg-brand/90 transition-colors"
       >
         {t("auth.upgradeCta")}
