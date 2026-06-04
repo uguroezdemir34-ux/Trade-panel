@@ -8,7 +8,7 @@ import type { ScorerWeights } from "@/lib/score/orchestrator";
 export interface BacktestConfig {
   pair: Pair;
   /** Kaç aylık 1h+4h geçmişi kullanılsın */
-  dataMonths: 6 | 12;
+  dataMonths: 3 | 6 | 12 | 24;
   /** Dondurulmuş F&G değeri (tarihi F&G verisi yok) */
   frozenFg: number;
   /** Minimum score filter — only enter if score >= this value (0 = no filter) */
@@ -17,6 +17,16 @@ export interface BacktestConfig {
   takerFee?: number;
   /** Hourly funding rate cost as a fraction. Default: 0 (not modelled) */
   fundingRateHourly?: number;
+  /**
+   * Market order slippage as a fraction. Default 0 (no slippage model).
+   * 0.001 = 0.1% — applied to entry; SL/timeout exits also slipped against direction.
+   */
+  slippagePct?: number;
+  /**
+   * Signal timeframe. Default "1h" — checks every 1h bar.
+   * "4h" — only fires signals at 4h bar boundaries (first 1h of each new 4h candle).
+   */
+  signalTf?: "1h" | "4h";
   /**
    * Scorer ağırlıkları — null/undefined ise varsayılan (tümü 1.0) kullanılır.
    * Bu alan sayesinde farklı ağırlık konfigürasyonları backtest edilebilir.
@@ -95,4 +105,50 @@ export interface BacktestResult {
   totalBarsScanned: number;
   /** Hangi ağırlıklarla çalıştırıldı — null ise varsayılan */
   scorerWeights?: ScorerWeights | null;
+}
+
+// ── Walk-Forward Optimization ─────────────────────────────────────────────
+
+export interface WFOWindow {
+  windowIdx: number;
+  /** Start epoch ms of this window */
+  windowStart: number;
+  /** End epoch ms of this window */
+  windowEnd: number;
+  /** Best minScore found on in-sample trades */
+  bestMinScore: number;
+  /** EV (R) of best minScore on in-sample period */
+  isEv: number | null;
+  /** Number of trades used in IS evaluation */
+  isTradeCount: number;
+  /** EV (R) of best minScore applied to out-of-sample period */
+  oosEv: number | null;
+  /** Win rate % on OOS */
+  oosWinRate: number | null;
+  /** Number of OOS trades */
+  oosTradeCount: number;
+  /** (IS_EV - OOS_EV) / |IS_EV| — positive = degraded, negative = improved */
+  degradation: number | null;
+}
+
+export interface WFOResult {
+  windows: WFOWindow[];
+  /** Mean degradation across windows with valid IS EV > 0 */
+  avgDegradation: number | null;
+  /** Summary judgment */
+  conclusion: "robust" | "overfit" | "insufficient";
+}
+
+// ── Temporal Consistency (Score × Time Heatmap) ───────────────────────────
+
+export interface HeatmapCell {
+  n: number;
+  ev: number | null;
+  winRate: number | null;
+}
+
+export interface TemporalConsistencyResult {
+  minScores: number[];
+  periodLabels: string[];
+  grid: HeatmapCell[][];  // grid[scoreIdx][periodIdx]
 }

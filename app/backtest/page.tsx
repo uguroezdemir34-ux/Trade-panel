@@ -10,6 +10,8 @@ import { MultiScanResults } from "@/components/backtest/MultiScanResults";
 import { BacktestTemporalCard } from "@/components/backtest/BacktestTemporalCard";
 import { ThresholdOptimizerCard } from "@/components/backtest/ThresholdOptimizerCard";
 import { PatternDiscoveryCard } from "@/components/backtest/PatternDiscoveryCard";
+import { WalkForwardCard } from "@/components/backtest/WalkForwardCard";
+import { TemporalConsistencyCard } from "@/components/backtest/TemporalConsistencyCard";
 import type { BacktestConfig } from "@/lib/backtest/types";
 import type { ScanConfig } from "@/lib/store/backtestStore";
 
@@ -170,6 +172,8 @@ function BacktestPageInner() {
             currentThreshold={config?.minScore ?? 70}
           />
           <PatternDiscoveryCard result={result!} />
+          <TemporalConsistencyCard result={result!} />
+          <WalkForwardCard result={result!} />
         </>
       ) : null}
 

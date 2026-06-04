@@ -32,7 +32,7 @@ export interface ScanRow {
 }
 
 export interface ScanConfig {
-  dataMonths: 6 | 12;
+  dataMonths: 3 | 6 | 12 | 24;
   frozenFg: number;
   minScore?: number;
 }

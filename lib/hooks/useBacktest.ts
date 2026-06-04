@@ -33,7 +33,11 @@ async function fetchCandles(
   onProgress?: (pct: number) => void,
 ) {
   const cached = await getCandlesFromDb(pair, tf);
-  if (cached && Date.now() - cached.fetchedAt < STALE_MS) {
+  // Cache valid only if: not stale AND oldest cached candle covers the requested range
+  const oldestCached = cached?.candles[0]?.ts ?? Infinity;
+  const rangeGapMs = 7 * 24 * 3600_000; // tolerate 1-week gap at start
+  const cacheCoversRange = oldestCached <= fromMs + rangeGapMs;
+  if (cached && Date.now() - cached.fetchedAt < STALE_MS && cacheCoversRange) {
     onProgress?.(1);
     return cached.candles.filter((c) => c.ts >= fromMs);
   }

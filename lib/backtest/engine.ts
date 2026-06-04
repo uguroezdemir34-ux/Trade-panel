@@ -221,6 +221,10 @@ export async function runBacktest(
     const c1h = candles1h.slice(Math.max(0, i - 209), i + 1);
     const ptr4h = ptrs[i];
     if (ptr4h < 0) continue; // not enough 4h data yet
+
+    // Multi-TF: when signalTf === "4h", only fire on first 1h bar of a new 4h candle
+    if (config.signalTf === "4h" && ptrs[i] === ptrs[i - 1]) continue;
+
     const c4h = candles4h.slice(Math.max(0, ptr4h - C4H_WINDOW + 1), ptr4h + 1);
 
     if (c1h.length < 200 || c4h.length < 200 || c15m.length < 20) continue;
@@ -247,15 +251,17 @@ export async function runBacktest(
     if (result.verdict !== "go") continue;
     if (config.minScore && result.score < config.minScore) continue;
 
-    // Entry: next bar's open price
-    const nextBar = candles1h[i + 1];
-    if (!nextBar) continue;
-    const entryPrice = nextBar.open;
-    const atr = simpleAtr(c1h);
-    if (atr <= 0) continue;
-
     if (result.direction !== "LONG" && result.direction !== "SHORT") continue;
     const direction = result.direction;
+
+    // Entry: next bar's open price + entry slippage (market order fills worse)
+    const nextBar = candles1h[i + 1];
+    if (!nextBar) continue;
+    const slippage = config.slippagePct ?? 0;
+    const entrySlipFactor = direction === "LONG" ? 1 + slippage : 1 - slippage;
+    const entryPrice = nextBar.open * entrySlipFactor;
+    const atr = simpleAtr(c1h);
+    if (atr <= 0) continue;
 
     // SL: structural stop (no swing data in backtest → ATR fallback 1.5×)
     const sl = computeStructuralStop(direction, entryPrice, atr, null, null);
@@ -273,14 +279,21 @@ export async function runBacktest(
       MAX_HOLD_BARS,
     );
 
-    const priceDelta = (exit.exitPrice - entryPrice) * (direction === "LONG" ? 1 : -1);
+    // Exit slippage: SL and timeout are market orders → slip against direction
+    const isMarketExit = exit.exitReason === "sl" || exit.exitReason === "timeout";
+    const exitSlipFactor = isMarketExit
+      ? (direction === "LONG" ? 1 - slippage : 1 + slippage)
+      : 1;
+    const effectiveExitPrice = exit.exitPrice * exitSlipFactor;
+
+    const priceDelta = (effectiveExitPrice - entryPrice) * (direction === "LONG" ? 1 : -1);
     const rMultiple = sl.stopDistance > 0 ? priceDelta / sl.stopDistance : 0;
     const pnlPct = entryPrice > 0 ? (priceDelta / entryPrice) * 100 : 0;
 
     // Fee model: both entry and exit use taker rate (market orders)
     const takerFee = config.takerFee ?? 0.0005;
     const fundingRateHourly = config.fundingRateHourly ?? 0;
-    const roundTripFeePct = takerFee * (1 + exit.exitPrice / entryPrice) * 100;
+    const roundTripFeePct = takerFee * (1 + effectiveExitPrice / entryPrice) * 100;
     const fundingCostPct = fundingRateHourly * exit.barsHeld * 100;
     const feesPct = roundTripFeePct + fundingCostPct;
     const netPnlPct = pnlPct - feesPct;
@@ -291,7 +304,7 @@ export async function runBacktest(
       entryTs: nextBar.ts,
       entryPrice,
       exitTs: exit.exitTs,
-      exitPrice: exit.exitPrice,
+      exitPrice: effectiveExitPrice,
       exitReason: exit.exitReason,
       tp1Price: tp.tp1Price,
       tp2Price: tp.tp2Price,
