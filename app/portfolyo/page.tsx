@@ -5,13 +5,16 @@ import { useT } from "@/lib/i18n/context";
 import PozisyonPage from "@/app/pozisyon/page";
 import RiskPage from "@/app/risk/page";
 import PnlPage from "@/app/pnl/page";
+import { VaRCard } from "@/components/portfolio/VaRCard";
+import { CorrelationMatrix } from "@/components/portfolio/CorrelationMatrix";
 
-type SubTab = "pozisyon" | "risk" | "pnl";
+type SubTab = "pozisyon" | "risk" | "pnl" | "analitik";
 
 const SUB_TABS: { id: SubTab; labelKey: string }[] = [
   { id: "pozisyon", labelKey: "nav.position" },
   { id: "risk", labelKey: "nav.risk" },
   { id: "pnl", labelKey: "nav.pnl" },
+  { id: "analitik", labelKey: "portfolio.analyticsTab" },
 ];
 
 export default function PortfolyoPage() {
@@ -46,6 +49,12 @@ export default function PortfolyoPage() {
         {active === "pozisyon" && <PozisyonPage />}
         {active === "risk" && <RiskPage />}
         {active === "pnl" && <PnlPage />}
+        {active === "analitik" && (
+          <div className="flex flex-col gap-4 p-4">
+            <VaRCard />
+            <CorrelationMatrix />
+          </div>
+        )}
       </div>
     </div>
   );

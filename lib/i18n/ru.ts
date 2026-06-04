@@ -434,6 +434,33 @@ export const ru: Dictionary = {
     inProgress: "В ПРОЦЕССЕ",
   },
 
+
+  portfolio: {
+    analyticsTab: "Analytics",
+    var: {
+      title: "Portfolio VaR",
+      var95: "1-Day VaR (95%)",
+      var99: "1-Day VaR (99%)",
+      cvar95: "CVaR / ES (95%)",
+      cvarHint: "Expected Shortfall — avg loss beyond VaR",
+      portfolioVol: "Daily Vol (1σ)",
+      scenarios: "scenarios",
+      notional: "Total Notional",
+      contributions: "Position Contributions",
+      noPositions: "No open positions",
+      noPositionsHint: "Open a trade to see your portfolio VaR.",
+      insufficientData: "Insufficient candle data for VaR calculation.",
+      disclaimer: "Historical simulation · 4h candles · √6 scaled to 1-day · not a guarantee",
+    },
+    corr: {
+      title: "Correlation Matrix",
+      hint: "Pearson · 4h returns · {n} data points",
+      noData: "No candle data loaded yet",
+      noDataHint: "Candle data loads automatically in the background.",
+      pearsonNote: "Pearson r — 4h returns — green = co-movement, red = inverse",
+    },
+  },
+
   position: {
     title: "💼 ОТКРЫТЫЕ ПОЗИЦИИ",
     subtitle: "P&L в реальном времени · автообновление каждые 3с",

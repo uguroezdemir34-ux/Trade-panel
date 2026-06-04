@@ -443,6 +443,32 @@ export const tr: Dictionary = {
     inProgress: "YAPIM AŞAMASINDA",
   },
 
+  portfolio: {
+    analyticsTab: "Analitik",
+    var: {
+      title: "Portföy VaR",
+      var95: "1-Günlük VaR (%95)",
+      var99: "1-Günlük VaR (%99)",
+      cvar95: "CVaR / ES (%95)",
+      cvarHint: "Beklenen Kayıp — VaR ötesindeki ort. kayıp",
+      portfolioVol: "Günlük Vol (1σ)",
+      scenarios: "senaryo",
+      notional: "Toplam Nominal",
+      contributions: "Pozisyon Katkıları",
+      noPositions: "Açık pozisyon yok",
+      noPositionsHint: "Portföy VaR'ınızı görmek için bir işlem açın.",
+      insufficientData: "VaR hesabı için yetersiz mum verisi.",
+      disclaimer: "Tarihsel simülasyon · 4s mumlar · √6 ile 1 güne ölçeklendirildi · garanti değildir",
+    },
+    corr: {
+      title: "Korelasyon Matrisi",
+      hint: "Pearson · 4s getiriler · {n} veri noktası",
+      noData: "Henüz mum verisi yüklenmedi",
+      noDataHint: "Mum verisi arka planda otomatik yüklenir.",
+      pearsonNote: "Pearson r — 4s getiriler — yeşil = birlikte hareket, kırmızı = ters yön",
+    },
+  },
+
   position: {
     title: "💼 AÇIK POZİSYONLAR",
     subtitle: "Canlı K/Z · her 3 saniyede bir yenilenir",
