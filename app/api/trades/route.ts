@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth/serverStubs";
 import { getTradesForUser, upsertTrade, upsertTrades } from "@/lib/db/trades";
 import { isDbConfigured } from "@/lib/db/server";
 import type { TradeSnapshot } from "@/lib/trades/types";
