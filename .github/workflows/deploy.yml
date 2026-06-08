@@ -11,8 +11,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Discover Vercel project metadata
+        id: meta
+        run: |
+          JSON=$(curl -sf -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            "https://api.vercel.com/v9/projects/quantix-os-new")
+          PROJECT_ID=$(echo $JSON | jq -r '.id')
+          ORG_ID=$(echo $JSON | jq -r '.accountId')
+          echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
+          echo "org_id=$ORG_ID" >> $GITHUB_OUTPUT
+
       - name: Deploy to Vercel (Production)
         run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
-          VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_ORG_ID: ${{ steps.meta.outputs.org_id }}
+          VERCEL_PROJECT_ID: ${{ steps.meta.outputs.project_id }}
