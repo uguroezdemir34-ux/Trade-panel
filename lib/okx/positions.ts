@@ -162,23 +162,38 @@ export function parsePositionResponse(raw: unknown): Position[] | null {
 /**
  * Açık pozisyonları çek.
  *
+ * @param clientCreds Browser-stored OKX credentials (Layer 2 fallback)
  * @param fetchFn HTTP fetch (default global)
  */
-export async function fetchPositions(fetchFn?: FetchFn): Promise<Position[] | null> {
+export async function fetchPositions(
+  clientCreds?: { key: string; secret: string; pass: string } | null,
+  fetchFn?: FetchFn,
+): Promise<Position[] | null> {
   const fn = fetchFn ?? (globalThis.fetch as unknown as FetchFn);
   const url = "/api/okx/api/v5/account/positions";
   try {
-    const res = await fn(url);
-    if (!res.ok) return null;
-    const raw = await res.json();
-    if (!raw || typeof raw !== "object") return null;
-    const r = raw as Record<string, unknown>;
-    // Direkt OKX response veya proxy wrap
-    if (typeof r.code === "string") {
-      return parsePositionResponse(raw);
+    let res: { ok: boolean; json: () => Promise<unknown> };
+    if (clientCreds?.key) {
+      res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDemo: false, clientCreds }),
+      });
+    } else {
+      res = await fn(url);
     }
-    if (r.data && typeof r.data === "object") {
-      return parsePositionResponse(r.data);
+    if (!res.ok) return null;
+    const raw = await res.json() as Record<string, unknown>;
+    if (!raw || typeof raw !== "object") return null;
+
+    // Proxy response: { ok: boolean, data: [...positions] }
+    if (typeof raw.ok === "boolean") {
+      if (!raw.ok) return null;
+      return parsePositionResponse({ code: "0", data: raw.data });
+    }
+    // Direct OKX envelope passthrough
+    if (typeof raw.code === "string") {
+      return parsePositionResponse(raw);
     }
     return null;
   } catch {

@@ -34,11 +34,15 @@ export async function fetchBalance(
 
     const raw = (await res.json()) as Record<string, unknown>;
 
-    // Proxy zarfı: { ok, data } veya direkt OKX yanıtı
-    const okxData =
-      typeof raw.ok === "boolean"
-        ? (raw.data as Record<string, unknown> | undefined)
-        : raw;
+    // Proxy zarfı: { ok, data } — data is the OKX envelope's data array
+    // Direct OKX response fallback (no wrapper)
+    const proxyData: unknown =
+      typeof raw.ok === "boolean" ? raw.data : raw;
+
+    // OKX balance lives at data[0] inside the envelope array
+    const okxData: Record<string, unknown> | undefined = Array.isArray(proxyData)
+      ? (proxyData[0] as Record<string, unknown> | undefined)
+      : (proxyData as Record<string, unknown> | undefined);
 
     const details = Array.isArray(
       (okxData as Record<string, unknown> | undefined)?.details,

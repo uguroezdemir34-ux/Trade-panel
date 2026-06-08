@@ -11,16 +11,20 @@
 import { useEffect, useRef } from "react";
 import { fetchPositions } from "@/lib/okx/positions";
 import { usePositionStore } from "@/lib/store/positionStore";
+import { useCredentialStore } from "@/lib/store/credentialStore";
 
 const POLL_INTERVAL_MS = 10_000;
 
 export function usePositionPoller(delayMs = 0): void {
   const setPositions = usePositionStore((s) => s.setPositions);
+  const okxProd = useCredentialStore((s) => s.okxProd);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const okxProdRef = useRef(okxProd);
+  okxProdRef.current = okxProd;
 
   async function fetchAll(): Promise<void> {
-    const positions = await fetchPositions();
+    const positions = await fetchPositions(okxProdRef.current);
     if (positions !== null) {
       setPositions(positions);
     }
