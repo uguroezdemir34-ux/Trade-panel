@@ -13,6 +13,12 @@ import { getAdapter } from "@/lib/exchange";
 import { useT } from "@/lib/i18n/context";
 import type { Position } from "@/lib/okx/positions";
 
+/** Converts null/undefined → undefined, and rejects zero/negative prices.
+ *  Makes the "user cleared field = don't place order" intent explicit. */
+function toAdapterPrice(p: number | null | undefined): number | undefined {
+  return p != null && p > 0 ? p : undefined;
+}
+
 export default function PozisyonPage() {
   const t = useT();
   const positions = usePositionStore((s) => s.positions);
@@ -97,15 +103,16 @@ export default function PozisyonPage() {
                 }}
                 onUpdateSlTp={async (slPrice, tp1Price, tp2Price) => {
                   // Layer 1: exchange algo orders
+                  // toAdapterPrice: null/0/negative → undefined (don't place order)
                   const adapter = getAdapter(demoMode);
                   const res = await adapter.updateSlTp({
                     instId: pos.instId,
                     direction: pos.direction,
                     mgnMode: pos.mgnMode,
                     qty: pos.size,
-                    slPrice: slPrice ?? undefined,
-                    tp1Price: tp1Price ?? undefined,
-                    tp2Price: tp2Price ?? undefined,
+                    slPrice: toAdapterPrice(slPrice),
+                    tp1Price: toAdapterPrice(tp1Price),
+                    tp2Price: toAdapterPrice(tp2Price),
                   });
                   if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
                   // Layer 2: tradesStore sync — re-lookup after await to avoid stale closure

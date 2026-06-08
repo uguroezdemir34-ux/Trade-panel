@@ -85,9 +85,18 @@ export function PositionCard({
   // SL/TP edit state
   const [editingSlTp, setEditingSlTp] = useState(false);
   const [editSl, setEditSl] = useState(String(position.slTriggerPx ?? ""));
-  const [editTp, setEditTp] = useState(String(position.tpTriggerPx ?? ""));
+  const [editTp, setEditTp] = useState(String(position.tpTriggerPx ?? tradeTp1 ?? ""));
   const [editTp2, setEditTp2] = useState(String(tradeTp2 ?? ""));
   const [slTpLoading, setSlTpLoading] = useState(false);
+
+  // Keep edit inputs in sync with incoming prop updates (e.g. after reconcile),
+  // but only when the panel is closed — never override in-progress edits.
+  useEffect(() => {
+    if (editingSlTp) return;
+    setEditSl(String(position.slTriggerPx ?? ""));
+    setEditTp(String(position.tpTriggerPx ?? tradeTp1 ?? ""));
+    setEditTp2(String(tradeTp2 ?? ""));
+  }, [position.slTriggerPx, position.tpTriggerPx, tradeTp1, tradeTp2, editingSlTp]);
   const [slTpError, setSlTpError] = useState<string | null>(null);
 
   const currentPx = tick?.last ?? position.markPx;

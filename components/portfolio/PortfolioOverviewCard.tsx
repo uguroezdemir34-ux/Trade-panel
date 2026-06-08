@@ -20,6 +20,7 @@ export function PortfolioOverviewCard(): React.ReactElement {
   const dailyPnlPct = useAccountStore((s) => s.dailyPnlPct);
   const weeklyPnlPct = useAccountStore((s) => s.weeklyPnlPct);
   const drawdownProtocol = useAccountStore((s) => s.drawdownProtocol);
+  const lastDailyResetAt = useAccountStore((s) => s.lastDailyResetAt);
 
   const closedTrades = useTradesStore(selectClosedTrades);
   const openPositions = usePositionStore((s) => s.positions);
@@ -27,7 +28,16 @@ export function PortfolioOverviewCard(): React.ReactElement {
   const wins = closedTrades.filter((tr) => (tr.exit?.pnlUsd ?? 0) > 0).length;
   const total = closedTrades.length;
   const winRate = total > 0 ? (wins / total) * 100 : null;
-  const realizedPnl = closedTrades.reduce((sum, tr) => sum + (tr.exit?.pnlUsd ?? 0), 0);
+
+  // Today's realized P&L: trades closed since the last daily reset
+  // Consistent with dailyPnlPct temporal window.
+  const todayRealizedPnl = closedTrades
+    .filter((tr) => (tr.exit?.closedAt ?? 0) >= lastDailyResetAt)
+    .reduce((sum, tr) => sum + (tr.exit?.pnlUsd ?? 0), 0);
+
+  // All-time realized shown as context in sub-label
+  const allTimeRealizedPnl = closedTrades.reduce((sum, tr) => sum + (tr.exit?.pnlUsd ?? 0), 0);
+
   const unrealizedPnl = openPositions.reduce((sum, p) => sum + p.upl, 0);
 
   const tierStyle: Record<string, string> = {
@@ -72,8 +82,9 @@ export function PortfolioOverviewCard(): React.ReactElement {
         />
         <OvStat
           label={t("portfolio.overview.realizedPnl")}
-          value={`${realizedPnl >= 0 ? "+" : "-"}$${fmt(Math.abs(realizedPnl))}`}
-          color={realizedPnl >= 0 ? "text-signal-green" : "text-signal-red"}
+          value={`${todayRealizedPnl >= 0 ? "+" : "-"}$${fmt(Math.abs(todayRealizedPnl))}`}
+          sub={`${t("portfolio.overview.allTime")} ${allTimeRealizedPnl >= 0 ? "+" : "-"}$${fmt(Math.abs(allTimeRealizedPnl))}`}
+          color={todayRealizedPnl >= 0 ? "text-signal-green" : "text-signal-red"}
         />
         <OvStat
           label={t("portfolio.overview.unrealized")}
