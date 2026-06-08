@@ -21,21 +21,17 @@ jobs:
           echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
           echo "org_id=$ORG_ID" >> $GITHUB_OUTPUT
 
-      - name: Deploy to Vercel (Production)
-        id: deploy
+      - name: Set production branch to our feature branch
         run: |
-          DEPLOY_URL=$(npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }} 2>&1 | grep -E "https://" | tail -1)
-          echo "deploy_url=$DEPLOY_URL" >> $GITHUB_OUTPUT
-          echo "Deployed to: $DEPLOY_URL"
-        env:
-          VERCEL_ORG_ID: ${{ steps.meta.outputs.org_id }}
-          VERCEL_PROJECT_ID: ${{ steps.meta.outputs.project_id }}
+          curl -sf -X PATCH \
+            "https://api.vercel.com/v9/projects/${{ steps.meta.outputs.project_id }}" \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"link":{"productionBranch":"claude/quantix-os-deployment-YXhhF"}}' \
+            | jq '.link.productionBranch' || true
 
-      - name: Assign production alias
-        run: |
-          npx vercel alias set ${{ steps.deploy.outputs.deploy_url }} quantix-os-new.vercel.app \
-            --token=${{ secrets.VERCEL_TOKEN }} \
-            --scope=${{ steps.meta.outputs.org_id }} || true
+      - name: Deploy to Vercel (Production)
+        run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
         env:
           VERCEL_ORG_ID: ${{ steps.meta.outputs.org_id }}
           VERCEL_PROJECT_ID: ${{ steps.meta.outputs.project_id }}
