@@ -7,6 +7,7 @@ import RiskPage from "@/app/risk/page";
 import PnlPage from "@/app/pnl/page";
 import { VaRCard } from "@/components/portfolio/VaRCard";
 import { CorrelationMatrix } from "@/components/portfolio/CorrelationMatrix";
+import { PortfolioOverviewCard } from "@/components/portfolio/PortfolioOverviewCard";
 
 type SubTab = "pozisyon" | "risk" | "pnl" | "analitik";
 
@@ -23,6 +24,9 @@ export default function PortfolyoPage() {
 
   return (
     <div className="flex flex-col">
+      {/* Portfolio equity overview — always visible above tabs */}
+      <PortfolioOverviewCard />
+
       {/* Sub-tab bar */}
       <div className="border-b border-border bg-bg-card sticky top-0 z-10">
         <div className="flex">
@@ -59,3 +63,4 @@ export default function PortfolyoPage() {
     </div>
   );
 }
+

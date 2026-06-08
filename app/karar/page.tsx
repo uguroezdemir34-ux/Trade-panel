@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
@@ -48,6 +48,7 @@ import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
 import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
 import { GoSignalLog } from "@/components/karar/GoSignalLog";
+import { KeyboardShortcutsModal } from "@/components/karar/KeyboardShortcutsModal";
 import { HistoricalEdge } from "@/components/karar/HistoricalEdge";
 import { FundingBadge } from "@/components/karar/FundingBadge";
 import { CorrelationWarning } from "@/components/karar/CorrelationWarning";
@@ -59,6 +60,7 @@ export default function KararPage() {
   const t = useT();
   const [activePair, setActivePair] = useState<Pair>("BTC");
   const [pairGroup, setPairGroup] = useState<PairGroup>("all");
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const watchlistPairs = useWatchlistStore((s) => s.pairs);
   const watchlistToggle = useWatchlistStore((s) => s.toggle);
   const watchlistLoad = useWatchlistStore((s) => s.load);
@@ -94,17 +96,40 @@ export default function KararPage() {
   const funding = useMacroStore((s) => s.funding);
   const fgValue = useMacroStore((s) => s.fgValue);
 
-  // Keyboard shortcuts: 1-9 → select pair by index, G → next GO pair
+  // Keyboard shortcuts: 1-9 / [ ] / G / ?
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.target as HTMLElement).tagName === "INPUT") return;
       if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
+
+      // ? → toggle shortcuts modal
+      if (e.key === "?") {
+        setShowShortcuts((v) => !v);
+        return;
+      }
+
+      // 1-9 → jump to pair by index
       const digit = parseInt(e.key);
       if (!isNaN(digit) && digit >= 1 && digit <= 9) {
         const target = PAIRS[digit - 1];
         if (target) setActivePair(target);
         return;
       }
+
+      // [ / ] → previous / next pair in current display list
+      if (e.key === "[" || e.key === "]") {
+        const list = displayPairsRef.current;
+        if (list.length === 0) return;
+        const idx = list.indexOf(activePair);
+        const next =
+          e.key === "]"
+            ? list[(idx + 1) % list.length]
+            : list[(idx - 1 + list.length) % list.length];
+        setActivePair(next);
+        return;
+      }
+
+      // G → cycle through GO pairs
       if (e.key === "g" || e.key === "G") {
         const goList = PAIRS.filter((p) => allResults[p]?.verdict === "go");
         if (goList.length === 0) return;
@@ -132,6 +157,10 @@ export default function KararPage() {
     if (pairGroup === "watch") return watchlistPairs.length > 0 ? watchlistPairs : PAIRS;
     return PAIR_GROUPS[pairGroup] ?? PAIRS;
   }, [pairGroup, goPairs, watchlistPairs]);
+
+  // Ref so the keydown handler always sees the latest displayPairs without re-binding
+  const displayPairsRef = useRef<readonly Pair[]>(displayPairs);
+  displayPairsRef.current = displayPairs;
 
   const pairMomentum = useMemo<Partial<Record<Pair, number>>>(() => {
     const out: Partial<Record<Pair, number>> = {};
@@ -358,6 +387,17 @@ export default function KararPage() {
       )}
 
       <StreakBanner />
+
+      {/* Keyboard shortcut hint — sağ üst köşe */}
+      <div className="flex justify-end -mt-1">
+        <button
+          onClick={() => setShowShortcuts(true)}
+          className="font-mono text-2xs text-text-t4 hover:text-text-t2 transition-colors border border-border/40 rounded px-2 py-0.5"
+          title="Klavye kısayolları (? tuşu)"
+        >
+          ⌨ ?
+        </button>
+      </div>
 
       {/* Desktop 2-column layout */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
@@ -653,6 +693,10 @@ export default function KararPage() {
             {t("karar.sendingOrder")}
           </div>
         </div>
+      )}
+
+      {showShortcuts && (
+        <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />
       )}
     </div>
   );
