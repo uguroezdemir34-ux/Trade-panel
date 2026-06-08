@@ -35,23 +35,30 @@ export function PairSignalHistory({ pair }: { pair: Pair }): React.ReactElement 
         {pair} GO Geçmişi
       </span>
       {signals.map((sig) => {
+        const dirUp = sig.direction.toUpperCase() as "LONG" | "SHORT" | "NEUTRAL";
         const wasTaken = trades.some(
           (tr) =>
             tr.pair === pair &&
-            tr.direction === sig.direction &&
+            tr.direction === dirUp &&
             Math.abs(tr.openedAt - sig.ts) < 15 * 60_000,
         );
         const fullTime = new Date(sig.ts).toLocaleTimeString("tr-TR", {
           hour: "2-digit",
           minute: "2-digit",
         });
+        const dirLabel =
+          dirUp === "LONG" ? "▲ L" : dirUp === "SHORT" ? "▼ S" : "↔ N";
+        const dirColor =
+          dirUp === "LONG"
+            ? "text-signal-green"
+            : dirUp === "SHORT"
+            ? "text-signal-red"
+            : "text-text-t3";
         return (
-          <div key={sig.ts} className="flex items-center gap-2 font-mono text-2xs">
-            <span className="text-text-t4 shrink-0 w-8 tabular-nums">{timeAgo(sig.ts)}</span>
-            <span className="text-text-t4 shrink-0 w-8 tabular-nums">{fullTime}</span>
-            <span className={`shrink-0 font-semibold ${sig.direction === "LONG" ? "text-signal-green" : "text-signal-red"}`}>
-              {sig.direction === "LONG" ? "▲ L" : "▼ S"}
-            </span>
+          <div key={`${sig.ts}_${sig.score}`} className="flex items-center gap-2 font-mono text-2xs">
+            <span className="text-text-t4 shrink-0 tabular-nums">{timeAgo(sig.ts)}</span>
+            <span className="text-text-t4 shrink-0 tabular-nums">{fullTime}</span>
+            <span className={`shrink-0 font-semibold ${dirColor}`}>{dirLabel}</span>
             <span className="text-text-t3 tabular-nums w-6 text-right">{sig.score}</span>
             {wasTaken ? (
               <span className="text-brand text-[8px] font-bold ml-1">✓</span>

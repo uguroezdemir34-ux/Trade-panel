@@ -46,7 +46,7 @@ const STORAGE_KEY = "trade_snapshots";
 const exitInfoSchema = z.object({
   closedAt: z.number(),
   exitPrice: z.number(),
-  reason: z.enum(["tp1", "tp2", "sl", "manual", "trail"]),
+  reason: z.enum(["tp1", "tp2", "sl", "manual", "trail", "equity_halt"]),
   pnlUsd: z.number(),
   pnlPct: z.number(),
   holdingSec: z.number(),
