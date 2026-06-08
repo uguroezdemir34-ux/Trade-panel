@@ -1,7 +1,6 @@
 "use client";
 
-import { SignIn } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
+import Link from "next/link";
 
 export default function SignInPage(): React.ReactElement {
   return (
@@ -14,26 +13,17 @@ export default function SignInPage(): React.ReactElement {
           Advanced AI Trading Systems
         </p>
       </div>
-      <SignIn
-        appearance={{
-          baseTheme: dark,
-          variables: {
-            colorBackground: "#111111",
-            colorPrimary: "#C35523",
-            colorText: "#E5E5E5",
-            colorTextSecondary: "#888888",
-            colorInputBackground: "#1A1A1A",
-            colorInputText: "#E5E5E5",
-            borderRadius: "8px",
-            fontFamily: "'IBM Plex Mono', monospace",
-          },
-          elements: {
-            card: "shadow-2xl border border-border",
-            headerTitle: "font-mono tracking-wider",
-            formButtonPrimary: "bg-brand hover:bg-brand/90 font-mono tracking-widest",
-          },
-        }}
-      />
+      <div className="rounded-lg border border-border bg-bg-card p-8 text-center max-w-sm w-full">
+        <p className="font-mono text-sm text-text-t2 mb-4">
+          Auth sistemi yapılandırılmamış.
+        </p>
+        <Link
+          href="/"
+          className="inline-block rounded bg-brand px-4 py-2 font-mono text-xs text-white tracking-widest hover:bg-brand/90 transition-colors"
+        >
+          Panele Dön
+        </Link>
+      </div>
     </div>
   );
 }

@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
 import { AppShell } from "@/components/layout/AppShell";
 import { I18nProvider } from "@/lib/i18n/context";
 import { LocaleHtmlSync } from "@/components/layout/LocaleHtmlSync";
@@ -52,7 +51,6 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <ClerkProvider>
     <html lang="en" dir="ltr" suppressHydrationWarning>
       <head>
         {/* Prevent theme FOUC — reads localStorage before React hydrates */}
@@ -80,6 +78,5 @@ export default function RootLayout({
         </I18nProvider>
       </body>
     </html>
-    </ClerkProvider>
   );
 }

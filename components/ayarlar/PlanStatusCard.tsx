@@ -1,6 +1,6 @@
 "use client";
 
-import { useUser } from "@clerk/nextjs";
+import { useUserStub } from "@/lib/auth/stubs";
 import { useT } from "@/lib/i18n/context";
 import { getPlanTier } from "@/lib/auth/subscription";
 
@@ -18,7 +18,7 @@ const TIER_BG: Record<string, string> = {
 
 export function PlanStatusCard(): React.ReactElement {
   const t = useT();
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useUserStub();
   const tier = getPlanTier(user);
 
   if (!isLoaded) return <></>;

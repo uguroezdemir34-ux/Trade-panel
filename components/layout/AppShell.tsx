@@ -50,7 +50,7 @@ import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
 import { useBotMode } from "@/lib/hooks/useBotMode";
 import { usePwaSetup } from "@/lib/hooks/usePwaSetup";
-import { useAuth } from "@clerk/nextjs";
+import { useAuthStub } from "@/lib/auth/stubs";
 import { setCurrentUserId } from "@/lib/auth/scope";
 import { migrateStorageForUser } from "@/lib/auth/migrate";
 import { fetchTradesFromServer, bulkSyncTradesToServer } from "@/lib/db/tradeSync";
@@ -82,7 +82,7 @@ export function AppShell({
   const rehydrateTrades = useTradesStore((s) => s.rehydrate);
   const mergeTradesFromDb = useTradesStore((s) => s.mergeFromDb);
   const loadCredentials = useCredentialStore((s) => s.load);
-  const { userId, isLoaded: authLoaded } = useAuth();
+  const { userId, isLoaded: authLoaded } = useAuthStub();
 
   // Splash: günde bir kez göster (localStorage tarih kontrolü)
   const [showSplash, setShowSplash] = useState(false);
