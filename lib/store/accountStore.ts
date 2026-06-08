@@ -45,12 +45,14 @@ interface AccountStoreState {
   drawdownProtocol: DrawdownProtocol;
   /** OKX bakiye fetch son durum */
   balanceFetchStatus: "idle" | "ok" | "error";
+  /** OKX fetch hata detayı */
+  balanceFetchErrMsg: string | null;
   /** Hidrate edildi mi (SSR guard) */
   _hydrated: boolean;
 
   // Actions
   setBalance: (total: number, free: number) => void;
-  setBalanceFetchError: () => void;
+  setBalanceFetchError: (msg?: string) => void;
   setDailyPnlPct: (pct: number) => void;
   setWeeklyPnlPct: (pct: number) => void;
   setMonthlyPnlPct: (pct: number) => void;
@@ -113,16 +115,17 @@ export const useAccountStore = create<AccountStoreState>((set, get) => ({
   lastMonthlyResetAt: 0,
   drawdownProtocol: computeDrawdownProtocol(0),
   balanceFetchStatus: "idle",
+  balanceFetchErrMsg: null,
   _hydrated: false,
 
   setBalance: (total, free) => {
-    set({ balanceTotal: total, balanceFree: free, balanceFetchStatus: "ok" });
+    set({ balanceTotal: total, balanceFree: free, balanceFetchStatus: "ok", balanceFetchErrMsg: null });
     const state = get();
     saveToStorage<PersistedAccount>(STORAGE_KEY, buildPersisted(state, { balanceTotal: total, balanceFree: free }));
   },
 
-  setBalanceFetchError: () => {
-    set({ balanceFetchStatus: "error" });
+  setBalanceFetchError: (msg) => {
+    set({ balanceFetchStatus: "error", balanceFetchErrMsg: msg ?? null });
   },
 
   setDailyPnlPct: (pct) => {

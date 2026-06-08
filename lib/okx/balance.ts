@@ -10,13 +10,31 @@ export interface BalanceResult {
   free: number;
 }
 
+export interface BalanceFetchResult {
+  ok: true;
+  total: number;
+  free: number;
+}
+
+export interface BalanceFetchError {
+  ok: false;
+  err: string;
+}
+
 export async function fetchBalance(
   isDemo: boolean,
   clientCreds?: { key: string; secret: string; pass: string } | null,
 ): Promise<BalanceResult | null> {
+  const result = await fetchBalanceDetailed(isDemo, clientCreds);
+  if (result.ok) return { total: result.total, free: result.free };
+  return null;
+}
+
+export async function fetchBalanceDetailed(
+  isDemo: boolean,
+  clientCreds?: { key: string; secret: string; pass: string } | null,
+): Promise<BalanceFetchResult | BalanceFetchError> {
   try {
-    // Use POST when client creds are present — avoids custom header stripping
-    // by proxies/Vercel Edge. GET is used only when relying on server-side env vars.
     let res: Response;
     if (clientCreds?.key) {
       res = await fetch("/api/okx/api/v5/account/balance", {
@@ -30,12 +48,15 @@ export async function fetchBalance(
         headers: { "X-OKX-Mode": isDemo ? "demo" : "prod" },
       });
     }
-    if (!res.ok) return null;
+    if (!res.ok) return { ok: false, err: `HTTP_${res.status}` };
 
     const raw = (await res.json()) as Record<string, unknown>;
 
-    // Proxy zarfı: { ok, data } — data is the OKX envelope's data array
-    // Direct OKX response fallback (no wrapper)
+    // Proxy zarfı: { ok, data, err } veya { ok, data } array
+    if (typeof raw.ok === "boolean" && !raw.ok) {
+      return { ok: false, err: String(raw.err ?? "PROXY_ERROR") };
+    }
+
     const proxyData: unknown =
       typeof raw.ok === "boolean" ? raw.data : raw;
 
@@ -44,24 +65,25 @@ export async function fetchBalance(
       ? (proxyData[0] as Record<string, unknown> | undefined)
       : (proxyData as Record<string, unknown> | undefined);
 
-    const details = Array.isArray(
-      (okxData as Record<string, unknown> | undefined)?.details,
-    )
-      ? ((okxData as Record<string, unknown>).details as Array<
-          Record<string, unknown>
-        >)
+    const details = Array.isArray(okxData?.details)
+      ? (okxData!.details as Array<Record<string, unknown>>)
       : [];
 
     const usdt = details.find((d) => d.ccy === "USDT");
-    if (!usdt) return null;
+    if (!usdt) {
+      const ccys = details.map((d) => d.ccy).join(",") || "empty";
+      return { ok: false, err: `NO_USDT(ccys:${ccys})` };
+    }
 
     const total = parseFloat(String(usdt.eq ?? "0"));
     const free = parseFloat(String(usdt.availEq ?? "0"));
 
-    if (!Number.isFinite(total) || !Number.isFinite(free)) return null;
+    if (!Number.isFinite(total) || !Number.isFinite(free)) {
+      return { ok: false, err: "PARSE_NaN" };
+    }
 
-    return { total, free };
-  } catch {
-    return null;
+    return { ok: true, total, free };
+  } catch (e) {
+    return { ok: false, err: (e as Error)?.message ?? "UNKNOWN" };
   }
 }
