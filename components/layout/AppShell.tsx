@@ -51,6 +51,7 @@ import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
 import { useBotMode } from "@/lib/hooks/useBotMode";
 import { usePwaSetup } from "@/lib/hooks/usePwaSetup";
 import { useEmergencyStopGuard } from "@/lib/hooks/useEmergencyStopGuard";
+import { useSlProximityAlert } from "@/lib/hooks/useSlProximityAlert";
 import { useCapacitorApp } from "@/lib/hooks/useCapacitorApp";
 import { QuickTradeSheet } from "@/components/mobile/QuickTradeSheet";
 import { useAuthStub } from "@/lib/auth/stubs";
@@ -125,6 +126,8 @@ export function AppShell({
   useBotMode();
   // Acil stop guard — OKX algo emri tetiklenmezse client tarafı SL koruması
   useEmergencyStopGuard();
+  // SL yaklaştığında Telegram bildirimi — %3 eşiği, 15 dak cooldown
+  useSlProximityAlert();
   // PWA kurulumu — SW kayıt + install prompt yakalama
   usePwaSetup();
   // Capacitor native lifecycle — back button, StatusBar, SplashScreen

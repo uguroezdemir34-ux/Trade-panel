@@ -27,6 +27,8 @@ export function formatDiscordMessage(msg: NotifyMessage): string {
       return formatScoreMomentum(msg);
     case "consecutive_loss":
       return formatConsecutiveLoss(msg);
+    case "sl_proximity":
+      return `⚠️ **SL YAKLAŞIYOR** — ${msg.pair ?? "—"} ${msg.direction ?? ""}\nFiyat: $${msg.entry?.toFixed(4) ?? "—"}  SL: $${msg.stopPrice?.toFixed(4) ?? "—"}${msg.reasonText ? `  (${msg.reasonText})` : ""}`;
     case "test":
       return "**QUANTIX Discord Test**\n\nBot connection working ✓";
     default: {
