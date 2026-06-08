@@ -512,6 +512,7 @@ export const fr: Dictionary = {
     closing: "Fermeture...",
     closeConfirmTitle: "Fermer la position ?",
     closeConfirmText: "{pair} {direction} ({size}) sera fermé au prix du marché. Cette action est irréversible.",
+    slLayerDesync: "Layer Mismatch —",
     closeError: {
       unknown: "Erreur inconnue lors de la fermeture de la position",
       invalidKey: "Clé API invalide",

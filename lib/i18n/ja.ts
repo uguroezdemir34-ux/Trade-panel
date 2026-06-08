@@ -512,6 +512,7 @@ export const ja: Dictionary = {
     closing: "決済中...",
     closeConfirmTitle: "ポジションを決済しますか？",
     closeConfirmText: "{pair} {direction} ({size}) を成行で決済します。この操作は取り消せません。",
+    slLayerDesync: "Layer Mismatch —",
     closeError: {
       unknown: "ポジション決済時に不明なエラーが発生しました",
       invalidKey: "無効なAPIキー",

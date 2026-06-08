@@ -512,6 +512,7 @@ export const ru: Dictionary = {
     closing: "Закрытие...",
     closeConfirmTitle: "Закрыть позицию?",
     closeConfirmText: "{pair} {direction} ({size}) будет закрыта по рыночной цене. Это действие нельзя отменить.",
+    slLayerDesync: "Layer Mismatch —",
     closeError: {
       unknown: "Неизвестная ошибка при закрытии позиции",
       invalidKey: "Неверный API ключ",

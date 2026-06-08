@@ -512,6 +512,7 @@ export const hi: Dictionary = {
     closing: "बंद हो रहा है...",
     closeConfirmTitle: "पोजीशन बंद करें?",
     closeConfirmText: "{pair} {direction} ({size}) मार्केट प्राइस पर बंद होगा। यह क्रिया पूर्ववत नहीं की जा सकती।",
+    slLayerDesync: "Layer Mismatch —",
     closeError: {
       unknown: "पोजीशन बंद करते समय अज्ञात त्रुटि",
       invalidKey: "अमान्य API कुंजी",

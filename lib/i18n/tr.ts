@@ -528,6 +528,7 @@ export const tr: Dictionary = {
     editSlTp: "SL/TP Düzenle",
     updateSlTp: "Güncelle",
     cancelEdit: "İptal",
+    slLayerDesync: "Katman Farkı —",
     closeButton: "POZİSYONU KAPAT",
     closing: "Kapatılıyor...",
     closeConfirmTitle: "Pozisyon Kapatılsın mı?",

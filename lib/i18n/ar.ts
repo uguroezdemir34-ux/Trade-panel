@@ -512,6 +512,7 @@ export const ar: Dictionary = {
     closing: "جارٍ الإغلاق...",
     closeConfirmTitle: "إغلاق المركز؟",
     closeConfirmText: "سيتم إغلاق {pair} {direction} ({size}) بسعر السوق. لا يمكن التراجع عن هذا الإجراء.",
+    slLayerDesync: "Layer Mismatch —",
     closeError: {
       unknown: "خطأ غير معروف عند إغلاق المركز",
       invalidKey: "مفتاح API غير صالح",

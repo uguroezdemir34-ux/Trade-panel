@@ -512,6 +512,7 @@ export const ko: Dictionary = {
     closing: "청산 중...",
     closeConfirmTitle: "포지션을 청산하시겠습니까?",
     closeConfirmText: "{pair} {direction} ({size}) 이 시장가로 청산됩니다. 이 작업은 취소할 수 없습니다.",
+    slLayerDesync: "Layer Mismatch —",
     closeError: {
       unknown: "포지션 청산 중 알 수 없는 오류",
       invalidKey: "잘못된 API 키",

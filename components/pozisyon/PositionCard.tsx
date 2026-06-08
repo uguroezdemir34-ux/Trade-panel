@@ -35,13 +35,22 @@ export function PositionCard({
   onScaleIn,
   onScaleOut,
   onUpdateSlTp,
+  tradeSl,
+  tradeTp1,
+  tradeTp2,
 }: {
   position: Position;
   onClose: () => void;
   isClosing: boolean;
   onScaleIn?: (qty: number) => Promise<void>;
   onScaleOut?: (qty: number) => Promise<void>;
-  onUpdateSlTp?: (slPrice: number | null, tp1Price: number | null) => Promise<void>;
+  onUpdateSlTp?: (slPrice: number | null, tp1Price: number | null, tp2Price?: number | null) => Promise<void>;
+  /** App-layer SL from tradesStore — used for desync detection */
+  tradeSl?: number | null;
+  /** App-layer TP1 from tradesStore */
+  tradeTp1?: number | null;
+  /** App-layer TP2 from tradesStore (app-only, not all exchanges support it) */
+  tradeTp2?: number | null;
 }): React.ReactElement {
   const t = useT();
   const locale = useLocale();
@@ -77,6 +86,7 @@ export function PositionCard({
   const [editingSlTp, setEditingSlTp] = useState(false);
   const [editSl, setEditSl] = useState(String(position.slTriggerPx ?? ""));
   const [editTp, setEditTp] = useState(String(position.tpTriggerPx ?? ""));
+  const [editTp2, setEditTp2] = useState(String(tradeTp2 ?? ""));
   const [slTpLoading, setSlTpLoading] = useState(false);
   const [slTpError, setSlTpError] = useState<string | null>(null);
 
@@ -146,7 +156,8 @@ export function PositionCard({
     try {
       const sl = editSl ? parseFloat(editSl) : null;
       const tp = editTp ? parseFloat(editTp) : null;
-      await onUpdateSlTp(sl, tp);
+      const tp2 = editTp2 ? parseFloat(editTp2) : null;
+      await onUpdateSlTp(sl, tp, tp2);
       setEditingSlTp(false);
     } catch (e) {
       setSlTpError(e instanceof Error ? e.message : "Failed");
@@ -238,42 +249,71 @@ export function PositionCard({
         />
       </div>
 
-      {/* SL/TP row — editable */}
+      {/* SL/TP row — editable, dual-layer */}
       <div className="border-border mt-3 border-t pt-3">
         {!editingSlTp ? (
-          <div className="grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
-            <SlTpStat
-              label={t("position.stopLoss")}
-              value={position.slTriggerPx}
-              fallback={t("position.noSlSet")}
-              locale={locale}
-              color="text-signal-red"
-            />
-            <SlTpStat
-              label={t("position.takeProfit")}
-              value={position.tpTriggerPx}
-              fallback={t("position.noTpSet")}
-              locale={locale}
-              color="text-signal-green"
-            />
+          <div className="space-y-1.5">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-2 text-xs">
+              <SlTpStat
+                label={t("position.stopLoss")}
+                value={position.slTriggerPx}
+                fallback={t("position.noSlSet")}
+                locale={locale}
+                color="text-signal-red"
+                currentPx={currentPx}
+                riskUsd={
+                  position.slTriggerPx && currentPx > 0
+                    ? Math.abs(currentPx - position.slTriggerPx) * position.size
+                    : null
+                }
+              />
+              <SlTpStat
+                label={`${t("position.takeProfit")} 1`}
+                value={position.tpTriggerPx ?? tradeTp1 ?? null}
+                fallback={t("position.noTpSet")}
+                locale={locale}
+                color="text-signal-green"
+                currentPx={currentPx}
+              />
+              <SlTpStat
+                label={`${t("position.takeProfit")} 2`}
+                value={tradeTp2 ?? null}
+                fallback="TP2 —"
+                locale={locale}
+                color="text-signal-green"
+                currentPx={currentPx}
+                dimmed
+              />
+            </div>
+            {/* Layer desync warning */}
+            {tradeSl != null &&
+              position.slTriggerPx != null &&
+              Math.abs(tradeSl - position.slTriggerPx) / position.slTriggerPx > 0.001 && (
+                <div className="flex items-center gap-1.5 rounded border border-yellow-500/30 bg-yellow-500/8 px-2 py-1 font-mono text-2xs text-yellow-400">
+                  <span>⚠</span>
+                  <span>
+                    {t("position.slLayerDesync")}
+                    {" "}App {formatPrice(tradeSl, locale)} / Ex {formatPrice(position.slTriggerPx, locale)}
+                  </span>
+                </div>
+              )}
             {onUpdateSlTp && (
-              <div className="col-span-2 mt-1">
-                <button
-                  onClick={() => {
-                    setEditSl(String(position.slTriggerPx ?? ""));
-                    setEditTp(String(position.tpTriggerPx ?? ""));
-                    setEditingSlTp(true);
-                  }}
-                  className="text-text-t4 hover:text-brand font-mono text-2xs tracking-wider transition-colors"
-                >
-                  ✎ {t("position.editSlTp")}
-                </button>
-              </div>
+              <button
+                onClick={() => {
+                  setEditSl(String(position.slTriggerPx ?? ""));
+                  setEditTp(String(position.tpTriggerPx ?? ""));
+                  setEditTp2(String(tradeTp2 ?? ""));
+                  setEditingSlTp(true);
+                }}
+                className="text-text-t4 hover:text-brand font-mono text-2xs tracking-wider transition-colors"
+              >
+                ✎ {t("position.editSlTp")}
+              </button>
             )}
           </div>
         ) : (
           <div className="space-y-2">
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <div>
                 <div className="font-mono text-2xs text-signal-red mb-1">{t("position.stopLoss")}</div>
                 <input
@@ -283,9 +323,18 @@ export function PositionCard({
                   placeholder="0"
                   className="w-full bg-surface-s1 border border-signal-red/30 rounded px-2 py-1 font-mono text-xs text-text-t1"
                 />
+                {editSl && currentPx > 0 && (
+                  <div className="font-mono text-2xs text-text-t4 mt-0.5 tabular-nums">
+                    {pctFromCurrent(parseFloat(editSl), currentPx)}
+                    {" · "}
+                    <span className="text-signal-red">
+                      ~${(Math.abs(currentPx - parseFloat(editSl)) * position.size).toFixed(1)}
+                    </span>
+                  </div>
+                )}
               </div>
               <div>
-                <div className="font-mono text-2xs text-signal-green mb-1">{t("position.takeProfit")}</div>
+                <div className="font-mono text-2xs text-signal-green mb-1">{t("position.takeProfit")} 1</div>
                 <input
                   type="number"
                   value={editTp}
@@ -293,6 +342,26 @@ export function PositionCard({
                   placeholder="0"
                   className="w-full bg-surface-s1 border border-signal-green/30 rounded px-2 py-1 font-mono text-xs text-text-t1"
                 />
+                {editTp && currentPx > 0 && (
+                  <div className="font-mono text-2xs text-text-t4 mt-0.5 tabular-nums">
+                    {pctFromCurrent(parseFloat(editTp), currentPx)}
+                  </div>
+                )}
+              </div>
+              <div>
+                <div className="font-mono text-2xs text-signal-green/70 mb-1">{t("position.takeProfit")} 2</div>
+                <input
+                  type="number"
+                  value={editTp2}
+                  onChange={(e) => setEditTp2(e.target.value)}
+                  placeholder="0"
+                  className="w-full bg-surface-s1 border border-signal-green/20 rounded px-2 py-1 font-mono text-xs text-text-t1"
+                />
+                {editTp2 && currentPx > 0 && (
+                  <div className="font-mono text-2xs text-text-t4 mt-0.5 tabular-nums">
+                    {pctFromCurrent(parseFloat(editTp2), currentPx)}
+                  </div>
+                )}
               </div>
             </div>
             {slTpError && (
@@ -599,27 +668,46 @@ function TrailDistanceBar({
   );
 }
 
+function pctFromCurrent(price: number, currentPx: number): string {
+  if (!price || !currentPx || isNaN(price)) return "";
+  const pct = ((price - currentPx) / currentPx) * 100;
+  return (pct > 0 ? "+" : "") + pct.toFixed(2) + "%";
+}
+
 function SlTpStat({
   label,
   value,
   fallback,
   locale,
   color,
+  currentPx,
+  riskUsd,
+  dimmed,
 }: {
   label: string;
   value: number | null;
   fallback: string;
   locale: import("@/lib/i18n/types").Locale;
   color: string;
+  currentPx?: number;
+  riskUsd?: number | null;
+  dimmed?: boolean;
 }) {
+  const pct = value && currentPx ? pctFromCurrent(value, currentPx) : null;
   return (
     <div>
-      <div className="text-text-t3 font-mono text-2xs tracking-wider">
+      <div className={`font-mono text-2xs tracking-wider ${dimmed ? "text-text-t4" : "text-text-t3"}`}>
         {label}
       </div>
-      <div className={`mt-0.5 font-mono tabular-nums ${value ? color : "text-text-t4"}`}>
+      <div className={`mt-0.5 font-mono tabular-nums text-xs ${value ? color : "text-text-t4"}`}>
         {value ? formatPrice(value, locale) : fallback}
       </div>
+      {pct && (
+        <div className="font-mono text-2xs text-text-t4 tabular-nums">{pct}</div>
+      )}
+      {riskUsd != null && riskUsd > 0 && (
+        <div className="font-mono text-2xs text-signal-red/70 tabular-nums">~${riskUsd.toFixed(1)}</div>
+      )}
     </div>
   );
 }

@@ -512,6 +512,7 @@ export const zh: Dictionary = {
     closing: "平仓中...",
     closeConfirmTitle: "确认平仓？",
     closeConfirmText: "{pair} {direction} ({size}) 将以市价平仓。此操作无法撤销。",
+    slLayerDesync: "Layer Mismatch —",
     closeError: {
       unknown: "平仓时发生未知错误",
       invalidKey: "无效的API密钥",

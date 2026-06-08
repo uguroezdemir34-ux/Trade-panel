@@ -512,6 +512,7 @@ export const es: Dictionary = {
     closing: "Cerrando...",
     closeConfirmTitle: "¿Cerrar posición?",
     closeConfirmText: "{pair} {direction} ({size}) se cerrará al precio de mercado. Esta acción no se puede deshacer.",
+    slLayerDesync: "Layer Mismatch —",
     closeError: {
       unknown: "Error desconocido al cerrar posición",
       invalidKey: "Clave API inválida",

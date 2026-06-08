@@ -138,6 +138,23 @@ interface TradesStoreState {
    */
   patchFromReconcile: (patches: ReconcileMatch[]) => void;
 
+  /**
+   * Dual-layer SL/TP sync — Layer 2 (app side).
+   * Called after adapter.updateSlTp() succeeds so the emergency stop guard
+   * uses the current SL instead of the stale one from openPending().
+   *
+   * slPrice=null → keep existing stopPrice (stopPrice is required on TradeSnapshot)
+   * tp1Price=null → clear takeProfit1
+   * tp2Price=undefined → don't touch takeProfit2
+   * tp2Price=null → clear takeProfit2
+   */
+  updateTradeSlTp: (
+    id: string,
+    slPrice: number | null,
+    tp1Price: number | null,
+    tp2Price?: number | null,
+  ) => void;
+
   // Test/debug
   _reset: () => void;
 }
@@ -352,6 +369,23 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
       saveToStorage(STORAGE_KEY, next);
       set({ trades: next });
     }
+  },
+
+  updateTradeSlTp: (id, slPrice, tp1Price, tp2Price) => {
+    const current = get().trades;
+    const next = current.map((t) => {
+      if (t.id !== id || t.status === "closed") return t;
+      return {
+        ...t,
+        ...(slPrice != null ? { stopPrice: slPrice } : {}),
+        takeProfit1: tp1Price != null ? tp1Price : undefined,
+        ...(tp2Price !== undefined
+          ? { takeProfit2: tp2Price != null ? tp2Price : undefined }
+          : {}),
+      };
+    });
+    saveToStorage(STORAGE_KEY, next);
+    set({ trades: next });
   },
 
   _reset: () => {

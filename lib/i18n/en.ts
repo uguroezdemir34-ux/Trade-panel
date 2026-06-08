@@ -528,6 +528,7 @@ export const en: Dictionary = {
     editSlTp: "Edit SL/TP",
     updateSlTp: "Update",
     cancelEdit: "Cancel",
+    slLayerDesync: "Layer Mismatch —",
     closeButton: "CLOSE POSITION",
     closing: "Closing...",
     closeConfirmTitle: "Close Position?",
