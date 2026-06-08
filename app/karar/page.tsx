@@ -59,6 +59,7 @@ import { CandlePatternBadge } from "@/components/karar/CandlePatternBadge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { RegimeBadge } from "@/components/karar/RegimeBadge";
 import { usePairNotesStore } from "@/lib/store/pairNotesStore";
+import { PairSignalHistory } from "@/components/karar/PairSignalHistory";
 
 export default function KararPage() {
   const t = useT();
@@ -758,6 +759,9 @@ export default function KararPage() {
                     {sizerResult && result.direction !== "NEUTRAL" && (
                       <CorrelationWarning pair={activePair} direction={result.direction} />
                     )}
+
+                    {/* Per-pair GO signal history */}
+                    <PairSignalHistory pair={activePair} />
 
                     {/* Pair note + Backtest quick link */}
                     <div className="flex flex-col gap-2">

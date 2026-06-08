@@ -80,6 +80,7 @@ const tradeSnapshotSchema = z.object({
   takeProfit2: z.number().optional(),
   riskAmountUsd: z.number(),
   isPaper: z.boolean(),
+  source: z.enum(["manual", "bot"]).optional(),
   entryContext: entryContextSchema,
   exit: exitInfoSchema.optional(),
 });

@@ -224,6 +224,7 @@ async function runBotExecution(
         takeProfit2: sizing.tp.tp2Price,
         riskAmountUsd: sizing.risk.riskUsd,
         isPaper: demoMode,
+        source: "bot",
         entryContext: {
           score: result.score,
           verdict: result.verdict,

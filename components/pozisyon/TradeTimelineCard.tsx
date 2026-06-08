@@ -99,6 +99,11 @@ function TimelineItem({
               {trade.direction}
             </span>
             <StatusBadge status={trade.status} isPaper={trade.isPaper} t={t} />
+            {trade.source === "bot" && (
+              <span className="font-mono text-[8px] font-bold text-brand/70 border border-brand/30 rounded px-1 py-px tracking-widest">
+                BOT
+              </span>
+            )}
           </div>
 
           {/* Entry context */}

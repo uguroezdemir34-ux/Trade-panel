@@ -42,6 +42,7 @@ export function createPendingTrade(input: OpenTradeInput): TradeSnapshot {
     pair: input.pair,
     direction: input.direction,
     status: "pending",
+    source: input.source,
     openedAt: now,
     entryPrice: input.entryPrice,
     qty: input.qty,
