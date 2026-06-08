@@ -1,6 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useTradesStore } from "@/lib/store/tradesStore";
 import { useT } from "@/lib/i18n/context";
 
 export function BotModeCard(): React.ReactElement {
@@ -9,6 +11,16 @@ export function BotModeCard(): React.ReactElement {
   const botModeMinScore = useSettingsStore((s) => s.botModeMinScore);
   const setBotModeEnabled = useSettingsStore((s) => s.setBotModeEnabled);
   const setBotModeMinScore = useSettingsStore((s) => s.setBotModeMinScore);
+
+  const trades = useTradesStore((s) => s.trades);
+  const botTrades = useMemo(
+    () =>
+      trades
+        .filter((tr) => tr.source === "bot")
+        .sort((a, b) => b.openedAt - a.openedAt)
+        .slice(0, 5),
+    [trades],
+  );
 
   return (
     <div
@@ -97,6 +109,50 @@ export function BotModeCard(): React.ReactElement {
             : t("settings.botMode.statusOff")}
         </span>
       </div>
+
+      {/* Recent bot trades */}
+      {botTrades.length > 0 && (
+        <div className="mt-4 border-t border-border/40 pt-3">
+          <p className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-2">
+            Son Bot İşlemleri
+          </p>
+          <div className="flex flex-col gap-1.5">
+            {botTrades.map((tr) => {
+              const pnl = tr.exit?.pnlUsd;
+              const date = new Date(tr.openedAt).toLocaleDateString("tr-TR", {
+                day: "2-digit", month: "2-digit",
+              });
+              const time = new Date(tr.openedAt).toLocaleTimeString("tr-TR", {
+                hour: "2-digit", minute: "2-digit",
+              });
+              return (
+                <div key={tr.id} className="flex items-center gap-2 font-mono text-2xs">
+                  <span className="text-text-t4 shrink-0">{date} {time}</span>
+                  <span className="font-semibold text-text-t2 shrink-0">{tr.pair}</span>
+                  <span className={`shrink-0 ${tr.direction === "LONG" ? "text-signal-green" : "text-signal-red"}`}>
+                    {tr.direction === "LONG" ? "▲" : "▼"}
+                  </span>
+                  <span className={`ml-auto tabular-nums font-semibold ${
+                    tr.status === "open"
+                      ? "text-amber-400"
+                      : pnl === undefined
+                      ? "text-text-t4"
+                      : pnl >= 0
+                      ? "text-signal-green"
+                      : "text-signal-red"
+                  }`}>
+                    {tr.status === "open"
+                      ? "açık"
+                      : pnl !== undefined
+                      ? `${pnl >= 0 ? "+" : ""}${pnl.toFixed(1)}$`
+                      : "—"}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
