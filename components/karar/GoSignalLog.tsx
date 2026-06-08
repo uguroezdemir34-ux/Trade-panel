@@ -8,6 +8,7 @@ import { PAIRS, type Pair } from "@/lib/constants/pairs";
 
 const PAGE_SIZE = 50;
 type DirFilter = "all" | "LONG" | "SHORT";
+type RangeFilter = "all" | "today" | "7d" | "30d";
 
 function timeAgo(ts: number): string {
   const delta = Date.now() - ts;
@@ -55,6 +56,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
 
   const [filterPair, setFilterPair] = useState<Pair | "all">("all");
   const [filterDir, setFilterDir] = useState<DirFilter>("all");
+  const [filterRange, setFilterRange] = useState<RangeFilter>("all");
   const [minScore, setMinScore] = useState(0);
   const [page, setPage] = useState(1);
 
@@ -100,16 +102,24 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
   }, [allGoEntries.length]);
 
   // Apply filters
-  const filtered = useMemo(
-    () =>
-      allGoEntries.filter(
-        (e) =>
-          (filterPair === "all" || e.pair === filterPair) &&
-          (filterDir === "all" || e.direction === filterDir) &&
-          e.score >= minScore,
-      ),
-    [allGoEntries, filterPair, filterDir, minScore],
-  );
+  const filtered = useMemo(() => {
+    const now = Date.now();
+    const cutoff =
+      filterRange === "today"
+        ? new Date().setHours(0, 0, 0, 0)
+        : filterRange === "7d"
+        ? now - 7 * 86_400_000
+        : filterRange === "30d"
+        ? now - 30 * 86_400_000
+        : 0;
+    return allGoEntries.filter(
+      (e) =>
+        (filterPair === "all" || e.pair === filterPair) &&
+        (filterDir === "all" || e.direction === filterDir) &&
+        e.score >= minScore &&
+        (filterRange === "all" || e.ts >= cutoff),
+    );
+  }, [allGoEntries, filterPair, filterDir, minScore, filterRange]);
 
   const paginated = filtered.slice(0, page * PAGE_SIZE);
   const hasMore = paginated.length < filtered.length;
@@ -179,6 +189,15 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
             </Chip>
           ))}
         </div>
+      </div>
+
+      {/* Time range filter */}
+      <div className="flex gap-1 px-3 py-1.5 border-b border-border/20">
+        {(["all", "today", "7d", "30d"] as RangeFilter[]).map((r) => (
+          <Chip key={r} active={filterRange === r} onClick={() => { setFilterRange(r); setPage(1); }}>
+            {r === "all" ? "Tümü" : r === "today" ? "Bugün" : r === "7d" ? "7G" : "30G"}
+          </Chip>
+        ))}
       </div>
 
       {/* Rows */}

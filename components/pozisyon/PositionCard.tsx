@@ -100,6 +100,7 @@ export function PositionCard({
   const [slTpError, setSlTpError] = useState<string | null>(null);
 
   const currentPx = tick?.last ?? position.markPx;
+  const effectiveSl = tradeSl ?? position.slTriggerPx;
   const liveUpl = computeLiveUpl(position, currentPx);
   const roe = computeRoe(position, currentPx);
   const tpProgress = computeTpProgress(position, currentPx);
@@ -462,6 +463,17 @@ export function PositionCard({
         </div>
       )}
 
+      {/* SL proximity warning */}
+      {effectiveSl && effectiveSl > 0 && currentPx > 0 && (
+        <SlProximityWarning
+          slPx={effectiveSl}
+          currentPx={currentPx}
+          isLong={isLong}
+          locale={locale}
+          t={t}
+        />
+      )}
+
       {/* Liquidation price — prominent warning */}
       {position.liqPx && currentPx > 0 && (
         <LiqWarning
@@ -486,6 +498,18 @@ export function PositionCard({
           ) : (
             <div className="space-y-2">
               <div className="font-mono text-2xs text-text-t3 tracking-wider">{t("position.scaleInLabel")}</div>
+              <div className="flex gap-1">
+                {[0.1, 0.25, 0.5].map((pct) => (
+                  <button
+                    key={pct}
+                    type="button"
+                    onClick={() => setScaleInQty(String(parseFloat((position.size * pct).toFixed(8))))}
+                    className="flex-1 rounded border border-border px-2 py-1 font-mono text-2xs text-text-t3 transition-colors hover:border-brand/50 hover:text-brand"
+                  >
+                    {(pct * 100).toFixed(0)}%
+                  </button>
+                ))}
+              </div>
               <div className="flex gap-2">
                 <input
                   type="number"
@@ -572,6 +596,51 @@ export function PositionCard({
       >
         {isClosing ? t("position.closing") : `✕ ${t("position.closeButton")}`}
       </button>
+    </div>
+  );
+}
+
+// ─── SL Proximity Warning ────────────────────────────────────────────────────
+
+function SlProximityWarning({
+  slPx,
+  currentPx,
+  isLong,
+  locale,
+  t,
+}: {
+  slPx: number;
+  currentPx: number;
+  isLong: boolean;
+  locale: import("@/lib/i18n/types").Locale;
+  t: (key: string) => string;
+}) {
+  const distPct = Math.abs((currentPx - slPx) / currentPx) * 100;
+  if (distPct >= 10) return null;
+
+  const isDanger = distPct < 2;
+  const isWarning = distPct < 5;
+
+  const colorClass = isDanger
+    ? "text-signal-red border-signal-red/60 bg-signal-red/10"
+    : isWarning
+    ? "text-orange-400 border-orange-400/40 bg-orange-400/8"
+    : "text-yellow-400/80 border-yellow-400/30 bg-yellow-400/5";
+
+  return (
+    <div className={`mt-3 rounded border px-3 py-2 flex items-center justify-between ${colorClass} ${isDanger ? "animate-pulse" : ""}`}>
+      <div className="flex items-center gap-1.5">
+        {isDanger && <span className="text-sm">⚠</span>}
+        <span className="font-mono text-2xs font-bold tracking-widest uppercase">
+          SL {isDanger ? "TEHLIKE" : "YAKIN"}
+        </span>
+        <span className="font-mono text-xs tabular-nums font-semibold">
+          {formatPrice(slPx, locale)}
+        </span>
+      </div>
+      <span className="font-mono text-2xs tabular-nums">
+        {distPct.toFixed(1)}% {isLong ? "↓" : "↑"} {t("position.liqFrom")}
+      </span>
     </div>
   );
 }
