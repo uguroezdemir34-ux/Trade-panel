@@ -18,6 +18,7 @@ const POLL_INTERVAL_MS = 10_000;
 export function usePositionPoller(delayMs = 0): void {
   const setPositions = usePositionStore((s) => s.setPositions);
   const okxProd = useCredentialStore((s) => s.okxProd);
+  const credsLoaded = useCredentialStore((s) => s._loaded);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const okxProdRef = useRef(okxProd);
@@ -31,6 +32,8 @@ export function usePositionPoller(delayMs = 0): void {
   }
 
   useEffect(() => {
+    if (!credsLoaded) return;
+
     startTimerRef.current = setTimeout(() => {
       fetchAll();
       timerRef.current = setInterval(fetchAll, POLL_INTERVAL_MS);
@@ -40,5 +43,5 @@ export function usePositionPoller(delayMs = 0): void {
       if (timerRef.current) clearInterval(timerRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [credsLoaded]);
 }

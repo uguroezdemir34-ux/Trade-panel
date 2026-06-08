@@ -361,6 +361,7 @@ export class OkxAdapter implements ExchangeAdapter {
             this.isDemo,
             this.timeoutMs,
             this.fetchFn,
+            this.clientCreds,
           ),
         );
       } catch {
@@ -399,6 +400,7 @@ export class OkxAdapter implements ExchangeAdapter {
             this.isDemo,
             this.timeoutMs,
             this.fetchFn,
+            this.clientCreds,
           ),
         );
       } catch {
@@ -612,6 +614,7 @@ export class OkxAdapter implements ExchangeAdapter {
             this.isDemo,
             this.timeoutMs,
             this.fetchFn,
+            this.clientCreds,
           ),
         );
       } catch {
@@ -647,6 +650,7 @@ export class OkxAdapter implements ExchangeAdapter {
             this.isDemo,
             this.timeoutMs,
             this.fetchFn,
+            this.clientCreds,
           ),
         );
       } catch {
