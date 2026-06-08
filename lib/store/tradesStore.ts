@@ -197,9 +197,9 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
     // Fire-and-forget DB sync — non-blocking, silent on failure
     const closed = next.find((t) => t.id === input.id);
     if (closed?.status === "closed") {
-      void import("@/lib/db/tradeSync").then(({ syncTradeToServer }) =>
-        syncTradeToServer(closed),
-      );
+      void import("@/lib/db/tradeSync")
+        .then(({ syncTradeToServer }) => syncTradeToServer(closed))
+        .catch(() => {});
     }
   },
 

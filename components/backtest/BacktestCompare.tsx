@@ -314,9 +314,9 @@ export function BacktestCompare({
         {sA.profitFactor !== null && sB.profitFactor !== null && (
           <StatRow
             label={t("backtest.profFactor")}
-            valA={sA.profitFactor.toFixed(2)}
-            valB={sB.profitFactor.toFixed(2)}
-            delta={sB.profitFactor - sA.profitFactor}
+            valA={isFinite(sA.profitFactor) ? sA.profitFactor.toFixed(2) : "∞"}
+            valB={isFinite(sB.profitFactor) ? sB.profitFactor.toFixed(2) : "∞"}
+            delta={isFinite(sA.profitFactor) && isFinite(sB.profitFactor) ? sB.profitFactor - sA.profitFactor : 0}
             higherIsBetter={true}
             fmtDeltaStr={(d) => fmtDelta(d, 2)}
           />

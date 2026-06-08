@@ -172,7 +172,7 @@ function computeStats(trades: BacktestTrade[]): BacktestStats {
 
   const grossWins = wins.reduce((s, t) => s + t.rMultiple, 0);
   const grossLosses = Math.abs(losses.reduce((s, t) => s + t.rMultiple, 0));
-  const profitFactor = grossLosses > 0 ? grossWins / grossLosses : (grossWins > 0 ? null : null);
+  const profitFactor = grossLosses > 0 ? grossWins / grossLosses : (grossWins > 0 ? Infinity : null);
 
   return {
     totalTrades: trades.length,
@@ -293,7 +293,8 @@ export async function runBacktest(
     // Fee model: both entry and exit use taker rate (market orders)
     const takerFee = config.takerFee ?? 0.0005;
     const fundingRateHourly = config.fundingRateHourly ?? 0;
-    const roundTripFeePct = takerFee * (1 + effectiveExitPrice / entryPrice) * 100;
+    const exitEntryRatio = entryPrice > 0 ? effectiveExitPrice / entryPrice : 1;
+    const roundTripFeePct = takerFee * (1 + exitEntryRatio) * 100;
     const fundingCostPct = fundingRateHourly * exit.barsHeld * 100;
     const feesPct = roundTripFeePct + fundingCostPct;
     const netPnlPct = pnlPct - feesPct;

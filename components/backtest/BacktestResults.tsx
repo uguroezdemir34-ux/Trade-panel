@@ -409,7 +409,7 @@ export function BacktestResults({ result, onPin, isPinned }: Props): React.React
           )}
           {dirFilter === "ALL" && stats.profitFactor !== null && stats.profitFactor !== undefined && (
             <Stat label={t("backtest.profFactor")}
-              value={stats.profitFactor.toFixed(2)}
+              value={isFinite(stats.profitFactor) ? stats.profitFactor.toFixed(2) : "∞"}
               color={stats.profitFactor >= 1.5 ? "text-green-400" : stats.profitFactor >= 1 ? "text-yellow-400" : "text-red-400"}
               hint={t("backtest.profFactorHint")} />
           )}

@@ -152,7 +152,7 @@ async function runBotExecution(
   // Bucket stats for risk sizing
   const closedTrades = trades
     .filter((tr) => tr.status === "closed" && tr.exit != null && tr.pair === pair)
-    .map((tr) => ({ score: tr.entryContext.score, pnlUsd: tr.exit!.pnlUsd }));
+    .map((tr) => ({ score: tr.entryContext.score, pnlUsd: tr.exit?.pnlUsd ?? 0 }));
   const bucketStats = getBucketStats(result.score, closedTrades);
 
   // Compute position size

@@ -88,6 +88,7 @@ export function computeDailyAggregates(
           tradesWithPct.length;
     const winRate =
       dayTrades.length === 0 ? 0 : winCount / dayTrades.length;
+    if (dayTrades.length === 0) continue;
     const dayStart = localDayStart(dayTrades[0].closedAt, tzOffsetMin);
     result.push({
       date,
