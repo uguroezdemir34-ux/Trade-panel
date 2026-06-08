@@ -32,6 +32,7 @@ export default function PozisyonPage() {
 
   const [confirmPosition, setConfirmPosition] = useState<Position | null>(null);
   const [closeError, setCloseError] = useState<string | null>(null);
+  const [closingAll, setClosingAll] = useState(false);
 
   async function handleClose(pos: Position) {
     setCloseError(null);
@@ -56,6 +57,32 @@ export default function PozisyonPage() {
     }
   }
 
+  async function handleCloseAll() {
+    if (closingAll || positions.length === 0) return;
+    setClosingAll(true);
+    setCloseError(null);
+    for (const pos of positions) {
+      try {
+        const adapter = getAdapter(demoMode);
+        const result = await adapter.closePosition({
+          instId: pos.instId,
+          mgnMode: pos.mgnMode,
+          posSide: pos.direction === "LONG" ? "long" : "short",
+        });
+        if (result.ok) {
+          removePosition(pos.instId);
+        } else {
+          setCloseError(result.errorMessage ?? t("app.closeFailed"));
+          break;
+        }
+      } catch (e) {
+        setCloseError(e instanceof Error ? e.message : t("karar.unknownError"));
+        break;
+      }
+    }
+    setClosingAll(false);
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {positions.length === 0 ? (
@@ -63,7 +90,17 @@ export default function PozisyonPage() {
       ) : (
         <>
           {positions.length > 1 && (
-            <PortfolioSummaryBanner positions={positions} />
+            <>
+              <PortfolioSummaryBanner positions={positions} />
+              <button
+                type="button"
+                onClick={handleCloseAll}
+                disabled={closingAll || !!closingInstId}
+                className="w-full rounded border border-signal-red/40 bg-signal-red/5 py-2 font-mono text-xs font-bold tracking-widest text-signal-red/80 transition-colors hover:bg-signal-red/15 disabled:opacity-40 disabled:cursor-wait"
+              >
+                {closingAll ? `${t("position.closing")}…` : `✕ ${t("position.closeButton")} (${positions.length})`}
+              </button>
+            </>
           )}
           {positions.map((pos) => {
             // Find most-recent open trade matching this position for Layer 2 sync

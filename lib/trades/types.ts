@@ -127,6 +127,9 @@ export interface TradeSnapshot {
 
   // Exit (status='closed' iken dolu)
   exit?: ExitInfo;
+
+  /** Trade journal notu — kullanıcı tarafından eklenir, kalıcıdır. */
+  notes?: string;
 }
 
 // ═══════════════ INPUT TYPES ═══════════════

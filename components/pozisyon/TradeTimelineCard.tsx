@@ -11,7 +11,9 @@
  *   - Entry context (skor, sebep)
  */
 
+import { useState } from "react";
 import { useT } from "@/lib/i18n/context";
+import { useTradesStore } from "@/lib/store/tradesStore";
 import type { TradeSnapshot } from "@/lib/trades/types";
 import { recentTrades } from "@/lib/trades/selectors";
 
@@ -59,6 +61,10 @@ function TimelineItem({
   trade: TradeSnapshot;
   t: (k: string, params?: Record<string, string | number>) => string;
 }) {
+  const updateTradeNotes = useTradesStore((s) => s.updateTradeNotes);
+  const [showNote, setShowNote] = useState(false);
+  const [editNote, setEditNote] = useState(trade.notes ?? "");
+
   const isClosed = trade.status === "closed";
   const isWin = isClosed && (trade.exit?.pnlUsd ?? 0) > 0;
   const isLoss = isClosed && (trade.exit?.pnlUsd ?? 0) < 0;
@@ -74,6 +80,13 @@ function TimelineItem({
       : "border-l-text-t4";
 
   const dateStr = formatDateTime(trade.openedAt);
+
+  function handleNoteSave() {
+    const trimmed = editNote.trim();
+    if (trimmed !== (trade.notes ?? "")) {
+      updateTradeNotes(trade.id, trimmed);
+    }
+  }
 
   return (
     <li
@@ -144,8 +157,44 @@ function TimelineItem({
               </span>
             </div>
           )}
+
+          {/* Note preview (collapsed) */}
+          {!showNote && trade.notes && (
+            <div className="mt-1.5 font-mono text-2xs text-text-t4 italic truncate max-w-xs">
+              {trade.notes}
+            </div>
+          )}
         </div>
+
+        {/* Note toggle button */}
+        <button
+          type="button"
+          onClick={() => {
+            setEditNote(trade.notes ?? "");
+            setShowNote((v) => !v);
+          }}
+          className={`mt-0.5 font-mono text-xs transition-colors leading-none ${
+            trade.notes ? "text-brand/60 hover:text-brand" : "text-text-t4/40 hover:text-text-t3"
+          }`}
+          title={trade.notes ? "Notu görüntüle / düzenle" : "Not ekle"}
+        >
+          ✎
+        </button>
       </div>
+
+      {/* Note editor (expanded) */}
+      {showNote && (
+        <div className="mt-2 border-t border-border/30 pt-2">
+          <textarea
+            value={editNote}
+            onChange={(e) => setEditNote(e.target.value)}
+            onBlur={handleNoteSave}
+            placeholder="Not ekle… (odaktan çıkınca kaydedilir)"
+            rows={2}
+            className="w-full resize-none bg-transparent border border-border/40 rounded px-2 py-1 font-mono text-2xs text-text-t2 placeholder:text-text-t4 focus:outline-none focus:border-brand/50 transition-colors"
+          />
+        </div>
+      )}
     </li>
   );
 }

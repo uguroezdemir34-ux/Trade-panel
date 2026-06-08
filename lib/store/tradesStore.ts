@@ -83,6 +83,7 @@ const tradeSnapshotSchema = z.object({
   source: z.enum(["manual", "bot"]).optional(),
   entryContext: entryContextSchema,
   exit: exitInfoSchema.optional(),
+  notes: z.string().optional(),
 });
 
 const tradesArraySchema = z.array(tradeSnapshotSchema);
@@ -156,6 +157,9 @@ interface TradesStoreState {
     tp1Price?: number | null,
     tp2Price?: number | null,
   ) => void;
+
+  /** Trade journal notu güncelle. Boş string → notu kaldır. */
+  updateTradeNotes: (id: string, notes: string) => void;
 
   // Test/debug
   _reset: () => void;
@@ -389,6 +393,19 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
           ? { takeProfit2: tp2Price != null ? tp2Price : undefined }
           : {}),
       };
+    });
+    if (!changed) return;
+    saveToStorage(STORAGE_KEY, next);
+    set({ trades: next });
+  },
+
+  updateTradeNotes: (id, notes) => {
+    const current = get().trades;
+    let changed = false;
+    const next = current.map((t) => {
+      if (t.id !== id) return t;
+      changed = true;
+      return { ...t, notes: notes.trim() || undefined };
     });
     if (!changed) return;
     saveToStorage(STORAGE_KEY, next);
