@@ -1,12 +1,19 @@
 "use client";
 
 /**
- * POSITION POLLER — Açık pozisyonları periyodik çeker.
+ * POSITION POLLER — Açık pozisyonları periyodik çeker + reconcile eder.
  *
  * activeExchange'e göre doğru borsadan çeker:
  *   okx     → OKX /api/v5/account/positions
  *   binance → Binance /fapi/v2/positionRisk
  *   bybit   → Bybit /v5/position/list
+ *
+ * Reconciliation:
+ *   Exchange'de kapanmış ama tradesStore'da hâlâ "open" olan trade'leri
+ *   otomatik kapatır. Freqtrade/Hummingbot pattern.
+ *
+ *   Güvenlik: 30s minimum açık yaşı — yeni açılan pozisyonun
+ *   ilk poller döngüsünde yanlışlıkla kapatılmaması için.
  */
 
 import { useEffect, useRef } from "react";
@@ -16,8 +23,13 @@ import { fetchBybitPositions } from "@/lib/bybit/positions";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useTradesStore } from "@/lib/store/tradesStore";
+import { useMarketStore } from "@/lib/store/marketStore";
+import type { Position } from "@/lib/okx/positions";
 
 const POLL_INTERVAL_MS = 10_000;
+// Yeni açılan pozisyonlar bu süreden kısa ise reconcile yapılmaz
+const MIN_OPEN_AGE_MS = 30_000;
 
 export function usePositionPoller(delayMs = 0): void {
   const setPositions = usePositionStore((s) => s.setPositions);
@@ -29,7 +41,7 @@ export function usePositionPoller(delayMs = 0): void {
     const { okxProd, bnbFutures, bybitFutures } = useCredentialStore.getState();
     const exchange = useSettingsStore.getState().activeExchange;
 
-    let positions = null;
+    let positions: Position[] | null = null;
     if (exchange === "binance") {
       positions = await fetchBinancePositions(bnbFutures);
     } else if (exchange === "bybit") {
@@ -38,9 +50,10 @@ export function usePositionPoller(delayMs = 0): void {
       positions = await fetchPositions(okxProd);
     }
 
-    if (positions !== null) {
-      setPositions(positions);
-    }
+    if (positions === null) return;
+
+    setPositions(positions);
+    reconcileOpenTrades(positions);
   }
 
   useEffect(() => {
@@ -56,4 +69,43 @@ export function usePositionPoller(delayMs = 0): void {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [credsLoaded]);
+}
+
+/**
+ * Exchange'den gelen güncel pozisyon listesini tradesStore ile karşılaştırır.
+ * Exchange'de olmayan ama "open" statüsündeki trade'leri kapatır.
+ *
+ * Bu mekanizma; SL algo tetiklenmesi, TP dolması, borsa likidasyonu ve
+ * manuel kapatma durumlarını yakalar.
+ */
+function reconcileOpenTrades(livePositions: Position[]): void {
+  const { trades, closeTradeById } = useTradesStore.getState();
+  const prices = useMarketStore.getState().prices;
+  const now = Date.now();
+
+  const openTrades = trades.filter((t) => t.status === "open");
+  if (openTrades.length === 0) return;
+
+  for (const trade of openTrades) {
+    // Yeni açılan pozisyonları reconcile etme — poller gecikmesi kaynaklı false positive riski
+    if (now - trade.openedAt < MIN_OPEN_AGE_MS) continue;
+
+    const stillOnExchange = livePositions.some(
+      (p) => p.pair === trade.pair && p.direction === trade.direction,
+    );
+    if (stillOnExchange) continue;
+
+    // Exchange'de bu pozisyon yok → kapanmış (SL/TP/liq/manuel)
+    const exitPrice = prices[trade.pair]?.last ?? trade.entryPrice;
+    console.log(
+      `[Reconcile] ${trade.direction} ${trade.pair} exchange'de yok → kapatılıyor @ ${exitPrice}`,
+    );
+
+    closeTradeById({
+      id: trade.id,
+      exitPrice,
+      reason: "manual", // gerçek sebep bilinmiyor; OKX reconciler daha sonra düzeltebilir
+      now,
+    });
+  }
 }
