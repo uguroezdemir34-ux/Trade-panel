@@ -51,6 +51,8 @@ import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
 import { useBotMode } from "@/lib/hooks/useBotMode";
 import { usePwaSetup } from "@/lib/hooks/usePwaSetup";
 import { useEmergencyStopGuard } from "@/lib/hooks/useEmergencyStopGuard";
+import { useCapacitorApp } from "@/lib/hooks/useCapacitorApp";
+import { QuickTradeSheet } from "@/components/mobile/QuickTradeSheet";
 import { useAuthStub } from "@/lib/auth/stubs";
 import { setCurrentUserId } from "@/lib/auth/scope";
 import { migrateStorageForUser } from "@/lib/auth/migrate";
@@ -125,6 +127,8 @@ export function AppShell({
   useEmergencyStopGuard();
   // PWA kurulumu — SW kayıt + install prompt yakalama
   usePwaSetup();
+  // Capacitor native lifecycle — back button, StatusBar, SplashScreen
+  useCapacitorApp();
 
   useEffect(() => {
     if (!authLoaded) return;
@@ -178,6 +182,7 @@ export function AppShell({
         {children}
       </main>
       <BottomNav />
+      <QuickTradeSheet />
     </div>
   );
 }

@@ -23,10 +23,21 @@
     "smoke": "tsx scripts/smoke-prod.ts",
     "quantix:install": "node scripts/quantix-install.mjs",
     "quantix:check-env": "node -e \"const fs=require('fs');const ex=fs.readFileSync('.env.example','utf8');const vars=ex.match(/^[A-Z_]+=.*/gm)?.map(l=>l.split('=')[0])||[];const env=fs.existsSync('.env.local')?fs.readFileSync('.env.local','utf8'):'';let ok=true;vars.forEach(v=>{if(!env.includes(v+'=')){console.warn('[QUANTIX] EKSIK: '+v);ok=false;}else{console.log('[QUANTIX] OK: '+v);}});if(!ok){console.error('\\n.env.local eksik değişkenler var. cp .env.example .env.local yapın.');process.exit(1);}console.log('\\n[QUANTIX] Tüm env değişkenleri mevcut.');\"",
-    "quantix:up": "pnpm quantix:check-env && pnpm build && pnpm start"
+    "quantix:up": "pnpm quantix:check-env && pnpm build && pnpm start",
+    "mobile:sync": "npx cap sync",
+    "mobile:ios": "npx cap open ios",
+    "mobile:android": "npx cap open android",
+    "mobile:build": "npm run build && npx cap sync"
   },
   "dependencies": {
-"@tanstack/react-query": "5.62.0",
+    "@capacitor/app": "^6.0.2",
+    "@capacitor/core": "^6.2.0",
+    "@capacitor/haptics": "^6.0.2",
+    "@capacitor/keyboard": "^6.0.3",
+    "@capacitor/push-notifications": "^6.0.2",
+    "@capacitor/splash-screen": "^6.0.2",
+    "@capacitor/status-bar": "^6.0.2",
+    "@tanstack/react-query": "5.62.0",
     "clsx": "2.1.1",
     "lightweight-charts": "^4.2.3",
     "next": "^15.5.18",
@@ -55,7 +66,7 @@
     "tailwindcss": "3.4.17",
     "tsx": "^4.22.3",
     "typescript": "5.7.2",
-    "vitest": "2.1.8"
-    
+    "vitest": "2.1.8",
+    "@capacitor/cli": "^6.2.0"
   }
 }
