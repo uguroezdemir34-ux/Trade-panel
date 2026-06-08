@@ -5,10 +5,14 @@ export function formatPrice(
   locale: Locale,
   showSign = false
 ): string {
+  const abs = Math.abs(value);
+  // Sub-cent assets (SHIB $0.000024, DOGE $0.40, etc.) need more decimals
+  const maxDecimals = abs > 0 && abs < 0.001 ? 8 : abs < 0.01 ? 6 : abs < 1 ? 4 : 2;
+
   const formatted = new Intl.NumberFormat(locale === "tr" ? "tr-TR" : "en-US", {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(Math.abs(value));
+    maximumFractionDigits: maxDecimals,
+  }).format(abs);
 
   const sign = showSign ? (value >= 0 ? "+" : "−") : value < 0 ? "−" : "";
   return `${sign}$${formatted}`;

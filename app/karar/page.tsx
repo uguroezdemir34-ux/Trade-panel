@@ -662,7 +662,7 @@ export default function KararPage() {
                     {activePosition.direction === "LONG" ? "▲ LONG" : "▼ SHORT"}
                   </span>
                   <span className="text-text-t3 shrink-0">
-                    @{activePosition.entryPx.toFixed(activePosition.entryPx > 100 ? 1 : 4)}
+                    @{fmtPx(activePosition.entryPx)}
                   </span>
                   <span className={`font-semibold tabular-nums shrink-0 ${activePosition.upl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
                     {activePosition.upl >= 0 ? "+" : ""}{activePosition.upl.toFixed(0)}$
@@ -869,6 +869,14 @@ function holdingStr(openedAt: number): string {
   if (m < 60) return `${m}dk`;
   const h = Math.floor(m / 60);
   return h < 24 ? `${h}sa` : `${Math.floor(h / 24)}g`;
+}
+
+function fmtPx(px: number): string {
+  if (px >= 1000) return px.toFixed(1);
+  if (px >= 100) return px.toFixed(2);
+  if (px >= 1) return px.toFixed(3);
+  if (px >= 0.001) return px.toFixed(5);
+  return px.toPrecision(4);
 }
 
 function PairPriceHeader({

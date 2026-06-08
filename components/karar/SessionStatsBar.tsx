@@ -55,9 +55,11 @@ export function SessionStatsBar(): React.ReactElement | null {
           {Math.abs(streak)}{streak > 0 ? "▲" : "▼"}
         </span>
       )}
-      {/* Mini trade outcome dots — last 10, oldest→newest */}
+      {/* Mini trade outcome dots — last 10 by closedAt, oldest→newest */}
       <div className="flex gap-0.5 ml-auto">
         {todayTrades
+          .slice()
+          .sort((a, b) => (a.exit?.closedAt ?? 0) - (b.exit?.closedAt ?? 0))
           .slice(-10)
           .map((t, i) => (
             <div
