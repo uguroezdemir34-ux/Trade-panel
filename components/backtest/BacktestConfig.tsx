@@ -13,12 +13,13 @@ interface Props {
   onRun: (config: BacktestConfig) => void;
   onScan: (config: ScanConfig) => void;
   disabled: boolean;
+  initialPair?: Pair;
 }
 
-export function BacktestConfigPanel({ onRun, onScan, disabled }: Props): React.ReactElement {
+export function BacktestConfigPanel({ onRun, onScan, disabled, initialPair }: Props): React.ReactElement {
   const t = useT();
   const [mode, setMode] = useState<Mode>("single");
-  const [pair, setPair] = useState<Pair>("BTC");
+  const [pair, setPair] = useState<Pair>(initialPair ?? "BTC");
   const [dataMonths, setDataMonths] = useState<3 | 6 | 12 | 24>(6);
   const [frozenFg, setFrozenFg] = useState(50);
   const [minScore, setMinScore] = useState(0);

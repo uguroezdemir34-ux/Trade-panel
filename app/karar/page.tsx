@@ -58,6 +58,7 @@ import { CorrelationWarning } from "@/components/karar/CorrelationWarning";
 import { CandlePatternBadge } from "@/components/karar/CandlePatternBadge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { RegimeBadge } from "@/components/karar/RegimeBadge";
+import { usePairNotesStore } from "@/lib/store/pairNotesStore";
 
 export default function KararPage() {
   const t = useT();
@@ -177,6 +178,10 @@ export default function KararPage() {
     () => new Set(alarms.filter((a) => a.status === "active").map((a) => a.pair)),
     [alarms],
   );
+
+  const pairNotes = usePairNotesStore((s) => s.notes);
+  const setPairNote = usePairNotesStore((s) => s.setNote);
+  const clearPairNote = usePairNotesStore((s) => s.clearNote);
 
   const displayPairs = useMemo<readonly Pair[]>(() => {
     if (pairGroup === "go") return goPairs.length > 0 ? goPairs : PAIRS;
@@ -629,6 +634,9 @@ export default function KararPage() {
                   >
                     ★
                   </button>
+                  {pairNotes[p as Pair] && (
+                    <span className="absolute bottom-4 right-0.5 h-1 w-1 rounded-full bg-blue-400/80 pointer-events-none" />
+                  )}
                 </div>
               );
             })}
@@ -750,6 +758,34 @@ export default function KararPage() {
                     {sizerResult && result.direction !== "NEUTRAL" && (
                       <CorrelationWarning pair={activePair} direction={result.direction} />
                     )}
+
+                    {/* Pair note + Backtest quick link */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-2xs text-text-t4 tracking-wider uppercase shrink-0">
+                          Not
+                        </span>
+                        <Link
+                          href={`/backtest?pair=${activePair}`}
+                          className="ml-auto font-mono text-2xs text-text-t4 hover:text-brand transition-colors border border-border/40 rounded px-2 py-0.5 shrink-0"
+                        >
+                          → Backtest
+                        </Link>
+                      </div>
+                      <textarea
+                        value={pairNotes[activePair] ?? ""}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            setPairNote(activePair, e.target.value);
+                          } else {
+                            clearPairNote(activePair);
+                          }
+                        }}
+                        placeholder="Bu parite için notlar..."
+                        rows={3}
+                        className="w-full rounded-lg border border-border bg-surface-s1 px-3 py-2 font-mono text-2xs text-text-t2 placeholder:text-text-t4 resize-none focus:outline-none focus:border-brand/50 transition-colors"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
