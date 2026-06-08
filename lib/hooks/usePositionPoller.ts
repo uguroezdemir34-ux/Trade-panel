@@ -25,6 +25,7 @@ import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMarketStore } from "@/lib/store/marketStore";
+import { createChannel } from "@/lib/notify/registry";
 import type { Position } from "@/lib/okx/positions";
 
 const POLL_INTERVAL_MS = 10_000;
@@ -107,5 +108,19 @@ function reconcileOpenTrades(livePositions: Position[]): void {
       reason: "manual", // gerçek sebep bilinmiyor; OKX reconciler daha sonra düzeltebilir
       now,
     });
+
+    // Telegram: reconcile kapanışını bildir
+    const telegram = createChannel("telegram");
+    if (telegram.isImplemented && telegram.isConfigured()) {
+      void telegram.send({
+        kind: "trade_closed",
+        pair: trade.pair,
+        direction: trade.direction,
+        entry: trade.entryPrice,
+        pnl: (exitPrice - trade.entryPrice) * (trade.direction === "SHORT" ? -1 : 1) * trade.qty,
+        reasonText: "Exchange reconciled — position closed on exchange (SL/TP/liq/manual)",
+        timestamp: now,
+      }).catch(() => {/* ignore */});
+    }
   }
 }

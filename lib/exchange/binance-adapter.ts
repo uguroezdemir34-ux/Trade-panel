@@ -248,6 +248,7 @@ export class BinanceAdapter implements ExchangeAdapter {
             closePosition: "true",
           }),
         );
+        void this.verifySl(symbol, input.slPrice, input.direction, positionSide);
       } catch {
         console.warn(`[BinanceAdapter] SL order failed for ${symbol}`);
       }
@@ -403,6 +404,7 @@ export class BinanceAdapter implements ExchangeAdapter {
             closePosition: "true",
           }),
         );
+        void this.verifySl(symbol, input.slPrice, input.direction, positionSide);
       } catch {
         console.warn(`[BinanceAdapter] SL update failed for ${symbol}`);
       }
@@ -437,6 +439,48 @@ export class BinanceAdapter implements ExchangeAdapter {
     }
 
     return { ok: true };
+  }
+
+  /**
+   * SL doğrulama — 3s bekler, openOrders'da STOP_MARKET emir yoksa bir kez tekrar gönderir.
+   * Fire-and-forget: SL placement'tan sonra void ile çağrılır.
+   */
+  private async verifySl(
+    symbol: string,
+    slPrice: number,
+    direction: "LONG" | "SHORT",
+    positionSide: string,
+  ): Promise<void> {
+    await new Promise((r) => setTimeout(r, 3_000));
+    try {
+      const r = await this.call("/fapi/v1/openOrders", "GET", { symbol });
+      if (!r.ok || !Array.isArray(r.data)) return;
+
+      const found = (r.data as Array<Record<string, unknown>>).some((o) => {
+        if (o.type !== "STOP_MARKET") return false;
+        const sp = parseFloat(String(o.stopPrice ?? "0"));
+        return sp > 0 && Math.abs(sp - slPrice) / slPrice < 0.005;
+      });
+
+      if (!found) {
+        console.warn(
+          `[BinanceAdapter] SL doğrulama başarısız ${symbol} @ ${slPrice} — yeniden gönderiliyor`,
+        );
+        const slSide = direction === "LONG" ? "SELL" : "BUY";
+        await withRetry(() =>
+          this.call("/fapi/v1/order", "POST", {
+            symbol,
+            side: slSide,
+            positionSide,
+            type: "STOP_MARKET",
+            stopPrice: String(slPrice),
+            closePosition: "true",
+          }),
+        );
+      }
+    } catch {
+      console.warn(`[BinanceAdapter] SL doğrulama sorgusu başarısız: ${symbol}`);
+    }
   }
 }
 

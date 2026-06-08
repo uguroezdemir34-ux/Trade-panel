@@ -214,6 +214,7 @@ export class BybitAdapter implements ExchangeAdapter {
             slTriggerBy: "LastPrice",
           }),
         );
+        void this.verifySl(symbol, input.slPrice, positionIdx);
       } catch {
         console.warn(`[BybitAdapter] SL set-tpsl failed for ${symbol}`);
       }
@@ -399,6 +400,7 @@ export class BybitAdapter implements ExchangeAdapter {
             slTriggerBy: "LastPrice",
           }),
         );
+        void this.verifySl(input.instId, input.slPrice, positionIdx);
       } catch {
         console.warn(`[BybitAdapter] SL update failed for ${input.instId}`);
       }
@@ -439,6 +441,50 @@ export class BybitAdapter implements ExchangeAdapter {
     }
 
     return { ok: true };
+  }
+
+  /**
+   * SL doğrulama — 3s bekler, position'da stopLoss yoksa bir kez tekrar set-tpsl gönderir.
+   * Fire-and-forget: SL placement'tan sonra void ile çağrılır.
+   */
+  private async verifySl(
+    symbol: string,
+    slPrice: number,
+    positionIdx: 0 | 1 | 2,
+  ): Promise<void> {
+    await new Promise((r) => setTimeout(r, 3_000));
+    try {
+      const r = await this.call("/v5/position/list", "GET", {
+        category: "linear",
+        symbol,
+      });
+      if (!r.ok || !r.data) return;
+
+      const list =
+        (r.data as { list?: Array<Record<string, unknown>> }).list ?? [];
+      const found = list.some((p) => {
+        if (Number(p.positionIdx) !== positionIdx) return false;
+        const sl = parseFloat(String(p.stopLoss ?? "0"));
+        return sl > 0 && Math.abs(sl - slPrice) / slPrice < 0.005;
+      });
+
+      if (!found) {
+        console.warn(
+          `[BybitAdapter] SL doğrulama başarısız ${symbol} @ ${slPrice} — yeniden gönderiliyor`,
+        );
+        await withRetry(() =>
+          this.call("/v5/position/set-tpsl", "POST", {
+            category: "linear",
+            symbol,
+            positionIdx,
+            stopLoss: String(slPrice),
+            slTriggerBy: "LastPrice",
+          }),
+        );
+      }
+    } catch {
+      console.warn(`[BybitAdapter] SL doğrulama sorgusu başarısız: ${symbol}`);
+    }
   }
 }
 
