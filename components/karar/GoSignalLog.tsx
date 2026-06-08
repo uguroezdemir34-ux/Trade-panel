@@ -48,7 +48,7 @@ function Chip({
   );
 }
 
-export function GoSignalLog(): React.ReactElement | null {
+export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode } = {}): React.ReactElement | null {
   const history = useScoreHistoryStore((s) => s.history);
   const trades = useTradesStore((s) => s.trades);
   const goAlertsEnabled = useSettingsStore((s) => s.goAlertsEnabled);
@@ -114,7 +114,7 @@ export function GoSignalLog(): React.ReactElement | null {
   const paginated = filtered.slice(0, page * PAGE_SIZE);
   const hasMore = paginated.length < filtered.length;
 
-  if (allGoEntries.length === 0) return null;
+  if (allGoEntries.length === 0) return emptyFallback ? <>{emptyFallback}</> : null;
 
   return (
     <div className="border-border bg-bg-card rounded-lg border overflow-hidden">

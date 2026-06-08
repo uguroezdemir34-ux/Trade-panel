@@ -29,16 +29,16 @@ export default function PortfolyoPage() {
       {/* Portfolio equity overview — always visible above tabs */}
       <PortfolioOverviewCard />
 
-      {/* Sub-tab bar */}
-      <div className="border-b border-border bg-bg-card sticky top-0 z-10">
-        <div className="flex">
+      {/* Sub-tab bar — scrollable so 5 tabs fit on narrow phones */}
+      <div className="border-b border-border bg-bg-card sticky top-0 z-10 overflow-x-auto scrollbar-none">
+        <div className="flex min-w-max">
           {SUB_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActive(tab.id)}
               className={[
-                "flex-1 py-3 font-mono text-xs tracking-wider transition-colors",
+                "shrink-0 px-4 py-3 font-mono text-xs tracking-wider transition-colors whitespace-nowrap",
                 active === tab.id
                   ? "text-brand border-b-2 border-brand"
                   : "text-text-t3 hover:text-text-t2",
@@ -63,7 +63,11 @@ export default function PortfolyoPage() {
         )}
         {active === "sinyaller" && (
           <div className="flex flex-col gap-4 p-4">
-            <GoSignalLog />
+            <GoSignalLog emptyFallback={
+              <div className="border border-border bg-bg-card rounded-lg px-4 py-8 text-center font-mono text-2xs text-text-t4">
+                Henüz GO sinyali yok — sistem çalıştıkça otomatik dolar.
+              </div>
+            } />
           </div>
         )}
       </div>
