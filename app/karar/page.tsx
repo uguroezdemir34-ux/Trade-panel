@@ -21,7 +21,7 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "FET", "SUI"],
   meme:   ["DOGE", "SHIB"],
 };
-type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch";
+type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreBar } from "@/components/karar/ScoreBar";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
@@ -46,6 +46,7 @@ import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
 import { ScoreLeaderboard } from "@/components/karar/ScoreLeaderboard";
+import { SessionStatsBar } from "@/components/karar/SessionStatsBar";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
 import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
@@ -150,6 +151,27 @@ export default function KararPage() {
     [allResults],
   );
 
+  // GO pairs where no open position exists — immediately actionable signals
+  const actionablePairs = useMemo(() => {
+    const openPairSet = new Set(openPositions.map((p) => p.pair));
+    return goPairs.filter((p) => !openPairSet.has(p));
+  }, [goPairs, openPositions]);
+
+  // Open position + matching trade for the currently selected pair
+  const activePosition = useMemo(
+    () => openPositions.find((p) => p.pair === activePair) ?? null,
+    [openPositions, activePair],
+  );
+  const activeTrade = useMemo(
+    () =>
+      activePosition
+        ? trades
+            .filter((t) => t.pair === activePair && t.status === "open")
+            .sort((a, b) => b.openedAt - a.openedAt)[0] ?? null
+        : null,
+    [activePosition, trades, activePair],
+  );
+
   const alarms = usePriceAlarmStore((s) => s.alarms);
   const alarmedPairs = useMemo(
     () => new Set(alarms.filter((a) => a.status === "active").map((a) => a.pair)),
@@ -159,8 +181,9 @@ export default function KararPage() {
   const displayPairs = useMemo<readonly Pair[]>(() => {
     if (pairGroup === "go") return goPairs.length > 0 ? goPairs : PAIRS;
     if (pairGroup === "watch") return watchlistPairs.length > 0 ? watchlistPairs : PAIRS;
+    if (pairGroup === "act") return actionablePairs.length > 0 ? actionablePairs : PAIRS;
     return PAIR_GROUPS[pairGroup] ?? PAIRS;
-  }, [pairGroup, goPairs, watchlistPairs]);
+  }, [pairGroup, goPairs, watchlistPairs, actionablePairs]);
 
   // Ref so the keydown handler always sees the latest displayPairs without re-binding
   const displayPairsRef = useRef<readonly Pair[]>(displayPairs);
@@ -419,6 +442,8 @@ export default function KararPage() {
         </Link>
       )}
 
+      <SessionStatsBar />
+
       {/* Keyboard shortcut hint — sağ üst köşe */}
       <div className="flex justify-end -mt-1">
         <button
@@ -457,23 +482,29 @@ export default function KararPage() {
 
           {/* Pair group filter */}
           <div className="flex flex-wrap gap-1">
-            {(["all", "majors", "alts", "meme", "go", "watch"] as PairGroup[]).map((g) => {
+            {(["all", "majors", "alts", "meme", "go", "act", "watch"] as PairGroup[]).map((g) => {
               const label =
                 g === "all" ? t("karar.groupAll") :
                 g === "majors" ? "Majors" :
                 g === "alts" ? "Alts" :
                 g === "meme" ? "Meme" :
                 g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
+                g === "act" ? `ACT${actionablePairs.length > 0 ? ` (${actionablePairs.length})` : ""}` :
                 `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
               const isActive = pairGroup === g;
               const isGo = g === "go";
+              const isAct = g === "act";
               const isWatch = g === "watch";
               return (
                 <button
                   key={g}
                   onClick={() => {
                     setPairGroup(g);
-                    const target = g === "go" ? goPairs : g === "watch" ? watchlistPairs : PAIR_GROUPS[g] ?? PAIRS;
+                    const target =
+                      g === "go" ? goPairs :
+                      g === "act" ? actionablePairs :
+                      g === "watch" ? watchlistPairs :
+                      PAIR_GROUPS[g] ?? PAIRS;
                     if (target.length > 0 && !target.includes(activePair)) {
                       setActivePair(target[0] as Pair);
                     }
@@ -481,12 +512,14 @@ export default function KararPage() {
                   className={[
                     "px-2.5 py-1 rounded font-mono text-2xs font-medium transition-colors",
                     isActive
-                      ? isGo
+                      ? isGo || isAct
                         ? "bg-green-500/20 text-green-400"
                         : isWatch
                         ? "bg-amber-500/20 text-amber-400"
                         : "bg-surface-s2 text-text-t1"
                       : isGo && goPairs.length > 0
+                      ? "text-green-400/70 hover:text-green-400"
+                      : isAct && actionablePairs.length > 0
                       ? "text-green-400/70 hover:text-green-400"
                       : isWatch && watchlistPairs.length > 0
                       ? "text-amber-400/70 hover:text-amber-400"
@@ -618,6 +651,28 @@ export default function KararPage() {
                 price={livePrice}
                 chg={allTicks[activePair]?.chg ?? null}
               />
+
+              {/* Active position strip — shown when this pair has an open position */}
+              {activePosition && (
+                <Link
+                  href="/portfolyo"
+                  className="flex items-center gap-3 rounded-lg border border-border/50 bg-surface-s1 px-3 py-2 font-mono text-2xs hover:bg-surface-s2 transition-colors"
+                >
+                  <span className={`font-bold shrink-0 ${activePosition.direction === "LONG" ? "text-green-400" : "text-red-400"}`}>
+                    {activePosition.direction === "LONG" ? "▲ LONG" : "▼ SHORT"}
+                  </span>
+                  <span className="text-text-t3 shrink-0">
+                    @{activePosition.entryPx.toFixed(activePosition.entryPx > 100 ? 1 : 4)}
+                  </span>
+                  <span className={`font-semibold tabular-nums shrink-0 ${activePosition.upl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
+                    {activePosition.upl >= 0 ? "+" : ""}{activePosition.upl.toFixed(0)}$
+                  </span>
+                  {activeTrade && (
+                    <span className="text-text-t4 shrink-0">{holdingStr(activeTrade.openedAt)}</span>
+                  )}
+                  <span className="text-text-t4 ml-auto shrink-0">→</span>
+                </Link>
+              )}
 
               {/* HERO: Verdict + Direction + Funding */}
               <div className="flex flex-wrap items-center gap-2">
@@ -807,6 +862,13 @@ function fmtPrice(price: number): string {
   if (price >= 1)      return "$" + price.toFixed(4);
   if (price >= 0.001)  return "$" + price.toFixed(5);
   return "$" + price.toPrecision(4);
+}
+
+function holdingStr(openedAt: number): string {
+  const m = Math.floor((Date.now() - openedAt) / 60_000);
+  if (m < 60) return `${m}dk`;
+  const h = Math.floor(m / 60);
+  return h < 24 ? `${h}sa` : `${Math.floor(h / 24)}g`;
 }
 
 function PairPriceHeader({
