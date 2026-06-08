@@ -338,35 +338,44 @@ export class OkxAdapter implements ExchangeAdapter {
       };
     }
 
-    // ─── SL algo order ───
+    // ─── SL algo order + arka plan doğrulama ───
     if (input.slPrice && input.slPrice > 0) {
       await this.algoLimiter.acquire();
       const slSide = input.direction === "LONG" ? "sell" : "buy";
       const slPosSide = posSide;
+      const slBody = {
+        instId,
+        tdMode: input.marginMode,
+        side: slSide,
+        posSide: slPosSide,
+        ordType: "conditional",
+        sz: String(input.qty),
+        slTriggerPx: String(input.slPrice),
+        slOrdPx: "-1",
+        slTriggerPxType: "last",
+      };
+      let slPlacedOk = false;
       try {
-        await withNetworkRetry(() =>
+        const slRaw = await withNetworkRetry(() =>
           proxyPost(
             "/api/v5/trade/order-algo",
-            {
-              instId,
-              tdMode: input.marginMode,
-              side: slSide,
-              posSide: slPosSide,
-              ordType: "conditional",
-              sz: String(input.qty),
-              slTriggerPx: String(input.slPrice),
-              slOrdPx: "-1",
-              slTriggerPxType: "last",
-            },
+            slBody,
             this.isDemo,
             this.timeoutMs,
             this.fetchFn,
             this.clientCreds,
           ),
         );
+        slPlacedOk = checkProxyResponse(slRaw).ok;
+        if (!slPlacedOk) {
+          console.warn(`[OkxAdapter] SL algo order rejected for ${instId}`);
+        }
       } catch {
         console.warn(`[OkxAdapter] SL algo order failed for ${instId}`);
       }
+
+      // 3s sonra arka planda SL'yi doğrula, eksikse bir kez daha gönder
+      void this.verifySl(instId, input.slPrice!, slBody);
     }
 
     // ─── TP algo order(lar) ───
@@ -596,21 +605,22 @@ export class OkxAdapter implements ExchangeAdapter {
 
     if (input.slPrice && input.slPrice > 0) {
       await this.algoLimiter.acquire();
+      const updateSlBody = {
+        instId: input.instId,
+        tdMode: input.mgnMode,
+        side,
+        posSide,
+        ordType: "conditional",
+        sz: String(input.qty),
+        slTriggerPx: String(input.slPrice),
+        slOrdPx: "-1",
+        slTriggerPxType: "last",
+      };
       try {
         await withNetworkRetry(() =>
           proxyPost(
             "/api/v5/trade/order-algo",
-            {
-              instId: input.instId,
-              tdMode: input.mgnMode,
-              side,
-              posSide,
-              ordType: "conditional",
-              sz: String(input.qty),
-              slTriggerPx: String(input.slPrice),
-              slOrdPx: "-1",
-              slTriggerPxType: "last",
-            },
+            updateSlBody,
             this.isDemo,
             this.timeoutMs,
             this.fetchFn,
@@ -620,6 +630,7 @@ export class OkxAdapter implements ExchangeAdapter {
       } catch {
         console.warn(`[OkxAdapter] SL update failed for ${input.instId}`);
       }
+      void this.verifySl(input.instId, input.slPrice!, updateSlBody);
     }
 
     const tpTargets: Array<{ price: number; qty: number }> = [];
@@ -659,6 +670,54 @@ export class OkxAdapter implements ExchangeAdapter {
     }
 
     return { ok: true };
+  }
+
+  /**
+   * SL algo emrini arka planda doğrular.
+   * 3s bekler → orders-algo-pending sorgular → bulunamazsa bir kez daha gönderir.
+   */
+  private async verifySl(
+    instId: string,
+    slPrice: number,
+    slBody: Record<string, unknown>,
+  ): Promise<void> {
+    await new Promise((r) => setTimeout(r, 3_000));
+    try {
+      const raw = await proxyGet(
+        `/api/v5/trade/orders-algo-pending?ordType=conditional&instId=${encodeURIComponent(instId)}`,
+        this.isDemo,
+        this.timeoutMs,
+        this.fetchFn,
+        this.clientCreds,
+      );
+      const check = checkProxyResponse(raw);
+      if (!check.ok || !Array.isArray(check.data)) return;
+
+      const found = (check.data as Array<Record<string, unknown>>).some((o) => {
+        const triggerPx = parseFloat(String(o.slTriggerPx ?? "0"));
+        return triggerPx > 0 && Math.abs(triggerPx - slPrice) / slPrice < 0.005;
+      });
+
+      if (!found) {
+        console.warn(
+          `[OkxAdapter] SL doğrulama başarısız ${instId} @ ${slPrice} — yeniden gönderiliyor`,
+        );
+        await this.algoLimiter.acquire();
+        await withNetworkRetry(() =>
+          proxyPost(
+            "/api/v5/trade/order-algo",
+            slBody,
+            this.isDemo,
+            this.timeoutMs,
+            this.fetchFn,
+            this.clientCreds,
+          ),
+        );
+      }
+    } catch {
+      // Doğrulama hatası log'lanır, ama akışı bozmaz
+      console.warn(`[OkxAdapter] SL doğrulama sorgusu başarısız: ${instId}`);
+    }
   }
 
   /** Idempotency guard'a erişim (test/debug için) */
