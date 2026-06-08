@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
@@ -82,16 +82,22 @@ export function GoSignalLog(): React.ReactElement | null {
   const convertedKeys = useMemo(() => {
     const set = new Set<string>();
     for (const e of allGoEntries) {
+      const eDir = e.direction.toUpperCase();
       const match = trades.find(
         (tr) =>
           tr.pair === e.pair &&
-          tr.direction === e.direction &&
+          tr.direction === eDir &&
           Math.abs(tr.openedAt - e.ts) < 15 * 60_000,
       );
       if (match) set.add(`${e.pair}_${e.ts}`);
     }
     return set;
   }, [allGoEntries, trades]);
+
+  // Reset page to 1 when new signals arrive (so fresh entries at top are visible)
+  useEffect(() => {
+    setPage(1);
+  }, [allGoEntries.length]);
 
   // Apply filters
   const filtered = useMemo(
@@ -183,12 +189,12 @@ export function GoSignalLog(): React.ReactElement | null {
       ) : (
         <>
           <div className="divide-y divide-border/15 max-h-80 overflow-y-auto">
-            {paginated.map((e, idx) => {
-              const isLong = e.direction === "LONG";
+            {paginated.map((e) => {
+              const isLong = e.direction.toUpperCase() === "LONG";
               const converted = convertedKeys.has(`${e.pair}_${e.ts}`);
               return (
                 <div
-                  key={idx}
+                  key={`${e.pair}_${e.ts}`}
                   className="grid items-center gap-x-2 px-3 py-1.5 font-mono text-2xs"
                   style={{ gridTemplateColumns: "36px 56px 28px 12px 1fr" }}
                 >

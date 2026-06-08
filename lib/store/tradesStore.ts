@@ -143,15 +143,16 @@ interface TradesStoreState {
    * Called after adapter.updateSlTp() succeeds so the emergency stop guard
    * uses the current SL instead of the stale one from openPending().
    *
-   * slPrice=null → keep existing stopPrice (stopPrice is required on TradeSnapshot)
-   * tp1Price=null → clear takeProfit1
-   * tp2Price=undefined → don't touch takeProfit2
-   * tp2Price=null → clear takeProfit2
+   * slPrice=null    → keep existing stopPrice (stopPrice is required on TradeSnapshot)
+   * tp1Price=null   → clear takeProfit1
+   * tp1Price=undef  → don't touch takeProfit1 (same semantics as tp2Price)
+   * tp2Price=undef  → don't touch takeProfit2
+   * tp2Price=null   → clear takeProfit2
    */
   updateTradeSlTp: (
     id: string,
     slPrice: number | null,
-    tp1Price: number | null,
+    tp1Price?: number | null,
     tp2Price?: number | null,
   ) => void;
 
@@ -373,17 +374,22 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
 
   updateTradeSlTp: (id, slPrice, tp1Price, tp2Price) => {
     const current = get().trades;
+    let changed = false;
     const next = current.map((t) => {
       if (t.id !== id || t.status === "closed") return t;
+      changed = true;
       return {
         ...t,
         ...(slPrice != null ? { stopPrice: slPrice } : {}),
-        takeProfit1: tp1Price != null ? tp1Price : undefined,
+        ...(tp1Price !== undefined
+          ? { takeProfit1: tp1Price != null ? tp1Price : undefined }
+          : {}),
         ...(tp2Price !== undefined
           ? { takeProfit2: tp2Price != null ? tp2Price : undefined }
           : {}),
       };
     });
+    if (!changed) return;
     saveToStorage(STORAGE_KEY, next);
     set({ trades: next });
   },

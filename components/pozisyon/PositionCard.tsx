@@ -288,6 +288,7 @@ export function PositionCard({
             {/* Layer desync warning */}
             {tradeSl != null &&
               position.slTriggerPx != null &&
+              position.slTriggerPx !== 0 &&
               Math.abs(tradeSl - position.slTriggerPx) / position.slTriggerPx > 0.001 && (
                 <div className="flex items-center gap-1.5 rounded border border-yellow-500/30 bg-yellow-500/8 px-2 py-1 font-mono text-2xs text-yellow-400">
                   <span>⚠</span>
@@ -669,7 +670,7 @@ function TrailDistanceBar({
 }
 
 function pctFromCurrent(price: number, currentPx: number): string {
-  if (!price || !currentPx || isNaN(price)) return "";
+  if (price <= 0 || currentPx <= 0 || isNaN(price)) return "";
   const pct = ((price - currentPx) / currentPx) * 100;
   return (pct > 0 ? "+" : "") + pct.toFixed(2) + "%";
 }

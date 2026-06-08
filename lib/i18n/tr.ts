@@ -461,6 +461,19 @@ export const tr: Dictionary = {
 
   portfolio: {
     analyticsTab: "Analitik",
+    overview: {
+      totalEquity: "Toplam Özsermaye",
+      free: "Serbest",
+      dailyPnl: "Günlük P&L",
+      weekly: "Haftalık",
+      realizedPnl: "Gerç. K/Z (Tümü)",
+      unrealized: "Gerç.Dışı K/Z",
+      winRate: "Win Rate",
+      openPos: "Açık Poz.",
+      closedTrades: "Kapalı İşlem",
+      riskMult: "Risk Çarpanı",
+      tradesCount: "{w}/{t} işlem",
+    },
     var: {
       title: "Portföy VaR",
       var95: "1-Günlük VaR (%95)",

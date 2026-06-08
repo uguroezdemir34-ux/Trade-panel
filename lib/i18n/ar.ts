@@ -450,6 +450,7 @@ export const ar: Dictionary = {
 
   portfolio: {
     analyticsTab: "Analytics",
+    overview: { totalEquity: "Total Equity", free: "Free", dailyPnl: "Daily P&L", weekly: "Weekly", realizedPnl: "Realized P&L (All)", unrealized: "Unrealized P&L", winRate: "Win Rate", openPos: "Open Pos.", closedTrades: "Closed", riskMult: "Risk Mult.", tradesCount: "{w}/{t} trades", },
     var: {
       title: "Portfolio VaR",
       var95: "1-Day VaR (95%)",

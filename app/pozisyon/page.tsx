@@ -108,9 +108,18 @@ export default function PozisyonPage() {
                     tp2Price: tp2Price ?? undefined,
                   });
                   if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
-                  // Layer 2: tradesStore sync — emergency stop guard reads this
-                  if (matchingTrade) {
-                    updateTradeSlTp(matchingTrade.id, slPrice, tp1Price, tp2Price);
+                  // Layer 2: tradesStore sync — re-lookup after await to avoid stale closure
+                  const fresh = useTradesStore
+                    .getState()
+                    .trades.filter(
+                      (tr) =>
+                        tr.pair === pos.pair &&
+                        tr.direction === pos.direction &&
+                        tr.status === "open",
+                    )
+                    .sort((a, b) => b.openedAt - a.openedAt)[0];
+                  if (fresh) {
+                    updateTradeSlTp(fresh.id, slPrice, tp1Price, tp2Price);
                   }
                 }}
               />

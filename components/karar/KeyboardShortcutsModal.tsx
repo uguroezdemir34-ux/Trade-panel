@@ -17,10 +17,15 @@ export function KeyboardShortcutsModal({
 }): React.ReactElement {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
-      if (e.key === "Escape" || e.key === "?") onClose();
+      if (e.key === "Escape" || e.key === "?") {
+        // stopPropagation prevents the parent page's "?" handler from
+        // toggling showShortcuts back to true immediately after we close.
+        e.stopPropagation();
+        onClose();
+      }
     }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, { capture: true });
+    return () => window.removeEventListener("keydown", onKey, { capture: true });
   }, [onClose]);
 
   return (
