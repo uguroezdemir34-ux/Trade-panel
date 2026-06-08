@@ -54,8 +54,16 @@ const ALGO_ORD_TYPES = [
 
 // ─── Adapter seçenekleri (DI / test) ─────────────────────────
 
+export interface OkxCredentials {
+  key: string;
+  secret: string;
+  pass: string;
+}
+
 export interface OkxAdapterOptions {
   isDemo: boolean;
+  /** Layer 2 browser-stored credentials (passed to proxy when server env vars absent) */
+  clientCreds?: OkxCredentials | null;
   /** Rate limiter inject (test için) */
   tradeLimiter?: TokenBucketRateLimiter;
   algoLimiter?: TokenBucketRateLimiter;
@@ -95,13 +103,14 @@ async function proxyPost(
   isDemo: boolean,
   timeoutMs: number,
   fetchFn: typeof fetch,
+  clientCreds?: OkxCredentials | null,
 ): Promise<Record<string, unknown>> {
   const res = await fetchWithTimeout(
     `/api/okx${path}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isDemo, body }),
+      body: JSON.stringify({ isDemo, body, clientCreds: clientCreds ?? undefined }),
     },
     timeoutMs,
     fetchFn,
@@ -118,7 +127,23 @@ async function proxyGet(
   isDemo: boolean,
   timeoutMs: number,
   fetchFn: typeof fetch,
+  clientCreds?: OkxCredentials | null,
 ): Promise<Record<string, unknown>> {
+  if (clientCreds?.key) {
+    // GET endpoints with client creds → use POST to pass credentials securely
+    const res = await fetchWithTimeout(
+      `/api/okx${path}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDemo, clientCreds }),
+      },
+      timeoutMs,
+      fetchFn,
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json() as Promise<Record<string, unknown>>;
+  }
   const res = await fetchWithTimeout(
     `/api/okx${path}`,
     {
@@ -205,6 +230,7 @@ async function withNetworkRetry<T>(
 
 export class OkxAdapter implements ExchangeAdapter {
   private readonly isDemo: boolean;
+  private readonly clientCreds: OkxCredentials | null;
   private readonly tradeLimiter: TokenBucketRateLimiter;
   private readonly algoLimiter: TokenBucketRateLimiter;
   private readonly guard: IdempotencyGuard;
@@ -213,6 +239,7 @@ export class OkxAdapter implements ExchangeAdapter {
 
   constructor(opts: OkxAdapterOptions) {
     this.isDemo = opts.isDemo;
+    this.clientCreds = opts.clientCreds ?? null;
     this.tradeLimiter = opts.tradeLimiter ?? createOkxTradeLimiter();
     this.algoLimiter = opts.algoLimiter ?? createOkxAlgoLimiter();
     this.guard = opts.idempotencyGuard ?? new IdempotencyGuard();
@@ -274,6 +301,7 @@ export class OkxAdapter implements ExchangeAdapter {
           this.isDemo,
           this.timeoutMs,
           this.fetchFn,
+          this.clientCreds,
         ),
       );
 
@@ -405,6 +433,7 @@ export class OkxAdapter implements ExchangeAdapter {
           this.isDemo,
           this.timeoutMs,
           this.fetchFn,
+          this.clientCreds,
         ),
       );
       const check = checkProxyResponse(raw);
@@ -446,6 +475,7 @@ export class OkxAdapter implements ExchangeAdapter {
           this.isDemo,
           this.timeoutMs,
           this.fetchFn,
+          this.clientCreds,
         );
         const check = checkProxyResponse(raw);
         if (!check.ok || !Array.isArray(check.data)) continue;
@@ -475,6 +505,7 @@ export class OkxAdapter implements ExchangeAdapter {
           this.isDemo,
           this.timeoutMs,
           this.fetchFn,
+          this.clientCreds,
         ),
       );
       const check = checkProxyResponse(raw);
@@ -522,6 +553,7 @@ export class OkxAdapter implements ExchangeAdapter {
           this.isDemo,
           this.timeoutMs,
           this.fetchFn,
+          this.clientCreds,
         ),
       );
       const check = checkProxyResponse(raw);
@@ -633,13 +665,10 @@ export class OkxAdapter implements ExchangeAdapter {
 
 // ─── Singleton factory ────────────────────────────────────────
 
-let _instance: OkxAdapter | null = null;
-let _instanceIsDemo: boolean | null = null;
+import { useCredentialStore } from "@/lib/store/credentialStore";
 
 export function getOkxAdapter(isDemo: boolean): OkxAdapter {
-  if (_instance === null || _instanceIsDemo !== isDemo) {
-    _instance = new OkxAdapter({ isDemo });
-    _instanceIsDemo = isDemo;
-  }
-  return _instance;
+  const { okxProd, okxDemo } = useCredentialStore.getState();
+  const clientCreds = isDemo ? okxDemo : okxProd;
+  return new OkxAdapter({ isDemo, clientCreds });
 }
