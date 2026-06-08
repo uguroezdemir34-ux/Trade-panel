@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
@@ -8,6 +9,7 @@ import { useAccountStore } from "@/lib/store/accountStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useRiskStore } from "@/lib/store/riskStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
+import { usePositionStore } from "@/lib/store/positionStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
@@ -93,6 +95,8 @@ export default function KararPage() {
   const logEvent = useRiskStore((s) => s.logEvent);
   const trades = useTradesStore((s) => s.trades);
   const openPending = useTradesStore((s) => s.openPending);
+  const openPositions = usePositionStore((s) => s.positions);
+  const openUpl = openPositions.reduce((sum, p) => sum + p.upl, 0);
   const funding = useMacroStore((s) => s.funding);
   const fgValue = useMacroStore((s) => s.fgValue);
 
@@ -172,6 +176,17 @@ export default function KararPage() {
     }
     return out;
   }, [scoreHistory]);
+
+  const pairStats = useMemo(() => {
+    const map: Partial<Record<Pair, { wr: number; n: number }>> = {};
+    for (const p of PAIRS) {
+      const closed = trades.filter((t) => t.pair === p && t.status === "closed");
+      if (closed.length < 3) continue;
+      const wins = closed.filter((t) => (t.exit?.pnlUsd ?? 0) > 0).length;
+      map[p] = { wr: (wins / closed.length) * 100, n: closed.length };
+    }
+    return map;
+  }, [trades]);
 
   const latestScoreTime = useMemo(() => {
     const times = Object.values(computedAt).filter((v): v is number => v !== undefined);
@@ -388,6 +403,22 @@ export default function KararPage() {
 
       <StreakBanner />
 
+      {/* Mini open positions bar — only when positions exist */}
+      {openPositions.length > 0 && (
+        <Link
+          href="/portfolyo"
+          className="flex items-center justify-between rounded-lg border border-border bg-surface-s1 px-3 py-1.5 font-mono text-2xs hover:bg-surface-s2 transition-colors"
+        >
+          <span className="text-text-t3">
+            {openPositions.length} {t("app.openPositions")}
+          </span>
+          <span className={`font-semibold tabular-nums ${openUpl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
+            UPL {openUpl >= 0 ? "+" : ""}{openUpl.toFixed(0)} $
+          </span>
+          <span className="text-text-t4">→</span>
+        </Link>
+      )}
+
       {/* Keyboard shortcut hint — sağ üst köşe */}
       <div className="flex justify-end -mt-1">
         <button
@@ -544,6 +575,15 @@ export default function KararPage() {
                     <div className="mt-0.5 h-[10px]">
                       <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
                     </div>
+                    {pairStats[p] && (
+                      <div className={`text-[8px] tabular-nums leading-none mt-0.5 ${
+                        pairStats[p]!.wr >= 55 ? "text-green-400/60"
+                        : pairStats[p]!.wr < 45 ? "text-red-400/60"
+                        : "text-text-t4/50"
+                      }`}>
+                        {Math.round(pairStats[p]!.wr)}%W
+                      </div>
+                    )}
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); watchlistToggle(p as Pair); }}

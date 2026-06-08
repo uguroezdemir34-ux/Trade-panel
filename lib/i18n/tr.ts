@@ -461,6 +461,7 @@ export const tr: Dictionary = {
 
   portfolio: {
     analyticsTab: "Analitik",
+    signalsTab: "Sinyaller",
     overview: {
       totalEquity: "Toplam Özsermaye",
       free: "Serbest",

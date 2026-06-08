@@ -8,14 +8,16 @@ import PnlPage from "@/app/pnl/page";
 import { VaRCard } from "@/components/portfolio/VaRCard";
 import { CorrelationMatrix } from "@/components/portfolio/CorrelationMatrix";
 import { PortfolioOverviewCard } from "@/components/portfolio/PortfolioOverviewCard";
+import { GoSignalLog } from "@/components/karar/GoSignalLog";
 
-type SubTab = "pozisyon" | "risk" | "pnl" | "analitik";
+type SubTab = "pozisyon" | "risk" | "pnl" | "analitik" | "sinyaller";
 
 const SUB_TABS: { id: SubTab; labelKey: string }[] = [
   { id: "pozisyon", labelKey: "nav.position" },
   { id: "risk", labelKey: "nav.risk" },
   { id: "pnl", labelKey: "nav.pnl" },
   { id: "analitik", labelKey: "portfolio.analyticsTab" },
+  { id: "sinyaller", labelKey: "portfolio.signalsTab" },
 ];
 
 export default function PortfolyoPage() {
@@ -57,6 +59,11 @@ export default function PortfolyoPage() {
           <div className="flex flex-col gap-4 p-4">
             <VaRCard />
             <CorrelationMatrix />
+          </div>
+        )}
+        {active === "sinyaller" && (
+          <div className="flex flex-col gap-4 p-4">
+            <GoSignalLog />
           </div>
         )}
       </div>

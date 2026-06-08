@@ -461,6 +461,7 @@ export const en: Dictionary = {
 
   portfolio: {
     analyticsTab: "Analytics",
+    signalsTab: "Signals",
     overview: {
       totalEquity: "Total Equity",
       free: "Free",

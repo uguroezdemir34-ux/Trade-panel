@@ -450,6 +450,7 @@ export const pt: Dictionary = {
 
   portfolio: {
     analyticsTab: "Analytics",
+    signalsTab: "Signals",
     overview: { totalEquity: "Total Equity", free: "Free", dailyPnl: "Daily P&L", weekly: "Weekly", realizedPnl: "Today P&L",
       allTime: "All-time", unrealized: "Unrealized P&L", winRate: "Win Rate", openPos: "Open Pos.", closedTrades: "Closed", riskMult: "Risk Mult.", tradesCount: "{w}/{t} trades", },
     var: {
