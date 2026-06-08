@@ -43,7 +43,7 @@ const tabIdSchema = z.enum(TAB_IDS);
 const themeSchema = z.enum(["dark", "light"]);
 export type Theme = z.infer<typeof themeSchema>;
 
-const exchangeSchema = z.enum(["okx", "binance"]);
+const exchangeSchema = z.enum(["okx", "binance", "bybit"]);
 export type ActiveExchange = z.infer<typeof exchangeSchema>;
 
 const settingsSchema = z.object({

@@ -298,14 +298,18 @@ export class BinanceAdapter implements ExchangeAdapter {
     const binancePosSide = input.posSide === "long" ? "LONG" : (input.posSide === "short" ? "SHORT" : "BOTH");
 
     try {
+      const orderParams: Record<string, string | number | boolean> = {
+        symbol,
+        side,
+        positionSide: binancePosSide,
+        type: "MARKET",
+      };
+      // Binance docs: REDUCE_ONLY must NOT be used with positionSide in Hedge Mode
+      if (binancePosSide === "BOTH") {
+        orderParams.reduceOnly = "true";
+      }
       const r = await withRetry(() =>
-        this.call("/fapi/v1/order", "POST", {
-          symbol,
-          side,
-          positionSide: binancePosSide,
-          type: "MARKET",
-          reduceOnly: "true",
-        }),
+        this.call("/fapi/v1/order", "POST", orderParams),
       );
       if (!r.ok) {
         return {
@@ -354,7 +358,8 @@ export class BinanceAdapter implements ExchangeAdapter {
   async partialClosePosition(input: PartialCloseInput): Promise<AdapterResult<void>> {
     if (this.isPaper) return { ok: true };
     // Binance: place REDUCE_ONLY order in opposite direction
-    const symbol = pairToSymbol(input.instId.split("-")[0] as Parameters<typeof pairToSymbol>[0]);
+    // instId is already "BTCUSDT" format — no transformation needed
+    const symbol = input.instId;
     const side = input.direction === "LONG" ? "SELL" : "BUY";
     try {
       const r = await this.call("/fapi/v1/order", "POST", {
@@ -377,10 +382,60 @@ export class BinanceAdapter implements ExchangeAdapter {
 
   async updateSlTp(input: UpdateSlTpInput): Promise<AdapterResult<void>> {
     if (this.isPaper) return { ok: true };
-    // Cancel existing SL/TP orders then place new ones
-    await this.cancelAlgoOrders(input.instId);
-    // Binance algo order placement would go here — stubbed for now
-    void input;
+
+    const cancelResult = await this.cancelAlgoOrders(input.instId);
+    if (!cancelResult.ok) return cancelResult;
+
+    const symbol = input.instId.split("_")[0];
+    const positionSide = input.direction === "LONG" ? "LONG" : "SHORT";
+    const slSide = input.direction === "LONG" ? "SELL" : "BUY";
+    const tpSide = input.direction === "LONG" ? "SELL" : "BUY";
+
+    if (input.slPrice && input.slPrice > 0) {
+      try {
+        await withRetry(() =>
+          this.call("/fapi/v1/order", "POST", {
+            symbol,
+            side: slSide,
+            positionSide,
+            type: "STOP_MARKET",
+            stopPrice: String(input.slPrice),
+            closePosition: "true",
+          }),
+        );
+      } catch {
+        console.warn(`[BinanceAdapter] SL update failed for ${symbol}`);
+      }
+    }
+
+    const tpTargets: Array<{ price: number; qty: number }> = [];
+    if (input.tp1Price && input.tp1Price > 0) {
+      tpTargets.push({ price: input.tp1Price, qty: input.qty / 2 });
+    }
+    if (input.tp2Price && input.tp2Price > 0) {
+      tpTargets.push({ price: input.tp2Price, qty: input.qty / 2 });
+    }
+    if (tpTargets.length === 1) {
+      tpTargets[0].qty = input.qty;
+    }
+
+    for (const tp of tpTargets) {
+      try {
+        await withRetry(() =>
+          this.call("/fapi/v1/order", "POST", {
+            symbol,
+            side: tpSide,
+            positionSide,
+            type: "TAKE_PROFIT_MARKET",
+            stopPrice: String(tp.price),
+            quantity: String(tp.qty),
+          }),
+        );
+      } catch {
+        console.warn(`[BinanceAdapter] TP update failed for ${symbol}`);
+      }
+    }
+
     return { ok: true };
   }
 }
