@@ -303,11 +303,12 @@ export class BinanceAdapter implements ExchangeAdapter {
         side,
         positionSide: binancePosSide,
         type: "MARKET",
+        // closePosition closes the entire position regardless of size.
+        // reduceOnly only in one-way mode (BOTH); hedge mode uses positionSide.
+        ...(binancePosSide === "BOTH"
+          ? { reduceOnly: "true" }
+          : { closePosition: "true" }),
       };
-      // Binance docs: REDUCE_ONLY must NOT be used with positionSide in Hedge Mode
-      if (binancePosSide === "BOTH") {
-        orderParams.reduceOnly = "true";
-      }
       const r = await withRetry(() =>
         this.call("/fapi/v1/order", "POST", orderParams),
       );
@@ -365,10 +366,9 @@ export class BinanceAdapter implements ExchangeAdapter {
       const r = await this.call("/fapi/v1/order", "POST", {
         symbol,
         side,
-        positionSide: input.direction,
+        positionSide: input.direction, // "LONG" | "SHORT" — hedge mode, no reduceOnly
         type: "MARKET",
         quantity: String(input.qty),
-        reduceOnly: "true",
       });
       if (!r.ok && r.code && !IGNORE_CODES.has(r.code)) {
         return { ok: false, errorKind: `BNB_${r.code}`, errorMessage: r.msg ?? "Partial close failed" };

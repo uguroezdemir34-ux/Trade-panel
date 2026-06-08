@@ -1,34 +1,45 @@
-/**
- * BALANCE POLLER — OKX USDT bakiyesini periyodik çeker.
- *
- * - İlk yüklemede hemen çeker
- * - Sonra her 60s'de günceller
- * - accountStore.setBalance() yazar
- */
-
 "use client";
+
+/**
+ * BALANCE POLLER — USDT bakiyesini periyodik çeker.
+ *
+ * activeExchange'e göre doğru borsadan çeker:
+ *   okx     → OKX /api/v5/account/balance
+ *   binance → Binance /fapi/v2/balance
+ *   bybit   → Bybit /v5/account/wallet-balance
+ */
 
 import { useEffect, useRef } from "react";
 import { useAccountStore } from "@/lib/store/accountStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { fetchBalanceDetailed } from "@/lib/okx/balance";
+import { fetchBinanceBalance } from "@/lib/binance/balance";
+import { fetchBybitBalance } from "@/lib/bybit/balance";
 
 const POLL_INTERVAL_MS = 60_000;
 
 export function useBalancePoller(delayMs = 0): void {
   const setBalance = useAccountStore((s) => s.setBalance);
   const setBalanceFetchError = useAccountStore((s) => s.setBalanceFetchError);
-  const demoMode = useSettingsStore((s) => s.demoMode);
-  const okxProd = useCredentialStore((s) => s.okxProd);
-  const okxDemo = useCredentialStore((s) => s.okxDemo);
   const credsLoaded = useCredentialStore((s) => s._loaded);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function poll(): Promise<void> {
-    const clientCreds = demoMode ? okxDemo : okxProd;
-    const result = await fetchBalanceDetailed(demoMode, clientCreds);
+    const { okxProd, okxDemo, bnbFutures, bybitFutures } = useCredentialStore.getState();
+    const { demoMode, activeExchange } = useSettingsStore.getState();
+
+    let result;
+    if (activeExchange === "binance") {
+      result = await fetchBinanceBalance(bnbFutures);
+    } else if (activeExchange === "bybit") {
+      result = await fetchBybitBalance(bybitFutures);
+    } else {
+      const clientCreds = demoMode ? okxDemo : okxProd;
+      result = await fetchBalanceDetailed(demoMode, clientCreds);
+    }
+
     if (result.ok) {
       setBalance(result.total, result.free);
     } else {
@@ -40,13 +51,13 @@ export function useBalancePoller(delayMs = 0): void {
     if (!credsLoaded) return;
 
     startTimerRef.current = setTimeout(() => {
-      poll();
-      timerRef.current = setInterval(poll, POLL_INTERVAL_MS);
+      void poll();
+      timerRef.current = setInterval(() => void poll(), POLL_INTERVAL_MS);
     }, delayMs);
     return () => {
       if (startTimerRef.current) clearTimeout(startTimerRef.current);
       if (timerRef.current) clearInterval(timerRef.current);
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [demoMode, okxProd, okxDemo, credsLoaded]);
+  }, [credsLoaded]);
 }
