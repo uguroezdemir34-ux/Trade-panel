@@ -90,22 +90,8 @@ export function QuickTradeSheet(): React.ReactElement {
 
     try {
       const adapter = getAdapter(demoMode);
-      const tradeSnap = openPending({
-        pair,
-        direction,
-        entryPrice: currentPrice,
-        qty,
-        leverage: DEFAULT_LEVERAGE,
-        stopPrice: slPrice,
-        riskAmountUsd: riskUsd,
-        isPaper: demoMode,
-        entryContext: {
-          score: 0,
-          verdict: "go",
-          reasonText: "Quick trade (mobile)",
-        },
-      });
 
+      // Exchange çağrısı ÖNCE — başarısız olursa store'a hiç yazılmaz
       const result = await adapter.openPosition({
         pair,
         direction,
@@ -116,6 +102,22 @@ export function QuickTradeSheet(): React.ReactElement {
       });
 
       if (result.ok) {
+        // Exchange kabul etti → şimdi store'a yaz
+        const tradeSnap = openPending({
+          pair,
+          direction,
+          entryPrice: currentPrice,
+          qty,
+          leverage: DEFAULT_LEVERAGE,
+          stopPrice: slPrice,
+          riskAmountUsd: riskUsd,
+          isPaper: demoMode,
+          entryContext: {
+            score: 0,
+            verdict: "go",
+            reasonText: "Quick trade (mobile)",
+          },
+        });
         confirmTradeOpen(tradeSnap.id, result.data?.orderId);
         haptics.success();
         setSuccess(true);

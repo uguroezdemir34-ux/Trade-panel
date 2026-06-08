@@ -97,7 +97,7 @@ function parseRow(row: BybitPositionRow): Position | null {
     liqPx: liqPxRaw > 0 ? liqPxRaw : null,
     slTriggerPx: isFinite(slRaw) && slRaw > 0 ? slRaw : null,
     tpTriggerPx: isFinite(tpRaw) && tpRaw > 0 ? tpRaw : null,
-    cTime: parseInt(row.createdTime) || Date.now(),
+    cTime: parseInt(row.createdTime, 10) || Date.now(),
   };
 }
 

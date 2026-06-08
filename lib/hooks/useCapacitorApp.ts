@@ -75,7 +75,9 @@ export function useCapacitorApp(): void {
     })();
 
     return () => {
-      cleanupFns.forEach((fn) => fn());
+      cleanupFns.forEach((fn) => {
+        try { fn(); } catch { /* ignore cleanup errors */ }
+      });
     };
   }, []);
 }
