@@ -31,6 +31,7 @@ export default function PozisyonPage() {
   const openTrades = trades.filter((t) => t.status === "open");
 
   const [confirmPosition, setConfirmPosition] = useState<Position | null>(null);
+  const [confirmCloseAll, setConfirmCloseAll] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
   const [closingAll, setClosingAll] = useState(false);
 
@@ -92,14 +93,34 @@ export default function PozisyonPage() {
           {positions.length > 1 && (
             <>
               <PortfolioSummaryBanner positions={positions} />
-              <button
-                type="button"
-                onClick={handleCloseAll}
-                disabled={closingAll || !!closingInstId}
-                className="w-full rounded border border-signal-red/40 bg-signal-red/5 py-2 font-mono text-xs font-bold tracking-widest text-signal-red/80 transition-colors hover:bg-signal-red/15 disabled:opacity-40 disabled:cursor-wait"
-              >
-                {closingAll ? `${t("position.closing")}…` : `✕ ${t("position.closeButton")} (${positions.length})`}
-              </button>
+              {!confirmCloseAll ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmCloseAll(true)}
+                  disabled={closingAll || !!closingInstId}
+                  className="w-full rounded border border-signal-red/40 bg-signal-red/5 py-2 font-mono text-xs font-bold tracking-widest text-signal-red/80 transition-colors hover:bg-signal-red/15 disabled:opacity-40 disabled:cursor-wait"
+                >
+                  ✕ {t("position.closeButton")} ({positions.length})
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { void handleCloseAll(); setConfirmCloseAll(false); }}
+                    disabled={closingAll}
+                    className="flex-1 rounded border border-signal-red/70 bg-signal-red/15 py-2 font-mono text-xs font-bold tracking-widest text-signal-red transition-colors hover:bg-signal-red/25 disabled:opacity-40 disabled:cursor-wait"
+                  >
+                    {closingAll ? `${t("position.closing")}…` : `⚠ Onayla — ${positions.length} pozisyon`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmCloseAll(false)}
+                    className="rounded border border-border px-4 py-2 font-mono text-xs text-text-t3 hover:text-text-t2 transition-colors"
+                  >
+                    İptal
+                  </button>
+                </div>
+              )}
             </>
           )}
           {positions.map((pos) => {
