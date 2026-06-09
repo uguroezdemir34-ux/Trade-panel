@@ -39,7 +39,7 @@ export function formatNotifyMessage(msg: NotifyMessage): string {
     case "consecutive_loss":
       return formatConsecutiveLoss(msg);
     case "sl_proximity":
-      return `⚠️ SL YAKLAŞIYOR — ${msg.pair ?? "—"} ${msg.direction ?? ""}\nFiyat: $${msg.entry?.toFixed(4) ?? "—"}  SL: $${msg.stopPrice?.toFixed(4) ?? "—"}${msg.reasonText ? ` (${msg.reasonText})` : ""}`;
+      return formatSlProximity(msg);
     case "test":
       return formatTest(msg);
     default: {
@@ -251,6 +251,25 @@ function formatConsecutiveLoss(msg: NotifyMessage): string {
     const date = new Date(msg.timestamp);
     const timeStr = `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;
     lines.push(`⏰ ${escapeMarkdownV2(timeStr)}`);
+  }
+  return lines.join("\n");
+}
+
+// ═══════════════ SL PROXIMITY ═══════════════
+
+function formatSlProximity(msg: NotifyMessage): string {
+  const lines: string[] = [];
+  lines.push("⛔ " + bold("SL YAKINLIK UYARISI"));
+  lines.push("");
+  lines.push(bold(msg.pair ?? "—") + (msg.direction ? " " + escapeMarkdownV2(msg.direction) : ""));
+  if (msg.entry !== undefined) {
+    lines.push(`Mevcut: ${formatUsdMd2(msg.entry)}`);
+  }
+  if (msg.stopPrice !== undefined) {
+    lines.push(`Stop: ${formatUsdMd2(msg.stopPrice)}`);
+  }
+  if (msg.reasonText) {
+    lines.push(escapeMarkdownV2(msg.reasonText));
   }
   return lines.join("\n");
 }

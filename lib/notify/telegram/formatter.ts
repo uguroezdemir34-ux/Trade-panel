@@ -255,14 +255,14 @@ function formatConsecutiveLoss(msg: NotifyMessage): string {
   return lines.join("\n");
 }
 
-// ═══════════════ SL PROXIMITY ════════════════
+// ═══════════════ SL PROXIMITY ═══════════════
 
 function formatSlProximity(msg: NotifyMessage): string {
   const lines: string[] = [];
   lines.push("⚠️ " + bold("SL YAKLAŞIYOR"));
   lines.push("");
   const dirLabel = msg.direction === "LONG" ? "LONG ↓" : "SHORT ↑";
-  lines.push(bold(`${msg.pair ?? "—"} · ${escapeMarkdownV2(dirLabel)}`))
+  lines.push(bold(`${msg.pair ?? "—"} · ${escapeMarkdownV2(dirLabel)}`));
   if (msg.entry !== undefined) {
     lines.push(`Fiyat: ${formatUsdMd2(msg.entry)}`);
   }

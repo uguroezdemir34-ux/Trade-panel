@@ -28,7 +28,7 @@ export function formatDiscordMessage(msg: NotifyMessage): string {
     case "consecutive_loss":
       return formatConsecutiveLoss(msg);
     case "sl_proximity":
-      return `⚠️ **SL YAKLAŞIYOR** — ${msg.pair ?? "—"} ${msg.direction ?? ""}\nFiyat: $${msg.entry?.toFixed(4) ?? "—"}  SL: $${msg.stopPrice?.toFixed(4) ?? "—"}${msg.reasonText ? `  (${msg.reasonText})` : ""}`;
+      return formatSlProximity(msg);
     case "test":
       return "**QUANTIX Discord Test**\n\nBot connection working ✓";
     default: {
@@ -36,6 +36,25 @@ export function formatDiscordMessage(msg: NotifyMessage): string {
       throw new Error(`Unknown notify kind: ${_exhaustive}`);
     }
   }
+}
+
+// ═══════════════ SL PROXIMITY ═══════════════
+
+function formatSlProximity(msg: NotifyMessage): string {
+  const lines: string[] = [];
+  lines.push("⛔ **SL PROXIMITY WARNING**");
+  lines.push("");
+  lines.push(`**${msg.pair ?? "—"}** ${msg.direction ?? ""}`);
+  if (msg.entry !== undefined) {
+    lines.push(`Current: ${fmtUsd(msg.entry)}`);
+  }
+  if (msg.stopPrice !== undefined) {
+    lines.push(`Stop: ${fmtUsd(msg.stopPrice)}`);
+  }
+  if (msg.reasonText) {
+    lines.push(`⚠️ ${msg.reasonText}`);
+  }
+  return lines.join("\n");
 }
 
 // ═══════════════ HELPERS ═══════════════

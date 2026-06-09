@@ -121,7 +121,9 @@ export type OrchestratorDecision =
   | "blocked_correlation" // aynı yönde çok fazla açık pozisyon var
   | "blocked_exposure"   // kümülatif marjin equity cap'ini aşıyor
   // Başarısız
-  | "failed_exchange"; // adapter.openPosition başarısız
+  | "failed_exchange"    // adapter.openPosition başarısız
+  // Execution kapalı
+  | "execution_disabled"; // EXECUTION_ENABLED=false — sinyal/notify gider, emir gitmez
 
 // ═══════════════ OUTPUT ═══════════════
 

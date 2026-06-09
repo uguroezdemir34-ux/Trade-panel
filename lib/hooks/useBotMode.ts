@@ -24,6 +24,7 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCandleStore } from "@/lib/store/candleStore";
 import { orchestrate } from "@/lib/orchestrator/router";
 import { getAdapter } from "@/lib/exchange";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 import { createChannel } from "@/lib/notify/registry";
 import { getGlobalDedupeStore } from "@/lib/orchestrator/dedupe";
 import { computePositionSize } from "@/lib/sizer/position";
@@ -97,6 +98,8 @@ async function runBotExecution(
   maxTradesPerDay: number,
   now: number,
 ): Promise<void> {
+  // Execution kapalı — orchestrate() yine de notify kanallarına GO sinyali gönderir
+  if (!EXECUTION_ENABLED) return;
   if (!result) return;
   if (result.direction !== "LONG" && result.direction !== "SHORT") return;
 

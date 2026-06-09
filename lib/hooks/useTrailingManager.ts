@@ -12,6 +12,7 @@ import { useEffect, useRef } from "react";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useCandleStore } from "@/lib/store/candleStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 import { TrailingManager } from "@/lib/trailing/manager";
 import { setActiveTrailingManager } from "@/lib/trailing/managerRef";
 import { getAdapter } from "@/lib/exchange";
@@ -37,6 +38,9 @@ export function useTrailingManager(): void {
   const demoMode = useSettingsStore((s) => s.demoMode);
 
   useEffect(() => {
+    // Execution kapalıyken trailing manager başlatılmaz
+    if (!EXECUTION_ENABLED) return;
+
     // Stop mevcut manager varsa
     managerRef.current?.stop();
 

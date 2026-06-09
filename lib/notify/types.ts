@@ -34,7 +34,7 @@ export type NotifyKind =
   | "price_alarm"
   | "score_momentum"
   | "consecutive_loss"
-  | "sl_proximity"
+  | "sl_proximity"  // SL yaklaştığında veya ihlal uyarısı
   | "test"; // health check
 
 /**

@@ -1,19 +1,12 @@
 "use client";
 
 /**
- * EMERGENCY STOP GUARD — İkinci katman stop-loss koruması.
+ * EMERGENCY STOP GUARD — İkinci katman stop-loss izleme.
  *
- * OKX/Binance/Bybit algo emri tetiklenmediği durumda (gapdown, bağlantı
- * kesintisi, vb.) client tarafında fiyatı izler ve SL seviyesi aşılınca
- * pozisyonu kapatır. Aktif borsaya göre doğru adapter kullanılır.
- *
- * Çalışma prensibi:
- *   - 5s'de bir tüm açık trade'lerin fiyatını kontrol eder
- *   - LONG: fiyat ≤ slPrice × (1 - buffer) ise → acil kapat
- *   - SHORT: fiyat ≥ slPrice × (1 + buffer) ise → acil kapat
- *   - positionStore'dan gerçek instId alınır (borsa bağımsız format)
- *   - closingSet ile çift-tetikleme engellenir
- *   - Başarısız kapatma → sonraki döngüde tekrar denenir
+ * EXECUTION_ENABLED=true: SL ihlalinde adapter.closePosition() çağrılır.
+ * EXECUTION_ENABLED=false: SL ihlalinde Telegram + browser uyarısı gönderilir,
+ *   emir GÖNDERİLMEZ. Kullanıcı pozisyonu borsadan manuel kapatmalıdır.
+ *   Her trade için 5 dakikada bir uyarı tekrarlanır (spam koruması).
  */
 
 import { useEffect, useRef } from "react";
@@ -22,20 +15,20 @@ import { useMarketStore } from "@/lib/store/marketStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { getAdapter } from "@/lib/exchange";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
+import { createChannel } from "@/lib/notify/registry";
+import { browserNotify } from "@/lib/notify/browser";
 
 const CHECK_INTERVAL_MS = 5_000;
-
-// SL fiyatı bu kadar aşılınca exchange algo emrinin kaçırdığı kabul edilir.
-// %0.15 buffer: normal volatilite değil, gerçek breach.
 const SL_BREACH_BUFFER = 0.0015;
-
-// Fiyat verisinin bu süreden daha eski olması durumunda guard devre dışı kalır
-// (stale veri ile yanlış tetikleme riski)
 const MAX_PRICE_STALE_MS = 15_000;
+// Execution kapalıyken aynı trade için uyarı tekrar süresi
+const WARN_COOLDOWN_MS = 5 * 60_000;
 
 export function useEmergencyStopGuard(): void {
   const demoMode = useSettingsStore((s) => s.demoMode);
   const closingRef = useRef<Set<string>>(new Set());
+  const warnedRef = useRef<Map<string, number>>(new Map()); // id → last warned ts
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const demoRef = useRef(demoMode);
   demoRef.current = demoMode;
@@ -55,8 +48,6 @@ export function useEmergencyStopGuard(): void {
 
         const tick = prices[trade.pair];
         if (!tick || tick.last <= 0) continue;
-
-        // Stale fiyat → bekle (WS kesilmiş olabilir, yanlış tetikleme riski)
         if (tick.ts && now - tick.ts > MAX_PRICE_STALE_MS) continue;
 
         const price = tick.last;
@@ -69,7 +60,33 @@ export function useEmergencyStopGuard(): void {
 
         if (!breached) continue;
 
-        // positionStore'dan gerçek instId al — borsa bağımsız format (OKX:"BTC-USDT-SWAP", BNB:"BTCUSDT")
+        if (!EXECUTION_ENABLED) {
+          // ── Execution kapalı: uyar, emir gönderme ──
+          const lastWarned = warnedRef.current.get(trade.id) ?? 0;
+          if (now - lastWarned < WARN_COOLDOWN_MS) continue;
+          warnedRef.current.set(trade.id, now);
+
+          const msg = `⛔ SL İHLALİ — ${trade.direction} ${trade.pair} fiyat=${price.toFixed(4)} sl=${sl.toFixed(4)} — Pozisyonu borsadan kapatın!`;
+          console.warn("[EmergencyStopGuard]", msg);
+
+          browserNotify("⛔ Acil Stop Uyarısı", `${trade.pair} SL seviyesi aşıldı — OKX'ten kapatın`);
+
+          const channel = createChannel("telegram");
+          if (channel.isConfigured()) {
+            void channel.send({
+              kind: "sl_proximity",
+              pair: trade.pair,
+              direction: trade.direction,
+              entry: price,
+              stopPrice: sl,
+              reasonText: `⛔ SL İHLALİ — Pozisyonu borsadan manuel kapatın!`,
+              timestamp: now,
+            }).catch(() => {});
+          }
+          continue;
+        }
+
+        // ── Execution açık: pozisyonu kapat ──
         const position = positions.find(
           (p) => p.pair === trade.pair && p.direction === trade.direction,
         );
@@ -81,7 +98,6 @@ export function useEmergencyStopGuard(): void {
         );
 
         closingRef.current.add(trade.id);
-
         const adapter = getAdapter(demoRef.current);
         const posSide =
           position.posSide === "long" || position.posSide === "short"
@@ -105,9 +121,7 @@ export function useEmergencyStopGuard(): void {
             });
             console.log(`[EmergencyStop] ${trade.pair} başarıyla kapatıldı`);
           } else {
-            console.error(
-              `[EmergencyStop] kapatma başarısız: ${result.errorMessage} — sonraki döngüde tekrar denenecek`,
-            );
+            console.error(`[EmergencyStop] kapatma başarısız: ${result.errorMessage}`);
             closingRef.current.delete(trade.id);
           }
         } catch (e) {
@@ -118,7 +132,6 @@ export function useEmergencyStopGuard(): void {
     }
 
     timerRef.current = setInterval(() => void check(), CHECK_INTERVAL_MS);
-
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };

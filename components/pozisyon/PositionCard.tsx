@@ -40,7 +40,7 @@ export function PositionCard({
   tradeTp2,
 }: {
   position: Position;
-  onClose: () => void;
+  onClose?: () => void;
   isClosing: boolean;
   onScaleIn?: (qty: number) => Promise<void>;
   onScaleOut?: (qty: number) => Promise<void>;
@@ -583,19 +583,21 @@ export function PositionCard({
         </div>
       )}
 
-      {/* Close button */}
-      <button
-        type="button"
-        onClick={onClose}
-        disabled={isClosing}
-        className={`mt-4 w-full rounded-md py-2.5 font-mono text-sm font-bold tracking-widest transition-colors ${
-          isClosing
-            ? "bg-border text-text-t4 cursor-wait"
-            : "border-signal-red text-signal-red hover:bg-signal-red hover:text-white border bg-transparent"
-        }`}
-      >
-        {isClosing ? t("position.closing") : `✕ ${t("position.closeButton")}`}
-      </button>
+      {/* Close button — hidden when execution disabled (onClose=undefined) */}
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          disabled={isClosing}
+          className={`mt-4 w-full rounded-md py-2.5 font-mono text-sm font-bold tracking-widest transition-colors ${
+            isClosing
+              ? "bg-border text-text-t4 cursor-wait"
+              : "border-signal-red text-signal-red hover:bg-signal-red hover:text-white border bg-transparent"
+          }`}
+        >
+          {isClosing ? t("position.closing") : `✕ ${t("position.closeButton")}`}
+        </button>
+      )}
     </div>
   );
 }

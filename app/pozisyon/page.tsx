@@ -10,6 +10,7 @@ import { TradeTimelineCard } from "@/components/pozisyon/TradeTimelineCard";
 import { CloseConfirmModal } from "@/components/pozisyon/CloseConfirmModal";
 import { PortfolioSummaryBanner } from "@/components/pozisyon/PortfolioSummaryBanner";
 import { getAdapter } from "@/lib/exchange";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 import { useT } from "@/lib/i18n/context";
 import type { Position } from "@/lib/okx/positions";
 
@@ -36,6 +37,10 @@ export default function PozisyonPage() {
   const [closingAll, setClosingAll] = useState(false);
 
   async function handleClose(pos: Position) {
+    if (!EXECUTION_ENABLED) {
+      setCloseError("Emir gönderme devre dışı. Pozisyonu OKX uygulamasından veya web panelinden kapatın.");
+      return;
+    }
     setCloseError(null);
     setClosingInstId(pos.instId);
     try {
@@ -86,6 +91,16 @@ export default function PozisyonPage() {
 
   return (
     <div className="flex flex-col gap-4">
+
+      {/* Execution devre dışı banner */}
+      {!EXECUTION_ENABLED && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-mono text-xs text-amber-400">
+          <span className="font-bold tracking-widest mr-2">⚙ SİNYAL MODU</span>
+          Emir yönetimi devre dışı. Pozisyonları OKX, Binance veya Bybit
+          uygulamasından yönetin.
+        </div>
+      )}
+
       {positions.length === 0 ? (
         <PositionEmptyState />
       ) : (
@@ -124,7 +139,6 @@ export default function PozisyonPage() {
             </>
           )}
           {positions.map((pos) => {
-            // Find most-recent open trade matching this position for Layer 2 sync
             const matchingTrade = openTrades
               .filter((t) => t.pair === pos.pair && t.direction === pos.direction)
               .sort((a, b) => b.openedAt - a.openedAt)[0];
@@ -133,12 +147,12 @@ export default function PozisyonPage() {
               <PositionCard
                 key={pos.instId}
                 position={pos}
-                onClose={() => setConfirmPosition(pos)}
+                onClose={EXECUTION_ENABLED ? () => setConfirmPosition(pos) : undefined}
                 isClosing={closingInstId === pos.instId}
                 tradeSl={matchingTrade?.stopPrice ?? null}
                 tradeTp1={matchingTrade?.takeProfit1 ?? null}
                 tradeTp2={matchingTrade?.takeProfit2 ?? null}
-                onScaleIn={async (qty) => {
+                onScaleIn={EXECUTION_ENABLED ? async (qty) => {
                   const adapter = getAdapter(demoMode);
                   const res = await adapter.openPosition({
                     pair: pos.pair,
@@ -148,8 +162,8 @@ export default function PozisyonPage() {
                     marginMode: pos.mgnMode,
                   });
                   if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
-                }}
-                onScaleOut={async (qty) => {
+                } : undefined}
+                onScaleOut={EXECUTION_ENABLED ? async (qty) => {
                   const adapter = getAdapter(demoMode);
                   const res = await adapter.partialClosePosition({
                     instId: pos.instId,
@@ -158,10 +172,8 @@ export default function PozisyonPage() {
                     qty,
                   });
                   if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
-                }}
-                onUpdateSlTp={async (slPrice, tp1Price, tp2Price) => {
-                  // Layer 1: exchange algo orders
-                  // toAdapterPrice: null/0/negative → undefined (don't place order)
+                } : undefined}
+                onUpdateSlTp={EXECUTION_ENABLED ? async (slPrice, tp1Price, tp2Price) => {
                   const adapter = getAdapter(demoMode);
                   const res = await adapter.updateSlTp({
                     instId: pos.instId,
@@ -173,7 +185,7 @@ export default function PozisyonPage() {
                     tp2Price: toAdapterPrice(tp2Price),
                   });
                   if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
-                  // Layer 2: tradesStore sync — re-lookup after await to avoid stale closure
+                  // re-lookup after await to avoid stale closure
                   const fresh = useTradesStore
                     .getState()
                     .trades.filter(
@@ -186,7 +198,7 @@ export default function PozisyonPage() {
                   if (fresh) {
                     updateTradeSlTp(fresh.id, slPrice, tp1Price, tp2Price);
                   }
-                }}
+                } : undefined}
               />
             );
           })}
@@ -201,7 +213,7 @@ export default function PozisyonPage() {
 
       <TradeTimelineCard trades={trades} limit={10} />
 
-      {confirmPosition && (
+      {confirmPosition && EXECUTION_ENABLED && (
         <CloseConfirmModal
           position={confirmPosition}
           onClose={() => setConfirmPosition(null)}
