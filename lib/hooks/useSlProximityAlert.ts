@@ -13,6 +13,7 @@
 import { useEffect, useRef } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMarketStore } from "@/lib/store/marketStore";
+import { useSettingsStore } from "@/lib/store/settingsStore";
 import { createChannel } from "@/lib/notify/registry";
 
 const CHECK_INTERVAL_MS = 30_000; // 30 saniye
@@ -26,6 +27,8 @@ export function useSlProximityAlert(): void {
 
   useEffect(() => {
     async function check(): Promise<void> {
+      if (!useSettingsStore.getState().goAlertsEnabled) return;
+
       const openTrades = useTradesStore.getState().getOpen();
       if (openTrades.length === 0) return;
 
@@ -67,6 +70,7 @@ export function useSlProximityAlert(): void {
       }
     }
 
+    void check();
     timerRef.current = setInterval(() => void check(), CHECK_INTERVAL_MS);
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);

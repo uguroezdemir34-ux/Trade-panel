@@ -189,6 +189,7 @@ function TimelineItem({
             value={editNote}
             onChange={(e) => setEditNote(e.target.value)}
             onBlur={handleNoteSave}
+            onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleNoteSave(); }}
             placeholder="Not ekle… (odaktan çıkınca kaydedilir)"
             rows={2}
             className="w-full resize-none bg-transparent border border-border/40 rounded px-2 py-1 font-mono text-2xs text-text-t2 placeholder:text-text-t4 focus:outline-none focus:border-brand/50 transition-colors"
