@@ -262,7 +262,7 @@ function formatSlProximity(msg: NotifyMessage): string {
   lines.push("⚠️ " + bold("SL YAKLAŞIYOR"));
   lines.push("");
   const dirLabel = msg.direction === "LONG" ? "LONG ↓" : "SHORT ↑";
-  lines.push(bold(`${msg.pair ?? "—"} · ${escapeMarkdownV2(dirLabel)}`));
+  lines.push(bold(`${msg.pair ?? "—"} · ${escapeMarkdownV2(dirLabel)}`))
   if (msg.entry !== undefined) {
     lines.push(`Fiyat: ${formatUsdMd2(msg.entry)}`);
   }
