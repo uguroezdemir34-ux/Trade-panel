@@ -16,6 +16,7 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { getAdapter } from "@/lib/exchange";
 import { formatPrice } from "@/lib/i18n/format";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 import type { Pair } from "@/lib/constants/pairs";
 
 interface Props {
@@ -78,6 +79,11 @@ export function QuickTradePanel({ pair }: Props) {
   }
 
   async function executeOrder() {
+    if (!EXECUTION_ENABLED) {
+      setExecError("Sinyal modu — emir gönderme devre dışı.");
+      setPending(false);
+      return;
+    }
     if (timerRef.current) clearTimeout(timerRef.current);
     setPending(false);
     setExecuting(true);
@@ -230,7 +236,11 @@ export function QuickTradePanel({ pair }: Props) {
       )}
 
       {/* Execute / Countdown */}
-      {!pending ? (
+      {!EXECUTION_ENABLED ? (
+        <div className="rounded border border-amber-500/30 bg-amber-500/10 py-2 text-center font-mono text-2xs text-amber-400">
+          ⚙ Sinyal modu — emir gönderme devre dışı
+        </div>
+      ) : !pending ? (
         <button
           onClick={startPending}
           disabled={executing}

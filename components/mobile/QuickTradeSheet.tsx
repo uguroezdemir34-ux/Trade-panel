@@ -21,6 +21,7 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { getAdapter } from "@/lib/exchange";
 import { useHaptics } from "@/lib/hooks/useHaptics";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 
 const DEFAULT_LEVERAGE = 10;
 const DEFAULT_SL_PCT = 0.02; // %2 varsayılan SL
@@ -83,6 +84,10 @@ export function QuickTradeSheet(): React.ReactElement {
   );
 
   const handleSubmit = useCallback(async () => {
+    if (!EXECUTION_ENABLED) {
+      setError("Sinyal modu — emir gönderme devre dışı.");
+      return;
+    }
     if (loading || qty <= 0 || currentPrice <= 0) return;
     haptics.heavy();
     setLoading(true);
@@ -161,8 +166,8 @@ export function QuickTradeSheet(): React.ReactElement {
 
   return (
     <>
-      {/* FAB — sağ alt köşe, bottom nav üstünde */}
-      <button
+      {/* FAB — sağ alt köşe, bottom nav üstünde — sinyal modda gizle */}
+      {EXECUTION_ENABLED && <button
         onClick={handleOpen}
         className={[
           "fixed z-50 flex items-center justify-center",
@@ -178,7 +183,7 @@ export function QuickTradeSheet(): React.ReactElement {
         aria-label="Hızlı İşlem"
       >
         +
-      </button>
+      </button>}
 
       {/* Overlay */}
       {open && (
