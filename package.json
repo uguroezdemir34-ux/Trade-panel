@@ -27,7 +27,10 @@
     "mobile:sync": "npx cap sync",
     "mobile:ios": "npx cap open ios",
     "mobile:android": "npx cap open android",
-    "mobile:build": "npm run build && npx cap sync"
+    "mobile:build": "npm run build && npx cap sync",
+    "mobile:icons": "npx @capacitor/assets generate --ios --android --pwa",
+    "mobile:add-ios": "npx cap add ios && npx cap sync",
+    "mobile:add-android": "npx cap add android && npx cap sync"
   },
   "dependencies": {
     "@capacitor/app": "^6.0.2",
@@ -67,6 +70,7 @@
     "tsx": "^4.22.3",
     "typescript": "5.7.2",
     "vitest": "2.1.8",
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/cli": "^6.2.0"
   }
 }

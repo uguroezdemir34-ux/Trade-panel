@@ -15,16 +15,28 @@
   "categories": ["finance", "productivity"],
   "icons": [
     {
-      "src": "/icon.svg",
-      "type": "image/svg+xml",
-      "sizes": "any",
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
       "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     },
     {
       "src": "/icon.svg",
       "type": "image/svg+xml",
       "sizes": "any",
-      "purpose": "maskable"
+      "purpose": "any"
     }
   ],
   "shortcuts": [
@@ -33,32 +45,57 @@
       "short_name": "Karar",
       "description": "Algoritmik sinyal — GO/WAIT/NO",
       "url": "/karar",
-      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Açık Pozisyonlar",
       "short_name": "Pozisyon",
       "description": "Canlı pozisyon ve P&L",
       "url": "/pozisyon",
-      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Piyasa",
       "short_name": "Piyasa",
       "description": "15 parite canlı fiyat",
       "url": "/piyasa",
-      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     },
     {
       "name": "Risk",
       "short_name": "Risk",
       "description": "Drawdown protokolü",
       "url": "/risk",
-      "icons": [{ "src": "/icon.svg", "sizes": "any" }]
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
-  "screenshots": [],
-  "related_applications": [],
+  "screenshots": [
+    {
+      "src": "/screenshots/karar.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "Sinyal Motoru",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/pozisyon.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "Pozisyonlar",
+      "form_factor": "narrow"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.quantixos.trading",
+      "id": "com.quantixos.trading"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/quantix-os/id0000000000"
+    }
+  ],
   "prefer_related_applications": false,
   "edge_side_panel": {
     "preferred_width": 480

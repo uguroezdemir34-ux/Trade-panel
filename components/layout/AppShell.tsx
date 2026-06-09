@@ -54,6 +54,7 @@ import { useEmergencyStopGuard } from "@/lib/hooks/useEmergencyStopGuard";
 import { useSlProximityAlert } from "@/lib/hooks/useSlProximityAlert";
 import { useCapacitorApp } from "@/lib/hooks/useCapacitorApp";
 import { QuickTradeSheet } from "@/components/mobile/QuickTradeSheet";
+import { DisclaimerModal } from "./DisclaimerModal";
 import { useAuthStub } from "@/lib/auth/stubs";
 import { setCurrentUserId } from "@/lib/auth/scope";
 import { migrateStorageForUser } from "@/lib/auth/migrate";
@@ -178,6 +179,7 @@ export function AppShell({
   return (
     <div className="bg-bg text-text-t1 min-h-screen">
       <ThemeSync />
+      <DisclaimerModal />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />
       <AlarmToastContainer />
