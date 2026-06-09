@@ -64,6 +64,10 @@ export default function PozisyonPage() {
   }
 
   async function handleCloseAll() {
+    if (!EXECUTION_ENABLED) {
+      setCloseError("Emir gönderme devre dışı. Pozisyonları OKX, Binance veya Bybit uygulamasından kapatın.");
+      return;
+    }
     if (closingAll || positions.length === 0) return;
     setClosingAll(true);
     setCloseError(null);
@@ -108,7 +112,7 @@ export default function PozisyonPage() {
           {positions.length > 1 && (
             <>
               <PortfolioSummaryBanner positions={positions} />
-              {!confirmCloseAll ? (
+              {EXECUTION_ENABLED && (!confirmCloseAll ? (
                 <button
                   type="button"
                   onClick={() => setConfirmCloseAll(true)}
@@ -135,7 +139,7 @@ export default function PozisyonPage() {
                     İptal
                   </button>
                 </div>
-              )}
+              ))}
             </>
           )}
           {positions.map((pos) => {
