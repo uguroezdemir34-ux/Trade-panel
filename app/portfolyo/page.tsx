@@ -9,8 +9,9 @@ import { VaRCard } from "@/components/portfolio/VaRCard";
 import { CorrelationMatrix } from "@/components/portfolio/CorrelationMatrix";
 import { PortfolioOverviewCard } from "@/components/portfolio/PortfolioOverviewCard";
 import { GoSignalLog } from "@/components/karar/GoSignalLog";
+import { CopyTradingCard } from "@/components/copy-trading/CopyTradingCard";
 
-type SubTab = "pozisyon" | "risk" | "pnl" | "analitik" | "sinyaller";
+type SubTab = "pozisyon" | "risk" | "pnl" | "analitik" | "sinyaller" | "takip";
 
 const SUB_TABS: { id: SubTab; labelKey: string }[] = [
   { id: "pozisyon", labelKey: "nav.position" },
@@ -18,6 +19,7 @@ const SUB_TABS: { id: SubTab; labelKey: string }[] = [
   { id: "pnl", labelKey: "nav.pnl" },
   { id: "analitik", labelKey: "portfolio.analyticsTab" },
   { id: "sinyaller", labelKey: "portfolio.signalsTab" },
+  { id: "takip", labelKey: "portfolio.copyTab" },
 ];
 
 export default function PortfolyoPage() {
@@ -29,7 +31,7 @@ export default function PortfolyoPage() {
       {/* Portfolio equity overview — always visible above tabs */}
       <PortfolioOverviewCard />
 
-      {/* Sub-tab bar — scrollable so 5 tabs fit on narrow phones */}
+      {/* Sub-tab bar — scrollable so 6 tabs fit on narrow phones */}
       <div className="border-b border-border bg-bg-card sticky top-0 z-10 overflow-x-auto scrollbar-none">
         <div className="flex min-w-max">
           {SUB_TABS.map((tab) => (
@@ -70,8 +72,12 @@ export default function PortfolyoPage() {
             } />
           </div>
         )}
+        {active === "takip" && (
+          <div className="p-4">
+            <CopyTradingCard />
+          </div>
+        )}
       </div>
     </div>
   );
 }
-
