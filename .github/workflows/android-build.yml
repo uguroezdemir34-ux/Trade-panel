@@ -71,6 +71,43 @@ jobs:
       - name: Print variables.gradle (SDK confirmation)
         run: cat android/variables.gradle
 
+      # Siyah ekran teşhisi — Activity katmanını WebView'dan ayırt etmek için:
+      # 1. styles.xml print → Capacitor 7'nin ürettiği tema yapısını gör
+      # 2. AppTheme.NoActionBarLaunch parent'ı Theme.SplashScreen ise → AppTheme.NoActionBar'a çevir
+      #    (Theme.SplashScreen, HyperOS 3'te sistem splash'ını freeze edebilir)
+      # 3. AppTheme'e android:windowBackground=#FF0000 ekle
+      #    Eğer test7 APK kırmızı gösterirse → Activity render ediyor, sorun WebView katmanında
+      #    Eğer hâlâ siyah → sorun Activity/theme katmanında (daha derin native sorun)
+      - name: Patch styles.xml — remove Theme.SplashScreen + red window background
+        run: |
+          python3 - << 'PYEOF'
+          import re
+          path = "android/app/src/main/res/values/styles.xml"
+          content = open(path).read()
+          print("=== ORIGINAL styles.xml ===")
+          print(content)
+          print("===========================")
+
+          # Theme.SplashScreen parent'ı kaldır — HyperOS 3'te sistem splash dondurabilir
+          content = content.replace(
+              'parent="Theme.SplashScreen"',
+              'parent="AppTheme.NoActionBar"'
+          )
+          # Splash-screen'e özgü item'ları temizle
+          content = re.sub(r'\s*<item name="windowSplashScreen[^"]*">[^<]*</item>', '', content)
+          content = re.sub(r'\s*<item name="postSplashScreenTheme">[^<]*</item>', '', content)
+
+          # AppTheme'e kırmızı window background ekle (Activity render ediyor mu test)
+          content = content.replace(
+              'parent="Theme.AppCompat.Light.NoActionBar">',
+              'parent="Theme.AppCompat.Light.NoActionBar">\n        <item name="android:windowBackground">#FF0000</item>'
+          )
+
+          open(path, "w").write(content)
+          print("=== PATCHED styles.xml ===")
+          print(open(path).read())
+          PYEOF
+
       - name: Sync Capacitor assets
         run: npx cap sync android
         env:
