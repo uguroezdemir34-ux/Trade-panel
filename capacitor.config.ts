@@ -20,7 +20,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
 
 const isProd = process.env.NODE_ENV === "production";
 const serverUrl =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://quantixos.vercel.app";
+  process.env.NEXT_PUBLIC_APP_URL ?? "https://quantix-os-new.vercel.app";
 
 const config: CapacitorConfig = {
   appId: "com.quantixos.trading",

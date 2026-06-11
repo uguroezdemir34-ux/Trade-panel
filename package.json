@@ -33,6 +33,7 @@
     "mobile:add-android": "npx cap add android && npx cap sync"
   },
   "dependencies": {
+    "@capacitor/android": "^6.2.0",
     "@capacitor/app": "^6.0.2",
     "@capacitor/browser": "^6.0.2",
     "@capacitor/core": "^6.2.0",
