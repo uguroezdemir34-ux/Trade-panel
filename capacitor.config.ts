@@ -22,7 +22,7 @@ const serverUrl =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://quantix-os-new.vercel.app";
 
 const config: CapacitorConfig = {
-  appId: "com.quantixos.trading",
+  appId: "com.quantixos.trading.test2",
   appName: "QUANTIX OS",
   webDir: "out",
 
