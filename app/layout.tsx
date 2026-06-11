@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import { ClerkProvider } from "@clerk/nextjs";
 import { AppShell } from "@/components/layout/AppShell";
 import { I18nProvider } from "@/lib/i18n/context";
 import { LocaleHtmlSync } from "@/components/layout/LocaleHtmlSync";
@@ -58,32 +59,34 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" dir="ltr" suppressHydrationWarning>
-      <head>
-        {/* Prevent theme FOUC — reads localStorage before React hydrates */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `try{var t=localStorage.getItem('ug52_theme');var v=t?JSON.parse(t):'dark';document.documentElement.setAttribute('data-theme',v);document.documentElement.style.colorScheme=v;}catch(e){}`,
-          }}
-        />
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin=""
-        />
-        {/* IBM Plex (Latin/Cyrillic) + Noto Sans families for CJK, Arabic, Devanagari */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
-      <body className="bg-bg text-text-t1 font-sans antialiased">
-        <I18nProvider>
-          <LocaleHtmlSync />
-          <AppShell>{children}</AppShell>
-        </I18nProvider>
-      </body>
-    </html>
+    <ClerkProvider>
+      <html lang="en" dir="ltr" suppressHydrationWarning>
+        <head>
+          {/* Prevent theme FOUC — reads localStorage before React hydrates */}
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `try{var t=localStorage.getItem('ug52_theme');var v=t?JSON.parse(t):'dark';document.documentElement.setAttribute('data-theme',v);document.documentElement.style.colorScheme=v;}catch(e){}`,
+            }}
+          />
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link
+            rel="preconnect"
+            href="https://fonts.gstatic.com"
+            crossOrigin=""
+          />
+          {/* IBM Plex (Latin/Cyrillic) + Noto Sans families for CJK, Arabic, Devanagari */}
+          <link
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;700&display=swap"
+            rel="stylesheet"
+          />
+        </head>
+        <body className="bg-bg text-text-t1 font-sans antialiased">
+          <I18nProvider>
+            <LocaleHtmlSync />
+            <AppShell>{children}</AppShell>
+          </I18nProvider>
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

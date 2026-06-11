@@ -1,15 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useAuth, useUser } from "@clerk/nextjs";
 
 export function useAuthStub() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  useEffect(() => { setIsLoaded(true); }, []);
-  return { userId: null as string | null, isLoaded };
+  const { userId, isLoaded } = useAuth();
+  return { userId: userId ?? null, isLoaded };
 }
 
 export function useUserStub() {
-  const [isLoaded, setIsLoaded] = useState(false);
-  useEffect(() => { setIsLoaded(true); }, []);
-  return { user: null as null, isLoaded };
+  const { user, isLoaded } = useUser();
+  return { user: user ?? null, isLoaded };
 }
