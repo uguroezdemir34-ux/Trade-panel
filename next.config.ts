@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
 
+// NEXT_OUTPUT=export → mobil APK static build (Capacitor webDir)
+// Vercel deployment bu env var'ı set etmez — server-side rendering devam eder
+const isMobileBuild = process.env.NEXT_OUTPUT === "export";
+
 const nextConfig: NextConfig = {
+  ...(isMobileBuild && {
+    output: "export" as const,
+    trailingSlash: true,  // Capacitor file:// routing için gerekli
+  }),
   reactStrictMode: true,
   poweredByHeader: false,
   typescript: {
@@ -10,7 +18,6 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
-  // OKX secret asla browser'a sızmamalı; sadece server-side env'den okunur.
   env: {
     APP_VERSION: "2.0.0",
   },

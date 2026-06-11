@@ -3,23 +3,15 @@ import type { CapacitorConfig } from "@capacitor/cli";
 /**
  * CAPACITOR CONFIG — QUANTIX OS native app wrapper.
  *
- * Native build adımları:
- *   1. npm install
- *   2. npx cap add ios      (macOS + Xcode gerekir)
- *   3. npx cap add android  (Android Studio gerekir)
- *   4. npx cap sync         (web assets'i native'e kopyala)
- *   5. npx cap open ios     (Xcode'u aç + App Store'a gönder)
- *   6. npx cap open android (Android Studio'yu aç + Play Store'a gönder)
+ * Mimari: local assets (APK'ya gömülü)
+ *   - webDir: "out"  →  next build (NEXT_OUTPUT=export) çıktısı APK'ya kopyalanır
+ *   - server.url YOK  →  uygulama kendi içindeki dosyaları açar, Vercel'e bağlanmaz
+ *   - API çağrıları (OKX, Clerk) hâlâ internete gider — sadece ilk yükleme lokale taşındı
  *
- * Önemli:
- *   - server.url → deployed Vercel URL'sine yönlendirir
- *   - webDir → offline-capable statik fallback (npx next export ile üret)
- *   - Apple Developer Account ($99/yıl) + Google Play ($25) gerekir
- *   - Trading uygulamaları App Store'da özel kategori gerektirebilir
+ * Mobil build:
+ *   NEXT_OUTPUT=export npm run build   →  out/ üretir
+ *   npx cap sync android               →  out/ → android/assets/public/ kopyalar
  */
-
-const serverUrl =
-  process.env.NEXT_PUBLIC_APP_URL ?? "https://quantix-os-new.vercel.app";
 
 const config: CapacitorConfig = {
   appId: "com.quantixos.trading.test7",
@@ -27,13 +19,11 @@ const config: CapacitorConfig = {
   webDir: "out",
 
   server: {
-    // server.url kaldırıldı — lokal webDir assets test (siyah ekran teşhisi)
-    // Vercel yüklemesi yerine out/ klasöründeki dosyalar doğrudan APK'dan açılır.
-    // Lokal açılırsa sorun remote/network, açılmazsa sorun WebView/JS tarafında.
+    // No server.url — APK kendi out/ içeriğini açar
     cleartext: false,
     androidScheme: "https",
     allowNavigation: [
-      serverUrl.replace("https://", ""),
+      "quantix-os-new.vercel.app",
       "*.quantixos.com",
       "*.clerk.accounts.dev",
       "*.clerk.dev",

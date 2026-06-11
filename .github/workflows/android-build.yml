@@ -34,12 +34,25 @@ jobs:
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
-      # Minimal kırmızı HTML — CSS/JS/font yok, sadece native WebView render test
-      # Kırmızı görünürse WebView çalışıyor, siyah kalırsa WebView render katmanı broken
-      - name: Create minimal red test page
+      # Gerçek Next.js static build → out/ APK'ya gömülür (production mimari)
+      # Build başarısız olursa (eksik secret vs.) diagnostic HTML fallback devreye girer
+      - name: Build Next.js (static export → out/)
         run: |
-          mkdir -p out
-          printf '<html><body style="margin:0;background:red"><h1 style="color:white;padding:20px;font-size:40px">NATIVE TEST</h1></body></html>' > out/index.html
+          npm run build || true
+          if [ ! -f "out/index.html" ]; then
+            echo "⚠️  next build başarısız veya out/index.html yok — diagnostic HTML kullanılıyor"
+            echo "    Çözüm: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY GitHub secret'ını ekle"
+            mkdir -p out
+            printf '<html><body style="margin:0;background:red;color:white;font-family:sans-serif;padding:20px"><h1>LOCAL ASSETS ✓</h1><p>next build başarısız — GitHub secrets eksik olabilir.</p></body></html>' > out/index.html
+          else
+            echo "✅  next build başarılı — gerçek uygulama APKya gömülüyor"
+          fi
+        env:
+          NEXT_OUTPUT: export
+          NODE_ENV: production
+          NEXT_PUBLIC_APP_URL: https://quantix-os-new.vercel.app
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
 
       # NODE_ENV=production: capacitor.config.ts'de server.url → Vercel URL (localhost değil)
       - name: Add Android platform
