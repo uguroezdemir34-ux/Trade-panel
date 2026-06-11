@@ -67,6 +67,10 @@ jobs:
               print("Already present, no patch needed")
           PYEOF
 
+      # SDK seviyelerini CI logunda görmek için — targetSdk 35 olmalı (Capacitor 7)
+      - name: Print variables.gradle (SDK confirmation)
+        run: cat android/variables.gradle
+
       - name: Sync Capacitor assets
         run: npx cap sync android
         env:

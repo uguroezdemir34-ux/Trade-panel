@@ -33,15 +33,15 @@
     "mobile:add-android": "npx cap add android && npx cap sync"
   },
   "dependencies": {
-    "@capacitor/android": "^6.2.0",
-    "@capacitor/app": "^6.0.2",
-    "@capacitor/browser": "^6.0.2",
-    "@capacitor/core": "^6.2.0",
-    "@capacitor/haptics": "^6.0.2",
-    "@capacitor/keyboard": "^6.0.3",
-    "@capacitor/push-notifications": "^6.0.2",
-    "@capacitor/splash-screen": "^6.0.2",
-    "@capacitor/status-bar": "^6.0.2",
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/app": "^7.0.0",
+    "@capacitor/browser": "^7.0.0",
+    "@capacitor/core": "^7.0.0",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/keyboard": "^7.0.0",
+    "@capacitor/push-notifications": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.0",
+    "@capacitor/status-bar": "^7.0.0",
     "@clerk/nextjs": "^6",
     "@tanstack/react-query": "5.62.0",
     "clsx": "2.1.1",
@@ -74,6 +74,6 @@
     "typescript": "5.7.2",
     "vitest": "2.1.8",
     "@capacitor/assets": "^3.0.5",
-    "@capacitor/cli": "^6.2.0"
+    "@capacitor/cli": "^7.0.0"
   }
 }
