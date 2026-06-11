@@ -83,7 +83,8 @@ const config: CapacitorConfig = {
   },
 
   android: {
-    backgroundColor: "#0A0A0A",
+    // DIAGNOSTIC: kırmızı — eğer ekran kırmızıya dönerse WebView render ediyor demek
+    backgroundColor: "#FF0000",
     allowMixedContent: false,
     captureInput: true,
     webContentsDebuggingEnabled: true,
