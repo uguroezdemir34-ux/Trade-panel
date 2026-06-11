@@ -1,7 +1,8 @@
 "use client";
 
+import { useMemo } from "react";
 import { useAccountStore } from "@/lib/store/accountStore";
-import { useTradesStore, selectClosedTrades } from "@/lib/store/tradesStore";
+import { useTradesStore } from "@/lib/store/tradesStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useT } from "@/lib/i18n/context";
 
@@ -22,7 +23,8 @@ export function PortfolioOverviewCard(): React.ReactElement {
   const drawdownProtocol = useAccountStore((s) => s.drawdownProtocol);
   const lastDailyResetAt = useAccountStore((s) => s.lastDailyResetAt);
 
-  const closedTrades = useTradesStore(selectClosedTrades);
+  const trades = useTradesStore((s) => s.trades);
+  const closedTrades = useMemo(() => trades.filter((tr) => tr.status === "closed"), [trades]);
   const openPositions = usePositionStore((s) => s.positions);
 
   const wins = closedTrades.filter((tr) => (tr.exit?.pnlUsd ?? 0) > 0).length;
