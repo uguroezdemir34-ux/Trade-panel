@@ -27,12 +27,11 @@ const config: CapacitorConfig = {
   webDir: "out",
 
   server: {
-    // Production: deployed Vercel URL kullan (API routes için gerekli)
-    // Development: localhost:3000
-    url: serverUrl,
+    // server.url kaldırıldı — lokal webDir assets test (siyah ekran teşhisi)
+    // Vercel yüklemesi yerine out/ klasöründeki dosyalar doğrudan APK'dan açılır.
+    // Lokal açılırsa sorun remote/network, açılmazsa sorun WebView/JS tarafında.
     cleartext: false,
     androidScheme: "https",
-    // iOS'ta CORS sorunları için
     allowNavigation: [
       serverUrl.replace("https://", ""),
       "*.quantixos.com",

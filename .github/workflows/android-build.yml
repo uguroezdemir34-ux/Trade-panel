@@ -34,12 +34,35 @@ jobs:
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
-      # cap sync, webDir: "out" klasörünün var olmasını bekler.
-      # APK runtime'da server.url (Vercel) yüklediği için içerik önemsiz.
-      - name: Create placeholder web output for cap sync
+      # server.url kaldırıldı — APK bu lokal index.html'i açar.
+      # Yeşil ekran = WebView çalışıyor, sorun remote URL'deydi.
+      # Siyah kalmaya devam ederse sorun WebView/native tarafında.
+      - name: Create local test page for WebView diagnosis
         run: |
           mkdir -p out
-          printf '<!DOCTYPE html><html><head><meta charset="utf-8"><title>QUANTIX OS</title></head><body></body></html>' > out/index.html
+          cat > out/index.html << 'HTMLEOF'
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1">
+            <title>QUANTIX OS - WebView Test</title>
+            <style>
+              body { margin: 0; background: #00aa44; color: #fff; font-family: monospace;
+                     display: flex; flex-direction: column; align-items: center;
+                     justify-content: center; min-height: 100vh; text-align: center; padding: 20px; }
+              h1 { font-size: 24px; margin-bottom: 12px; }
+              p  { font-size: 14px; opacity: 0.85; }
+            </style>
+          </head>
+          <body>
+            <h1>✅ WebView Çalışıyor</h1>
+            <p>Lokal assets yüklendi.<br>Sorun remote Vercel URL'deydi.</p>
+            <p id="ts" style="margin-top:16px;font-size:12px;opacity:0.6;"></p>
+            <script>document.getElementById('ts').textContent = new Date().toISOString();</script>
+          </body>
+          </html>
+          HTMLEOF
 
       # NODE_ENV=production: capacitor.config.ts'de server.url → Vercel URL (localhost değil)
       - name: Add Android platform
