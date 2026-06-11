@@ -22,7 +22,7 @@ const serverUrl =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://quantix-os-new.vercel.app";
 
 const config: CapacitorConfig = {
-  appId: "com.quantixos.trading.test5",
+  appId: "com.quantixos.trading.test6",
   appName: "QUANTIX OS",
   webDir: "out",
 
@@ -41,17 +41,6 @@ const config: CapacitorConfig = {
   },
 
   plugins: {
-    SplashScreen: {
-      launchShowDuration: 2000,
-      launchAutoHide: true,
-      backgroundColor: "#0A0A0A",
-      androidSplashResourceName: "splash",
-      androidScaleType: "CENTER_CROP",
-      showSpinner: false,
-      splashFullScreen: true,
-      splashImmersive: true,
-    },
-
     StatusBar: {
       style: "Dark",
       backgroundColor: "#0A0A0A",

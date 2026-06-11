@@ -65,10 +65,6 @@ export function useCapacitorApp(): void {
         const { StatusBar, Style } = await import("@capacitor/status-bar");
         await StatusBar.setStyle({ style: Style.Dark });
         await StatusBar.setBackgroundColor({ color: "#0A0A0A" });
-
-        // SplashScreen gizle
-        const { SplashScreen } = await import("@capacitor/splash-screen");
-        await SplashScreen.hide({ fadeOutDuration: 300 });
       } catch {
         // Plugin yüklü değil — sessizce devam et
       }
