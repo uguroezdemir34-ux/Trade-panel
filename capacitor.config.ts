@@ -18,7 +18,6 @@ import type { CapacitorConfig } from "@capacitor/cli";
  *   - Trading uygulamaları App Store'da özel kategori gerektirebilir
  */
 
-const isProd = process.env.NODE_ENV === "production";
 const serverUrl =
   process.env.NEXT_PUBLIC_APP_URL ?? "https://quantix-os-new.vercel.app";
 
