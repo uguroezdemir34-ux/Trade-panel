@@ -34,7 +34,12 @@ const config: CapacitorConfig = {
     cleartext: false,
     androidScheme: "https",
     // iOS'ta CORS sorunları için
-    allowNavigation: [serverUrl.replace("https://", ""), "*.quantixos.com"],
+    allowNavigation: [
+      serverUrl.replace("https://", ""),
+      "*.quantixos.com",
+      "*.clerk.accounts.dev",
+      "*.clerk.dev",
+    ],
   },
 
   plugins: {
@@ -83,7 +88,7 @@ const config: CapacitorConfig = {
     backgroundColor: "#0A0A0A",
     allowMixedContent: false,
     captureInput: true,
-    webContentsDebuggingEnabled: !isProd,
+    webContentsDebuggingEnabled: true,
   },
 };
 
