@@ -1,0 +1,80 @@
+name: Android Debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/quantix-os-deployment-YXhhF
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # ubuntu-latest'te Android SDK kurulu gelir ($ANDROID_HOME set).
+      # Gradle build öncesi lisansları otomatik kabul et.
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      # package-lock.json yok (silindi), npm install kullan (npm ci değil)
+      - name: Install npm dependencies
+        run: npm install
+
+      # cap sync, webDir: "out" klasörünün var olmasını bekler.
+      # APK runtime'da server.url (Vercel) yüklediği için içerik önemsiz.
+      - name: Create placeholder web output for cap sync
+        run: |
+          mkdir -p out
+          printf '<!DOCTYPE html><html><head><meta charset="utf-8"><title>QUANTIX OS</title></head><body></body></html>' > out/index.html
+
+      # NODE_ENV=production: capacitor.config.ts'de server.url → Vercel URL (localhost değil)
+      - name: Add Android platform
+        run: npx cap add android
+        env:
+          CI: "true"
+          NODE_ENV: production
+
+      - name: Sync Capacitor assets
+        run: npx cap sync android
+        env:
+          CI: "true"
+          NODE_ENV: production
+
+      # Gradle caches — ilk build'de yavaş, sonraki build'lerde hızlanır
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantix-os-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+          if-no-files-found: error
