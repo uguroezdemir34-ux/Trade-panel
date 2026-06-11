@@ -30,8 +30,8 @@ const config: CapacitorConfig = {
   server: {
     // Production: deployed Vercel URL kullan (API routes için gerekli)
     // Development: localhost:3000
-    url: isProd ? serverUrl : "http://localhost:3000",
-    cleartext: !isProd,
+    url: serverUrl,
+    cleartext: false,
     androidScheme: "https",
     // iOS'ta CORS sorunları için
     allowNavigation: [serverUrl.replace("https://", ""), "*.quantixos.com"],
