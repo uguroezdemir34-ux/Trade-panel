@@ -14,7 +14,7 @@ import type { CapacitorConfig } from "@capacitor/cli";
  */
 
 const config: CapacitorConfig = {
-  appId: "com.quantixos.trading.test7",
+  appId: "com.quantixos.trading.test8",
   appName: "QUANTIX OS",
   webDir: "out",
 
