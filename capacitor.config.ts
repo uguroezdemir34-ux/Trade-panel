@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   webDir: "public",
 
   server: {
-    url: "https://quantix-os-new.vercel.app",
+    url: "https://quantixos.io",
     cleartext: false,
     androidScheme: "https",
     allowNavigation: [
