@@ -60,7 +60,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <ClerkProvider>
-      <html lang="en" dir="ltr" suppressHydrationWarning>
+      <html lang="tr" dir="ltr" suppressHydrationWarning translate="no">
         <head>
           {/* Prevent theme FOUC — reads localStorage before React hydrates */}
           <script

@@ -46,13 +46,13 @@ export function SessionStatsBar(): React.ReactElement | null {
   return (
     <div className="flex items-center gap-3 rounded-lg border border-border bg-surface-s1 px-3 py-1.5 font-mono text-2xs">
       <span className="text-text-t4 tracking-wider uppercase shrink-0">Bugün</span>
-      <span className={`font-semibold tabular-nums shrink-0 ${pnlPositive ? "text-signal-green" : "text-signal-red"}`}>
-        {pnlPositive ? "+" : ""}{totalPnl.toFixed(0)}$
+      <span translate="no" className={`font-semibold tabular-nums shrink-0 ${pnlPositive ? "text-signal-green" : "text-signal-red"}`}>
+        {`${pnlPositive ? "+" : ""}${totalPnl.toFixed(0)}$`}
       </span>
-      <span className="text-text-t3 shrink-0">{wins}W / {losses}L</span>
+      <span translate="no" className="text-text-t3 shrink-0">{`${wins}W / ${losses}L`}</span>
       {streak !== 0 && (
-        <span className={`shrink-0 font-bold ${streak > 0 ? "text-green-400" : "text-red-400"}`}>
-          {Math.abs(streak)}{streak > 0 ? "▲" : "▼"}
+        <span translate="no" className={`shrink-0 font-bold ${streak > 0 ? "text-green-400" : "text-red-400"}`}>
+          {`${Math.abs(streak)}${streak > 0 ? "▲" : "▼"}`}
         </span>
       )}
       {/* Mini trade outcome dots — last 10 by closedAt, oldest→newest */}

@@ -442,8 +442,8 @@ export default function KararPage() {
           <span className="text-text-t3">
             {openPositions.length} {t("app.openPositions")}
           </span>
-          <span className={`font-semibold tabular-nums ${openUpl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
-            UPL {openUpl >= 0 ? "+" : ""}{openUpl.toFixed(0)} $
+          <span translate="no" className={`font-semibold tabular-nums ${openUpl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
+            {`UPL ${openUpl >= 0 ? "+" : ""}${openUpl.toFixed(0)} $`}
           </span>
           <span className="text-text-t4">→</span>
         </Link>
@@ -469,7 +469,7 @@ export default function KararPage() {
         <div className="flex flex-col gap-3 lg:w-72 lg:shrink-0">
           {/* Score freshness */}
           <div className="flex items-center justify-between">
-            <span className="text-text-t4 font-mono text-2xs tracking-wider">
+            <span translate="no" className="text-text-t4 font-mono text-2xs tracking-wider">
               {latestScoreTime !== null
                 ? `${t("karar.scoresUpdated")} · ${scoreAge(latestScoreTime)} ${t("karar.scoresAgo")}`
                 : t("karar.scoresNever")}
@@ -598,7 +598,7 @@ export default function KararPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-0.5">
-                      <span className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
+                      <span translate="no" className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
                         {score !== undefined ? `${score}${dirArrow}` : "·"}
                       </span>
                       {showMom && (
@@ -608,20 +608,20 @@ export default function KararPage() {
                       )}
                     </div>
                     {pairChg !== null && (
-                      <div className={`text-[8px] tabular-nums leading-none ${chgColor}`}>
-                        {pairChg >= 0 ? "+" : ""}{pairChg.toFixed(1)}%
+                      <div translate="no" className={`text-[8px] tabular-nums leading-none ${chgColor}`}>
+                        {`${pairChg >= 0 ? "+" : ""}${pairChg.toFixed(1)}%`}
                       </div>
                     )}
                     <div className="mt-0.5 h-[10px]">
                       <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
                     </div>
                     {pairStats[p] && (
-                      <div className={`text-[8px] tabular-nums leading-none mt-0.5 ${
+                      <div translate="no" className={`text-[8px] tabular-nums leading-none mt-0.5 ${
                         pairStats[p]!.wr >= 55 ? "text-green-400/60"
                         : pairStats[p]!.wr < 45 ? "text-red-400/60"
                         : "text-text-t4/50"
                       }`}>
-                        {Math.round(pairStats[p]!.wr)}%W
+                        {`${Math.round(pairStats[p]!.wr)}%W`}
                       </div>
                     )}
                   </button>
@@ -674,8 +674,8 @@ export default function KararPage() {
                   <span className="text-text-t3 shrink-0">
                     @{fmtPx(activePosition.entryPx)}
                   </span>
-                  <span className={`font-semibold tabular-nums shrink-0 ${activePosition.upl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
-                    {activePosition.upl >= 0 ? "+" : ""}{activePosition.upl.toFixed(0)}$
+                  <span translate="no" className={`font-semibold tabular-nums shrink-0 ${activePosition.upl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
+                    {`${activePosition.upl >= 0 ? "+" : ""}${activePosition.upl.toFixed(0)}$`}
                   </span>
                   {activeTrade && (
                     <span className="text-text-t4 shrink-0">{holdingStr(activeTrade.openedAt)}</span>
@@ -877,7 +877,7 @@ function ScoreHistoryChart({
     <div className="border-border bg-bg-card rounded-lg border px-3 pt-2 pb-1">
       <div className="flex items-center justify-between mb-1">
         <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">{t("karar.scoreTrend")}</span>
-        <span className="text-text-t4 font-mono text-2xs">{pts.length} {t("karar.snapshots")}</span>
+        <span translate="no" className="text-text-t4 font-mono text-2xs">{`${pts.length} ${t("karar.snapshots")}`}</span>
       </div>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
         <line x1={PAD} y1={yGo} x2={W - PAD} y2={yGo}
@@ -893,8 +893,8 @@ function ScoreHistoryChart({
         />
       </svg>
       <div className="flex justify-between mt-0.5">
-        <span className="text-text-t4 font-mono text-2xs">{pts[0].ts ? new Date(pts[0].ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
-        <span className="text-text-t4 font-mono text-2xs">{latest.ts ? new Date(latest.ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
+        <span translate="no" className="text-text-t4 font-mono text-2xs">{pts[0].ts ? new Date(pts[0].ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
+        <span translate="no" className="text-text-t4 font-mono text-2xs">{latest.ts ? new Date(latest.ts).toLocaleTimeString([], {hour: "2-digit", minute:"2-digit"}) : ""}</span>
       </div>
     </div>
   );
@@ -943,13 +943,13 @@ function PairPriceHeader({
       <span className="font-mono text-sm font-bold text-text-t1 tracking-wide">{pair}</span>
       <div className="flex items-center gap-3">
         {price !== null && (
-          <span className="font-mono text-sm font-semibold text-text-t1 tabular-nums">
+          <span translate="no" className="font-mono text-sm font-semibold text-text-t1 tabular-nums">
             {fmtPrice(price)}
           </span>
         )}
         {chg !== null && (
-          <span className={`font-mono text-xs font-medium tabular-nums ${chgColor}`}>
-            {chg >= 0 ? "+" : ""}{chg.toFixed(2)}%
+          <span translate="no" className={`font-mono text-xs font-medium tabular-nums ${chgColor}`}>
+            {`${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%`}
           </span>
         )}
       </div>
