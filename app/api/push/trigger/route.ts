@@ -15,6 +15,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getAllSubscriptions, deleteSubscription } from "@/lib/push/db";
 import { loadVapidConfig, sendPushToEndpoint } from "@/lib/push/vapid";
 
+export const dynamic = 'force-dynamic';
+
 export interface PushTriggerPayload {
   kind?: string;
   title?: string;

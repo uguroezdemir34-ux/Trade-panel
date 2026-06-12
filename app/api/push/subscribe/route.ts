@@ -9,6 +9,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth/serverStubs";
 import { saveSubscription, deleteSubscription } from "@/lib/push/db";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const { userId } = await auth();
   if (!userId) {

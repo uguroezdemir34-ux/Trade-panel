@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { formatNotifyMessage } from "@/lib/notify/telegram/formatter";
 import type { NotifyMessage } from "@/lib/notify/types";
 
+export const dynamic = 'force-dynamic';
+
 interface SignalBody {
   msg: NotifyMessage;
   /** Layer 2: browser-stored credentials (fallback when env vars absent) */

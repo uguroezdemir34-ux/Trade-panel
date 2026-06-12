@@ -4,6 +4,8 @@ import { getTradesForUser, upsertTrade, upsertTrades } from "@/lib/db/trades";
 import { isDbConfigured } from "@/lib/db/server";
 import type { TradeSnapshot } from "@/lib/trades/types";
 
+export const dynamic = 'force-dynamic';
+
 // ── GET /api/trades ──────────────────────────────────────────────
 // Returns all trades for the authenticated user from Supabase.
 

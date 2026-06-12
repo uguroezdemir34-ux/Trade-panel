@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 
+export const dynamic = 'force-dynamic';
+
 // Stripe sends raw body — disable Next.js body parsing
 export const runtime = "nodejs";
 

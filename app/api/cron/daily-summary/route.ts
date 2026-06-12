@@ -20,6 +20,8 @@ import { sendTelegramMessage } from "@/lib/notify/telegram/client";
 import { escapeMarkdownV2, bold } from "@/lib/notify/telegram/escape";
 import type { ServerSignalResult } from "@/lib/server/signalEngine";
 
+export const dynamic = 'force-dynamic';
+
 export const runtime = "nodejs";
 export const maxDuration = 10;
 

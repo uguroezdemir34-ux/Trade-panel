@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest) {
   // Layer 1: server-side env vars (highest priority)
   let token = process.env.TELEGRAM_BOT_TOKEN?.trim();

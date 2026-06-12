@@ -13,6 +13,8 @@ import { NextResponse } from "next/server";
 import { fetchBtcDominance, fetchFearGreed } from "@/lib/macro/fetch";
 import { getDominancePhase, getMarketSummary } from "@/lib/macro/regime";
 
+export const dynamic = 'force-dynamic';
+
 export async function GET() {
   const now = Date.now();
   // F&G ve dominance paralel

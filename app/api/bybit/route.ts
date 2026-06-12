@@ -14,6 +14,8 @@ import {
   type BybitProxyRequest,
 } from "@/lib/bybit/server-handler";
 
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   let parsed: {
     path?: string;
