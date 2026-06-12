@@ -80,6 +80,19 @@ jobs:
               print("Already present, no patch needed")
           PYEOF
 
+      # versionCode + versionName — Play Store hazırlığı için sabit değer
+      - name: Set versionCode=1, versionName="1.0.0"
+        run: |
+          python3 - << 'PYEOF'
+          import re
+          path = "android/app/build.gradle"
+          content = open(path).read()
+          content = re.sub(r'versionCode\s+\d+', 'versionCode 1', content)
+          content = re.sub(r'versionName\s+"[^"]*"', 'versionName "1.0.0"', content)
+          open(path, "w").write(content)
+          print("Patched: versionCode=1, versionName=1.0.0")
+          PYEOF
+
       # SDK seviyelerini CI logunda görmek için — targetSdk 35 olmalı (Capacitor 7)
       - name: Print variables.gradle (SDK confirmation)
         run: cat android/variables.gradle
