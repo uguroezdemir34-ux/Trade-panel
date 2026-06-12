@@ -15,7 +15,7 @@ const config: CapacitorConfig = {
   webDir: "public",
 
   server: {
-    url: "https://quantixos.com",
+    url: "https://www.quantixos.com",
     cleartext: false,
     androidScheme: "https",
     allowNavigation: [
