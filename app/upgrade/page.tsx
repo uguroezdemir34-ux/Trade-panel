@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useUser } from "@clerk/nextjs";
+import { useUserStub } from "@/lib/auth/stubs";
 import { useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n/context";
 import { getPlanTier } from "@/lib/auth/subscription";
@@ -24,7 +24,7 @@ function Cell({ value }: { value: string | boolean }) {
 
 function UpgradePageInner() {
   const t = useT();
-  const { user, isLoaded } = useUser();
+  const { user, isLoaded } = useUserStub();
   const params = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

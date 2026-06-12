@@ -50,7 +50,12 @@ import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
 import { useBotMode } from "@/lib/hooks/useBotMode";
 import { usePwaSetup } from "@/lib/hooks/usePwaSetup";
-import { useAuth } from "@clerk/nextjs";
+import { useEmergencyStopGuard } from "@/lib/hooks/useEmergencyStopGuard";
+import { useSlProximityAlert } from "@/lib/hooks/useSlProximityAlert";
+import { useCapacitorApp } from "@/lib/hooks/useCapacitorApp";
+import { QuickTradeSheet } from "@/components/mobile/QuickTradeSheet";
+import { DisclaimerModal } from "./DisclaimerModal";
+import { useAuthStub } from "@/lib/auth/stubs";
 import { setCurrentUserId } from "@/lib/auth/scope";
 import { migrateStorageForUser } from "@/lib/auth/migrate";
 import { fetchTradesFromServer, bulkSyncTradesToServer } from "@/lib/db/tradeSync";
@@ -82,7 +87,7 @@ export function AppShell({
   const rehydrateTrades = useTradesStore((s) => s.rehydrate);
   const mergeTradesFromDb = useTradesStore((s) => s.mergeFromDb);
   const loadCredentials = useCredentialStore((s) => s.load);
-  const { userId, isLoaded: authLoaded } = useAuth();
+  const { userId, isLoaded: authLoaded } = useAuthStub();
 
   // Splash: günde bir kez göster (localStorage tarih kontrolü)
   const [showSplash, setShowSplash] = useState(false);
@@ -120,8 +125,14 @@ export function AppShell({
   useLiqFeed();
   // Bot modu — GO sinyalinde otomatik emir açar (Pro özelliği, ayarlardan açılır)
   useBotMode();
+  // Acil stop guard — OKX algo emri tetiklenmezse client tarafı SL koruması
+  useEmergencyStopGuard();
+  // SL yaklaştığında Telegram bildirimi — %3 eşiği, 15 dak cooldown
+  useSlProximityAlert();
   // PWA kurulumu — SW kayıt + install prompt yakalama
   usePwaSetup();
+  // Capacitor native lifecycle — back button, StatusBar, SplashScreen
+  useCapacitorApp();
 
   useEffect(() => {
     if (!authLoaded) return;
@@ -168,6 +179,7 @@ export function AppShell({
   return (
     <div className="bg-bg text-text-t1 min-h-screen">
       <ThemeSync />
+      <DisclaimerModal />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />
       <AlarmToastContainer />
@@ -175,6 +187,7 @@ export function AppShell({
         {children}
       </main>
       <BottomNav />
+      <QuickTradeSheet />
     </div>
   );
 }

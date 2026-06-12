@@ -10,10 +10,13 @@ import { KellyAdvisorCard } from "@/components/risk/KellyAdvisorCard";
 import { AdherenceScore } from "@/components/risk/AdherenceScore";
 import { LocksList } from "@/components/risk/LocksList";
 import { DisciplineLogList } from "@/components/risk/DisciplineLogList";
+import { WeeklyPnlBar } from "@/components/risk/WeeklyPnlBar";
 
 export default function RiskPage() {
   return (
     <div className="flex flex-col gap-4">
+      <WeeklyPnlBar />
+
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <DrawdownMeter />
         <DailyStatsCard />

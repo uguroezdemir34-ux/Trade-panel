@@ -14,7 +14,7 @@ function downloadScanCsv(rows: ScanRow[], config: ScanConfig | null): void {
       r.avgR !== null ? r.avgR.toFixed(3) : "",
       r.ev !== null ? r.ev.toFixed(4) : "",
       r.sharpe !== null ? r.sharpe.toFixed(3) : "",
-      r.profitFactor !== null ? r.profitFactor.toFixed(3) : "",
+      r.profitFactor !== null ? (isFinite(r.profitFactor) ? r.profitFactor.toFixed(3) : "Infinity") : "",
       r.maxDrawdownR.toFixed(2),
       r.longWinRate !== null ? r.longWinRate.toFixed(1) : "",
       r.shortWinRate !== null ? r.shortWinRate.toFixed(1) : "",
@@ -249,7 +249,7 @@ export function MultiScanResults({
                         row.profitFactor !== null && row.profitFactor >= 1 ? "text-yellow-400" :
                         row.profitFactor !== null ? "text-red-400" : "text-text-t4"
                       }`}>
-                        {row.profitFactor !== null ? row.profitFactor.toFixed(2) : "—"}
+                        {row.profitFactor !== null ? (isFinite(row.profitFactor) ? row.profitFactor.toFixed(2) : "∞") : "—"}
                       </td>
                       <td className="text-text-t3 text-right py-1.5 pr-3 tabular-nums">
                         {row.longWinRate !== null ? `${row.longWinRate.toFixed(0)}%` : "—"}

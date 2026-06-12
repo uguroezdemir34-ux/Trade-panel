@@ -1,9 +1,13 @@
 "use client";
 
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n/context";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import { useBacktest } from "@/lib/hooks/useBacktest";
 import { BacktestConfigPanel } from "@/components/backtest/BacktestConfig";
+import { PAIRS } from "@/lib/constants/pairs";
+import type { Pair } from "@/lib/constants/pairs";
 import { BacktestResults } from "@/components/backtest/BacktestResults";
 import { BacktestCompare } from "@/components/backtest/BacktestCompare";
 import { MultiScanResults } from "@/components/backtest/MultiScanResults";
@@ -17,6 +21,11 @@ import type { ScanConfig } from "@/lib/store/backtestStore";
 
 function BacktestPageInner() {
   const t = useT();
+  const searchParams = useSearchParams();
+  const pairParam = searchParams.get("pair")?.toUpperCase();
+  const initialPair: Pair | undefined =
+    pairParam && PAIRS.includes(pairParam as Pair) ? (pairParam as Pair) : undefined;
+
   const {
     run,
     runScan,
@@ -117,6 +126,7 @@ function BacktestPageInner() {
           onRun={handleRun}
           onScan={handleScan}
           disabled={isAnyRunning}
+          initialPair={initialPair}
         />
       )}
 
@@ -196,7 +206,9 @@ function BacktestPageInner() {
 export default function BacktestPage() {
   return (
     <SubscriptionGate feature="backtest">
-      <BacktestPageInner />
+      <Suspense fallback={null}>
+        <BacktestPageInner />
+      </Suspense>
     </SubscriptionGate>
   );
 }

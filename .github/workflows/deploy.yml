@@ -1,0 +1,37 @@
+name: Deploy to Vercel
+
+on:
+  push:
+    branches:
+      - claude/quantix-os-deployment-YXhhF
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Discover Vercel project metadata
+        id: meta
+        run: |
+          JSON=$(curl -sf -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            "https://api.vercel.com/v9/projects/quantix-os-new")
+          PROJECT_ID=$(echo $JSON | jq -r '.id')
+          ORG_ID=$(echo $JSON | jq -r '.accountId')
+          echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
+          echo "org_id=$ORG_ID" >> $GITHUB_OUTPUT
+
+      - name: Set production branch to our feature branch
+        run: |
+          curl -sf -X PATCH \
+            "https://api.vercel.com/v9/projects/${{ steps.meta.outputs.project_id }}" \
+            -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"link":{"productionBranch":"claude/quantix-os-deployment-YXhhF"}}' \
+            | jq '.link.productionBranch' || true
+
+      - name: Deploy to Vercel (Production)
+        run: npx vercel --prod --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ steps.meta.outputs.org_id }}
+          VERCEL_PROJECT_ID: ${{ steps.meta.outputs.project_id }}

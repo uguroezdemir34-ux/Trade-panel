@@ -46,7 +46,7 @@ const STORAGE_KEY = "trade_snapshots";
 const exitInfoSchema = z.object({
   closedAt: z.number(),
   exitPrice: z.number(),
-  reason: z.enum(["tp1", "tp2", "sl", "manual", "trail"]),
+  reason: z.enum(["tp1", "tp2", "sl", "manual", "trail", "equity_halt"]),
   pnlUsd: z.number(),
   pnlPct: z.number(),
   holdingSec: z.number(),
@@ -80,8 +80,10 @@ const tradeSnapshotSchema = z.object({
   takeProfit2: z.number().optional(),
   riskAmountUsd: z.number(),
   isPaper: z.boolean(),
+  source: z.enum(["manual", "bot"]).optional(),
   entryContext: entryContextSchema,
   exit: exitInfoSchema.optional(),
+  notes: z.string().optional(),
 });
 
 const tradesArraySchema = z.array(tradeSnapshotSchema);
@@ -138,6 +140,27 @@ interface TradesStoreState {
    */
   patchFromReconcile: (patches: ReconcileMatch[]) => void;
 
+  /**
+   * Dual-layer SL/TP sync — Layer 2 (app side).
+   * Called after adapter.updateSlTp() succeeds so the emergency stop guard
+   * uses the current SL instead of the stale one from openPending().
+   *
+   * slPrice=null    → keep existing stopPrice (stopPrice is required on TradeSnapshot)
+   * tp1Price=null   → clear takeProfit1
+   * tp1Price=undef  → don't touch takeProfit1 (same semantics as tp2Price)
+   * tp2Price=undef  → don't touch takeProfit2
+   * tp2Price=null   → clear takeProfit2
+   */
+  updateTradeSlTp: (
+    id: string,
+    slPrice: number | null,
+    tp1Price?: number | null,
+    tp2Price?: number | null,
+  ) => void;
+
+  /** Trade journal notu güncelle. Boş string → notu kaldır. */
+  updateTradeNotes: (id: string, notes: string) => void;
+
   // Test/debug
   _reset: () => void;
 }
@@ -178,9 +201,9 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
     // Fire-and-forget DB sync — non-blocking, silent on failure
     const closed = next.find((t) => t.id === input.id);
     if (closed?.status === "closed") {
-      void import("@/lib/db/tradeSync").then(({ syncTradeToServer }) =>
-        syncTradeToServer(closed),
-      );
+      void import("@/lib/db/tradeSync")
+        .then(({ syncTradeToServer }) => syncTradeToServer(closed))
+        .catch(() => {});
     }
   },
 
@@ -352,6 +375,41 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
       saveToStorage(STORAGE_KEY, next);
       set({ trades: next });
     }
+  },
+
+  updateTradeSlTp: (id, slPrice, tp1Price, tp2Price) => {
+    const current = get().trades;
+    let changed = false;
+    const next = current.map((t) => {
+      if (t.id !== id || t.status === "closed") return t;
+      changed = true;
+      return {
+        ...t,
+        ...(slPrice != null ? { stopPrice: slPrice } : {}),
+        ...(tp1Price !== undefined
+          ? { takeProfit1: tp1Price != null ? tp1Price : undefined }
+          : {}),
+        ...(tp2Price !== undefined
+          ? { takeProfit2: tp2Price != null ? tp2Price : undefined }
+          : {}),
+      };
+    });
+    if (!changed) return;
+    saveToStorage(STORAGE_KEY, next);
+    set({ trades: next });
+  },
+
+  updateTradeNotes: (id, notes) => {
+    const current = get().trades;
+    let changed = false;
+    const next = current.map((t) => {
+      if (t.id !== id) return t;
+      changed = true;
+      return { ...t, notes: notes.trim() || undefined };
+    });
+    if (!changed) return;
+    saveToStorage(STORAGE_KEY, next);
+    set({ trades: next });
   },
 
   _reset: () => {

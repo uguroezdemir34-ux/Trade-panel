@@ -11,7 +11,8 @@ import { useT, useLocale } from "@/lib/i18n/context";
 import { formatPrice, formatPercent } from "@/lib/i18n/format";
 import { useAccountStore } from "@/lib/store/accountStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
-import { fetchBalance } from "@/lib/okx/balance";
+import { useCredentialStore } from "@/lib/store/credentialStore";
+import { fetchBalanceDetailed } from "@/lib/okx/balance";
 
 export function AccountBalanceCard(): React.ReactElement {
   const t = useT();
@@ -23,8 +24,12 @@ export function AccountBalanceCard(): React.ReactElement {
   const dailyPnlPct = useAccountStore((s) => s.dailyPnlPct);
   const protocol = useAccountStore((s) => s.drawdownProtocol);
   const balanceFetchStatus = useAccountStore((s) => s.balanceFetchStatus);
+  const balanceFetchErrMsg = useAccountStore((s) => s.balanceFetchErrMsg);
   const setBalance = useAccountStore((s) => s.setBalance);
+  const setBalanceFetchError = useAccountStore((s) => s.setBalanceFetchError);
   const demoMode = useSettingsStore((s) => s.demoMode);
+  const okxProd = useCredentialStore((s) => s.okxProd);
+  const okxDemo = useCredentialStore((s) => s.okxDemo);
 
   const usedMargin = balanceTotal - balanceFree;
 
@@ -39,8 +44,13 @@ export function AccountBalanceCard(): React.ReactElement {
   async function handleRefresh() {
     setRefreshing(true);
     try {
-      const result = await fetchBalance(demoMode);
-      if (result) setBalance(result.total, result.free);
+      const clientCreds = demoMode ? okxDemo : okxProd;
+      const result = await fetchBalanceDetailed(demoMode, clientCreds);
+      if (result.ok) {
+        setBalance(result.total, result.free);
+      } else {
+        setBalanceFetchError(result.err);
+      }
     } finally {
       setRefreshing(false);
     }
@@ -73,6 +83,9 @@ export function AccountBalanceCard(): React.ReactElement {
       {balanceFetchStatus === "error" && (
         <div className="mb-3 rounded bg-soft-amber px-3 py-1.5 font-mono text-xs text-signal-amber">
           ⚠ {t("settings.balance.fetchError")}
+          {balanceFetchErrMsg && (
+            <span className="ml-1 opacity-70">[{balanceFetchErrMsg}]</span>
+          )}
         </div>
       )}
 

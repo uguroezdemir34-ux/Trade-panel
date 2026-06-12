@@ -54,8 +54,16 @@ const ALGO_ORD_TYPES = [
 
 // ─── Adapter seçenekleri (DI / test) ─────────────────────────
 
+export interface OkxCredentials {
+  key: string;
+  secret: string;
+  pass: string;
+}
+
 export interface OkxAdapterOptions {
   isDemo: boolean;
+  /** Layer 2 browser-stored credentials (passed to proxy when server env vars absent) */
+  clientCreds?: OkxCredentials | null;
   /** Rate limiter inject (test için) */
   tradeLimiter?: TokenBucketRateLimiter;
   algoLimiter?: TokenBucketRateLimiter;
@@ -95,13 +103,14 @@ async function proxyPost(
   isDemo: boolean,
   timeoutMs: number,
   fetchFn: typeof fetch,
+  clientCreds?: OkxCredentials | null,
 ): Promise<Record<string, unknown>> {
   const res = await fetchWithTimeout(
     `/api/okx${path}`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ isDemo, body }),
+      body: JSON.stringify({ isDemo, body, clientCreds: clientCreds ?? undefined }),
     },
     timeoutMs,
     fetchFn,
@@ -118,7 +127,23 @@ async function proxyGet(
   isDemo: boolean,
   timeoutMs: number,
   fetchFn: typeof fetch,
+  clientCreds?: OkxCredentials | null,
 ): Promise<Record<string, unknown>> {
+  if (clientCreds?.key) {
+    // GET endpoints with client creds → use POST to pass credentials securely
+    const res = await fetchWithTimeout(
+      `/api/okx${path}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isDemo, clientCreds }),
+      },
+      timeoutMs,
+      fetchFn,
+    );
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return res.json() as Promise<Record<string, unknown>>;
+  }
   const res = await fetchWithTimeout(
     `/api/okx${path}`,
     {
@@ -205,6 +230,7 @@ async function withNetworkRetry<T>(
 
 export class OkxAdapter implements ExchangeAdapter {
   private readonly isDemo: boolean;
+  private readonly clientCreds: OkxCredentials | null;
   private readonly tradeLimiter: TokenBucketRateLimiter;
   private readonly algoLimiter: TokenBucketRateLimiter;
   private readonly guard: IdempotencyGuard;
@@ -213,6 +239,7 @@ export class OkxAdapter implements ExchangeAdapter {
 
   constructor(opts: OkxAdapterOptions) {
     this.isDemo = opts.isDemo;
+    this.clientCreds = opts.clientCreds ?? null;
     this.tradeLimiter = opts.tradeLimiter ?? createOkxTradeLimiter();
     this.algoLimiter = opts.algoLimiter ?? createOkxAlgoLimiter();
     this.guard = opts.idempotencyGuard ?? new IdempotencyGuard();
@@ -274,6 +301,7 @@ export class OkxAdapter implements ExchangeAdapter {
           this.isDemo,
           this.timeoutMs,
           this.fetchFn,
+          this.clientCreds,
         ),
       );
 
@@ -310,34 +338,44 @@ export class OkxAdapter implements ExchangeAdapter {
       };
     }
 
-    // ─── SL algo order ───
+    // ─── SL algo order + arka plan doğrulama ───
     if (input.slPrice && input.slPrice > 0) {
       await this.algoLimiter.acquire();
       const slSide = input.direction === "LONG" ? "sell" : "buy";
       const slPosSide = posSide;
+      const slBody = {
+        instId,
+        tdMode: input.marginMode,
+        side: slSide,
+        posSide: slPosSide,
+        ordType: "conditional",
+        sz: String(input.qty),
+        slTriggerPx: String(input.slPrice),
+        slOrdPx: "-1",
+        slTriggerPxType: "last",
+      };
+      let slPlacedOk = false;
       try {
-        await withNetworkRetry(() =>
+        const slRaw = await withNetworkRetry(() =>
           proxyPost(
             "/api/v5/trade/order-algo",
-            {
-              instId,
-              tdMode: input.marginMode,
-              side: slSide,
-              posSide: slPosSide,
-              ordType: "conditional",
-              sz: String(input.qty),
-              slTriggerPx: String(input.slPrice),
-              slOrdPx: "-1",
-              slTriggerPxType: "last",
-            },
+            slBody,
             this.isDemo,
             this.timeoutMs,
             this.fetchFn,
+            this.clientCreds,
           ),
         );
+        slPlacedOk = checkProxyResponse(slRaw).ok;
+        if (!slPlacedOk) {
+          console.warn(`[OkxAdapter] SL algo order rejected for ${instId}`);
+        }
       } catch {
         console.warn(`[OkxAdapter] SL algo order failed for ${instId}`);
       }
+
+      // 3s sonra arka planda SL'yi doğrula, eksikse bir kez daha gönder
+      void this.verifySl(instId, input.slPrice!, slBody);
     }
 
     // ─── TP algo order(lar) ───
@@ -371,6 +409,7 @@ export class OkxAdapter implements ExchangeAdapter {
             this.isDemo,
             this.timeoutMs,
             this.fetchFn,
+            this.clientCreds,
           ),
         );
       } catch {
@@ -405,6 +444,7 @@ export class OkxAdapter implements ExchangeAdapter {
           this.isDemo,
           this.timeoutMs,
           this.fetchFn,
+          this.clientCreds,
         ),
       );
       const check = checkProxyResponse(raw);
@@ -446,6 +486,7 @@ export class OkxAdapter implements ExchangeAdapter {
           this.isDemo,
           this.timeoutMs,
           this.fetchFn,
+          this.clientCreds,
         );
         const check = checkProxyResponse(raw);
         if (!check.ok || !Array.isArray(check.data)) continue;
@@ -475,6 +516,7 @@ export class OkxAdapter implements ExchangeAdapter {
           this.isDemo,
           this.timeoutMs,
           this.fetchFn,
+          this.clientCreds,
         ),
       );
       const check = checkProxyResponse(raw);
@@ -522,6 +564,7 @@ export class OkxAdapter implements ExchangeAdapter {
           this.isDemo,
           this.timeoutMs,
           this.fetchFn,
+          this.clientCreds,
         ),
       );
       const check = checkProxyResponse(raw);
@@ -562,29 +605,32 @@ export class OkxAdapter implements ExchangeAdapter {
 
     if (input.slPrice && input.slPrice > 0) {
       await this.algoLimiter.acquire();
+      const updateSlBody = {
+        instId: input.instId,
+        tdMode: input.mgnMode,
+        side,
+        posSide,
+        ordType: "conditional",
+        sz: String(input.qty),
+        slTriggerPx: String(input.slPrice),
+        slOrdPx: "-1",
+        slTriggerPxType: "last",
+      };
       try {
         await withNetworkRetry(() =>
           proxyPost(
             "/api/v5/trade/order-algo",
-            {
-              instId: input.instId,
-              tdMode: input.mgnMode,
-              side,
-              posSide,
-              ordType: "conditional",
-              sz: String(input.qty),
-              slTriggerPx: String(input.slPrice),
-              slOrdPx: "-1",
-              slTriggerPxType: "last",
-            },
+            updateSlBody,
             this.isDemo,
             this.timeoutMs,
             this.fetchFn,
+            this.clientCreds,
           ),
         );
       } catch {
         console.warn(`[OkxAdapter] SL update failed for ${input.instId}`);
       }
+      void this.verifySl(input.instId, input.slPrice!, updateSlBody);
     }
 
     const tpTargets: Array<{ price: number; qty: number }> = [];
@@ -615,6 +661,7 @@ export class OkxAdapter implements ExchangeAdapter {
             this.isDemo,
             this.timeoutMs,
             this.fetchFn,
+            this.clientCreds,
           ),
         );
       } catch {
@@ -625,6 +672,54 @@ export class OkxAdapter implements ExchangeAdapter {
     return { ok: true };
   }
 
+  /**
+   * SL algo emrini arka planda doğrular.
+   * 3s bekler → orders-algo-pending sorgular → bulunamazsa bir kez daha gönderir.
+   */
+  private async verifySl(
+    instId: string,
+    slPrice: number,
+    slBody: Record<string, unknown>,
+  ): Promise<void> {
+    await new Promise((r) => setTimeout(r, 3_000));
+    try {
+      const raw = await proxyGet(
+        `/api/v5/trade/orders-algo-pending?ordType=conditional&instId=${encodeURIComponent(instId)}`,
+        this.isDemo,
+        this.timeoutMs,
+        this.fetchFn,
+        this.clientCreds,
+      );
+      const check = checkProxyResponse(raw);
+      if (!check.ok || !Array.isArray(check.data)) return;
+
+      const found = (check.data as Array<Record<string, unknown>>).some((o) => {
+        const triggerPx = parseFloat(String(o.slTriggerPx ?? "0"));
+        return triggerPx > 0 && Math.abs(triggerPx - slPrice) / slPrice < 0.005;
+      });
+
+      if (!found) {
+        console.warn(
+          `[OkxAdapter] SL doğrulama başarısız ${instId} @ ${slPrice} — yeniden gönderiliyor`,
+        );
+        await this.algoLimiter.acquire();
+        await withNetworkRetry(() =>
+          proxyPost(
+            "/api/v5/trade/order-algo",
+            slBody,
+            this.isDemo,
+            this.timeoutMs,
+            this.fetchFn,
+            this.clientCreds,
+          ),
+        );
+      }
+    } catch {
+      // Doğrulama hatası log'lanır, ama akışı bozmaz
+      console.warn(`[OkxAdapter] SL doğrulama sorgusu başarısız: ${instId}`);
+    }
+  }
+
   /** Idempotency guard'a erişim (test/debug için) */
   getGuard(): IdempotencyGuard {
     return this.guard;
@@ -633,13 +728,10 @@ export class OkxAdapter implements ExchangeAdapter {
 
 // ─── Singleton factory ────────────────────────────────────────
 
-let _instance: OkxAdapter | null = null;
-let _instanceIsDemo: boolean | null = null;
+import { useCredentialStore } from "@/lib/store/credentialStore";
 
 export function getOkxAdapter(isDemo: boolean): OkxAdapter {
-  if (_instance === null || _instanceIsDemo !== isDemo) {
-    _instance = new OkxAdapter({ isDemo });
-    _instanceIsDemo = isDemo;
-  }
-  return _instance;
+  const { okxProd, okxDemo } = useCredentialStore.getState();
+  const clientCreds = isDemo ? okxDemo : okxProd;
+  return new OkxAdapter({ isDemo, clientCreds });
 }

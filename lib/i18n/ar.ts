@@ -327,6 +327,19 @@ export const ar: Dictionary = {
       saveSuccess: "Saved",
       hedgeWarning: "Hedge Mode must be enabled on Binance Futures (Account → Settings → Position Mode → Hedge Mode) before trading.",
     },
+    bybitCreds: {
+      title: "Bybit Futures",
+      subtitle: "USDT Perpetual futures via V5 API",
+      active: "ACTIVE EXCHANGE",
+      setActive: "Set as active",
+      saved: "Credentials saved (encrypted)",
+      clear: "Clear",
+      keyPlaceholder: "API Key",
+      secretPlaceholder: "API Secret",
+      save: "Save Bybit Keys",
+      saveSuccess: "Saved",
+      note: "Ensure the API key has Read + Trade permissions. Hedge Mode (Two-Way Position) is recommended.",
+    },
     pwa: {
       title: "PWA & Push Notifications",
       subtitle: "Install app + GO signal alerts on this device",
@@ -437,6 +450,10 @@ export const ar: Dictionary = {
 
   portfolio: {
     analyticsTab: "Analytics",
+    signalsTab: "Signals",
+    overview: { totalEquity: "Total Equity", free: "Free", dailyPnl: "Daily P&L", weekly: "Weekly", realizedPnl: "Today P&L",
+      allTime: "All-time", unrealized: "Unrealized P&L", winRate: "Win Rate", openPos: "Open Pos.", closedTrades: "Closed", riskMult: "Risk Mult.", tradesCount: "{w}/{t} trades", },
+    copyTab: "Follow",
     var: {
       title: "Portfolio VaR",
       var95: "1-Day VaR (95%)",
@@ -499,6 +516,7 @@ export const ar: Dictionary = {
     closing: "جارٍ الإغلاق...",
     closeConfirmTitle: "إغلاق المركز؟",
     closeConfirmText: "سيتم إغلاق {pair} {direction} ({size}) بسعر السوق. لا يمكن التراجع عن هذا الإجراء.",
+    slLayerDesync: "Layer Mismatch —",
     closeError: {
       unknown: "خطأ غير معروف عند إغلاق المركز",
       invalidKey: "مفتاح API غير صالح",
@@ -938,5 +956,24 @@ export const ar: Dictionary = {
     applyUpdates: "Apply {count} update(s)",
     allClear: "No mismatches found",
     lastSync: "Last sync",
+  },
+
+  copyTrading: {
+    title: "Master Trader Follow",
+    description: "Automatically follow the trades of our selected master trader via the exchange's copy trading system. This section is for information and guidance purposes.",
+    disclaimer: "This feature is not investment advice. Past performance does not guarantee future results. Leveraged trading carries high risk.",
+    okxHeading: "OKX Copy Trading",
+    okxStep1: "Open the OKX app and log into your account.",
+    okxStep2: "Go to 'Trade' → 'Copy Trading' from the bottom menu.",
+    okxStep3: "Click 'Follow' and review the parameters.",
+    okxStep4: "Set your follow amount and confirm.",
+    okxButton: "Follow on OKX →",
+    binanceHeading: "Binance Copy Trading",
+    binanceStep1: "Open the Binance app and log into your account.",
+    binanceStep2: "Go to 'Copy Trading' from the main menu.",
+    binanceStep3: "Review the trader profile and click 'Copy'.",
+    binanceStep4: "Set your investment amount and confirm positions.",
+    binanceButton: "Follow on Binance →",
+    notConfigured: "Not configured yet",
   },
 };

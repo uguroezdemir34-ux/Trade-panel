@@ -12,9 +12,10 @@ import { useEffect, useRef } from "react";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useCandleStore } from "@/lib/store/candleStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 import { TrailingManager } from "@/lib/trailing/manager";
 import { setActiveTrailingManager } from "@/lib/trailing/managerRef";
-import { getOkxAdapter } from "@/lib/exchange/okx-adapter";
+import { getAdapter } from "@/lib/exchange";
 import { createChannel } from "@/lib/notify/registry";
 import { atr as calcAtr } from "@/lib/indicators/atr";
 import type { OkxPosition, OkxKline } from "@/types/okx";
@@ -37,10 +38,13 @@ export function useTrailingManager(): void {
   const demoMode = useSettingsStore((s) => s.demoMode);
 
   useEffect(() => {
+    // Execution kapalıyken trailing manager başlatılmaz
+    if (!EXECUTION_ENABLED) return;
+
     // Stop mevcut manager varsa
     managerRef.current?.stop();
 
-    const adapter = getOkxAdapter(demoMode);
+    const adapter = getAdapter(demoMode);
     const telegram = createChannel("telegram");
 
     const manager = new TrailingManager(

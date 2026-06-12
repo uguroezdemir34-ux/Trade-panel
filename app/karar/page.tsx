@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
@@ -8,6 +9,7 @@ import { useAccountStore } from "@/lib/store/accountStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useRiskStore } from "@/lib/store/riskStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
+import { usePositionStore } from "@/lib/store/positionStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
@@ -19,7 +21,7 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "FET", "SUI"],
   meme:   ["DOGE", "SHIB"],
 };
-type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch";
+type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreBar } from "@/components/karar/ScoreBar";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
@@ -44,21 +46,27 @@ import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
 import { ScoreLeaderboard } from "@/components/karar/ScoreLeaderboard";
+import { SessionStatsBar } from "@/components/karar/SessionStatsBar";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
 import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
 import { GoSignalLog } from "@/components/karar/GoSignalLog";
+import { KeyboardShortcutsModal } from "@/components/karar/KeyboardShortcutsModal";
 import { HistoricalEdge } from "@/components/karar/HistoricalEdge";
 import { FundingBadge } from "@/components/karar/FundingBadge";
 import { CorrelationWarning } from "@/components/karar/CorrelationWarning";
 import { CandlePatternBadge } from "@/components/karar/CandlePatternBadge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { RegimeBadge } from "@/components/karar/RegimeBadge";
+import { usePairNotesStore } from "@/lib/store/pairNotesStore";
+import { PairSignalHistory } from "@/components/karar/PairSignalHistory";
+import { PairTradeStats } from "@/components/karar/PairTradeStats";
 
 export default function KararPage() {
   const t = useT();
   const [activePair, setActivePair] = useState<Pair>("BTC");
   const [pairGroup, setPairGroup] = useState<PairGroup>("all");
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const watchlistPairs = useWatchlistStore((s) => s.pairs);
   const watchlistToggle = useWatchlistStore((s) => s.toggle);
   const watchlistLoad = useWatchlistStore((s) => s.load);
@@ -91,20 +99,45 @@ export default function KararPage() {
   const logEvent = useRiskStore((s) => s.logEvent);
   const trades = useTradesStore((s) => s.trades);
   const openPending = useTradesStore((s) => s.openPending);
+  const openPositions = usePositionStore((s) => s.positions);
+  const openUpl = openPositions.reduce((sum, p) => sum + p.upl, 0);
   const funding = useMacroStore((s) => s.funding);
   const fgValue = useMacroStore((s) => s.fgValue);
 
-  // Keyboard shortcuts: 1-9 → select pair by index, G → next GO pair
+  // Keyboard shortcuts: 1-9 / [ ] / G / ?
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       if ((e.target as HTMLElement).tagName === "INPUT") return;
       if ((e.target as HTMLElement).tagName === "TEXTAREA") return;
+
+      // ? → toggle shortcuts modal
+      if (e.key === "?") {
+        setShowShortcuts((v) => !v);
+        return;
+      }
+
+      // 1-9 → jump to pair by index
       const digit = parseInt(e.key);
       if (!isNaN(digit) && digit >= 1 && digit <= 9) {
         const target = PAIRS[digit - 1];
         if (target) setActivePair(target);
         return;
       }
+
+      // [ / ] → previous / next pair in current display list
+      if (e.key === "[" || e.key === "]") {
+        const list = displayPairsRef.current;
+        if (list.length === 0) return;
+        const idx = list.indexOf(activePair);
+        const next =
+          e.key === "]"
+            ? list[(idx + 1) % list.length]
+            : list[(idx - 1 + list.length) % list.length];
+        setActivePair(next);
+        return;
+      }
+
+      // G → cycle through GO pairs
       if (e.key === "g" || e.key === "G") {
         const goList = PAIRS.filter((p) => allResults[p]?.verdict === "go");
         if (goList.length === 0) return;
@@ -121,17 +154,47 @@ export default function KararPage() {
     [allResults],
   );
 
+  // GO pairs where no open position exists — immediately actionable signals
+  const actionablePairs = useMemo(() => {
+    const openPairSet = new Set(openPositions.map((p) => p.pair));
+    return goPairs.filter((p) => !openPairSet.has(p));
+  }, [goPairs, openPositions]);
+
+  // Open position + matching trade for the currently selected pair
+  const activePosition = useMemo(
+    () => openPositions.find((p) => p.pair === activePair) ?? null,
+    [openPositions, activePair],
+  );
+  const activeTrade = useMemo(
+    () =>
+      activePosition
+        ? trades
+            .filter((t) => t.pair === activePair && t.status === "open")
+            .sort((a, b) => b.openedAt - a.openedAt)[0] ?? null
+        : null,
+    [activePosition, trades, activePair],
+  );
+
   const alarms = usePriceAlarmStore((s) => s.alarms);
   const alarmedPairs = useMemo(
     () => new Set(alarms.filter((a) => a.status === "active").map((a) => a.pair)),
     [alarms],
   );
 
+  const pairNotes = usePairNotesStore((s) => s.notes);
+  const setPairNote = usePairNotesStore((s) => s.setNote);
+  const clearPairNote = usePairNotesStore((s) => s.clearNote);
+
   const displayPairs = useMemo<readonly Pair[]>(() => {
     if (pairGroup === "go") return goPairs.length > 0 ? goPairs : PAIRS;
     if (pairGroup === "watch") return watchlistPairs.length > 0 ? watchlistPairs : PAIRS;
+    if (pairGroup === "act") return actionablePairs.length > 0 ? actionablePairs : PAIRS;
     return PAIR_GROUPS[pairGroup] ?? PAIRS;
-  }, [pairGroup, goPairs, watchlistPairs]);
+  }, [pairGroup, goPairs, watchlistPairs, actionablePairs]);
+
+  // Ref so the keydown handler always sees the latest displayPairs without re-binding
+  const displayPairsRef = useRef<readonly Pair[]>(displayPairs);
+  displayPairsRef.current = displayPairs;
 
   const pairMomentum = useMemo<Partial<Record<Pair, number>>>(() => {
     const out: Partial<Record<Pair, number>> = {};
@@ -143,6 +206,17 @@ export default function KararPage() {
     }
     return out;
   }, [scoreHistory]);
+
+  const pairStats = useMemo(() => {
+    const map: Partial<Record<Pair, { wr: number; n: number }>> = {};
+    for (const p of PAIRS) {
+      const closed = trades.filter((t) => t.pair === p && t.status === "closed");
+      if (closed.length < 3) continue;
+      const wins = closed.filter((t) => (t.exit?.pnlUsd ?? 0) > 0).length;
+      map[p] = { wr: (wins / closed.length) * 100, n: closed.length };
+    }
+    return map;
+  }, [trades]);
 
   const latestScoreTime = useMemo(() => {
     const times = Object.values(computedAt).filter((v): v is number => v !== undefined);
@@ -359,6 +433,35 @@ export default function KararPage() {
 
       <StreakBanner />
 
+      {/* Mini open positions bar — only when positions exist */}
+      {openPositions.length > 0 && (
+        <Link
+          href="/portfolyo"
+          className="flex items-center justify-between rounded-lg border border-border bg-surface-s1 px-3 py-1.5 font-mono text-2xs hover:bg-surface-s2 transition-colors"
+        >
+          <span className="text-text-t3">
+            {openPositions.length} {t("app.openPositions")}
+          </span>
+          <span className={`font-semibold tabular-nums ${openUpl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
+            UPL {openUpl >= 0 ? "+" : ""}{openUpl.toFixed(0)} $
+          </span>
+          <span className="text-text-t4">→</span>
+        </Link>
+      )}
+
+      <SessionStatsBar />
+
+      {/* Keyboard shortcut hint — sağ üst köşe */}
+      <div className="flex justify-end -mt-1">
+        <button
+          onClick={() => setShowShortcuts(true)}
+          className="font-mono text-2xs text-text-t4 hover:text-text-t2 transition-colors border border-border/40 rounded px-2 py-0.5"
+          title="Klavye kısayolları (? tuşu)"
+        >
+          ⌨ ?
+        </button>
+      </div>
+
       {/* Desktop 2-column layout */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
 
@@ -386,23 +489,29 @@ export default function KararPage() {
 
           {/* Pair group filter */}
           <div className="flex flex-wrap gap-1">
-            {(["all", "majors", "alts", "meme", "go", "watch"] as PairGroup[]).map((g) => {
+            {(["all", "majors", "alts", "meme", "go", "act", "watch"] as PairGroup[]).map((g) => {
               const label =
                 g === "all" ? t("karar.groupAll") :
                 g === "majors" ? "Majors" :
                 g === "alts" ? "Alts" :
                 g === "meme" ? "Meme" :
                 g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
+                g === "act" ? `ACT${actionablePairs.length > 0 ? ` (${actionablePairs.length})` : ""}` :
                 `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
               const isActive = pairGroup === g;
               const isGo = g === "go";
+              const isAct = g === "act";
               const isWatch = g === "watch";
               return (
                 <button
                   key={g}
                   onClick={() => {
                     setPairGroup(g);
-                    const target = g === "go" ? goPairs : g === "watch" ? watchlistPairs : PAIR_GROUPS[g] ?? PAIRS;
+                    const target =
+                      g === "go" ? goPairs :
+                      g === "act" ? actionablePairs :
+                      g === "watch" ? watchlistPairs :
+                      PAIR_GROUPS[g] ?? PAIRS;
                     if (target.length > 0 && !target.includes(activePair)) {
                       setActivePair(target[0] as Pair);
                     }
@@ -410,12 +519,14 @@ export default function KararPage() {
                   className={[
                     "px-2.5 py-1 rounded font-mono text-2xs font-medium transition-colors",
                     isActive
-                      ? isGo
+                      ? isGo || isAct
                         ? "bg-green-500/20 text-green-400"
                         : isWatch
                         ? "bg-amber-500/20 text-amber-400"
                         : "bg-surface-s2 text-text-t1"
                       : isGo && goPairs.length > 0
+                      ? "text-green-400/70 hover:text-green-400"
+                      : isAct && actionablePairs.length > 0
                       ? "text-green-400/70 hover:text-green-400"
                       : isWatch && watchlistPairs.length > 0
                       ? "text-amber-400/70 hover:text-amber-400"
@@ -504,6 +615,15 @@ export default function KararPage() {
                     <div className="mt-0.5 h-[10px]">
                       <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
                     </div>
+                    {pairStats[p] && (
+                      <div className={`text-[8px] tabular-nums leading-none mt-0.5 ${
+                        pairStats[p]!.wr >= 55 ? "text-green-400/60"
+                        : pairStats[p]!.wr < 45 ? "text-red-400/60"
+                        : "text-text-t4/50"
+                      }`}>
+                        {Math.round(pairStats[p]!.wr)}%W
+                      </div>
+                    )}
                   </button>
                   <button
                     onClick={(e) => { e.stopPropagation(); watchlistToggle(p as Pair); }}
@@ -516,6 +636,9 @@ export default function KararPage() {
                   >
                     ★
                   </button>
+                  {pairNotes[p as Pair] && (
+                    <span className="absolute bottom-4 right-0.5 h-1 w-1 rounded-full bg-blue-400/80 pointer-events-none" />
+                  )}
                 </div>
               );
             })}
@@ -538,6 +661,28 @@ export default function KararPage() {
                 price={livePrice}
                 chg={allTicks[activePair]?.chg ?? null}
               />
+
+              {/* Active position strip — shown when this pair has an open position */}
+              {activePosition && (
+                <Link
+                  href="/portfolyo"
+                  className="flex items-center gap-3 rounded-lg border border-border/50 bg-surface-s1 px-3 py-2 font-mono text-2xs hover:bg-surface-s2 transition-colors"
+                >
+                  <span className={`font-bold shrink-0 ${activePosition.direction === "LONG" ? "text-green-400" : "text-red-400"}`}>
+                    {activePosition.direction === "LONG" ? "▲ LONG" : "▼ SHORT"}
+                  </span>
+                  <span className="text-text-t3 shrink-0">
+                    @{fmtPx(activePosition.entryPx)}
+                  </span>
+                  <span className={`font-semibold tabular-nums shrink-0 ${activePosition.upl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
+                    {activePosition.upl >= 0 ? "+" : ""}{activePosition.upl.toFixed(0)}$
+                  </span>
+                  {activeTrade && (
+                    <span className="text-text-t4 shrink-0">{holdingStr(activeTrade.openedAt)}</span>
+                  )}
+                  <span className="text-text-t4 ml-auto shrink-0">→</span>
+                </Link>
+              )}
 
               {/* HERO: Verdict + Direction + Funding */}
               <div className="flex flex-wrap items-center gap-2">
@@ -615,6 +760,40 @@ export default function KararPage() {
                     {sizerResult && result.direction !== "NEUTRAL" && (
                       <CorrelationWarning pair={activePair} direction={result.direction} />
                     )}
+
+                    {/* Per-pair trade performance */}
+                    <PairTradeStats pair={activePair} />
+
+                    {/* Per-pair GO signal history */}
+                    <PairSignalHistory pair={activePair} />
+
+                    {/* Pair note + Backtest quick link */}
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-2xs text-text-t4 tracking-wider uppercase shrink-0">
+                          Not
+                        </span>
+                        <Link
+                          href={`/backtest?pair=${activePair}`}
+                          className="ml-auto font-mono text-2xs text-text-t4 hover:text-brand transition-colors border border-border/40 rounded px-2 py-0.5 shrink-0"
+                        >
+                          → Backtest
+                        </Link>
+                      </div>
+                      <textarea
+                        value={pairNotes[activePair] ?? ""}
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            setPairNote(activePair, e.target.value);
+                          } else {
+                            clearPairNote(activePair);
+                          }
+                        }}
+                        placeholder="Bu parite için notlar..."
+                        rows={3}
+                        className="w-full rounded-lg border border-border bg-surface-s1 px-3 py-2 font-mono text-2xs text-text-t2 placeholder:text-text-t4 resize-none focus:outline-none focus:border-brand/50 transition-colors"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -653,6 +832,10 @@ export default function KararPage() {
             {t("karar.sendingOrder")}
           </div>
         </div>
+      )}
+
+      {showShortcuts && (
+        <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />
       )}
     </div>
   );
@@ -723,6 +906,21 @@ function fmtPrice(price: number): string {
   if (price >= 1)      return "$" + price.toFixed(4);
   if (price >= 0.001)  return "$" + price.toFixed(5);
   return "$" + price.toPrecision(4);
+}
+
+function holdingStr(openedAt: number): string {
+  const m = Math.floor((Date.now() - openedAt) / 60_000);
+  if (m < 60) return `${m}dk`;
+  const h = Math.floor(m / 60);
+  return h < 24 ? `${h}sa` : `${Math.floor(h / 24)}g`;
+}
+
+function fmtPx(px: number): string {
+  if (px >= 1000) return px.toFixed(1);
+  if (px >= 100) return px.toFixed(2);
+  if (px >= 1) return px.toFixed(3);
+  if (px >= 0.001) return px.toFixed(5);
+  return px.toPrecision(4);
 }
 
 function PairPriceHeader({

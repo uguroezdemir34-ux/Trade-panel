@@ -42,6 +42,7 @@ export function createPendingTrade(input: OpenTradeInput): TradeSnapshot {
     pair: input.pair,
     direction: input.direction,
     status: "pending",
+    source: input.source,
     openedAt: now,
     entryPrice: input.entryPrice,
     qty: input.qty,
@@ -118,7 +119,7 @@ export function computeExit(
   const sign = trade.direction === "LONG" ? 1 : -1;
   const priceDelta = (exitPrice - trade.entryPrice) * sign;
   const pnlUsd = priceDelta * trade.qty;
-  const pnlPct = priceDelta / trade.entryPrice;
+  const pnlPct = trade.entryPrice > 0 ? priceDelta / trade.entryPrice : 0;
   const holdingSec = Math.max(0, Math.floor((closedAt - trade.openedAt) / 1000));
 
   let rMultiple: number | undefined;

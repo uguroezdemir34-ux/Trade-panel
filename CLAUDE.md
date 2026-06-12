@@ -192,6 +192,8 @@ Runtime'da Next.js bundler çözer — gerçek mantık hatası yok.
 | `lastTab` | Son aktif sekme |
 | `demo_mode` | Demo modu |
 | `theme` | dark/light |
+| `qx_splash_date` | Splash ekranı son gösterim tarihi (ISO date string) |
+| `qx_disclaimer_v1` | Risk uyarısı modal'ı kabul edildi ("1") |
 
 ---
 

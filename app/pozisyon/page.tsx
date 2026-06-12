@@ -9,10 +9,16 @@ import { PositionEmptyState } from "@/components/pozisyon/PositionEmptyState";
 import { TradeTimelineCard } from "@/components/pozisyon/TradeTimelineCard";
 import { CloseConfirmModal } from "@/components/pozisyon/CloseConfirmModal";
 import { PortfolioSummaryBanner } from "@/components/pozisyon/PortfolioSummaryBanner";
-import { getOkxAdapter } from "@/lib/exchange/okx-adapter";
 import { getAdapter } from "@/lib/exchange";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 import { useT } from "@/lib/i18n/context";
 import type { Position } from "@/lib/okx/positions";
+
+/** Converts null/undefined → undefined, and rejects zero/negative prices.
+ *  Makes the "user cleared field = don't place order" intent explicit. */
+function toAdapterPrice(p: number | null | undefined): number | undefined {
+  return p != null && p > 0 ? p : undefined;
+}
 
 export default function PozisyonPage() {
   const t = useT();
@@ -21,16 +27,24 @@ export default function PozisyonPage() {
   const setClosingInstId = usePositionStore((s) => s.setClosingInstId);
   const removePosition = usePositionStore((s) => s.removePosition);
   const trades = useTradesStore((s) => s.trades);
+  const updateTradeSlTp = useTradesStore((s) => s.updateTradeSlTp);
   const demoMode = useSettingsStore((s) => s.demoMode);
+  const openTrades = trades.filter((t) => t.status === "open");
 
   const [confirmPosition, setConfirmPosition] = useState<Position | null>(null);
+  const [confirmCloseAll, setConfirmCloseAll] = useState(false);
   const [closeError, setCloseError] = useState<string | null>(null);
+  const [closingAll, setClosingAll] = useState(false);
 
   async function handleClose(pos: Position) {
+    if (!EXECUTION_ENABLED) {
+      setCloseError("Emir gönderme devre dışı. Pozisyonu OKX uygulamasından veya web panelinden kapatın.");
+      return;
+    }
     setCloseError(null);
     setClosingInstId(pos.instId);
     try {
-      const adapter = getOkxAdapter(demoMode);
+      const adapter = getAdapter(demoMode);
       const result = await adapter.closePosition({
         instId: pos.instId,
         mgnMode: pos.mgnMode,
@@ -49,56 +63,149 @@ export default function PozisyonPage() {
     }
   }
 
+  async function handleCloseAll() {
+    if (!EXECUTION_ENABLED) {
+      setCloseError("Emir gönderme devre dışı. Pozisyonları OKX, Binance veya Bybit uygulamasından kapatın.");
+      return;
+    }
+    if (closingAll || positions.length === 0) return;
+    setClosingAll(true);
+    setCloseError(null);
+    for (const pos of positions) {
+      try {
+        const adapter = getAdapter(demoMode);
+        const result = await adapter.closePosition({
+          instId: pos.instId,
+          mgnMode: pos.mgnMode,
+          posSide: pos.direction === "LONG" ? "long" : "short",
+        });
+        if (result.ok) {
+          removePosition(pos.instId);
+        } else {
+          setCloseError(result.errorMessage ?? t("app.closeFailed"));
+          break;
+        }
+      } catch (e) {
+        setCloseError(e instanceof Error ? e.message : t("karar.unknownError"));
+        break;
+      }
+    }
+    setClosingAll(false);
+  }
+
   return (
     <div className="flex flex-col gap-4">
+
+      {/* Execution devre dışı banner */}
+      {!EXECUTION_ENABLED && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-mono text-xs text-amber-400">
+          <span className="font-bold tracking-widest mr-2">⚙ SİNYAL MODU</span>
+          Emir yönetimi devre dışı. Pozisyonları OKX, Binance veya Bybit
+          uygulamasından yönetin.
+        </div>
+      )}
+
       {positions.length === 0 ? (
         <PositionEmptyState />
       ) : (
         <>
           {positions.length > 1 && (
-            <PortfolioSummaryBanner positions={positions} />
+            <>
+              <PortfolioSummaryBanner positions={positions} />
+              {EXECUTION_ENABLED && (!confirmCloseAll ? (
+                <button
+                  type="button"
+                  onClick={() => setConfirmCloseAll(true)}
+                  disabled={closingAll || !!closingInstId}
+                  className="w-full rounded border border-signal-red/40 bg-signal-red/5 py-2 font-mono text-xs font-bold tracking-widest text-signal-red/80 transition-colors hover:bg-signal-red/15 disabled:opacity-40 disabled:cursor-wait"
+                >
+                  ✕ {t("position.closeButton")} ({positions.length})
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { void handleCloseAll(); setConfirmCloseAll(false); }}
+                    disabled={closingAll}
+                    className="flex-1 rounded border border-signal-red/70 bg-signal-red/15 py-2 font-mono text-xs font-bold tracking-widest text-signal-red transition-colors hover:bg-signal-red/25 disabled:opacity-40 disabled:cursor-wait"
+                  >
+                    {closingAll ? `${t("position.closing")}…` : `⚠ Onayla — ${positions.length} pozisyon`}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmCloseAll(false)}
+                    className="rounded border border-border px-4 py-2 font-mono text-xs text-text-t3 hover:text-text-t2 transition-colors"
+                  >
+                    İptal
+                  </button>
+                </div>
+              ))}
+            </>
           )}
-          {positions.map((pos) => (
-            <PositionCard
-              key={pos.instId}
-              position={pos}
-              onClose={() => setConfirmPosition(pos)}
-              isClosing={closingInstId === pos.instId}
-              onScaleIn={async (qty) => {
-                const adapter = getAdapter(demoMode);
-                const res = await adapter.openPosition({
-                  pair: pos.pair,
-                  direction: pos.direction,
-                  qty,
-                  leverage: pos.leverage,
-                  marginMode: pos.mgnMode,
-                });
-                if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
-              }}
-              onScaleOut={async (qty) => {
-                const adapter = getAdapter(demoMode);
-                const res = await adapter.partialClosePosition({
-                  instId: pos.instId,
-                  mgnMode: pos.mgnMode,
-                  direction: pos.direction,
-                  qty,
-                });
-                if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
-              }}
-              onUpdateSlTp={async (slPrice, tp1Price) => {
-                const adapter = getAdapter(demoMode);
-                const res = await adapter.updateSlTp({
-                  instId: pos.instId,
-                  direction: pos.direction,
-                  mgnMode: pos.mgnMode,
-                  qty: pos.size,
-                  slPrice: slPrice ?? undefined,
-                  tp1Price: tp1Price ?? undefined,
-                });
-                if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
-              }}
-            />
-          ))}
+          {positions.map((pos) => {
+            const matchingTrade = openTrades
+              .filter((t) => t.pair === pos.pair && t.direction === pos.direction)
+              .sort((a, b) => b.openedAt - a.openedAt)[0];
+
+            return (
+              <PositionCard
+                key={pos.instId}
+                position={pos}
+                onClose={EXECUTION_ENABLED ? () => setConfirmPosition(pos) : undefined}
+                isClosing={closingInstId === pos.instId}
+                tradeSl={matchingTrade?.stopPrice ?? null}
+                tradeTp1={matchingTrade?.takeProfit1 ?? null}
+                tradeTp2={matchingTrade?.takeProfit2 ?? null}
+                onScaleIn={EXECUTION_ENABLED ? async (qty) => {
+                  const adapter = getAdapter(demoMode);
+                  const res = await adapter.openPosition({
+                    pair: pos.pair,
+                    direction: pos.direction,
+                    qty,
+                    leverage: pos.leverage,
+                    marginMode: pos.mgnMode,
+                  });
+                  if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
+                } : undefined}
+                onScaleOut={EXECUTION_ENABLED ? async (qty) => {
+                  const adapter = getAdapter(demoMode);
+                  const res = await adapter.partialClosePosition({
+                    instId: pos.instId,
+                    mgnMode: pos.mgnMode,
+                    direction: pos.direction,
+                    qty,
+                  });
+                  if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
+                } : undefined}
+                onUpdateSlTp={EXECUTION_ENABLED ? async (slPrice, tp1Price, tp2Price) => {
+                  const adapter = getAdapter(demoMode);
+                  const res = await adapter.updateSlTp({
+                    instId: pos.instId,
+                    direction: pos.direction,
+                    mgnMode: pos.mgnMode,
+                    qty: pos.size,
+                    slPrice: toAdapterPrice(slPrice),
+                    tp1Price: toAdapterPrice(tp1Price),
+                    tp2Price: toAdapterPrice(tp2Price),
+                  });
+                  if (!res.ok) throw new Error(res.errorMessage ?? t("app.closeFailed"));
+                  // re-lookup after await to avoid stale closure
+                  const fresh = useTradesStore
+                    .getState()
+                    .trades.filter(
+                      (tr) =>
+                        tr.pair === pos.pair &&
+                        tr.direction === pos.direction &&
+                        tr.status === "open",
+                    )
+                    .sort((a, b) => b.openedAt - a.openedAt)[0];
+                  if (fresh) {
+                    updateTradeSlTp(fresh.id, slPrice, tp1Price, tp2Price);
+                  }
+                } : undefined}
+              />
+            );
+          })}
         </>
       )}
 
@@ -110,7 +217,7 @@ export default function PozisyonPage() {
 
       <TradeTimelineCard trades={trades} limit={10} />
 
-      {confirmPosition && (
+      {confirmPosition && EXECUTION_ENABLED && (
         <CloseConfirmModal
           position={confirmPosition}
           onClose={() => setConfirmPosition(null)}
