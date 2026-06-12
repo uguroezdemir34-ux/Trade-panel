@@ -55,7 +55,7 @@ export interface ConnectionState {
 /** WS sabitleri */
 export const WS_CONSTANTS = {
   /** Silence watchdog süresi — bu kadar süre tick gelmezse sessiz say */
-  SILENCE_TIMEOUT_MS: 5_000,
+  SILENCE_TIMEOUT_MS: 10_000,
   /** Silence watchdog kontrol periyodu */
   SILENCE_CHECK_MS: 1_000,
   /** OKX ping periyodu (default 25s) */

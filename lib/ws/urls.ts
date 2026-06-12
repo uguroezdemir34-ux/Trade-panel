@@ -23,6 +23,18 @@ const BINANCE_STREAMS = PAIRS.map((p) => `${p.toLowerCase()}usdt@ticker`).join("
  */
 export const WS_ENDPOINTS: readonly WsEndpoint[] = [
   {
+    // Port 443 — firewall/carrier-friendly, port 8443 bloke olan ağlarda direkt çalışır
+    url: "wss://ws.okx.com/ws/v5/public",
+    type: "okx",
+    subscribeMessage: {
+      op: "subscribe",
+      args: OKX_INSTRUMENTS.flatMap((instId) => [
+        { channel: "tickers", instId },
+        { channel: "trades", instId },
+      ]),
+    },
+  },
+  {
     url: "wss://ws.okx.com:8443/ws/v5/public",
     type: "okx",
     subscribeMessage: {
@@ -35,17 +47,6 @@ export const WS_ENDPOINTS: readonly WsEndpoint[] = [
   },
   {
     url: "wss://wsaws.okx.com:8443/ws/v5/public",
-    type: "okx",
-    subscribeMessage: {
-      op: "subscribe",
-      args: OKX_INSTRUMENTS.flatMap((instId) => [
-        { channel: "tickers", instId },
-        { channel: "trades", instId },
-      ]),
-    },
-  },
-  {
-    url: "wss://ws.okx.com/ws/v5/public",
     type: "okx",
     subscribeMessage: {
       op: "subscribe",
