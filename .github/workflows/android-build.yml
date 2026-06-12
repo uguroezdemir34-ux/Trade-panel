@@ -39,6 +39,15 @@ jobs:
           CI: "true"
           NODE_ENV: production
 
+      # QUANTIX OS logosuyla tüm Android mipmap boyutlarını üret
+      # assets/icon.png (1024px) → legacy icons
+      # assets/icon-only.png    → adaptive foreground katmanı
+      # assets/icon-background.png (#0A0A0A) → adaptive arka plan
+      - name: Generate Android app icons
+        run: npx @capacitor/assets generate --android
+        env:
+          CI: "true"
+
       # hardware acceleration açıkça manifest'e yaz — Xiaomi/MIUI WebView siyah ekran fix
       - name: Patch AndroidManifest — hardwareAccelerated
         run: |
