@@ -20,7 +20,10 @@ const config: CapacitorConfig = {
     androidScheme: "https",
     allowNavigation: [
       "quantix-os-new.vercel.app",
+      "quantixos.com",
       "*.quantixos.com",
+      "quantixos.io",
+      "*.quantixos.io",
       "*.clerk.accounts.dev",
       "*.clerk.dev",
     ],
