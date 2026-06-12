@@ -34,6 +34,15 @@ jobs:
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
+      # @clerk/nextjs v6 içinde 'use server' direktifleri var — static export bunu reddeder.
+      # node_modules içindeki Clerk dosyalarından direktifi şerit et (runtime etkilenmez).
+      - name: Strip Clerk 'use server' for static export
+        run: |
+          find node_modules/@clerk -type f \( -name "*.js" -o -name "*.mjs" \) \
+            -exec grep -l "'use server'" {} \; | \
+            xargs -I {} sed -i "s/'use server';//g" {} || true
+          echo "Clerk 'use server' stripping done"
+
       # Static export'ta API route'lar desteklenmiyor — build öncesi app/ dışına taşı.
       # app/ içinde kalırsa Next.js yine route olarak görür.
       # APK'daki JS zaten NEXT_PUBLIC_APP_URL (Vercel) üzerinden API'ye erişiyor.
