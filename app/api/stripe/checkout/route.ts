@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, currentUser } from "@/lib/auth/serverStubs";
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(req: NextRequest) {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   if (!stripeKey) {

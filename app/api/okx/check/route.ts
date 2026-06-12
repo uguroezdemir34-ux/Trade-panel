@@ -15,8 +15,6 @@
 
 import { loadServerConfigFromEnv } from "@/lib/okx/server-handler";
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(): Promise<Response> {
   const config = loadServerConfigFromEnv(process.env);
 

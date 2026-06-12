@@ -14,8 +14,6 @@ import {
   type BinanceProxyRequest,
 } from "@/lib/binance/server-handler";
 
-export const dynamic = 'force-dynamic';
-
 export async function POST(req: NextRequest): Promise<NextResponse> {
   let parsed: {
     path?: string;

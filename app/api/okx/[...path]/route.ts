@@ -16,8 +16,6 @@ import {
   loadServerConfigFromEnv,
 } from "@/lib/okx/server-handler";
 
-export const dynamic = 'force-dynamic';
-
 function buildOkxPath(req: NextRequest): string {
   // URL: /api/okx/api/v5/market/candles?instId=...
   // OKX path: /api/v5/market/candles?instId=...

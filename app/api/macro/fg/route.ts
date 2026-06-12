@@ -11,8 +11,6 @@ import { NextResponse } from "next/server";
 import { fetchFearGreed } from "@/lib/macro/fetch";
 import { getFgInfo } from "@/lib/macro/regime";
 
-export const dynamic = 'force-dynamic';
-
 export async function GET() {
   const now = Date.now();
   const result = await fetchFearGreed(now);

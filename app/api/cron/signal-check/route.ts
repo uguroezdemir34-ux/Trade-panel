@@ -25,8 +25,6 @@ import { loadTelegramConfigFromEnv } from "@/lib/notify/telegram/config";
 import { sendTelegramMessage } from "@/lib/notify/telegram/client";
 import { escapeMarkdownV2, bold } from "@/lib/notify/telegram/escape";
 
-export const dynamic = 'force-dynamic';
-
 export const runtime = "nodejs";
 export const maxDuration = 10;
 

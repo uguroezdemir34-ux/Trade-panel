@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { escapeMarkdownV2, bold } from "@/lib/notify/telegram/escape";
 
-export const dynamic = 'force-dynamic';
-
 /**
  * TRADINGVIEW WEBHOOK — Receives TradingView alerts and forwards to Telegram.
  *

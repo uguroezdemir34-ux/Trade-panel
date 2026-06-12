@@ -34,6 +34,11 @@ jobs:
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
+      # Static export'ta API route'lar desteklenmiyor — build öncesi gizle.
+      # APK'daki JS zaten NEXT_PUBLIC_APP_URL (Vercel) üzerinden API'ye erişiyor.
+      - name: Hide API routes for static export
+        run: mv app/api app/api.disabled
+
       # Gerçek Next.js static build → out/ APK'ya gömülür (production mimari)
       # Build başarısız olursa (eksik secret vs.) diagnostic HTML fallback devreye girer
       - name: Build Next.js (static export → out/)
