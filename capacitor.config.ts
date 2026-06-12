@@ -3,23 +3,19 @@ import type { CapacitorConfig } from "@capacitor/cli";
 /**
  * CAPACITOR CONFIG — QUANTIX OS native app wrapper.
  *
- * Mimari: local assets (APK'ya gömülü)
- *   - webDir: "out"  →  next build (NEXT_OUTPUT=export) çıktısı APK'ya kopyalanır
- *   - server.url YOK  →  uygulama kendi içindeki dosyaları açar, Vercel'e bağlanmaz
- *   - API çağrıları (OKX, Clerk) hâlâ internete gider — sadece ilk yükleme lokale taşındı
- *
- * Mobil build:
- *   NEXT_OUTPUT=export npm run build   →  out/ üretir
- *   npx cap sync android               →  out/ → android/assets/public/ kopyalar
+ * Mimari: remote (Vercel)
+ *   - server.url → APK WebView doğrudan Vercel'i açar
+ *   - webDir: "public" → Capacitor için zorunlu alan; server.url varken çalışma zamanında kullanılmaz
+ *   - Clerk, API route'lar, SSR — hepsi Vercel tarafında çalışır, uyumluluk sorunu yok
  */
 
 const config: CapacitorConfig = {
-  appId: "com.quantixos.trading.test9",
+  appId: "com.quantixos.trading.test10",
   appName: "QUANTIX OS",
-  webDir: "out",
+  webDir: "public",
 
   server: {
-    // No server.url — APK kendi out/ içeriğini açar
+    url: "https://quantix-os-new.vercel.app",
     cleartext: false,
     androidScheme: "https",
     allowNavigation: [
@@ -48,7 +44,6 @@ const config: CapacitorConfig = {
     },
 
     App: {
-      // iOS'ta "swipe back" navigasyonu etkinleştir
       launchUrl: "/karar",
     },
   },
@@ -57,13 +52,11 @@ const config: CapacitorConfig = {
     contentInset: "always",
     backgroundColor: "#0A0A0A",
     scheme: "quantixos",
-    // Minimum iOS 16 (Safe Area, Sheet API)
     minVersion: "16.0",
   },
 
   android: {
-    // DIAGNOSTIC: kırmızı — eğer ekran kırmızıya dönerse WebView render ediyor demek
-    backgroundColor: "#FF0000",
+    backgroundColor: "#0A0A0A",
     allowMixedContent: false,
     captureInput: true,
     webContentsDebuggingEnabled: true,

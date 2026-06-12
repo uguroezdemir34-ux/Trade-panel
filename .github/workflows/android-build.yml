@@ -26,50 +26,13 @@ jobs:
           java-version: "21"
 
       # ubuntu-latest'te Android SDK kurulu gelir ($ANDROID_HOME set).
-      # Gradle build öncesi lisansları otomatik kabul et.
       - name: Accept Android SDK licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
 
-      # package-lock.json yok (silindi), npm install kullan (npm ci değil)
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
-      # @clerk/nextjs v6 içinde 'use server' direktifleri var — static export bunu reddeder.
-      # node_modules içindeki Clerk dosyalarından direktifi şerit et (runtime etkilenmez).
-      - name: Strip Clerk 'use server' for static export
-        run: |
-          find node_modules/@clerk -type f \( -name "*.js" -o -name "*.mjs" \) \
-            -exec grep -l "'use server'" {} \; | \
-            xargs -I {} sed -i "s/'use server';//g" {} || true
-          echo "Clerk 'use server' stripping done"
-
-      # Static export'ta API route'lar desteklenmiyor — build öncesi app/ dışına taşı.
-      # app/ içinde kalırsa Next.js yine route olarak görür.
-      # APK'daki JS zaten NEXT_PUBLIC_APP_URL (Vercel) üzerinden API'ye erişiyor.
-      - name: Hide API routes for static export
-        run: mv app/api _api_disabled
-
-      # Gerçek Next.js static build → out/ APK'ya gömülür (production mimari)
-      # Build başarısız olursa (eksik secret vs.) diagnostic HTML fallback devreye girer
-      - name: Build Next.js (static export → out/)
-        run: |
-          npm run build || true
-          if [ ! -f "out/index.html" ]; then
-            echo "⚠️  next build başarısız veya out/index.html yok — diagnostic HTML kullanılıyor"
-            echo "    Çözüm: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY GitHub secret'ını ekle"
-            mkdir -p out
-            printf '<html><body style="margin:0;background:red;color:white;font-family:sans-serif;padding:20px"><h1>LOCAL ASSETS ✓</h1><p>next build başarısız — GitHub secrets eksik olabilir.</p></body></html>' > out/index.html
-          else
-            echo "✅  next build başarılı — gerçek uygulama APKya gömülüyor"
-          fi
-        env:
-          NEXT_OUTPUT: export
-          NODE_ENV: production
-          NEXT_PUBLIC_APP_URL: https://quantix-os-new.vercel.app
-          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
-          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-
-      # NODE_ENV=production: capacitor.config.ts'de server.url → Vercel URL (localhost değil)
+      # NODE_ENV=production: capacitor.config.ts'de server.url → Vercel URL
       - name: Add Android platform
         run: npx cap add android
         env:
@@ -95,7 +58,7 @@ jobs:
               print("Already present, no patch needed")
           PYEOF
 
-      # versionCode + versionName — Play Store hazırlığı için sabit değer
+      # versionCode + versionName — Play Store hazırlığı için
       - name: Set versionCode=1, versionName="1.0.0"
         run: |
           python3 - << 'PYEOF'
@@ -108,18 +71,11 @@ jobs:
           print("Patched: versionCode=1, versionName=1.0.0")
           PYEOF
 
-      # SDK seviyelerini CI logunda görmek için — targetSdk 35 olmalı (Capacitor 7)
       - name: Print variables.gradle (SDK confirmation)
         run: cat android/variables.gradle
 
-      # Siyah ekran teşhisi — Activity katmanını WebView'dan ayırt etmek için:
-      # 1. styles.xml print → Capacitor 7'nin ürettiği tema yapısını gör
-      # 2. AppTheme.NoActionBarLaunch parent'ı Theme.SplashScreen ise → AppTheme.NoActionBar'a çevir
-      #    (Theme.SplashScreen, HyperOS 3'te sistem splash'ını freeze edebilir)
-      # 3. AppTheme'e android:windowBackground=#FF0000 ekle
-      #    Eğer test7 APK kırmızı gösterirse → Activity render ediyor, sorun WebView katmanında
-      #    Eğer hâlâ siyah → sorun Activity/theme katmanında (daha derin native sorun)
-      - name: Patch styles.xml — remove Theme.SplashScreen + red window background
+      # Theme.SplashScreen kaldır — HyperOS 3'te sistem splash dondurabilir
+      - name: Patch styles.xml — remove Theme.SplashScreen
         run: |
           python3 - << 'PYEOF'
           import re
@@ -129,20 +85,12 @@ jobs:
           print(content)
           print("===========================")
 
-          # Theme.SplashScreen parent'ı kaldır — HyperOS 3'te sistem splash dondurabilir
           content = content.replace(
               'parent="Theme.SplashScreen"',
               'parent="AppTheme.NoActionBar"'
           )
-          # Splash-screen'e özgü item'ları temizle
           content = re.sub(r'\s*<item name="windowSplashScreen[^"]*">[^<]*</item>', '', content)
           content = re.sub(r'\s*<item name="postSplashScreenTheme">[^<]*</item>', '', content)
-
-          # AppTheme'e kırmızı window background ekle (Activity render ediyor mu test)
-          content = content.replace(
-              'parent="Theme.AppCompat.Light.NoActionBar">',
-              'parent="Theme.AppCompat.Light.NoActionBar">\n        <item name="android:windowBackground">#FF0000</item>'
-          )
 
           open(path, "w").write(content)
           print("=== PATCHED styles.xml ===")
