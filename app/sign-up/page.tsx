@@ -1,13 +1,11 @@
-import { SignUp } from "@clerk/nextjs";
+"use client";
 
-export function generateStaticParams() {
-  return [{}];
-}
+import { SignUp } from "@clerk/nextjs";
 
 export default function SignUpPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-bg">
-      <SignUp />
+      <SignUp routing="virtual" />
     </div>
   );
 }
