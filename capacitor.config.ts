@@ -10,12 +10,12 @@ import type { CapacitorConfig } from "@capacitor/cli";
  */
 
 const config: CapacitorConfig = {
-  appId: "com.quantixos.trading.test10",
+  appId: "com.quantixos.trading",
   appName: "QUANTIX OS",
   webDir: "public",
 
   server: {
-    url: "https://quantixos.io",
+    url: "https://quantixos.com",
     cleartext: false,
     androidScheme: "https",
     allowNavigation: [
