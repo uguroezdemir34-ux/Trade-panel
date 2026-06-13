@@ -36,7 +36,7 @@ export function DirectionBadge({
       <span className="leading-none">{icon}</span>
       <span>{t(KEYS[direction])}</span>
       {confidence > 0 && (
-        <span className="opacity-70">·{(confidence * 100).toFixed(0)}%</span>
+        <span className="opacity-70">· {confidence}/3 {t("direction.alignment")}</span>
       )}
     </div>
   );

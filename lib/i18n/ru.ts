@@ -57,6 +57,7 @@ export const ru: Dictionary = {
     long: "LONG",
     short: "SHORT",
     neutral: "НЕЙТРАЛЬНО",
+    alignment: "aligned",
   },
 
   score: {

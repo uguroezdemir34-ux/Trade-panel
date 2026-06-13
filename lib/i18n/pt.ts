@@ -57,6 +57,7 @@ export const pt: Dictionary = {
     long: "LONG",
     short: "SHORT",
     neutral: "NEUTRO",
+    alignment: "aligned",
   },
 
   score: {

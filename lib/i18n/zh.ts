@@ -57,6 +57,7 @@ export const zh: Dictionary = {
     long: "LONG",
     short: "SHORT",
     neutral: "中性",
+    alignment: "aligned",
   },
 
   score: {

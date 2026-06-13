@@ -57,6 +57,7 @@ export const ko: Dictionary = {
     long: "LONG",
     short: "SHORT",
     neutral: "중립",
+    alignment: "aligned",
   },
 
   score: {

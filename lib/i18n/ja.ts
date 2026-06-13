@@ -57,6 +57,7 @@ export const ja: Dictionary = {
     long: "LONG",
     short: "SHORT",
     neutral: "中立",
+    alignment: "aligned",
   },
 
   score: {
