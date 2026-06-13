@@ -47,33 +47,21 @@ export async function fetchFundingRate(
 
     const raw = (await res.json()) as Record<string, unknown>;
 
-    // Proxy unwrap (mevcut OKX wrap pattern)
-    let inner: Record<string, unknown> = raw;
-    if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
-      const d = raw.data as Record<string, unknown>;
-      if (typeof d.code === "string") inner = d;
+    // Proxy zarfı: { ok: true, data: [...] } | Direkt OKX: { code, data: [...] }
+    let items: unknown;
+    if (typeof raw.ok === "boolean") {
+      if (!raw.ok) return { pair, fundingRate: 0, annualizedPct: 0, source: "fallback" };
+      items = raw.data;
+    } else if (raw.code === "0") {
+      items = raw.data;
+    } else {
+      return { pair, fundingRate: 0, annualizedPct: 0, source: "fallback" };
+    }
+    if (!Array.isArray(items) || items.length === 0) {
+      return { pair, fundingRate: 0, annualizedPct: 0, source: "fallback" };
     }
 
-    if (inner.code !== "0") {
-      return {
-        pair,
-        fundingRate: 0,
-        annualizedPct: 0,
-        source: "fallback",
-      };
-    }
-
-    const data = inner.data as Array<Record<string, unknown>> | undefined;
-    if (!data || data.length === 0) {
-      return {
-        pair,
-        fundingRate: 0,
-        annualizedPct: 0,
-        source: "fallback",
-      };
-    }
-
-    const first = data[0];
+    const first = items[0] as Record<string, unknown>;
     const rateStr = first.fundingRate as string | undefined;
     const rate = rateStr ? parseFloat(rateStr) : 0;
     if (!isFinite(rate)) {
