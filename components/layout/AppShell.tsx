@@ -37,7 +37,6 @@ import { usePositionPoller } from "@/lib/hooks/usePositionPoller";
 import { useScoreEngine } from "@/lib/hooks/useScoreEngine";
 import { useGoAlerts } from "@/lib/hooks/useGoAlerts";
 import { useScoreHistory } from "@/lib/hooks/useScoreHistory";
-import { useTrailingManager } from "@/lib/hooks/useTrailingManager";
 import { useBalancePoller } from "@/lib/hooks/useBalancePoller";
 import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
@@ -48,7 +47,6 @@ import { useScoreMomentumAlerts } from "@/lib/hooks/useScoreMomentumAlerts";
 import { useConsecutiveLossAlert } from "@/lib/hooks/useConsecutiveLossAlert";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
-import { useBotMode } from "@/lib/hooks/useBotMode";
 import { usePwaSetup } from "@/lib/hooks/usePwaSetup";
 import { useEmergencyStopGuard } from "@/lib/hooks/useEmergencyStopGuard";
 import { useSlProximityAlert } from "@/lib/hooks/useSlProximityAlert";
@@ -106,7 +104,6 @@ export function AppShell({
 
   // Secondary — staggered to avoid startup thundering herd
   usePositionPoller(1_000); // t+1s
-  useTrailingManager();     // candle-triggered, etkisiz erken çalışsa da
   useBalancePoller(2_000);  // t+2s
   useMacroPoller(3_000);    // t+3s — en yavaş değişen veri, en son
   // Günlük P&L takip → drawdown protokol tier güncelle (güvenlik kritik)
@@ -123,8 +120,6 @@ export function AppShell({
   useConsecutiveLossAlert();
   // Gerçek OKX liquidation-orders feed — liq haritası için (OHLCV tahmininin yerini alır)
   useLiqFeed();
-  // Bot modu — GO sinyalinde otomatik emir açar (Pro özelliği, ayarlardan açılır)
-  useBotMode();
   // Acil stop guard — OKX algo emri tetiklenmezse client tarafı SL koruması
   useEmergencyStopGuard();
   // SL yaklaştığında Telegram bildirimi — %3 eşiği, 15 dak cooldown

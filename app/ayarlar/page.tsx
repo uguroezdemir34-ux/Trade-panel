@@ -13,7 +13,6 @@ import { GoAlertsCard } from "@/components/ayarlar/GoAlertsCard";
 import { PriceAlarmsCard } from "@/components/ayarlar/PriceAlarmsCard";
 import { TvWebhookCard } from "@/components/ayarlar/TvWebhookCard";
 import { ScorerWeightsCard } from "@/components/ayarlar/ScorerWeightsCard";
-import { BotModeCard } from "@/components/ayarlar/BotModeCard";
 import { BinanceCredsCard } from "@/components/ayarlar/BinanceCredsCard";
 import { BybitCredsCard } from "@/components/ayarlar/BybitCredsCard";
 import { PwaCard } from "@/components/ayarlar/PwaCard";
@@ -93,9 +92,6 @@ export default function AyarlarPage() {
           </div>
           <SubscriptionGate feature="scorerWeights">
             <ScorerWeightsCard />
-          </SubscriptionGate>
-          <SubscriptionGate feature="botMode">
-            <BotModeCard />
           </SubscriptionGate>
           <PwaCard />
         </div>

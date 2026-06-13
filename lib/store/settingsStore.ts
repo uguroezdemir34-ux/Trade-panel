@@ -63,8 +63,6 @@ const settingsSchema = z.object({
     trend: z.number(), adx: z.number(), rsi: z.number(), vol: z.number(),
     bb: z.number(), vwap: z.number(), funding: z.number(), macro: z.number(),
   }).nullable(),
-  botModeEnabled: z.boolean(),
-  botModeMinScore: z.number().int().min(50).max(100),
   activeExchange: exchangeSchema,
   discordWebhookUrl: z.string().nullable(),
 });
@@ -89,8 +87,6 @@ export const DEFAULT_SETTINGS: SettingsData = {
   goAlertsEnabled: false,
   audioAlertsEnabled: true,
   scorerWeights: null,
-  botModeEnabled: false,
-  botModeMinScore: 80,
   activeExchange: "okx" as ActiveExchange,
   discordWebhookUrl: null,
 };
@@ -113,8 +109,6 @@ const KEYS = {
   goAlertsEnabled: "go_alerts_enabled",
   audioAlertsEnabled: "audio_alerts_enabled",
   scorerWeights: "scorer_weights",
-  botModeEnabled: "bot_mode_enabled",
-  botModeMinScore: "bot_mode_min_score",
   activeExchange: "active_exchange",
   discordWebhookUrl: "discord_webhook_url",
 } as const;
@@ -138,8 +132,6 @@ interface SettingsStoreState extends SettingsData {
   setTheme: (theme: Theme) => void;
   setGoAlertsEnabled: (on: boolean) => void;
   setAudioAlertsEnabled: (on: boolean) => void;
-  setBotModeEnabled: (on: boolean) => void;
-  setBotModeMinScore: (n: number) => void;
   setActiveExchange: (e: ActiveExchange) => void;
   setDiscordWebhookUrl: (url: string | null) => void;
   /** Tüm ayarları varsayılana sıfırla */
@@ -217,16 +209,6 @@ export function loadSettings(): SettingsData {
         trend: z.number(), adx: z.number(), rsi: z.number(), vol: z.number(),
         bb: z.number(), vwap: z.number(), funding: z.number(), macro: z.number(),
       }).nullable(),
-    ),
-    botModeEnabled: loadFromStorage<boolean>(
-      KEYS.botModeEnabled,
-      DEFAULT_SETTINGS.botModeEnabled,
-      z.boolean(),
-    ),
-    botModeMinScore: loadFromStorage<number>(
-      KEYS.botModeMinScore,
-      DEFAULT_SETTINGS.botModeMinScore,
-      z.number().int().min(50).max(100),
     ),
     activeExchange: loadFromStorage<ActiveExchange>(
       KEYS.activeExchange,
@@ -320,17 +302,6 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ scorerWeights: weights });
   },
 
-  setBotModeEnabled: (on) => {
-    saveToStorage(KEYS.botModeEnabled, on);
-    set({ botModeEnabled: on });
-  },
-
-  setBotModeMinScore: (n) => {
-    const safe = Math.max(50, Math.min(100, Math.round(n)));
-    saveToStorage(KEYS.botModeMinScore, safe);
-    set({ botModeMinScore: safe });
-  },
-
   setActiveExchange: (e) => {
     saveToStorage(KEYS.activeExchange, e);
     set({ activeExchange: e });
@@ -359,8 +330,6 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     saveToStorage(KEYS.goAlertsEnabled, DEFAULT_SETTINGS.goAlertsEnabled);
     saveToStorage(KEYS.audioAlertsEnabled, DEFAULT_SETTINGS.audioAlertsEnabled);
     saveToStorage(KEYS.scorerWeights, DEFAULT_SETTINGS.scorerWeights);
-    saveToStorage(KEYS.botModeEnabled, DEFAULT_SETTINGS.botModeEnabled);
-    saveToStorage(KEYS.botModeMinScore, DEFAULT_SETTINGS.botModeMinScore);
     saveToStorage(KEYS.activeExchange, DEFAULT_SETTINGS.activeExchange);
     saveToStorage(KEYS.discordWebhookUrl, DEFAULT_SETTINGS.discordWebhookUrl);
     set({ ...DEFAULT_SETTINGS });

@@ -306,14 +306,6 @@ export const zh: Dictionary = {
       funding: "Funding Rate",
       macro: "Macro (F&G)",
     },
-    botMode: {
-      title: "Bot Mode",
-      subtitle: "Auto-execute orders on GO signal",
-      warning: "LIVE ORDERS will be placed automatically. Make sure OKX API credentials have Trade permission and risk limits are configured.",
-      minScore: "Minimum score threshold",
-      statusActive: "Bot active — monitoring all pairs",
-      statusOff: "Bot off",
-    },
     binanceCreds: {
       title: "Binance Futures",
       subtitle: "USDT-M Perpetual futures via FAPI",

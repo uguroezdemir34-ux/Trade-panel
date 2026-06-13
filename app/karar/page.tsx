@@ -36,10 +36,6 @@ import { atr } from "@/lib/indicators/atr";
 import { adx } from "@/lib/indicators/adx";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import { findSwingLevels } from "@/lib/sr/swing";
-import { orchestrate } from "@/lib/orchestrator/router";
-import { getAdapter } from "@/lib/exchange";
-import { createChannel } from "@/lib/notify/registry";
-import { getGlobalDedupeStore } from "@/lib/orchestrator/dedupe";
 import type { PositionSizerResult } from "@/lib/sizer/types";
 import { useFlowIntelligence } from "@/lib/hooks/useFlowIntelligence";
 import { getBucketStats } from "@/lib/bucket/stats";
@@ -91,11 +87,7 @@ export default function KararPage() {
   const balanceTotal = useAccountStore((s) => s.balanceTotal);
   const balanceFree = useAccountStore((s) => s.balanceFree);
   const drawdownProtocol = useAccountStore((s) => s.drawdownProtocol);
-  const maxTradesPerDay = useSettingsStore((s) => s.maxTradesPerDay);
-  const demoMode = useSettingsStore((s) => s.demoMode);
   const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
-  const btcCooldownUntil = useRiskStore((s) => s.btcCooldownUntil);
-  const btcSelfCooldownUntil = useRiskStore((s) => s.btcSelfCooldownUntil);
   const logEvent = useRiskStore((s) => s.logEvent);
   const trades = useTradesStore((s) => s.trades);
   const openPending = useTradesStore((s) => s.openPending);
@@ -296,22 +288,12 @@ export default function KararPage() {
     });
   }, [result, livePrice, atrValue, adxValue, swingLevels, activePair, balanceTotal, balanceFree, drawdownProtocol]);
 
-  async function handleConfirm(marginMode: "cross" | "isolated" = "cross") {
+  async function handleConfirm(_marginMode: "cross" | "isolated" = "cross") {
     if (!sizerResult || !result || !livePrice) return;
     if (result.direction !== "LONG" && result.direction !== "SHORT") return;
 
     setIsExecuting(true);
     setExecError(null);
-
-    const today = new Date();
-    const todayTrades = trades.filter((tr) => {
-      const d = new Date(tr.openedAt);
-      return (
-        d.getFullYear() === today.getFullYear() &&
-        d.getMonth() === today.getMonth() &&
-        d.getDate() === today.getDate()
-      );
-    });
 
     const fundingResult = funding[activePair] ?? null;
 
@@ -348,73 +330,8 @@ export default function KararPage() {
       return;
     }
 
-    try {
-      const output = await orchestrate(
-        {
-          signal: result,
-          pair: activePair,
-          livePrice,
-          qty: sizerResult.qty,
-          stopPrice: sizerResult.stop.stopPrice,
-          takeProfitPrice: sizerResult.tp.tp1Price,
-          leverage: sizerResult.leverage,
-          marginMode,
-          source: "manual",
-          accountState: {
-            drawdownProtocol,
-            btcCooldownUntil,
-            btcSelfCooldownUntil,
-            todayTradeCount: todayTrades.length,
-            maxTradesPerDay,
-          },
-        },
-        {
-          adapter: getAdapter(demoMode),
-          channels: [createChannel("telegram")],
-          dedupeStore: getGlobalDedupeStore(),
-        },
-      );
-
-      const je = output.journalEntry;
-      logEvent(je.type as Parameters<typeof logEvent>[0], {
-        pair: je.pair,
-        direction: je.direction,
-        score: je.score,
-        decision: je.decision,
-        source: je.source,
-        reason: je.reason,
-      });
-
-      if (output.ok) {
-        openPending({
-          pair: activePair,
-          direction: result.direction,
-          entryPrice: livePrice,
-          qty: sizerResult.qty,
-          leverage: sizerResult.leverage,
-          stopPrice: sizerResult.stop.stopPrice,
-          takeProfit1: sizerResult.tp.tp1Price,
-          takeProfit2: sizerResult.tp.tp2Price,
-          riskAmountUsd: sizerResult.risk.riskUsd,
-          isPaper: demoMode,
-          entryContext: {
-            score: result.score,
-            verdict: result.verdict,
-            fgValue: fgValue ?? undefined,
-            fundingRate: fundingResult?.fundingRate ?? undefined,
-            drawdownTier: drawdownProtocol.tier,
-          },
-          orderId: output.tradeResult?.data?.orderId,
-        });
-        setShowConfirm(false);
-      } else {
-        setExecError(output.reasonHuman);
-      }
-    } catch (e) {
-      setExecError(e instanceof Error ? e.message : t("karar.unknownError"));
-    } finally {
-      setIsExecuting(false);
-    }
+    setExecError("Forward Test Modunu etkinleştirin — emir gönderme devre dışı.");
+    setIsExecuting(false);
   }
 
   return (

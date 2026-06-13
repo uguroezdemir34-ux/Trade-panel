@@ -318,14 +318,6 @@ export const tr: Dictionary = {
       funding: "Fonlama Oranı",
       macro: "Makro (K/A)",
     },
-    botMode: {
-      title: "Bot Modu",
-      subtitle: "GO sinyalinde otomatik emir aç",
-      warning: "CANLI EMİRLER otomatik açılacak. OKX API anahtarlarının Trade iznine sahip olduğundan ve risk limitlerinin yapılandırıldığından emin olun.",
-      minScore: "Minimum skor eşiği",
-      statusActive: "Bot aktif — tüm pariteler izleniyor",
-      statusOff: "Bot kapalı",
-    },
     binanceCreds: {
       title: "Binance Futures",
       subtitle: "USDT-M Perpetual vadeli işlemler (FAPI)",
