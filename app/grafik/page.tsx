@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
@@ -30,16 +30,34 @@ const VOL_UP = "rgba(34,197,94,0.5)";
 const VOL_DOWN = "rgba(239,68,68,0.5)";
 
 const CHART_STORAGE_KEY = "qx_chart_v1";
-const VALID_TF = new Set<string>(["5m", "15m", "1h", "4h", "1d"]);
+const VALID_TF = new Set<string>(["1m", "5m", "15m", "1h", "4h", "1d"]);
 
-/** Secondary timeframe for split view */
+/** Secondary timeframe for split view (zoom-in pattern) */
 const SEC_TF: Record<Timeframe, Timeframe> = {
   "1d": "4h",
   "4h": "1h",
   "1h": "15m",
   "15m": "5m",
-  "5m": "5m",
+  "5m": "1m",
+  "1m": "1m",
 };
+
+/** Drawn lines localStorage helpers */
+const LINES_KEY = "qx_chart_dl_v2_";
+function loadLines(pair: string): DrawnLine[] {
+  try {
+    const raw = localStorage.getItem(LINES_KEY + pair);
+    if (!raw) return [];
+    const d = JSON.parse(raw);
+    return Array.isArray(d) ? (d as DrawnLine[]) : [];
+  } catch { return []; }
+}
+function saveLines(pair: string, lines: DrawnLine[]): void {
+  try {
+    if (lines.length === 0) localStorage.removeItem(LINES_KEY + pair);
+    else localStorage.setItem(LINES_KEY + pair, JSON.stringify(lines));
+  } catch { /* ignore */ }
+}
 
 /** Build ChartSeries from a candle array + overlay flags */
 function buildSeries(
@@ -189,42 +207,96 @@ export default function GrafikPage() {
   const [capturedPrice, setCapturedPrice] = useState<number | null>(null);
   const [secCandles, setSecCandles]     = useState<Candle[]>([]);
   const [secLoading, setSecLoading]     = useState(false);
+  // Chart height / fullscreen
+  const [chartHeight, setChartHeight]   = useState(480);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  // Local candles for 1m/5m (not covered by global poller)
+  const [localCandles, setLocalCandles] = useState<Candle[]>([]);
+  // Guard against saving before initial load completes
+  const hasLoadedRef = useRef(false);
 
   // Load persisted settings on mount
   useEffect(() => {
+    let loadedPair: Pair = "BTC";
     try {
       const raw = localStorage.getItem(CHART_STORAGE_KEY);
-      if (!raw) return;
-      const s = JSON.parse(raw) as Record<string, unknown>;
-      if (typeof s.pair === "string" && (PAIRS as readonly string[]).includes(s.pair)) setPair(s.pair as Pair);
-      if (typeof s.tf === "string" && VALID_TF.has(s.tf)) setTimeframe(s.tf as Timeframe);
-      const o = s.o as Record<string, boolean> | undefined;
-      if (o) {
-        if (o.ema20  !== undefined) setShowEma20(o.ema20);
-        if (o.ema50  !== undefined) setShowEma50(o.ema50);
-        if (o.ema200 !== undefined) setShowEma200(o.ema200);
-        if (o.vol    !== undefined) setShowVolume(o.vol);
-        if (o.rsi    !== undefined) setShowRsi(o.rsi);
-        if (o.macd   !== undefined) setShowMacd(o.macd);
-        if (o.bb     !== undefined) setShowBb(o.bb);
-        if (o.vwap   !== undefined) setShowVwap(o.vwap);
-        if (o.sr     !== undefined) setShowSr(o.sr);
-        if (o.trades !== undefined) setShowTrades(o.trades);
+      if (raw) {
+        const s = JSON.parse(raw) as Record<string, unknown>;
+        if (typeof s.pair === "string" && (PAIRS as readonly string[]).includes(s.pair)) {
+          loadedPair = s.pair as Pair;
+          setPair(loadedPair);
+        }
+        if (typeof s.tf === "string" && VALID_TF.has(s.tf)) setTimeframe(s.tf as Timeframe);
+        if (typeof s.chartHeight === "number" && s.chartHeight >= 200 && s.chartHeight <= 1000) {
+          setChartHeight(s.chartHeight);
+        }
+        const o = s.o as Record<string, boolean> | undefined;
+        if (o) {
+          if (o.ema20  !== undefined) setShowEma20(o.ema20);
+          if (o.ema50  !== undefined) setShowEma50(o.ema50);
+          if (o.ema200 !== undefined) setShowEma200(o.ema200);
+          if (o.vol    !== undefined) setShowVolume(o.vol);
+          if (o.rsi    !== undefined) setShowRsi(o.rsi);
+          if (o.macd   !== undefined) setShowMacd(o.macd);
+          if (o.bb     !== undefined) setShowBb(o.bb);
+          if (o.vwap   !== undefined) setShowVwap(o.vwap);
+          if (o.sr     !== undefined) setShowSr(o.sr);
+          if (o.trades !== undefined) setShowTrades(o.trades);
+        }
       }
     } catch { /* ignore */ }
+    // Load drawn lines for restored pair (do this AFTER chartStorage parse)
+    setDrawnLines(loadLines(loadedPair));
+    hasLoadedRef.current = true;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist settings on change
+  // Persist settings on change (skip initial mount)
   useEffect(() => {
+    if (!hasLoadedRef.current) return;
     try {
       localStorage.setItem(CHART_STORAGE_KEY, JSON.stringify({
-        pair, tf: timeframe,
+        pair, tf: timeframe, chartHeight,
         o: { ema20: showEma20, ema50: showEma50, ema200: showEma200, vol: showVolume,
              rsi: showRsi, macd: showMacd, bb: showBb, vwap: showVwap, sr: showSr, trades: showTrades },
       }));
     } catch { /* ignore */ }
-  }, [pair, timeframe, showEma20, showEma50, showEma200, showVolume, showRsi, showMacd, showBb, showVwap, showSr, showTrades]);
+  }, [pair, timeframe, chartHeight, showEma20, showEma50, showEma200, showVolume, showRsi, showMacd, showBb, showVwap, showSr, showTrades]);
+
+  // Persist drawn lines per pair (skip initial mount)
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+    saveLines(pair, drawnLines);
+  }, [pair, drawnLines]);
+
+  // Fetch 1m/5m candles locally (not in global poller)
+  useEffect(() => {
+    if (timeframe !== "1m" && timeframe !== "5m") {
+      setLocalCandles([]);
+      return;
+    }
+    let cancelled = false;
+    const doFetch = async () => {
+      const data = await fetchCandles(pair, timeframe, 200);
+      if (!cancelled) setLocalCandles(data ?? []);
+    };
+    void doFetch();
+    const intervalMs = timeframe === "1m" ? 15_000 : 30_000;
+    const id = setInterval(() => void doFetch(), intervalMs);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+      setLocalCandles([]);
+    };
+  }, [pair, timeframe]);
+
+  // ESC exits fullscreen
+  useEffect(() => {
+    if (!isFullscreen) return;
+    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setIsFullscreen(false); };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [isFullscreen]);
 
   // Fetch secondary TF candles when split view is active
   const secTf = SEC_TF[timeframe];
@@ -237,8 +309,32 @@ export default function GrafikPage() {
       .finally(() => { setSecLoading(false); });
   }, [showSplit, pair, secTf]);
 
+  // Switch pair: load new pair's drawn lines, clear old ones
+  const handlePairChange = useCallback((newPair: Pair) => {
+    setDrawnLines(loadLines(newPair));
+    setPair(newPair);
+  }, []);
+
+  // Resize handle
+  const handleResizeMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    const startY = e.clientY;
+    const startH = chartHeight;
+    const onMove = (ev: MouseEvent) => {
+      setChartHeight(Math.max(200, Math.min(1000, startH + (ev.clientY - startY))));
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [chartHeight]);
+
   const candlesRaw = useCandleStore((s) => s.candles[`${pair}_${timeframe}`]);
-  const candles    = candlesRaw ?? EMPTY_CANDLES;
+  const storedCandles = candlesRaw ?? EMPTY_CANDLES;
+  // For 1m/5m use locally-fetched candles; global poller doesn't cover these TFs
+  const candles = (timeframe === "1m" || timeframe === "5m") ? localCandles : storedCandles;
   const trades     = useTradesStore((s) => s.trades);
   const alarms     = usePriceAlarmStore((s) => s.alarms);
   const livePrice  = useMarketStore((s) => s.prices[pair]?.last ?? null);
@@ -340,7 +436,7 @@ export default function GrafikPage() {
         showSplit={showSplit}
         clickMode={clickMode}
         hasDrawnLines={drawnLines.length > 0}
-        onPairChange={setPair}
+        onPairChange={handlePairChange}
         onTimeframeChange={setTimeframe}
         onToggleEma20={() => setShowEma20((v) => !v)}
         onToggleEma50={() => setShowEma50((v) => !v)}
@@ -440,12 +536,48 @@ export default function GrafikPage() {
               {pair} · {timeframe.toUpperCase()}
             </p>
           )}
-          <PriceChart
-            series={series}
-            height={showSplit ? 360 : 480}
-            theme={theme}
-            onPriceClick={handlePriceClick}
-          />
+          {/* Fullscreen wrapper */}
+          <div className={isFullscreen ? "fixed inset-0 z-50 bg-bg-page flex flex-col" : ""}>
+            {isFullscreen && (
+              <div className="flex items-center gap-2 shrink-0 border-b border-border px-3 py-2">
+                <span className="font-mono text-xs text-text-t2 font-bold">{pair} · {timeframe.toUpperCase()}</span>
+                <button
+                  onClick={() => setIsFullscreen(false)}
+                  className="ml-auto rounded border border-border px-2 py-0.5 font-mono text-2xs text-text-t3 hover:text-text-t1 hover:border-text-t2 transition-colors"
+                >
+                  ✕ Kapat
+                </button>
+              </div>
+            )}
+            <div className={isFullscreen ? "flex-1 relative" : "relative"}>
+              {!isFullscreen && (
+                <button
+                  onClick={() => setIsFullscreen(true)}
+                  className="absolute top-1 right-1 z-20 rounded border border-border bg-bg-card/80 px-1.5 py-0.5 font-mono text-2xs text-text-t4 hover:text-text-t2 hover:border-text-t3 transition-colors"
+                  title="Tam ekran"
+                >
+                  ⛶
+                </button>
+              )}
+              <PriceChart
+                series={series}
+                height={isFullscreen
+                  ? (typeof window !== "undefined" ? window.innerHeight - 56 : 700)
+                  : (showSplit ? 360 : chartHeight)}
+                theme={theme}
+                onPriceClick={handlePriceClick}
+                resetKey={`${pair}_${timeframe}`}
+              />
+            </div>
+          </div>
+          {/* Resize handle (only when not split or fullscreen) */}
+          {!showSplit && !isFullscreen && (
+            <div
+              className="mt-0.5 h-1.5 w-full cursor-row-resize rounded bg-border/30 hover:bg-border/70 transition-colors"
+              onMouseDown={handleResizeMouseDown}
+              title="Grafik yüksekliğini ayarla"
+            />
+          )}
         </div>
 
         {/* Secondary chart (split view) */}
@@ -461,6 +593,7 @@ export default function GrafikPage() {
                 height={360}
                 theme={theme}
                 onPriceClick={handlePriceClick}
+                resetKey={`${pair}_${secTf}`}
               />
             ) : (
               <div className="flex items-center justify-center h-[360px] rounded border border-border bg-bg-card">

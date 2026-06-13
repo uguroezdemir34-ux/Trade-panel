@@ -81,6 +81,7 @@ export async function fetchHistoricalCandleRange(
     "1h": 3_600_000,
     "15m": 900_000,
     "5m": 300_000,
+    "1m": 60_000,
   };
   const estimated = Math.ceil((Date.now() - fromMs) / MS_PER_BAR[tf]);
 

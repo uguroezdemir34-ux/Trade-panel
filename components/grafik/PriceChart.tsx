@@ -11,7 +11,7 @@
  * Pane layout: tek chart instance, ayrı priceScaleId + scaleMargins.
  */
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   createChart,
   type IChartApi,
@@ -22,6 +22,7 @@ import {
   type HistogramData,
   type SeriesMarker,
   type Time,
+  type MouseEventParams,
 } from "lightweight-charts";
 import type { ChartSeries } from "@/lib/chart/types";
 
@@ -31,6 +32,8 @@ interface Props {
   theme?: "dark" | "light";
   /** Called when user clicks on the chart (y-coordinate → price) */
   onPriceClick?: (price: number) => void;
+  /** Change when pair/TF changes to trigger a fitContent() reset */
+  resetKey?: string;
 }
 
 const COLOR_UP       = "#22c55e";
@@ -39,18 +42,17 @@ const COLOR_EMA20    = "#3b82f6";
 const COLOR_EMA50    = "#f59e0b";
 const COLOR_EMA200   = "#a855f7";
 const COLOR_RSI      = "#ec4899";
-const COLOR_BB       = "#06b6d4"; // cyan-500
-const COLOR_VWAP     = "#f97316"; // orange-500
+const COLOR_BB       = "#06b6d4";
+const COLOR_VWAP     = "#f97316";
 const COLOR_MACD     = "#3b82f6";
 const COLOR_SIGNAL   = "#f59e0b";
-const COLOR_LIVE     = "#3b82f6"; // blue-500
+const COLOR_LIVE     = "#3b82f6";
 
 const THEME_COLORS = {
   dark:  { grid: "#2d2d2d", text: "#a3a3a3", border: "#2d2d2d" },
   light: { grid: "#e5e5e5", text: "#525252",  border: "#e5e5e5" },
 } as const;
 
-// Dynamic pane layout — each sub-panel gets PANEL_H of chart height
 const PANEL_H = 0.20;
 const BOT_PAD = 0.01;
 
@@ -65,7 +67,6 @@ function candleMargins(panelCount: number) {
   return { top: 0.03, bottom: panelCount * PANEL_H + BOT_PAD };
 }
 
-// Assign slots bottom→top: MACD=0, RSI=1, Vol=2
 function computeSlots(hasVol: boolean, hasRsi: boolean, hasMacd: boolean) {
   const slots: { name: string; slot: number }[] = [];
   let next = 0;
@@ -75,13 +76,27 @@ function computeSlots(hasVol: boolean, hasRsi: boolean, hasMacd: boolean) {
   return slots;
 }
 
-export function PriceChart({ series, height = 400, theme = "dark", onPriceClick }: Props): React.ReactElement {
+interface CrosshairInfo {
+  open: number; high: number; low: number; close: number; volume?: number;
+}
+
+function fmtVal(n: number): string {
+  if (n >= 1000) return n.toFixed(2);
+  if (n >= 1) return n.toFixed(4);
+  return n.toFixed(6);
+}
+
+function fmtVol(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(2) + "K";
+  return n.toFixed(2);
+}
+
+export function PriceChart({ series, height = 400, theme = "dark", onPriceClick, resetKey }: Props): React.ReactElement {
   const containerRef  = useRef<HTMLDivElement>(null);
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  // Drawn lines (horizontal user-placed lines) — keyed by DrawnLine.id
   const drawnLinesMapRef = useRef<Map<string, IPriceLine>>(new Map());
-  // Stable ref for the click callback to avoid recreating chart on callback change
   const onPriceClickRef = useRef(onPriceClick);
   const ema20Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50Ref      = useRef<ISeriesApi<"Line"> | null>(null);
@@ -92,7 +107,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
   const macdLineRef   = useRef<ISeriesApi<"Line"> | null>(null);
   const macdSignalRef = useRef<ISeriesApi<"Line"> | null>(null);
   const alarmLinesRef = useRef<IPriceLine[]>([]);
-  const srLinesRef = useRef<IPriceLine[]>([]);
+  const srLinesRef    = useRef<IPriceLine[]>([]);
   const tradeLinesRef = useRef<IPriceLine[]>([]);
   const currentPriceLineRef = useRef<IPriceLine | null>(null);
   const bbUpperRef    = useRef<ISeriesApi<"Line"> | null>(null);
@@ -101,11 +116,20 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
   const vwapRef       = useRef<ISeriesApi<"Line"> | null>(null);
   const vwapUpperRef  = useRef<ISeriesApi<"Line"> | null>(null);
   const vwapLowerRef  = useRef<ISeriesApi<"Line"> | null>(null);
+  // fitContent guard — resets when resetKey changes, preventing zoom reset on every tick
+  const didFitRef    = useRef(false);
+  const resetKeyRef  = useRef<string | undefined>(undefined);
+  // Crosshair OHLCV overlay
+  const [crosshairData, setCrosshairData] = useState<CrosshairInfo | null>(null);
 
   // ─── Mount ───────────────────────────────────────────────────────────────
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
+    // New chart instance always needs fitContent on first data load
+    didFitRef.current = false;
+    resetKeyRef.current = undefined;
 
     const tc = THEME_COLORS[theme];
     const chart = createChart(container, {
@@ -155,7 +179,19 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       }
     });
 
+    // Wire crosshair → OHLCV overlay
+    const crosshairHandler = (param: MouseEventParams<Time>) => {
+      if (!param.point) { setCrosshairData(null); return; }
+      const cd = param.seriesData.get(candle) as { open: number; high: number; low: number; close: number } | undefined;
+      if (!cd) { setCrosshairData(null); return; }
+      const volSeries = volumeRef.current;
+      const vd = volSeries ? (param.seriesData.get(volSeries) as { value?: number } | undefined) : undefined;
+      setCrosshairData({ open: cd.open, high: cd.high, low: cd.low, close: cd.close, volume: vd?.value });
+    };
+    chart.subscribeCrosshairMove(crosshairHandler);
+
     return () => {
+      chart.unsubscribeCrosshairMove(crosshairHandler);
       ro.disconnect();
       chart.remove();
       drawnLinesMapRef.current.clear();
@@ -191,14 +227,12 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
     const incoming = series.drawnLines ?? [];
     const incomingIds = new Set(incoming.map((l) => l.id));
 
-    // Remove stale
     for (const [id, priceLine] of drawnLinesMapRef.current) {
       if (!incomingIds.has(id)) {
         try { candle.removePriceLine(priceLine); } catch { /* ignore */ }
         drawnLinesMapRef.current.delete(id);
       }
     }
-    // Add new
     for (const dl of incoming) {
       if (!drawnLinesMapRef.current.has(dl.id)) {
         const pl = candle.createPriceLine({
@@ -233,7 +267,6 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
     const candle = candleRef.current;
     if (!chart || !candle) return;
 
-    // Determine what's active this render
     const hasVol  = !!(series.volume?.length);
     const hasRsi  = !!(series.rsi?.length);
     const hasMacd = !!(series.macdData?.length);
@@ -241,15 +274,13 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
     const slots = computeSlots(hasVol, hasRsi, hasMacd);
     const panelCount = slots.length;
 
-    // 1. Update candle price scale margins
     chart.priceScale("right").applyOptions({
       scaleMargins: candleMargins(panelCount),
     });
 
-    // 2. Candle data
     candle.setData(series.candles as CandlestickData<Time>[]);
 
-    // 3. EMA20
+    // EMA20
     if (series.ema20?.length) {
       if (!ema20Ref.current) {
         ema20Ref.current = chart.addLineSeries({
@@ -263,7 +294,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       ema20Ref.current = null;
     }
 
-    // 4. EMA50
+    // EMA50
     if (series.ema50?.length) {
       if (!ema50Ref.current) {
         ema50Ref.current = chart.addLineSeries({
@@ -277,7 +308,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       ema50Ref.current = null;
     }
 
-    // 5. EMA200
+    // EMA200
     if (series.ema200?.length) {
       if (!ema200Ref.current) {
         ema200Ref.current = chart.addLineSeries({
@@ -291,14 +322,11 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       ema200Ref.current = null;
     }
 
-    // 5b. Bollinger Bands (overlay on main pane)
+    // Bollinger Bands
     if (series.bb?.upper.length) {
       const bbOpts = {
-        color: COLOR_BB,
-        lineWidth: 1 as const,
-        lineStyle: 0 as const,
-        priceLineVisible: false,
-        lastValueVisible: false,
+        color: COLOR_BB, lineWidth: 1 as const, lineStyle: 0 as const,
+        priceLineVisible: false, lastValueVisible: false,
       };
       if (!bbUpperRef.current)  bbUpperRef.current  = chart.addLineSeries({ ...bbOpts, lineStyle: 2 });
       if (!bbMiddleRef.current) bbMiddleRef.current = chart.addLineSeries({ ...bbOpts, lineWidth: 1 });
@@ -312,16 +340,11 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       if (bbLowerRef.current)  { chart.removeSeries(bbLowerRef.current);  bbLowerRef.current  = null; }
     }
 
-    // 5c. VWAP overlay
+    // VWAP
     if (series.vwap?.vwap.length) {
-      const vwapOpts = {
-        priceLineVisible: false,
-        lastValueVisible: true,
-      };
+      const vwapOpts = { priceLineVisible: false, lastValueVisible: true };
       if (!vwapRef.current) {
-        vwapRef.current = chart.addLineSeries({
-          ...vwapOpts, color: COLOR_VWAP, lineWidth: 2,
-        });
+        vwapRef.current = chart.addLineSeries({ ...vwapOpts, color: COLOR_VWAP, lineWidth: 2 });
       }
       if (!vwapUpperRef.current) {
         vwapUpperRef.current = chart.addLineSeries({
@@ -342,7 +365,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       if (vwapLowerRef.current) { chart.removeSeries(vwapLowerRef.current); vwapLowerRef.current = null; }
     }
 
-    // 6. Volume histogram
+    // Volume histogram
     if (hasVol) {
       const volSlot = slots.find((s) => s.name === "volume")!.slot;
       if (!volumeRef.current) {
@@ -360,7 +383,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       volumeRef.current = null;
     }
 
-    // 7. RSI panel
+    // RSI panel
     if (hasRsi) {
       const rsiSlot = slots.find((s) => s.name === "rsi")!.slot;
       if (!rsiRef.current) {
@@ -384,7 +407,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       rsiRef.current = null;
     }
 
-    // 7b. MACD panel
+    // MACD panel
     if (hasMacd) {
       const macdSlot = slots.find((s) => s.name === "macd")!.slot;
       const histData = series.macdData!.map((p) => ({
@@ -392,39 +415,25 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
         value: p.hist,
         color: p.hist >= 0 ? "#22c55e88" : "#ef444488",
       }));
-      const macdLineData = series.macdData!.map((p) => ({
-        time: p.time as Time,
-        value: p.macd,
-      }));
-      const signalData = series.macdData!.map((p) => ({
-        time: p.time as Time,
-        value: p.signal,
-      }));
+      const macdLineData = series.macdData!.map((p) => ({ time: p.time as Time, value: p.macd }));
+      const signalData   = series.macdData!.map((p) => ({ time: p.time as Time, value: p.signal }));
 
       if (!macdHistRef.current) {
         macdHistRef.current = chart.addHistogramSeries({
-          priceScaleId: "macd",
-          priceLineVisible: false,
-          lastValueVisible: false,
+          priceScaleId: "macd", priceLineVisible: false, lastValueVisible: false,
         });
         chart.priceScale("macd").applyOptions({ drawTicks: false, borderVisible: false });
       }
       if (!macdLineRef.current) {
         macdLineRef.current = chart.addLineSeries({
-          priceScaleId: "macd",
-          color: COLOR_MACD,
-          lineWidth: 1,
-          priceLineVisible: false,
-          lastValueVisible: false,
+          priceScaleId: "macd", color: COLOR_MACD, lineWidth: 1,
+          priceLineVisible: false, lastValueVisible: false,
         });
       }
       if (!macdSignalRef.current) {
         macdSignalRef.current = chart.addLineSeries({
-          priceScaleId: "macd",
-          color: COLOR_SIGNAL,
-          lineWidth: 1,
-          priceLineVisible: false,
-          lastValueVisible: false,
+          priceScaleId: "macd", color: COLOR_SIGNAL, lineWidth: 1,
+          priceLineVisible: false, lastValueVisible: false,
         });
       }
       chart.priceScale("macd").applyOptions({ scaleMargins: panelMargins(macdSlot) });
@@ -432,12 +441,12 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       macdLineRef.current.setData(macdLineData as LineData<Time>[]);
       macdSignalRef.current.setData(signalData as LineData<Time>[]);
     } else {
-      if (macdHistRef.current) { chart.removeSeries(macdHistRef.current); macdHistRef.current = null; }
-      if (macdLineRef.current) { chart.removeSeries(macdLineRef.current); macdLineRef.current = null; }
+      if (macdHistRef.current)   { chart.removeSeries(macdHistRef.current);   macdHistRef.current   = null; }
+      if (macdLineRef.current)   { chart.removeSeries(macdLineRef.current);   macdLineRef.current   = null; }
       if (macdSignalRef.current) { chart.removeSeries(macdSignalRef.current); macdSignalRef.current = null; }
     }
 
-    // 8. Alarm price lines
+    // Alarm price lines
     for (const line of alarmLinesRef.current) {
       try { candle.removePriceLine(line); } catch { /* ignore */ }
     }
@@ -447,16 +456,14 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
         const line = candle.createPriceLine({
           price: alarm.price,
           color: alarm.condition === "above" ? "#f59e0b" : "#a78bfa",
-          lineWidth: 1,
-          lineStyle: 2, // dashed
-          axisLabelVisible: true,
+          lineWidth: 1, lineStyle: 2, axisLabelVisible: true,
           title: alarm.label ? `⏰ ${alarm.label}` : "⏰",
         });
         alarmLinesRef.current.push(line);
       }
     }
 
-    // 9. Swing S/R level lines
+    // S/R level lines
     for (const line of srLinesRef.current) {
       try { candle.removePriceLine(line); } catch { /* ignore */ }
     }
@@ -466,48 +473,35 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
         const line = candle.createPriceLine({
           price: sr.price,
           color: sr.type === "support" ? "#22c55e88" : "#ef444488",
-          lineWidth: 1,
-          lineStyle: 1, // dotted
-          axisLabelVisible: true,
+          lineWidth: 1, lineStyle: 1, axisLabelVisible: true,
           title: sr.type === "support" ? "S" : "R",
         });
         srLinesRef.current.push(line);
       }
     }
 
-    // 10. Open trade level lines (entry/SL/TP)
+    // Open trade level lines
     for (const line of tradeLinesRef.current) {
       try { candle.removePriceLine(line); } catch { /* ignore */ }
     }
     tradeLinesRef.current = [];
     if (series.tradeLevels?.length) {
-      const TRADE_LINE_COLORS: Record<string, string> = {
-        entry: "#3b82f6",
-        sl: "#ef4444",
-        tp1: "#22c55e",
-        tp2: "#86efac",
-      };
-      const TRADE_LINE_TITLES: Record<string, string> = {
-        entry: "Entry",
-        sl: "SL",
-        tp1: "TP1",
-        tp2: "TP2",
-      };
+      const COLORS: Record<string, string> = { entry: "#3b82f6", sl: "#ef4444", tp1: "#22c55e", tp2: "#86efac" };
+      const TITLES: Record<string, string> = { entry: "Entry", sl: "SL", tp1: "TP1", tp2: "TP2" };
       for (const tl of series.tradeLevels) {
-        const color = TRADE_LINE_COLORS[tl.kind] ?? "#ffffff";
         const line = candle.createPriceLine({
           price: tl.price,
-          color,
+          color: COLORS[tl.kind] ?? "#ffffff",
           lineWidth: 1,
-          lineStyle: tl.kind === "entry" ? 0 : 2, // solid for entry, dashed for SL/TP
+          lineStyle: tl.kind === "entry" ? 0 : 2,
           axisLabelVisible: true,
-          title: TRADE_LINE_TITLES[tl.kind] ?? tl.kind,
+          title: TITLES[tl.kind] ?? tl.kind,
         });
         tradeLinesRef.current.push(line);
       }
     }
 
-    // 10b. Current live price line
+    // Live price line
     if (currentPriceLineRef.current) {
       try { candle.removePriceLine(currentPriceLineRef.current); } catch { /* ignore */ }
       currentPriceLineRef.current = null;
@@ -515,15 +509,12 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
     if (series.currentPrice && series.currentPrice > 0) {
       currentPriceLineRef.current = candle.createPriceLine({
         price: series.currentPrice,
-        color: COLOR_LIVE,
-        lineWidth: 1,
-        lineStyle: 3, // dotted
-        axisLabelVisible: true,
-        title: "LIVE",
+        color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
+        axisLabelVisible: true, title: "LIVE",
       });
     }
 
-    // 11. Trade markers
+    // Trade markers
     if (series.markers?.length) {
       const markers: SeriesMarker<Time>[] = series.markers.map((m) => ({
         time: m.time as Time,
@@ -537,8 +528,50 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       candle.setMarkers([]);
     }
 
-    chart.timeScale().fitContent();
-  }, [series]);
+    // fitContent only on first load per pair/TF (resetKey change resets the guard)
+    if (resetKeyRef.current !== resetKey) {
+      resetKeyRef.current = resetKey;
+      didFitRef.current = false;
+    }
+    if (!didFitRef.current && series.candles.length > 0) {
+      chart.timeScale().fitContent();
+      didFitRef.current = true;
+    }
+  }, [series, resetKey]);
 
-  return <div ref={containerRef} className="w-full" style={{ height }} />;
+  return (
+    <div className="relative w-full" style={{ height }}>
+      <div ref={containerRef} className="w-full h-full" />
+      {crosshairData && (
+        <div className="absolute top-1 left-1 z-10 flex gap-2.5 rounded bg-bg-card/90 border border-border px-2 py-1 font-mono text-2xs text-text-t2 pointer-events-none select-none">
+          <span>
+            <span className="text-text-t4">O </span>
+            <span className={crosshairData.close >= crosshairData.open ? "text-green-400" : "text-red-400"}>
+              {fmtVal(crosshairData.open)}
+            </span>
+          </span>
+          <span>
+            <span className="text-text-t4">H </span>
+            <span className="text-green-400">{fmtVal(crosshairData.high)}</span>
+          </span>
+          <span>
+            <span className="text-text-t4">L </span>
+            <span className="text-red-400">{fmtVal(crosshairData.low)}</span>
+          </span>
+          <span>
+            <span className="text-text-t4">C </span>
+            <span className={crosshairData.close >= crosshairData.open ? "text-green-400" : "text-red-400"}>
+              {fmtVal(crosshairData.close)}
+            </span>
+          </span>
+          {crosshairData.volume !== undefined && (
+            <span>
+              <span className="text-text-t4">V </span>
+              {fmtVol(crosshairData.volume)}
+            </span>
+          )}
+        </div>
+      )}
+    </div>
+  );
 }
