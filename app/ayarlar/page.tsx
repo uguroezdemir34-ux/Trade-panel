@@ -11,7 +11,6 @@ import { ModeToggleCard } from "@/components/ayarlar/ModeToggleCard";
 import { DangerZoneCard } from "@/components/ayarlar/DangerZoneCard";
 import { GoAlertsCard } from "@/components/ayarlar/GoAlertsCard";
 import { PriceAlarmsCard } from "@/components/ayarlar/PriceAlarmsCard";
-import { TvWebhookCard } from "@/components/ayarlar/TvWebhookCard";
 import { ScorerWeightsCard } from "@/components/ayarlar/ScorerWeightsCard";
 import { BinanceCredsCard } from "@/components/ayarlar/BinanceCredsCard";
 import { BybitCredsCard } from "@/components/ayarlar/BybitCredsCard";
@@ -82,10 +81,7 @@ export default function AyarlarPage() {
             </SubscriptionGate>
             <PriceAlarmsCard />
           </div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <TvWebhookCard />
-            <TradingLimitsCard />
-          </div>
+          <TradingLimitsCard />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <DrawdownToggleCard />
             <DangerZoneCard />

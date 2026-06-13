@@ -329,7 +329,7 @@ export const en: Dictionary = {
       secretPlaceholder: "API Secret",
       save: "Save Binance Keys",
       saveSuccess: "Saved",
-      hedgeWarning: "Hedge Mode must be enabled on Binance Futures (Account → Settings → Position Mode → Hedge Mode) before trading.",
+      hedgeWarning: "Read-only permission is sufficient for balance and position viewing — Trade permission is NOT required.",
     },
     bybitCreds: {
       title: "Bybit Futures",
@@ -342,7 +342,7 @@ export const en: Dictionary = {
       secretPlaceholder: "API Secret",
       save: "Save Bybit Keys",
       saveSuccess: "Saved",
-      note: "Ensure the API key has Read + Trade permissions. Hedge Mode (Two-Way Position) is recommended.",
+      note: "Read-only permission is sufficient for balance and position viewing — Trade permission is NOT required.",
     },
     pwa: {
       title: "PWA & Push Notifications",
@@ -380,19 +380,6 @@ export const en: Dictionary = {
     resetAll: "RESET ALL DATA",
     resetConfirm: "Are you sure? This will delete all panel data.",
     hydrating: "Loading...",
-    tvWebhook: {
-      description: "Forward TradingView alerts to Telegram. Use this URL in your alert settings.",
-      urlLabel: "Webhook URL",
-      copy: "Copy",
-      copied: "✓ Copied",
-      security: "Security (optional)",
-      securityDesc: "Add TV_WEBHOOK_SECRET=strong-password as a Vercel env var, then append ?secret=strong-password to the URL.",
-      template: "Alert JSON Template",
-      step1: "Create an alert in TradingView (Create Alert)",
-      step2: "Paste the Webhook URL in the Notifications tab",
-      step3: "Enter the JSON template above in the Alert Message box",
-      step4: "See the alert arrive in your Telegram channel",
-    },
   },
 
   auth: {

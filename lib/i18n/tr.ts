@@ -329,7 +329,7 @@ export const tr: Dictionary = {
       secretPlaceholder: "API Secret",
       save: "Binance Anahtarlarını Kaydet",
       saveSuccess: "Kaydedildi",
-      hedgeWarning: "Hedge Mode aktif edilmeli: Binance Futures → Hesap → Ayarlar → Pozisyon Modu → Hedge Mode.",
+      hedgeWarning: "Bakiye ve pozisyon görüntüleme için yalnızca Okuma izni yeterlidir — emir gönderme izni GEREKMEZ.",
     },
     bybitCreds: {
       title: "Bybit Futures",
@@ -342,7 +342,7 @@ export const tr: Dictionary = {
       secretPlaceholder: "API Secret",
       save: "Bybit Anahtarlarını Kaydet",
       saveSuccess: "Kaydedildi",
-      note: "API anahtarının Okuma + İşlem izinleri olmalı. İki yönlü Pozisyon Modu (Hedge) önerilir.",
+      note: "Bakiye ve pozisyon görüntüleme için yalnızca Okuma izni yeterlidir — emir gönderme izni GEREKMEZ.",
     },
     pwa: {
       title: "PWA & Push Bildirimleri",
@@ -380,19 +380,6 @@ export const tr: Dictionary = {
     resetAll: "TÜM VERİLERİ SIFIRLA",
     resetConfirm: "Emin misiniz? Bu işlem tüm panel verilerini silecektir.",
     hydrating: "Yükleniyor...",
-    tvWebhook: {
-      description: "TradingView alert'lerini Telegram'a yönlendir. Alert ayarlarında bu URL'yi kullan.",
-      urlLabel: "Webhook URL",
-      copy: "Kopyala",
-      copied: "✓ Kopyalandı",
-      security: "Güvenlik (opsiyonel)",
-      securityDesc: "Vercel env var olarak TV_WEBHOOK_SECRET=güçlü-şifre ekle, ardından URL'ye ?secret=güçlü-şifre ekle.",
-      template: "Alert JSON Şablonu",
-      step1: "TradingView'de bir alert oluştur (Create Alert)",
-      step2: "Notifications sekmesinde Webhook URL'yi yapıştır",
-      step3: "Alert Message kutusuna yukardaki JSON şablonunu yaz",
-      step4: "Telegram kanalında gelen alert'i gör",
-    },
   },
 
   auth: {
