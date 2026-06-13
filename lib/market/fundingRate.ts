@@ -116,9 +116,9 @@ export type FundingTier =
   | "extreme_short";
 
 export function classifyFundingRate(rate: number): FundingTier {
-  if (rate >= 0.0001) return "extreme_long";
-  if (rate >= 0.00005) return "elevated_long";
-  if (rate <= -0.0001) return "extreme_short";
-  if (rate <= -0.00005) return "elevated_short";
+  if (rate >= 0.0005) return "extreme_long";
+  if (rate >= 0.0002) return "elevated_long";
+  if (rate <= -0.0005) return "extreme_short";
+  if (rate <= -0.0002) return "elevated_short";
   return "neutral";
 }

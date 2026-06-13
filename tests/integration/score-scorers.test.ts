@@ -300,21 +300,21 @@ describe("scoreFunding()", () => {
     expect(scoreFunding(-0.0005, "LONG").score).toBe(8); // -0.05%
   });
 
-  it("SHORT + fr > 0.04% → 8 pts (contrarian opportunity)", () => {
+  it("SHORT + fr > 0.02% → 8 pts (contrarian opportunity)", () => {
     expect(scoreFunding(0.0006, "SHORT").score).toBe(8); // +0.06%
   });
 
-  it("LONG + fr > 0.04% → 1 pt (crowded longs)", () => {
-    expect(scoreFunding(0.0006, "LONG").score).toBe(1);  // +0.06%
+  it("LONG + fr > 0.05% → 2 pts (crowded longs)", () => {
+    expect(scoreFunding(0.0006, "LONG").score).toBe(2);  // +0.06%
   });
 
-  it("SHORT + fr < -0.03% → 1 pt (crowded shorts)", () => {
-    expect(scoreFunding(-0.0004, "SHORT").score).toBe(1); // -0.04%
+  it("SHORT + fr < -0.05% → 2 pts (crowded shorts); -0.04% → 5 pts (elevated)", () => {
+    expect(scoreFunding(-0.0006, "SHORT").score).toBe(2); // -0.06% → crowded
+    expect(scoreFunding(-0.0004, "SHORT").score).toBe(5); // -0.04% < 0.05% threshold → elevated
   });
 
-  it("moderate fr not hitting extremes → 5 pts (neutral)", () => {
-    // fr = 0.03% → absFr=0.03, not ≤0.02, not LONG<-0.02, not SHORT>0.04
-    // not LONG>0.04, not SHORT<-0.03 → 5 pts
+  it("0.02–0.05% → 5 pts (elevated, paying side)", () => {
+    // fr = 0.03% → absFr=0.03, > 0.02, LONG paying, not contrarian, not > 0.05 → elevated
     expect(scoreFunding(0.0003, "LONG").score).toBe(5);
   });
 });

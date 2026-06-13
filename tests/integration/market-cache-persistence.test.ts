@@ -49,38 +49,42 @@ import type { ScoreResult } from "@/lib/score/orchestrator";
 // ─────────────────────────────────────────────────────────────
 
 describe("classifyFundingRate()", () => {
-  it(">= 0.01% → extreme_long", () => {
-    expect(classifyFundingRate(0.0001)).toBe("extreme_long");
-    expect(classifyFundingRate(0.0005)).toBe("extreme_long");
+  it(">= 0.05% → extreme_long", () => {
+    expect(classifyFundingRate(0.0005)).toBe("extreme_long");  // tam eşik
+    expect(classifyFundingRate(0.001)).toBe("extreme_long");   // üstü
   });
 
-  it("0.005-0.01% → elevated_long", () => {
-    expect(classifyFundingRate(0.00005)).toBe("elevated_long");
-    expect(classifyFundingRate(0.00008)).toBe("elevated_long");
+  it("0.02–0.05% → elevated_long", () => {
+    expect(classifyFundingRate(0.0002)).toBe("elevated_long"); // tam alt eşik
+    expect(classifyFundingRate(0.0003)).toBe("elevated_long");
   });
 
-  it("-0.005 to +0.005% → neutral", () => {
+  it("-0.02% to +0.02% → neutral", () => {
     expect(classifyFundingRate(0)).toBe("neutral");
-    expect(classifyFundingRate(0.00004)).toBe("neutral");
-    expect(classifyFundingRate(-0.00004)).toBe("neutral");
+    expect(classifyFundingRate(0.0001)).toBe("neutral");       // eski extreme_long, artık neutral
+    expect(classifyFundingRate(0.00005)).toBe("neutral");      // eski elevated_long, artık neutral
+    expect(classifyFundingRate(0.00008)).toBe("neutral");
+    expect(classifyFundingRate(-0.00005)).toBe("neutral");     // eski elevated_short, artık neutral
+    expect(classifyFundingRate(-0.00008)).toBe("neutral");
+    expect(classifyFundingRate(-0.0001)).toBe("neutral");      // eski extreme_short, artık neutral
   });
 
-  it("-0.005 to -0.01% → elevated_short", () => {
-    expect(classifyFundingRate(-0.00005)).toBe("elevated_short");
-    expect(classifyFundingRate(-0.00008)).toBe("elevated_short");
+  it("-0.02% to -0.05% → elevated_short", () => {
+    expect(classifyFundingRate(-0.0002)).toBe("elevated_short"); // tam alt eşik
+    expect(classifyFundingRate(-0.0003)).toBe("elevated_short");
   });
 
-  it("<= -0.01% → extreme_short", () => {
-    expect(classifyFundingRate(-0.0001)).toBe("extreme_short");
+  it("<= -0.05% → extreme_short", () => {
+    expect(classifyFundingRate(-0.0005)).toBe("extreme_short");  // tam eşik
     expect(classifyFundingRate(-0.001)).toBe("extreme_short");
   });
 
-  it("tam eşik = 0.0001 → extreme_long (>= koşulu)", () => {
-    expect(classifyFundingRate(0.0001)).toBe("extreme_long");
+  it("tam eşik = 0.0005 → extreme_long (>= koşulu)", () => {
+    expect(classifyFundingRate(0.0005)).toBe("extreme_long");
   });
 
-  it("tam eşik = 0.00005 → elevated_long", () => {
-    expect(classifyFundingRate(0.00005)).toBe("elevated_long");
+  it("tam eşik = 0.0002 → elevated_long", () => {
+    expect(classifyFundingRate(0.0002)).toBe("elevated_long");
   });
 });
 

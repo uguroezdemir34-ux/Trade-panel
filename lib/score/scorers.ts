@@ -219,30 +219,26 @@ export function scoreFunding(
   const isLong = direction === "LONG";
   const isShort = direction === "SHORT";
 
+  // Healthy: OKX baseline faiz dahil küçük premium — yön bağımsız
   if (absFr <= 0.02) {
-    return {
-      score: 8,
-      reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (healthy)`,
-    };
+    return { score: 8, reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (healthy)` };
   }
-  // Contrarian (avantaj)
+  // Contrarian: alan taraf, cezalandırılmaz
   if (isLong && fr < -0.02) {
-    return { score: 8, reason: `${fr.toFixed(3)}% (LONG opportunity, contrarian)` };
+    return { score: 8, reason: `${fr.toFixed(3)}% (LONG contrarian)` };
   }
-  if (isShort && fr > 0.04) {
-    return { score: 8, reason: `+${fr.toFixed(3)}% (SHORT opportunity, contrarian)` };
+  if (isShort && fr > 0.02) {
+    return { score: 8, reason: `+${fr.toFixed(3)}% (SHORT contrarian)` };
   }
-  // Kalabalığa katılma (cezalı)
-  if (isLong && fr > 0.04) {
-    return { score: 1, reason: `+${fr.toFixed(3)}% (LONG crowded)` };
+  // Crowded extreme: ödeyen taraf, >0.05% (gerçek mania başlangıcı)
+  if (isLong && fr > 0.05) {
+    return { score: 2, reason: `+${fr.toFixed(3)}% (LONG crowded)` };
   }
-  if (isShort && fr < -0.03) {
-    return { score: 1, reason: `${fr.toFixed(3)}% (SHORT crowded)` };
+  if (isShort && fr < -0.05) {
+    return { score: 2, reason: `${fr.toFixed(3)}% (SHORT crowded)` };
   }
-  return {
-    score: 5,
-    reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (neutral)`,
-  };
+  // Elevated: ödeyen taraf, 0.02–0.05% (belirgin premium ama mania değil)
+  return { score: 5, reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (elevated)` };
 }
 
 // ───────── H) MACRO F&G (7 pts) ─────────

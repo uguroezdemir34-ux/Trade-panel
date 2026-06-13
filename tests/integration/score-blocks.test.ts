@@ -266,12 +266,13 @@ describe("checkVolumeLow()", () => {
 
 describe("checkFundingExtreme()", () => {
   it("null → null", () => expect(checkFundingExtreme(null)).toBeNull());
-  it("|fr| > 0.06% → block", () => {
-    expect(checkFundingExtreme(0.0007)).not.toBeNull();   // +0.07%
-    expect(checkFundingExtreme(-0.0007)).not.toBeNull();  // -0.07%
+  it("|fr| > 0.10% → block", () => {
+    expect(checkFundingExtreme(0.0011)).not.toBeNull();   // +0.11%
+    expect(checkFundingExtreme(-0.0011)).not.toBeNull();  // -0.11%
   });
-  it("|fr| ≤ 0.06% → null", () => {
-    expect(checkFundingExtreme(0.0006)).toBeNull();       // exactly 0.06%
+  it("|fr| ≤ 0.10% → null", () => {
+    expect(checkFundingExtreme(0.0007)).toBeNull();       // +0.07% (soft block bölgesi, extreme değil)
+    expect(checkFundingExtreme(0.0010)).toBeNull();       // tam 0.10% (> değil, null)
     expect(checkFundingExtreme(0.0003)).toBeNull();
   });
 });
@@ -375,17 +376,18 @@ describe("checkDailyTrendOpposite()", () => {
 });
 
 // ─────────────────────────────────────────────────────────────
-// checkFundingCrowded (soft block, 0.04-0.06% range)
+// checkFundingCrowded (soft block, 0.05-0.10% range)
 // ─────────────────────────────────────────────────────────────
 
 describe("checkFundingCrowded()", () => {
   it("null → null", () => expect(checkFundingCrowded(null, "LONG")).toBeNull());
   it("NEUTRAL → null", () => expect(checkFundingCrowded(0.0005, "NEUTRAL")).toBeNull());
 
-  it("LONG + fr 0.04-0.06% → soft block", () => {
-    expect(checkFundingCrowded(0.0005, "LONG")).not.toBeNull(); // +0.05%
+  it("LONG + fr 0.05-0.10% → soft block", () => {
+    expect(checkFundingCrowded(0.0005, "LONG")).not.toBeNull(); // +0.05% (alt sınır, dahil)
+    expect(checkFundingCrowded(0.0008, "LONG")).not.toBeNull(); // +0.08% (band ortası)
   });
-  it("SHORT + fr -0.04 to -0.06% → soft block", () => {
+  it("SHORT + fr -0.05 to -0.10% → soft block", () => {
     expect(checkFundingCrowded(-0.0005, "SHORT")).not.toBeNull(); // -0.05%
   });
 
@@ -393,9 +395,9 @@ describe("checkFundingCrowded()", () => {
     expect(checkFundingCrowded(-0.0005, "LONG")).toBeNull();
   });
 
-  it("fr outside 0.04-0.06% range → null", () => {
+  it("fr outside 0.05-0.10% range → null", () => {
     expect(checkFundingCrowded(0.0003, "LONG")).toBeNull(); // 0.03% (below threshold)
-    expect(checkFundingCrowded(0.0008, "LONG")).toBeNull(); // 0.08% (above — handled by extreme block)
+    expect(checkFundingCrowded(0.0011, "LONG")).toBeNull(); // 0.11% (above — handled by extreme block)
   });
 });
 

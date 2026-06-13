@@ -212,7 +212,7 @@ export function checkVolumeLow(volRatio: number | null): string | null {
 export function checkFundingExtreme(fundingRate: number | null): string | null {
   if (fundingRate === null) return null;
   const fr = fundingRate * 100;
-  return Math.abs(fr) > 0.06 ? `Funding extreme (${fr.toFixed(3)}%)` : null;
+  return Math.abs(fr) > 0.10 ? `Funding extreme (${fr.toFixed(3)}%)` : null;
 }
 
 export interface TimeQualityInput {
@@ -313,7 +313,7 @@ export function checkDailyTrendOpposite(input: DailyTrendInput): string | null {
 }
 
 /**
- * Funding mid-tier kalabalık soft block (0.04%-0.06% aralığı, yön funding ile aynı).
+ * Funding mid-tier kalabalık soft block (0.05%-0.10% aralığı, yön funding ile aynı).
  * Panel referansı: satır 7824-7834.
  */
 export function checkFundingCrowded(
@@ -327,7 +327,7 @@ export function checkFundingCrowded(
 
   const fr = fundingRate * 100;
   const absFr = Math.abs(fr);
-  if (absFr < 0.04 || absFr > 0.06) return null;
+  if (absFr < 0.05 || absFr > 0.10) return null;
 
   if (isLong && fr > 0) {
     return `💰 Funding +${fr.toFixed(3)}% — LONG crowded, avoid piling in`;
