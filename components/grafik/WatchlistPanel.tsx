@@ -4,11 +4,12 @@
  * WATCHLIST PANEL — TradingView-style izleme listesi (grafik sayfası sağ panel).
  *
  * Düzen:
- *   1. Makro dominance bloğu: BTC.D / ETH.D / USDT.D
- *   2. 15 coin — 4 kolon grid: Sembol | Son | Değ | Değ%
+ *   1. Makro dominance bloğu: BTC.D / ETH.D / USDT.D  (sticky, kaymaz)
+ *   2. Başlık satırı: Sembol | Son | Değ | %            (sticky, kaymaz)
+ *   3. 15 coin listesi                                   (overflow-y-auto scroll)
  *
  * Mobil: sağdan kayan drawer (floating "Liste" butonuyla açılır).
- * Masaüstü: sabit sağ sütun (w-[224px]).
+ * Masaüstü: sticky sağ sütun, max-h ile coin listesi kendi içinde kayar.
  */
 
 import { useState } from "react";
@@ -35,10 +36,11 @@ function fmtPct(chg: number | undefined | null): string {
 
 function fmtPrice(p: number): string {
   if (p <= 0) return "—";
-  if (p < 0.0001) return p.toFixed(8);
-  if (p < 0.01) return p.toFixed(6);
-  if (p < 1) return p.toFixed(4);
-  if (p < 100) return p.toFixed(3);
+  // Very small coins (SHIB range): exponential keeps it to 7 chars max
+  if (p < 0.00001) return p.toExponential(2);  // "4.91e-6"
+  if (p < 0.01)    return p.toFixed(6);         // "0.000014" (8 chars)
+  if (p < 1)       return p.toFixed(4);
+  if (p < 100)     return p.toFixed(3);
   return p.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
@@ -47,12 +49,13 @@ function fmtAbs(abs: number, last: number): string {
   const sign = abs >= 0 ? "+" : "";
   const a = Math.abs(abs);
   let s: string;
-  if (last < 0.0001) s = a.toFixed(8);
-  else if (last < 0.01) s = a.toFixed(6);
-  else if (last < 1) s = a.toFixed(4);
-  else if (last < 100) s = a.toFixed(3);
-  else if (a >= 1000) s = a.toLocaleString("en-US", { maximumFractionDigits: 0 });
-  else s = a.toFixed(2);
+  // Tiny abs change → exponential for compactness
+  if (a < 0.00001)      s = a.toExponential(2);  // "4.91e-8" → "+4.91e-8" (8 chars)
+  else if (last < 0.01) s = a.toFixed(6);         // "+0.000012" (9 chars, fits 56px col)
+  else if (last < 1)    s = a.toFixed(4);
+  else if (last < 100)  s = a.toFixed(3);
+  else if (a >= 1000)   s = a.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  else                  s = a.toFixed(2);
   return `${sign}${s}`;
 }
 
@@ -68,24 +71,27 @@ function domChgColor(v: number | null): string {
   return "text-text-t4";
 }
 
+// Grid column template — shared between header and data rows
+const GRID_COLS = "grid-cols-[1fr_56px_54px_44px]";
+
 /** Ortak içerik (masaüstü panel + mobil drawer) */
 function WatchlistContent({ activePair, onPairChange }: Props) {
-  const btcD = useMacroStore((s) => s.btcD);
-  const ethD = useMacroStore((s) => s.ethD);
-  const usdtD = useMacroStore((s) => s.usdtD);
+  const btcD         = useMacroStore((s) => s.btcD);
+  const ethD         = useMacroStore((s) => s.ethD);
+  const usdtD        = useMacroStore((s) => s.usdtD);
   const btcDChange24h = useMacroStore((s) => s.btcDChange24h);
   const ethDChange24h = useMacroStore((s) => s.ethDChange24h);
-  const prices = useMarketStore((s) => s.prices);
+  const prices       = useMarketStore((s) => s.prices);
 
   return (
     <>
-      {/* ── Dominance bloğu ── */}
-      <div className="px-2 pt-2 pb-1.5 border-b border-border/50">
+      {/* ── Dominance bloğu (sabit) ── */}
+      <div className="shrink-0 px-2 pt-2 pb-1.5 border-b border-border/50">
         <p className="text-text-t4 font-mono text-[9px] uppercase tracking-widest mb-1.5">Dominance</p>
         <div className="flex flex-col gap-0.5">
           {([
-            { label: "BTC.D", val: btcD, chg: btcDChange24h },
-            { label: "ETH.D", val: ethD, chg: ethDChange24h },
+            { label: "BTC.D",  val: btcD,  chg: btcDChange24h },
+            { label: "ETH.D",  val: ethD,  chg: ethDChange24h },
             { label: "USDT.D", val: usdtD, chg: null },
           ] as const).map(({ label, val, chg }) => (
             <div key={label} className="flex items-center justify-between">
@@ -105,33 +111,43 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
         </div>
       </div>
 
-      {/* ── Başlık satırı ── */}
-      <div className="grid grid-cols-[1fr_54px_52px_42px] gap-x-1 px-2 py-1 border-b border-border/50 shrink-0">
+      {/* ── Başlık satırı (sabit) ── */}
+      <div className={`shrink-0 grid ${GRID_COLS} gap-x-1 px-2 py-1 border-b border-border/50`}>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider">Sembol</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">Son</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">Değ</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">%</span>
       </div>
 
-      {/* ── Coin listesi ── */}
-      <div className="flex flex-col overflow-y-auto flex-1">
+      {/* ── Coin listesi (kaydırılabilir) ── */}
+      <div
+        className={[
+          "flex flex-col overflow-y-auto flex-1",
+          // İnce, sönük scrollbar
+          "[&::-webkit-scrollbar]:w-[3px]",
+          "[&::-webkit-scrollbar-thumb]:rounded-full",
+          "[&::-webkit-scrollbar-thumb]:bg-border/60",
+          "[&::-webkit-scrollbar-track]:bg-transparent",
+        ].join(" ")}
+      >
         {PAIRS.map((pair) => {
-          const tick = prices[pair];
-          const last = tick?.last ?? 0;
+          const tick    = prices[pair];
+          const last    = tick?.last    ?? 0;
           const open24h = tick?.open24h ?? 0;
-          const abs = open24h > 0 ? last - open24h : 0;
-          const chg = tick?.chg;
+          const abs     = open24h > 0 ? last - open24h : 0;
+          const chg     = tick?.chg;
           const isActive = pair === activePair;
           return (
             <button
               key={pair}
               onClick={() => onPairChange(pair)}
-              className={`grid grid-cols-[1fr_54px_52px_42px] gap-x-1 items-center px-2 py-1.5 text-left transition-colors border-l-2 ${
+              className={`grid ${GRID_COLS} gap-x-1 items-center px-2 py-1.5 text-left transition-colors border-l-2 ${
                 isActive
                   ? "bg-brand/10 border-l-brand"
                   : "hover:bg-bg-hover border-l-transparent"
               }`}
             >
+              {/* Sembol */}
               <span
                 className={`font-mono text-[10px] font-semibold truncate ${
                   isActive ? "text-brand" : "text-text-t2"
@@ -139,17 +155,22 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
               >
                 {pair}
               </span>
-              <span className="font-mono text-[9px] tabular-nums text-right text-text-t2">
+              {/* Son fiyat */}
+              <span className="font-mono text-[9px] tabular-nums whitespace-nowrap text-right text-text-t2">
                 {last > 0 ? fmtPrice(last) : "—"}
               </span>
+              {/* Değ (mutlak) */}
               <span
-                className={`font-mono text-[9px] tabular-nums text-right ${
+                className={`font-mono text-[9px] tabular-nums whitespace-nowrap text-right ${
                   chgColor(open24h > 0 ? abs : null)
                 }`}
               >
                 {open24h > 0 ? fmtAbs(abs, last) : "—"}
               </span>
-              <span className={`font-mono text-[9px] tabular-nums text-right ${chgColor(chg)}`}>
+              {/* Değ% */}
+              <span
+                className={`font-mono text-[9px] tabular-nums whitespace-nowrap text-right ${chgColor(chg)}`}
+              >
                 {fmtPct(chg)}
               </span>
             </button>
@@ -171,7 +192,19 @@ export function WatchlistPanel({ activePair, onPairChange }: Props): React.React
   return (
     <>
       {/* ── Masaüstü panel (md+) ── */}
-      <div className="hidden md:flex flex-col border border-border bg-bg-card rounded-lg overflow-hidden select-none w-[224px] shrink-0">
+      {/*
+        self-start + sticky: panel sayfayla birlikte kaymaz, viewport üstünde sabit durur.
+        max-h: yükseklik sınırı → flex-1 coin listesi bu sınırda scroll eder.
+      */}
+      <div
+        className={[
+          "hidden md:flex flex-col",
+          "border border-border bg-bg-card rounded-lg overflow-hidden",
+          "select-none w-[236px] shrink-0",
+          "self-start sticky top-3",
+          "max-h-[calc(100vh-80px)]",
+        ].join(" ")}
+      >
         <WatchlistContent activePair={activePair} onPairChange={onPairChange} />
       </div>
 
