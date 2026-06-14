@@ -49,7 +49,7 @@ import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
 import { GoSignalLog } from "@/components/karar/GoSignalLog";
 import { KeyboardShortcutsModal } from "@/components/karar/KeyboardShortcutsModal";
 import { HistoricalEdge } from "@/components/karar/HistoricalEdge";
-import { FundingBadge } from "@/components/karar/FundingBadge";
+import { FlowMiniCards } from "@/components/karar/FlowMiniCards";
 import { CorrelationWarning } from "@/components/karar/CorrelationWarning";
 import { CandlePatternBadge } from "@/components/karar/CandlePatternBadge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
@@ -601,7 +601,7 @@ export default function KararPage() {
                 </Link>
               )}
 
-              {/* HERO: Verdict + Direction + Funding */}
+              {/* HERO: Verdict + Direction + Regime */}
               <div className="flex flex-wrap items-center gap-2">
                 <VerdictBadge
                   verdict={result.verdict}
@@ -611,21 +611,45 @@ export default function KararPage() {
                   direction={result.direction}
                   confidence={result.dirConfidence}
                 />
-                <FundingBadge
-                  pair={activePair}
-                  direction={result.direction !== "NEUTRAL" ? result.direction : undefined}
-                />
                 <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
               </div>
 
-              {/* Score bar */}
-              <ScoreBar
-                score={result.score}
-                threshold={result.effectiveThreshold}
-                goThreshold={result.goThreshold}
-              />
+              {/* Score bar + compact FLOW badge */}
+              <div className="flex gap-3 items-start">
+                <div className="flex-1 min-w-0">
+                  <ScoreBar
+                    score={result.score}
+                    threshold={result.effectiveThreshold}
+                    goThreshold={result.goThreshold}
+                  />
+                </div>
+                {flowResult && (
+                  <div className={`shrink-0 flex flex-col items-center justify-center rounded-lg border px-3 py-2 min-w-[64px] ${
+                    flowResult.vetoed || flowResult.totalAdjustment < -5
+                      ? "border-red-500/30 bg-red-500/5"
+                      : flowResult.totalAdjustment > 5
+                      ? "border-green-500/30 bg-green-500/5"
+                      : "border-border bg-surface-s1"
+                  }`}>
+                    <span className="text-[9px] font-mono text-text-t4 tracking-widest uppercase leading-tight">FLOW</span>
+                    <span className={`text-base font-mono font-bold tabular-nums leading-tight ${
+                      flowResult.vetoed || flowResult.totalAdjustment < 0
+                        ? "text-signal-down"
+                        : flowResult.totalAdjustment > 0
+                        ? "text-signal-up"
+                        : "text-text-t3"
+                    }`}>
+                      {flowResult.totalAdjustment > 0 ? `+${flowResult.totalAdjustment}` : `${flowResult.totalAdjustment}`}
+                    </span>
+                    <span className="text-[9px] font-mono text-text-t4 tabular-nums leading-tight">×{flowResult.confidenceMultiplier.toFixed(2)}</span>
+                  </div>
+                )}
+              </div>
 
-              {/* Flow summary — single line */}
+              {/* Smart Money + Volume Delta 5m mini cards */}
+              <FlowMiniCards flow={flowResult} />
+
+              {/* Flow drilldown */}
               <FlowAlignmentRow flow={flowResult} />
 
               {/* Details accordion — hidden by default */}

@@ -16,7 +16,6 @@
 import { useState, useMemo } from "react";
 import type { FlowIntelligenceResult } from "@/lib/orderflow/flowIntelligence";
 import type { LiquidationMap } from "@/lib/orderflow/liquidationMap";
-import { formatCvd } from "@/lib/orderflow/cvd";
 import { useLiqFeedStore } from "@/lib/store/liqFeedStore";
 import type { LiqEvent } from "@/lib/store/liqFeedStore";
 import { useT } from "@/lib/i18n/context";
@@ -111,23 +110,6 @@ export function FlowAlignmentRow({ flow }: Props) {
       {expanded && (
         <div className="border-t border-border px-3 py-2 space-y-1.5" data-testid="flow-drilldown">
 
-          {/* Smart Money (VPIN) */}
-          <DetailRow
-            label="Smart Money"
-            value={
-              flow.flowVerdict.vpin && flow.flowVerdict.vpin.ready
-                ? `${flow.flowVerdict.vpin.toxicity.toUpperCase()} (VPIN ${flow.flowVerdict.vpin.vpin.toFixed(2)})`
-                : t("karar.flowComputing")
-            }
-          />
-
-          {/* Volume Delta — üç pencere */}
-          <CvdRow
-            w1m={flow.flowVerdict.cvd.w1m}
-            w5m={flow.flowVerdict.cvd.w5m}
-            w15m={flow.flowVerdict.cvd.w15m}
-          />
-
           {/* Delta Divergence */}
           <DetailRow
             label="Divergence"
@@ -163,49 +145,6 @@ export function FlowAlignmentRow({ flow }: Props) {
         </div>
       )}
     </div>
-  );
-}
-
-// ── CVD üç pencere ────────────────────────────────────────────────────────────
-
-interface CvdWindowLike {
-  cvdUsd: number;
-  direction: string;
-}
-
-function CvdRow({
-  w1m,
-  w5m,
-  w15m,
-}: {
-  w1m: CvdWindowLike;
-  w5m: CvdWindowLike;
-  w15m: CvdWindowLike;
-}) {
-  return (
-    <div className="flex items-center justify-between text-xs">
-      <span className="text-text-t4">Volume Delta</span>
-      <div className="flex items-center gap-2 font-mono tabular-nums">
-        <CvdChip label="1m" window={w1m} />
-        <CvdChip label="5m" window={w5m} />
-        <CvdChip label="15m" window={w15m} />
-      </div>
-    </div>
-  );
-}
-
-function CvdChip({ label, window: w }: { label: string; window: CvdWindowLike }) {
-  const color =
-    w.direction === "bullish"
-      ? "text-signal-up"
-      : w.direction === "bearish"
-      ? "text-signal-down"
-      : "text-text-t3";
-  return (
-    <span className="flex items-center gap-0.5">
-      <span className="text-text-t4 text-[10px]">{label}</span>
-      <span className={`${color} text-[11px]`}>{formatCvd(w.cvdUsd)}</span>
-    </span>
   );
 }
 
