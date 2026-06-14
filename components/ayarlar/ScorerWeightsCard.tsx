@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useT } from "@/lib/i18n/context";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { DEFAULT_SCORER_WEIGHTS, type ScorerWeights } from "@/lib/score/orchestrator";
@@ -12,6 +13,12 @@ export function ScorerWeightsCard(): React.ReactElement {
   const t = useT();
   const stored = useSettingsStore((s) => s.scorerWeights);
   const setScorerWeights = useSettingsStore((s) => s.setScorerWeights);
+
+  // ?devweights=1 URL parametresi varsa düzenleme modunda başla
+  const [isUnlocked] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return new URLSearchParams(window.location.search).get("devweights") === "1";
+  });
 
   const weights: ScorerWeights = stored
     ? { ...DEFAULT_SCORER_WEIGHTS, ...(stored as Partial<ScorerWeights>) }
@@ -28,13 +35,20 @@ export function ScorerWeightsCard(): React.ReactElement {
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
       <div className="flex items-start justify-between gap-2 mb-1">
-        <h3 className="text-text-t1 text-sm font-medium">⚖️ {t("settings.scorerWeights.title")}</h3>
-        <button
-          onClick={handleReset}
-          className="text-text-t4 hover:text-text-t2 font-mono text-2xs tracking-wider transition-colors shrink-0"
-        >
-          {t("settings.scorerWeights.reset")}
-        </button>
+        <h3 className="text-text-t1 text-sm font-medium flex items-center gap-1.5">
+          ⚖️ {t("settings.scorerWeights.title")}
+          <span className="text-text-t4 text-xs select-none" aria-label={isUnlocked ? "unlocked" : "locked"}>
+            {isUnlocked ? "🔓" : "🔒"}
+          </span>
+        </h3>
+        {isUnlocked && (
+          <button
+            onClick={handleReset}
+            className="text-text-t4 hover:text-text-t2 font-mono text-2xs tracking-wider transition-colors shrink-0"
+          >
+            {t("settings.scorerWeights.reset")}
+          </button>
+        )}
       </div>
       <p className="text-text-t3 text-xs leading-relaxed mb-4">
         {t("settings.scorerWeights.description")}
@@ -45,7 +59,7 @@ export function ScorerWeightsCard(): React.ReactElement {
           const val = weights[key];
           const isDefault = val === DEFAULT_SCORER_WEIGHTS[key];
           return (
-            <div key={key} className="flex flex-col gap-1">
+            <div key={key} className={`flex flex-col gap-1 ${!isUnlocked ? "opacity-60" : ""}`}>
               <div className="flex items-center justify-between">
                 <span className="text-text-t2 font-mono text-xs">
                   {t(`settings.scorerWeights.${key}`)}
@@ -70,8 +84,11 @@ export function ScorerWeightsCard(): React.ReactElement {
                 max={2}
                 step={0.5}
                 value={val}
+                disabled={!isUnlocked}
                 onChange={(e) => handleChange(key, parseFloat(e.target.value))}
-                className="w-full h-1.5 appearance-none rounded-full cursor-pointer accent-brand bg-border/50"
+                className={`w-full h-1.5 appearance-none rounded-full accent-brand bg-border/50 ${
+                  isUnlocked ? "cursor-pointer" : "cursor-not-allowed"
+                }`}
               />
               <div className="flex justify-between font-mono text-2xs text-text-t4">
                 <span>0</span>
