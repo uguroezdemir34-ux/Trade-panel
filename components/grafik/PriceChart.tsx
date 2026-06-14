@@ -13,6 +13,112 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useT } from "@/lib/i18n/context";
+import {
+  createChart,
+  type IChartApi,
+  type ISeriesApi,
+  type IPriceLine,
+  type CandlestickData,
+  type LineData,
+  type HistogramData,
+  type SeriesMarker,
+  type Time,
+  type MouseEventParams,
+} from "lightweight-charts";
+import type { ChartSeries, LiqBand } from "@/lib/chart/types";
+import { VerticalLinePrimitive } from "@/lib/chart/primitives/VerticalLinePrimitive";
+import { CrossLinePrimitive } from "@/lib/chart/primitives/CrossLinePrimitive";
+import { FibTimeZonePrimitive } from "@/lib/chart/primitives/FibTimeZonePrimitive";
+
+interface Props {
+  series: ChartSeries;
+  height?: number;
+  theme?: "dark" | "light";
+  /** Called when user clicks on the chart: price from coordinateToPrice + bar time (undefined in empty areas) */
+  onChartClick?: (price: number, time: number | undefined) => void;
+  /** Change when pair/TF changes to trigger a fitContent() reset */
+  resetKey?: string;
+  /** Liq magnet bands — separate prop so price-tick updates don't re-run the full series effect */
+  liqBands?: LiqBand[];
+  /** Live price line — separate prop so price-tick updates don't re-run the full series effect */
+  currentPrice?: number;
+  /** When true, overlay div captures pointer events for drawing input; false = transparent (LWC pan/zoom normal) */
+  isDrawingMode?: boolean;
+}
+
+const COLOR_UP       = "#22c55e";
+const COLOR_DOWN     = "#ef4444";
+const COLOR_EMA20    = "#3b82f6";
+const COLOR_EMA50    = "#f59e0b";
+const COLOR_EMA200   = "#a855f7";
+const COLOR_RSI      = "#ec4899";
+const COLOR_BB       = "#06b6d4";
+const COLOR_VWAP     = "#f97316";
+const COLOR_MACD     = "#3b82f6";
+const COLOR_SIGNAL   = "#f59e0b";
+const COLOR_LIVE     = "#3b82f6";
+
+const THEME_COLORS = {
+  dark:  { grid: "#2d2d2d", text: "#a3a3a3", border: "#2d2d2d" },
+  light: { grid: "#e5e5e5", text: "#525252",  border: "#e5e5e5" },
+} as const;
+
+const EXT_SECONDS = 100_000_000;
+
+const FIB_EXT_RATIOS = [
+  { r: 0,     label: "0%",     ext: false },
+  { r: 0.236, label: "23.6%",  ext: false },
+  { r: 0.382, label: "38.2%",  ext: false },
+  { r: 0.5,   label: "50%",    ext: false },
+  { r: 0.618, label: "61.8%",  ext: false },
+  { r: 0.786, label: "78.6%",  ext: false },
+  { r: 1,     label: "100%",   ext: false },
+  { r: 1.272, label: "127.2%", ext: true  },
+  { r: 1.414, label: "141.4%", ext: true  },
+  { r: 1.618, label: "161.8%", ext: true  },
+];
+
+const PANEL_H = 0.20;
+const BOT_PAD = 0.01;
+
+function panelMargins(slotFromBottom: number) {
+  return {
+    top: 1.0 - (slotFromBottom + 1) * PANEL_H - BOT_PAD,
+    bottom: slotFromBottom * PANEL_H + BOT_PAD,
+  };
+}
+
+function candleMargins(panelCount: number) {
+  return { top: 0.03, bottom: panelCount * PANEL_H + BOT_PAD };
+}
+
+function computeSlots(hasVol: boolean, hasRsi: boolean, hasMacd: boolean) {
+  const slots: { name: string; slot: number }[] = [];
+  let next = 0;
+  if (hasMacd) slots.push({ name: "macd", slot: next++ });
+  if (hasRsi)  slots.push({ name: "rsi",  slot: next++ });
+  if (hasVol)  slots.push({ name: "volume", slot: next++ });
+  return slots;
+}
+
+interface CrosshairInfo {
+  open: number; high: number; low: number; close: number; volume?: number;
+}
+
+function fmtVal(n: number): string {
+  if (n >= 1000) return n.toFixed(2);
+  if (n >= 1) return n.toFixed(4);
+  return n.toFixed(6);
+}
+
+function fmtVol(n: number): string {
+  if (n >= 1_000_000) return (n / 1_000_000).toFixed(2) + "M";
+  if (n >= 1_000) return (n / 1_000).toFixed(2) + "K";
+  return n.toFixed(2);
+}
+
+export function PriceChart({ series, height = 400, theme = "dark", onChartClick, resetKey, liqBands, currentPrice, isDrawingMode = false }: Props): React.ReactElement {
+  const t             = useT();
   const containerRef  = useRef<HTMLDivElement>(null);
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -843,6 +949,7 @@ import { useT } from "@/lib/i18n/context";
     if (!didFitRef.current && series.candles.length > 0) {
       chart.timeScale().fitContent();
       didFitRef.current = true;
+    }
     }
   }, [series, resetKey]);
 
