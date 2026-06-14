@@ -201,7 +201,6 @@ export function WatchlistPanel({ activePair, onPairChange }: Props): React.React
           "hidden md:flex flex-col",
           "border border-border bg-bg-card rounded-lg overflow-hidden",
           "select-none w-[236px] shrink-0",
-          "h-full",
         ].join(" ")}
       >
         <WatchlistContent activePair={activePair} onPairChange={onPairChange} />
