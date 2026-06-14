@@ -18,7 +18,7 @@ import { vwapSeries } from "@/lib/indicators/vwap";
 import { findAllSwingHighs, findAllSwingLows } from "@/lib/sr/swing";
 import { toIndicatorCandle, fetchCandles, type Timeframe, type Candle } from "@/lib/okx/candles";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
-import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine, TrendLine, FibLevel, RayLine, ExtendedLine, ParallelChannel, FibExtension } from "@/lib/chart/types";
+import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine, TrendLine, FibLevel, RayLine, ExtendedLine, ParallelChannel, FibExtension, VerticalLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel } from "@/components/grafik/WatchlistPanel";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
@@ -89,6 +89,7 @@ const RAY_KEY  = "qx_ray_v1_";
 const EXT_KEY  = "qx_ext_v1_";
 const CH_KEY   = "qx_ch_v1_";
 const FIBX_KEY = "qx_fibx_v1_";
+const VL_KEY   = "qx_vl_v1_";
 function loadRayLines(pair: string): RayLine[] {
   try { return JSON.parse(localStorage.getItem(RAY_KEY + pair) ?? "[]") as RayLine[]; }
   catch { return []; }
@@ -129,6 +130,16 @@ function saveFibExtensions(pair: string, exts: FibExtension[]): void {
     else localStorage.setItem(FIBX_KEY + pair, JSON.stringify(exts));
   } catch { /* ignore */ }
 }
+function loadVerticalLines(pair: string): VerticalLine[] {
+  try { return JSON.parse(localStorage.getItem(VL_KEY + pair) ?? "[]") as VerticalLine[]; }
+  catch { return []; }
+}
+function saveVerticalLines(pair: string, lines: VerticalLine[]): void {
+  try {
+    if (lines.length === 0) localStorage.removeItem(VL_KEY + pair);
+    else localStorage.setItem(VL_KEY + pair, JSON.stringify(lines));
+  } catch { /* ignore */ }
+}
 
 /** Build ChartSeries from a candle array + overlay flags */
 function buildSeries(
@@ -141,6 +152,7 @@ function buildSeries(
     trades: boolean; alarmLevels: AlarmLevel[]; tradeLevels: TradeLevelLine[];
     drawnLines: DrawnLine[]; trendLines: TrendLine[]; fibLevels: FibLevel[];
     rayLines: RayLine[]; extLines: ExtendedLine[]; channels: ParallelChannel[]; fibExtensions: FibExtension[];
+    verticalLines: VerticalLine[];
     livePrice?: number;
   },
 ): ChartSeries {
@@ -257,6 +269,7 @@ function buildSeries(
     extLines:   opts.extLines,
     channels:   opts.channels,
     fibExtensions: opts.fibExtensions,
+    verticalLines: opts.verticalLines,
     currentPrice: opts.livePrice,
   };
 }
@@ -289,6 +302,7 @@ export default function GrafikPage() {
   const [extLines, setExtLines]             = useState<ExtendedLine[]>([]);
   const [channels, setChannels]             = useState<ParallelChannel[]>([]);
   const [fibExtensions, setFibExtensions]   = useState<FibExtension[]>([]);
+  const [verticalLines, setVerticalLines]   = useState<VerticalLine[]>([]);
   const [pendingPoint, setPendingPoint]     = useState<{ time: number; price: number } | null>(null);
   const [pendingChannelLine, setPendingChannelLine] = useState<{ p1: { time: number; price: number }; p2: { time: number; price: number } } | null>(null);
   const [capturedPrice, setCapturedPrice] = useState<number | null>(null);
@@ -340,6 +354,7 @@ export default function GrafikPage() {
     setExtLines(loadExtLines(loadedPair));
     setChannels(loadChannels(loadedPair));
     setFibExtensions(loadFibExtensions(loadedPair));
+    setVerticalLines(loadVerticalLines(loadedPair));
     hasLoadedRef.current = true;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -385,6 +400,10 @@ export default function GrafikPage() {
     if (!hasLoadedRef.current) return;
     saveFibExtensions(pair, fibExtensions);
   }, [pair, fibExtensions]);
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+    saveVerticalLines(pair, verticalLines);
+  }, [pair, verticalLines]);
 
   // Fetch 1m/5m candles locally (not in global poller)
   useEffect(() => {
@@ -439,6 +458,7 @@ export default function GrafikPage() {
     setExtLines(loadExtLines(newPair));
     setChannels(loadChannels(newPair));
     setFibExtensions(loadFibExtensions(newPair));
+    setVerticalLines(loadVerticalLines(newPair));
     setPendingPoint(null);
     setPendingChannelLine(null);
     setClickMode("none");
@@ -500,13 +520,13 @@ export default function GrafikPage() {
       volume: showVolume, rsi: showRsi, macd: showMacd, bb: showBb,
       vwap: showVwap, sr: showSr, trades: showTrades,
       alarmLevels, tradeLevels, drawnLines, trendLines, fibLevels,
-      rayLines, extLines, channels, fibExtensions,
+      rayLines, extLines, channels, fibExtensions, verticalLines,
       livePrice: livePrice ?? undefined,
     }),
     [candles, trades, pair, showEma20, showEma50, showEma200, showVolume,
      showRsi, showMacd, showBb, showVwap, showSr, showTrades,
      alarmLevels, tradeLevels, drawnLines, trendLines, fibLevels,
-     rayLines, extLines, channels, fibExtensions, livePrice],
+     rayLines, extLines, channels, fibExtensions, verticalLines, livePrice],
   );
 
   // Secondary series (split view — EMA200 + volume only, no drawings)
@@ -518,7 +538,7 @@ export default function GrafikPage() {
       vwap: false, sr: showSr, trades: false,
       alarmLevels: [], tradeLevels, drawnLines,
       trendLines: [], fibLevels: [],
-      rayLines: [], extLines: [], channels: [], fibExtensions: [],
+      rayLines: [], extLines: [], channels: [], fibExtensions: [], verticalLines: [],
       livePrice: livePrice ?? undefined,
     });
   }, [showSplit, secCandles, trades, pair, showVolume, showSr, tradeLevels, drawnLines, livePrice]);
@@ -596,6 +616,11 @@ export default function GrafikPage() {
         ]);
         setPendingPoint(null);
       }
+    } else if (clickMode === "vline") {
+      setVerticalLines((prev) => [
+        ...prev,
+        { id: `vl_${Date.now()}`, time, color: DRAW_COLORS[prev.length % DRAW_COLORS.length] },
+      ]);
     }
   }, [clickMode, pendingPoint, pendingChannelLine, trendLines.length]);
 
@@ -614,6 +639,7 @@ export default function GrafikPage() {
     setExtLines([]);
     setChannels([]);
     setFibExtensions([]);
+    setVerticalLines([]);
     setPendingPoint(null);
     setPendingChannelLine(null);
   }, []);
@@ -720,6 +746,8 @@ export default function GrafikPage() {
             ? pendingPoint
               ? "FİB EXT — 2. nokta: bitiş fiyatına tıkla (ESC = iptal)"
               : "FİB EXT — 1. nokta: başlangıç fiyatına tıkla"
+            : clickMode === "vline"
+            ? "DİKEY ÇİZGİ — Grafik üzerine tıkla → dikey çizgi"
             : "PRICE MODE — Grafik üzerine tıkla → fiyat yakala"}
           <button
             onClick={() => {
@@ -799,7 +827,8 @@ export default function GrafikPage() {
                 clickMode={clickMode}
                 onSetClickMode={handleSetClickMode}
                 hasDrawings={drawnLines.length > 0 || rayLines.length > 0 || trendLines.length > 0
-                  || extLines.length > 0 || channels.length > 0 || fibLevels.length > 0 || fibExtensions.length > 0}
+                  || extLines.length > 0 || channels.length > 0 || fibLevels.length > 0 || fibExtensions.length > 0
+                  || verticalLines.length > 0}
                 pendingPoint={!!(pendingPoint || pendingChannelLine)}
                 onClearAll={clearAllDrawings}
               />
@@ -869,7 +898,8 @@ export default function GrafikPage() {
 
       {/* All drawn items — individual ✕ per drawing */}
       {(drawnLines.length > 0 || rayLines.length > 0 || trendLines.length > 0 ||
-        extLines.length > 0 || channels.length > 0 || fibLevels.length > 0 || fibExtensions.length > 0) && (
+        extLines.length > 0 || channels.length > 0 || fibLevels.length > 0 || fibExtensions.length > 0
+        || verticalLines.length > 0) && (
         <div className="flex flex-wrap gap-1.5">
           {drawnLines.map((dl) => (
             <div key={dl.id} className="flex items-center gap-1.5 rounded border border-border px-2 py-0.5" style={{ borderColor: dl.color + "60" }}>
@@ -918,6 +948,13 @@ export default function GrafikPage() {
               <span className="font-mono text-2xs text-text-t4">Φ</span>
               <span className="font-mono text-2xs text-text-t2">FIB+</span>
               <button onClick={() => setFibExtensions((prev) => prev.filter((l) => l.id !== f.id))} className="font-mono text-2xs text-text-t4 hover:text-red-400">✕</button>
+            </div>
+          ))}
+          {verticalLines.map((vl) => (
+            <div key={vl.id} className="flex items-center gap-1.5 rounded border border-border px-2 py-0.5" style={{ borderColor: (vl.color ?? "#f59e0b") + "60" }}>
+              <span className="font-mono text-2xs text-text-t4">│</span>
+              <span className="font-mono text-2xs text-text-t2">V-ÇİZ</span>
+              <button onClick={() => setVerticalLines((prev) => prev.filter((l) => l.id !== vl.id))} className="font-mono text-2xs text-text-t4 hover:text-red-400">✕</button>
             </div>
           ))}
         </div>

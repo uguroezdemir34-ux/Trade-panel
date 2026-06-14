@@ -111,6 +111,12 @@ export interface FibExtension {
   color: string;
 }
 
+export interface VerticalLine {
+  id: string;
+  time: number;
+  color?: string;
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
@@ -132,6 +138,7 @@ export interface ChartSeries {
   extLines?: ExtendedLine[];
   channels?: ParallelChannel[];
   fibExtensions?: FibExtension[];
+  verticalLines?: VerticalLine[];
   /** Canlı fiyat — grafik üzerinde mavi kesikli "LIVE" çizgisi */
   currentPrice?: number;
 }

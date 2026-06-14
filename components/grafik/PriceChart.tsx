@@ -25,6 +25,7 @@ import {
   type MouseEventParams,
 } from "lightweight-charts";
 import type { ChartSeries } from "@/lib/chart/types";
+import { VerticalLinePrimitive } from "@/lib/chart/primitives/VerticalLinePrimitive";
 
 interface Props {
   series: ChartSeries;
@@ -118,6 +119,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
   const extLinesMapRef      = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
   const channelsMapRef      = useRef<Map<string, [ISeriesApi<"Line">, ISeriesApi<"Line">, ISeriesApi<"Line">]>>(new Map());
   const fibExtMapRef        = useRef<Map<string, IPriceLine[]>>(new Map());
+  const verticalLinesMapRef = useRef<Map<string, VerticalLinePrimitive>>(new Map());
   const onChartClickRef = useRef(onChartClick);
   const ema20Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50Ref      = useRef<ISeriesApi<"Line"> | null>(null);
@@ -226,6 +228,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       extLinesMapRef.current.clear();
       channelsMapRef.current.clear();
       fibExtMapRef.current.clear();
+      verticalLinesMapRef.current.clear();
       chartRef.current  = null;
       candleRef.current = null;
       ema20Ref.current  = null;
@@ -496,6 +499,27 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       fibExtMapRef.current.set(fib.id, lines);
     }
   }, [series.fibExtensions]);
+
+  // ─── Sync vertical lines (primitive — LWC ISeriesPrimitive API) ──────────
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    const incoming = series.verticalLines ?? [];
+    const incomingIds = new Set(incoming.map((v) => v.id));
+
+    for (const [id, primitive] of verticalLinesMapRef.current) {
+      if (!incomingIds.has(id)) {
+        try { (candle as any).detachPrimitive(primitive); } catch { /* ignore */ }
+        verticalLinesMapRef.current.delete(id);
+      }
+    }
+    for (const vl of incoming) {
+      if (verticalLinesMapRef.current.has(vl.id)) continue;
+      const primitive = new VerticalLinePrimitive(vl);
+      try { (candle as any).attachPrimitive(primitive); } catch { /* ignore */ }
+      verticalLinesMapRef.current.set(vl.id, primitive);
+    }
+  }, [series.verticalLines]);
 
   // ─── Theme color update (no chart recreation) ───────────────────────────
   useEffect(() => {

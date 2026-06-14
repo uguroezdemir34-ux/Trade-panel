@@ -17,8 +17,9 @@ const TOOLS: Array<{ mode: ChartClickMode; icon: string; title: string }> = [
   { mode: "trendline", icon: "╱", title: "Trend Çizgisi" },
   { mode: "extline",   icon: "↔", title: "Uzayan Çizgi"  },
   { mode: "channel",   icon: "≡", title: "Paralel Kanal" },
-  { mode: "fibonacci", icon: "φ", title: "Fibonacci"     },
-  { mode: "fibext",    icon: "Φ", title: "Fib Extension" },
+  { mode: "fibonacci", icon: "φ", title: "Fibonacci"      },
+  { mode: "fibext",    icon: "Φ", title: "Fib Extension"  },
+  { mode: "vline",     icon: "│", title: "Dikey Çizgi"    },
 ];
 
 export function DrawingToolbar({
