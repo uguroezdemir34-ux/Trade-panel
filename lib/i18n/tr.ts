@@ -308,6 +308,7 @@ export const tr: Dictionary = {
     scorerWeights: {
       title: "Skor Motoru Ağırlıkları",
       description: "Her puanlama bileşeninin göreli ağırlığını ayarlayın. 0 = devre dışı, 2 = iki katı.",
+      descriptionLocked: "Skor motorunun her bileşene verdiği ağırlık. Bu değerler sistem tarafından sabitlenmiştir.",
       reset: "Varsayılana sıfırla",
       trend: "Trend",
       adx: "ADX",

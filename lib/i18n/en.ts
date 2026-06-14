@@ -308,6 +308,7 @@ export const en: Dictionary = {
     scorerWeights: {
       title: "Score Engine Weights",
       description: "Adjust the relative weight of each scoring component. Set to 0 to disable, 2 to double.",
+      descriptionLocked: "The weight assigned to each scoring component by the engine. These values are fixed by the system.",
       reset: "Reset to defaults",
       trend: "Trend",
       adx: "ADX",
