@@ -27,6 +27,9 @@ export async function GET() {
   return NextResponse.json({
     btcD: domResult.btcD,
     usdtD: domResult.usdtD,
+    ethD: domResult.ethD,
+    btcDChange24h: domResult.btcDChange24h,
+    ethDChange24h: domResult.ethDChange24h,
     phase: phase.phase,
     phaseLabel: phase.label,
     summary,

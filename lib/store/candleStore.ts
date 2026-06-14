@@ -31,6 +31,12 @@ interface CandleStoreState {
   setError: (pair: Pair, tf: Timeframe, err: string) => void;
   /** Live ticker fiyatıyla son mumun close değerini güncelle (tick'te) */
   updateLastClose: (pair: Pair, tf: Timeframe, close: number) => void;
+  /**
+   * OKX candle WS güncellemesi:
+   *  - candle.ts === last candle ts → in-place güncelle (forming candle)
+   *  - candle.ts > last candle ts  → yeni mum olarak ekle (yeni periyot başladı)
+   */
+  updateLastCandle: (pair: Pair, tf: Timeframe, candle: Candle) => void;
   reset: () => void;
 }
 
@@ -70,6 +76,36 @@ export const useCandleStore = create<CandleStoreState>((set) => ({
       return {
         candles: { ...s.candles, [key]: updated },
       };
+    }),
+
+  updateLastCandle: (pair, tf, candle) =>
+    set((s) => {
+      const key = keyOf(pair, tf);
+      const arr = s.candles[key];
+      if (!arr || arr.length === 0) return s;
+      const last = arr[arr.length - 1];
+      if (candle.ts === last.ts) {
+        // In-progress: update OHLCV of last candle
+        const updated = [
+          ...arr.slice(0, arr.length - 1),
+          {
+            ...last,
+            open: candle.open,
+            high: Math.max(last.high, candle.high),
+            low: Math.min(last.low, candle.low),
+            close: candle.close,
+            volume: candle.volume,
+            confirm: candle.confirm,
+          },
+        ];
+        return { candles: { ...s.candles, [key]: updated } };
+      }
+      if (candle.ts > last.ts) {
+        // New candle: append (keep up to 300 candles)
+        const updated = [...arr, candle].slice(-300);
+        return { candles: { ...s.candles, [key]: updated } };
+      }
+      return s; // older ts — stale, ignore
     }),
 
   reset: () => set({ candles: {}, lastFetchedAt: {}, lastError: {} }),
