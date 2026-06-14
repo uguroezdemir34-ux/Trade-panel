@@ -51,7 +51,9 @@ export function ScorerWeightsCard(): React.ReactElement {
         )}
       </div>
       <p className="text-text-t3 text-xs leading-relaxed mb-4">
-        {t("settings.scorerWeights.description")}
+        {isUnlocked
+          ? t("settings.scorerWeights.description")
+          : t("settings.scorerWeights.descriptionLocked")}
       </p>
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
