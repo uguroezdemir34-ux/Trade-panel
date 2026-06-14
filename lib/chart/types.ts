@@ -117,6 +117,20 @@ export interface VerticalLine {
   color?: string;
 }
 
+export interface CrossLine {
+  id: string;
+  time: number;
+  price: number;
+  color?: string;
+}
+
+export interface FibTimeZone {
+  id: string;
+  time0: number;
+  time1: number;
+  color?: string;
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
@@ -139,6 +153,8 @@ export interface ChartSeries {
   channels?: ParallelChannel[];
   fibExtensions?: FibExtension[];
   verticalLines?: VerticalLine[];
+  crossLines?: CrossLine[];
+  fibTimeZones?: FibTimeZone[];
   /** Canlı fiyat — grafik üzerinde mavi kesikli "LIVE" çizgisi */
   currentPrice?: number;
 }

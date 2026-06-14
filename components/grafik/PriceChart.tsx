@@ -26,6 +26,8 @@ import {
 } from "lightweight-charts";
 import type { ChartSeries } from "@/lib/chart/types";
 import { VerticalLinePrimitive } from "@/lib/chart/primitives/VerticalLinePrimitive";
+import { CrossLinePrimitive } from "@/lib/chart/primitives/CrossLinePrimitive";
+import { FibTimeZonePrimitive } from "@/lib/chart/primitives/FibTimeZonePrimitive";
 
 interface Props {
   series: ChartSeries;
@@ -119,7 +121,9 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
   const extLinesMapRef      = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
   const channelsMapRef      = useRef<Map<string, [ISeriesApi<"Line">, ISeriesApi<"Line">, ISeriesApi<"Line">]>>(new Map());
   const fibExtMapRef        = useRef<Map<string, IPriceLine[]>>(new Map());
-  const verticalLinesMapRef = useRef<Map<string, VerticalLinePrimitive>>(new Map());
+  const verticalLinesMapRef  = useRef<Map<string, VerticalLinePrimitive>>(new Map());
+  const crossLinesMapRef     = useRef<Map<string, CrossLinePrimitive>>(new Map());
+  const fibTimeZonesMapRef   = useRef<Map<string, FibTimeZonePrimitive>>(new Map());
   const onChartClickRef = useRef(onChartClick);
   const ema20Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50Ref      = useRef<ISeriesApi<"Line"> | null>(null);
@@ -229,6 +233,8 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       channelsMapRef.current.clear();
       fibExtMapRef.current.clear();
       verticalLinesMapRef.current.clear();
+      crossLinesMapRef.current.clear();
+      fibTimeZonesMapRef.current.clear();
       chartRef.current  = null;
       candleRef.current = null;
       ema20Ref.current  = null;
@@ -520,6 +526,48 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       verticalLinesMapRef.current.set(vl.id, primitive);
     }
   }, [series.verticalLines]);
+
+  // ─── Sync cross lines (primitive — horiz + vert through one point) ──────
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    const incoming = series.crossLines ?? [];
+    const incomingIds = new Set(incoming.map((c) => c.id));
+
+    for (const [id, primitive] of crossLinesMapRef.current) {
+      if (!incomingIds.has(id)) {
+        try { (candle as any).detachPrimitive(primitive); } catch { /* ignore */ }
+        crossLinesMapRef.current.delete(id);
+      }
+    }
+    for (const cl of incoming) {
+      if (crossLinesMapRef.current.has(cl.id)) continue;
+      const primitive = new CrossLinePrimitive(cl);
+      try { (candle as any).attachPrimitive(primitive); } catch { /* ignore */ }
+      crossLinesMapRef.current.set(cl.id, primitive);
+    }
+  }, [series.crossLines]);
+
+  // ─── Sync Fibonacci time zones (primitive — N vertical lines) ────────────
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    const incoming = series.fibTimeZones ?? [];
+    const incomingIds = new Set(incoming.map((f) => f.id));
+
+    for (const [id, primitive] of fibTimeZonesMapRef.current) {
+      if (!incomingIds.has(id)) {
+        try { (candle as any).detachPrimitive(primitive); } catch { /* ignore */ }
+        fibTimeZonesMapRef.current.delete(id);
+      }
+    }
+    for (const ftz of incoming) {
+      if (fibTimeZonesMapRef.current.has(ftz.id)) continue;
+      const primitive = new FibTimeZonePrimitive(ftz);
+      try { (candle as any).attachPrimitive(primitive); } catch { /* ignore */ }
+      fibTimeZonesMapRef.current.set(ftz.id, primitive);
+    }
+  }, [series.fibTimeZones]);
 
   // ─── Theme color update (no chart recreation) ───────────────────────────
   useEffect(() => {

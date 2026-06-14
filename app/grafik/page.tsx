@@ -18,7 +18,7 @@ import { vwapSeries } from "@/lib/indicators/vwap";
 import { findAllSwingHighs, findAllSwingLows } from "@/lib/sr/swing";
 import { toIndicatorCandle, fetchCandles, type Timeframe, type Candle } from "@/lib/okx/candles";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
-import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine, TrendLine, FibLevel, RayLine, ExtendedLine, ParallelChannel, FibExtension, VerticalLine } from "@/lib/chart/types";
+import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine, TrendLine, FibLevel, RayLine, ExtendedLine, ParallelChannel, FibExtension, VerticalLine, CrossLine, FibTimeZone } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel } from "@/components/grafik/WatchlistPanel";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
@@ -140,6 +140,28 @@ function saveVerticalLines(pair: string, lines: VerticalLine[]): void {
     else localStorage.setItem(VL_KEY + pair, JSON.stringify(lines));
   } catch { /* ignore */ }
 }
+const CL_KEY  = "qx_cl_v1_";
+const FTZ_KEY = "qx_ftz_v1_";
+function loadCrossLines(pair: string): CrossLine[] {
+  try { return JSON.parse(localStorage.getItem(CL_KEY + pair) ?? "[]") as CrossLine[]; }
+  catch { return []; }
+}
+function saveCrossLines(pair: string, lines: CrossLine[]): void {
+  try {
+    if (lines.length === 0) localStorage.removeItem(CL_KEY + pair);
+    else localStorage.setItem(CL_KEY + pair, JSON.stringify(lines));
+  } catch { /* ignore */ }
+}
+function loadFibTimeZones(pair: string): FibTimeZone[] {
+  try { return JSON.parse(localStorage.getItem(FTZ_KEY + pair) ?? "[]") as FibTimeZone[]; }
+  catch { return []; }
+}
+function saveFibTimeZones(pair: string, zones: FibTimeZone[]): void {
+  try {
+    if (zones.length === 0) localStorage.removeItem(FTZ_KEY + pair);
+    else localStorage.setItem(FTZ_KEY + pair, JSON.stringify(zones));
+  } catch { /* ignore */ }
+}
 
 /** Build ChartSeries from a candle array + overlay flags */
 function buildSeries(
@@ -152,7 +174,7 @@ function buildSeries(
     trades: boolean; alarmLevels: AlarmLevel[]; tradeLevels: TradeLevelLine[];
     drawnLines: DrawnLine[]; trendLines: TrendLine[]; fibLevels: FibLevel[];
     rayLines: RayLine[]; extLines: ExtendedLine[]; channels: ParallelChannel[]; fibExtensions: FibExtension[];
-    verticalLines: VerticalLine[];
+    verticalLines: VerticalLine[]; crossLines: CrossLine[]; fibTimeZones: FibTimeZone[];
     livePrice?: number;
   },
 ): ChartSeries {
@@ -270,7 +292,9 @@ function buildSeries(
     channels:   opts.channels,
     fibExtensions: opts.fibExtensions,
     verticalLines: opts.verticalLines,
-    currentPrice: opts.livePrice,
+    crossLines:    opts.crossLines,
+    fibTimeZones:  opts.fibTimeZones,
+    currentPrice:  opts.livePrice,
   };
 }
 
@@ -303,6 +327,8 @@ export default function GrafikPage() {
   const [channels, setChannels]             = useState<ParallelChannel[]>([]);
   const [fibExtensions, setFibExtensions]   = useState<FibExtension[]>([]);
   const [verticalLines, setVerticalLines]   = useState<VerticalLine[]>([]);
+  const [crossLines, setCrossLines]         = useState<CrossLine[]>([]);
+  const [fibTimeZones, setFibTimeZones]     = useState<FibTimeZone[]>([]);
   const [pendingPoint, setPendingPoint]     = useState<{ time: number; price: number } | null>(null);
   const [pendingChannelLine, setPendingChannelLine] = useState<{ p1: { time: number; price: number }; p2: { time: number; price: number } } | null>(null);
   const [capturedPrice, setCapturedPrice] = useState<number | null>(null);
@@ -355,6 +381,8 @@ export default function GrafikPage() {
     setChannels(loadChannels(loadedPair));
     setFibExtensions(loadFibExtensions(loadedPair));
     setVerticalLines(loadVerticalLines(loadedPair));
+    setCrossLines(loadCrossLines(loadedPair));
+    setFibTimeZones(loadFibTimeZones(loadedPair));
     hasLoadedRef.current = true;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -404,6 +432,14 @@ export default function GrafikPage() {
     if (!hasLoadedRef.current) return;
     saveVerticalLines(pair, verticalLines);
   }, [pair, verticalLines]);
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+    saveCrossLines(pair, crossLines);
+  }, [pair, crossLines]);
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+    saveFibTimeZones(pair, fibTimeZones);
+  }, [pair, fibTimeZones]);
 
   // Fetch 1m/5m candles locally (not in global poller)
   useEffect(() => {
@@ -459,6 +495,8 @@ export default function GrafikPage() {
     setChannels(loadChannels(newPair));
     setFibExtensions(loadFibExtensions(newPair));
     setVerticalLines(loadVerticalLines(newPair));
+    setCrossLines(loadCrossLines(newPair));
+    setFibTimeZones(loadFibTimeZones(newPair));
     setPendingPoint(null);
     setPendingChannelLine(null);
     setClickMode("none");
@@ -520,13 +558,13 @@ export default function GrafikPage() {
       volume: showVolume, rsi: showRsi, macd: showMacd, bb: showBb,
       vwap: showVwap, sr: showSr, trades: showTrades,
       alarmLevels, tradeLevels, drawnLines, trendLines, fibLevels,
-      rayLines, extLines, channels, fibExtensions, verticalLines,
+      rayLines, extLines, channels, fibExtensions, verticalLines, crossLines, fibTimeZones,
       livePrice: livePrice ?? undefined,
     }),
     [candles, trades, pair, showEma20, showEma50, showEma200, showVolume,
      showRsi, showMacd, showBb, showVwap, showSr, showTrades,
      alarmLevels, tradeLevels, drawnLines, trendLines, fibLevels,
-     rayLines, extLines, channels, fibExtensions, verticalLines, livePrice],
+     rayLines, extLines, channels, fibExtensions, verticalLines, crossLines, fibTimeZones, livePrice],
   );
 
   // Secondary series (split view — EMA200 + volume only, no drawings)
@@ -539,6 +577,7 @@ export default function GrafikPage() {
       alarmLevels: [], tradeLevels, drawnLines,
       trendLines: [], fibLevels: [],
       rayLines: [], extLines: [], channels: [], fibExtensions: [], verticalLines: [],
+      crossLines: [], fibTimeZones: [],
       livePrice: livePrice ?? undefined,
     });
   }, [showSplit, secCandles, trades, pair, showVolume, showSr, tradeLevels, drawnLines, livePrice]);
@@ -621,6 +660,23 @@ export default function GrafikPage() {
         ...prev,
         { id: `vl_${Date.now()}`, time, color: DRAW_COLORS[prev.length % DRAW_COLORS.length] },
       ]);
+    } else if (clickMode === "crossline") {
+      setCrossLines((prev) => [
+        ...prev,
+        { id: `cl_${Date.now()}`, time, price, color: DRAW_COLORS[prev.length % DRAW_COLORS.length] },
+      ]);
+    } else if (clickMode === "fibtimezone") {
+      if (!pendingPoint) {
+        setPendingPoint({ time, price });
+      } else {
+        if (time !== pendingPoint.time) {
+          setFibTimeZones((prev) => [
+            ...prev,
+            { id: `ftz_${Date.now()}`, time0: pendingPoint.time, time1: time, color: "#a78bfa" },
+          ]);
+        }
+        setPendingPoint(null);
+      }
     }
   }, [clickMode, pendingPoint, pendingChannelLine, trendLines.length]);
 
@@ -640,6 +696,8 @@ export default function GrafikPage() {
     setChannels([]);
     setFibExtensions([]);
     setVerticalLines([]);
+    setCrossLines([]);
+    setFibTimeZones([]);
     setPendingPoint(null);
     setPendingChannelLine(null);
   }, []);
@@ -715,8 +773,10 @@ export default function GrafikPage() {
             ? "border-blue-500/40 bg-blue-500/10 text-blue-400"
             : clickMode === "channel"
             ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-400"
-            : clickMode === "fibonacci" || clickMode === "fibext"
+            : clickMode === "fibonacci" || clickMode === "fibext" || clickMode === "fibtimezone"
             ? "border-purple-500/40 bg-purple-500/10 text-purple-400"
+            : clickMode === "crossline"
+            ? "border-orange-500/40 bg-orange-500/10 text-orange-400"
             : "border-green-500/40 bg-green-500/10 text-green-400"
         }`}>
           <span className="animate-pulse">●</span>
@@ -748,6 +808,12 @@ export default function GrafikPage() {
               : "FİB EXT — 1. nokta: başlangıç fiyatına tıkla"
             : clickMode === "vline"
             ? "DİKEY ÇİZGİ — Grafik üzerine tıkla → dikey çizgi"
+            : clickMode === "crossline"
+            ? "CROSS ÇİZGİ — Grafik üzerine tıkla → artı işareti"
+            : clickMode === "fibtimezone"
+            ? pendingPoint
+              ? "FİB ZAMAN — 2. nokta: zaman aralığı bitiş noktasına tıkla (ESC = iptal)"
+              : "FİB ZAMAN — 1. nokta: başlangıç noktasına tıkla"
             : "PRICE MODE — Grafik üzerine tıkla → fiyat yakala"}
           <button
             onClick={() => {
@@ -828,7 +894,7 @@ export default function GrafikPage() {
                 onSetClickMode={handleSetClickMode}
                 hasDrawings={drawnLines.length > 0 || rayLines.length > 0 || trendLines.length > 0
                   || extLines.length > 0 || channels.length > 0 || fibLevels.length > 0 || fibExtensions.length > 0
-                  || verticalLines.length > 0}
+                  || verticalLines.length > 0 || crossLines.length > 0 || fibTimeZones.length > 0}
                 pendingPoint={!!(pendingPoint || pendingChannelLine)}
                 onClearAll={clearAllDrawings}
               />
@@ -899,7 +965,7 @@ export default function GrafikPage() {
       {/* All drawn items — individual ✕ per drawing */}
       {(drawnLines.length > 0 || rayLines.length > 0 || trendLines.length > 0 ||
         extLines.length > 0 || channels.length > 0 || fibLevels.length > 0 || fibExtensions.length > 0
-        || verticalLines.length > 0) && (
+        || verticalLines.length > 0 || crossLines.length > 0 || fibTimeZones.length > 0) && (
         <div className="flex flex-wrap gap-1.5">
           {drawnLines.map((dl) => (
             <div key={dl.id} className="flex items-center gap-1.5 rounded border border-border px-2 py-0.5" style={{ borderColor: dl.color + "60" }}>
@@ -955,6 +1021,20 @@ export default function GrafikPage() {
               <span className="font-mono text-2xs text-text-t4">│</span>
               <span className="font-mono text-2xs text-text-t2">V-ÇİZ</span>
               <button onClick={() => setVerticalLines((prev) => prev.filter((l) => l.id !== vl.id))} className="font-mono text-2xs text-text-t4 hover:text-red-400">✕</button>
+            </div>
+          ))}
+          {crossLines.map((cl) => (
+            <div key={cl.id} className="flex items-center gap-1.5 rounded border border-border px-2 py-0.5" style={{ borderColor: (cl.color ?? "#f97316") + "60" }}>
+              <span className="font-mono text-2xs text-text-t4">✛</span>
+              <span className="font-mono text-2xs text-text-t2">CROSS</span>
+              <button onClick={() => setCrossLines((prev) => prev.filter((l) => l.id !== cl.id))} className="font-mono text-2xs text-text-t4 hover:text-red-400">✕</button>
+            </div>
+          ))}
+          {fibTimeZones.map((ftz) => (
+            <div key={ftz.id} className="flex items-center gap-1.5 rounded border border-border px-2 py-0.5" style={{ borderColor: (ftz.color ?? "#a78bfa") + "60" }}>
+              <span className="font-mono text-2xs text-text-t4">ƒ</span>
+              <span className="font-mono text-2xs text-text-t2">FIB-T</span>
+              <button onClick={() => setFibTimeZones((prev) => prev.filter((l) => l.id !== ftz.id))} className="font-mono text-2xs text-text-t4 hover:text-red-400">✕</button>
             </div>
           ))}
         </div>
