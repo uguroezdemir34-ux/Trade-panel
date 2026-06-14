@@ -100,6 +100,8 @@ export interface TradeSnapshot {
   pair: Pair;
   direction: "LONG" | "SHORT";
   status: TradeStatus;
+  /** Trade kaynağı — bot otomatik emir veya kullanıcı manuel */
+  source?: "manual" | "bot";
 
   // Entry
   openedAt: number;
@@ -125,6 +127,9 @@ export interface TradeSnapshot {
 
   // Exit (status='closed' iken dolu)
   exit?: ExitInfo;
+
+  /** Trade journal notu — kullanıcı tarafından eklenir, kalıcıdır. */
+  notes?: string;
 }
 
 // ═══════════════ INPUT TYPES ═══════════════
@@ -144,6 +149,8 @@ export interface OpenTradeInput {
   riskAmountUsd: number;
   isPaper: boolean;
   entryContext: EntryContext;
+  /** Trade kaynağı — belirtilmezse "manual" sayılır */
+  source?: "manual" | "bot";
   /** Borsa order ID (adapter'dan dönmüşse) */
   orderId?: string;
   /** Şimdi (test injection için) */

@@ -24,6 +24,11 @@ export interface BinanceCreds {
   secret: string;
 }
 
+export interface BybitCreds {
+  key: string;
+  secret: string;
+}
+
 export interface TelegramCreds {
   botToken: string;
   chatId: string;
@@ -34,11 +39,13 @@ interface CredentialStoreState {
   okxDemo: OkxCreds | null;
   telegram: TelegramCreds | null;
   bnbFutures: BinanceCreds | null;
+  bybitFutures: BybitCreds | null;
   _loaded: boolean;
   setOkxProd: (c: OkxCreds | null) => Promise<void>;
   setOkxDemo: (c: OkxCreds | null) => Promise<void>;
   setTelegram: (c: TelegramCreds | null) => Promise<void>;
   setBnbFutures: (c: BinanceCreds | null) => Promise<void>;
+  setBybitFutures: (c: BybitCreds | null) => Promise<void>;
   load: () => Promise<void>;
   clearAll: () => Promise<void>;
 }
@@ -63,9 +70,17 @@ const K = {
   okxDemo: "creds_okx_demo",
   telegram: "creds_telegram",
   bnbFutures: "creds_bnb_futures",
+  bybitFutures: "creds_bybit_futures",
 } as const;
 
 const bnbSchema = z
+  .object({
+    key: z.string().min(1),
+    secret: z.string().min(1),
+  })
+  .nullable();
+
+const bybitSchema = z
   .object({
     key: z.string().min(1),
     secret: z.string().min(1),
@@ -77,6 +92,7 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
   okxDemo: null,
   telegram: null,
   bnbFutures: null,
+  bybitFutures: null,
   _loaded: false,
 
   setOkxProd: async (c) => {
@@ -99,17 +115,23 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
     await saveSecure(K.bnbFutures, c);
   },
 
+  setBybitFutures: async (c) => {
+    set({ bybitFutures: c });
+    await saveSecure(K.bybitFutures, c);
+  },
+
   load: async () => {
     // Guard: skip if already loaded (idempotent — safe for StrictMode double-invocation)
     if (useCredentialStore.getState()._loaded) return;
 
-    const [okxProd, okxDemo, telegram, bnbFutures] = await Promise.all([
+    const [okxProd, okxDemo, telegram, bnbFutures, bybitFutures] = await Promise.all([
       loadSecure(K.okxProd, null, { schema: okxSchema }),
       loadSecure(K.okxDemo, null, { schema: okxSchema }),
       loadSecure(K.telegram, null, { schema: tgSchema }),
       loadSecure(K.bnbFutures, null, { schema: bnbSchema }),
+      loadSecure(K.bybitFutures, null, { schema: bybitSchema }),
     ]);
-    set({ okxProd, okxDemo, telegram, bnbFutures, _loaded: true });
+    set({ okxProd, okxDemo, telegram, bnbFutures, bybitFutures, _loaded: true });
   },
 
   clearAll: async () => {
@@ -118,7 +140,8 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
       saveSecure(K.okxDemo, null),
       saveSecure(K.telegram, null),
       saveSecure(K.bnbFutures, null),
+      saveSecure(K.bybitFutures, null),
     ]);
-    set({ okxProd: null, okxDemo: null, telegram: null, bnbFutures: null });
+    set({ okxProd: null, okxDemo: null, telegram: null, bnbFutures: null, bybitFutures: null });
   },
 }));

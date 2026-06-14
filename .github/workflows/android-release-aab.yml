@@ -1,0 +1,184 @@
+name: Android Release AAB (Play Store)
+
+# ============================================================
+# TASLAK — Henüz aktif değil.
+# Aktif etmek için:
+#   1. GitHub Secrets'a ekle (bkz. scripts/create-keystore.sh):
+#        ANDROID_KEYSTORE_BASE64
+#        ANDROID_KEY_ALIAS
+#        ANDROID_KEY_PASSWORD
+#        ANDROID_STORE_PASSWORD
+#   2. GitHub Secrets'a ekle (Clerk):
+#        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY  (production key)
+#        CLERK_SECRET_KEY                   (production key)
+#   3. capacitor.config.ts'de appId'yi production'a çevir:
+#        com.quantixos.trading.test7  →  com.quantixos.trading
+#   4. Bu workflow'u test et: Actions → "Android Release AAB" → Run workflow
+# ============================================================
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: "versionName (örn: 1.0.0)"
+        required: true
+        default: "1.0.0"
+      version_code:
+        description: "versionCode (tamsayı, her release artır)"
+        required: true
+        default: "1"
+
+jobs:
+  release-aab:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Install npm dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Build Next.js (static export → out/)
+        run: |
+          npm run build
+          if [ ! -f "out/index.html" ]; then
+            echo "❌ next build başarısız — out/index.html yok. CLERK secrets eksik mi?"
+            exit 1
+          fi
+          echo "✅ next build başarılı"
+        env:
+          NEXT_OUTPUT: export
+          NODE_ENV: production
+          NEXT_PUBLIC_APP_URL: https://quantix-os-new.vercel.app
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+
+      - name: Add Android platform
+        run: npx cap add android
+        env:
+          CI: "true"
+          NODE_ENV: production
+
+      - name: Patch AndroidManifest — hardwareAccelerated
+        run: |
+          python3 - << 'PYEOF'
+          path = "android/app/src/main/AndroidManifest.xml"
+          content = open(path).read()
+          if "android:hardwareAccelerated" not in content:
+              content = content.replace(
+                  "<application",
+                  '<application android:hardwareAccelerated="true"',
+                  1
+              )
+              open(path, "w").write(content)
+              print("Patched: hardwareAccelerated added")
+          else:
+              print("Already present")
+          PYEOF
+
+      - name: Patch styles.xml — remove Theme.SplashScreen
+        run: |
+          python3 - << 'PYEOF'
+          import re
+          path = "android/app/src/main/res/values/styles.xml"
+          content = open(path).read()
+          content = content.replace('parent="Theme.SplashScreen"', 'parent="AppTheme.NoActionBar"')
+          content = re.sub(r'\s*<item name="windowSplashScreen[^"]*">[^<]*</item>', '', content)
+          content = re.sub(r'\s*<item name="postSplashScreenTheme">[^<]*</item>', '', content)
+          open(path, "w").write(content)
+          print("Patched: Theme.SplashScreen removed")
+          PYEOF
+
+      # Release için arka plan siyah olmalı (test7'deki tanı kırmızısını kaldır)
+      - name: Patch styles.xml — black window background (release)
+        run: |
+          python3 - << 'PYEOF'
+          path = "android/app/src/main/res/values/styles.xml"
+          content = open(path).read()
+          content = content.replace(
+              'parent="Theme.AppCompat.Light.NoActionBar">',
+              'parent="Theme.AppCompat.Light.NoActionBar">\n        <item name="android:windowBackground">#FF000000</item>'
+          )
+          open(path, "w").write(content)
+          print("Patched: black window background set")
+          PYEOF
+
+      - name: Set versionCode and versionName in build.gradle
+        run: |
+          python3 - << 'PYEOF'
+          import re, os
+          vc = os.environ["VERSION_CODE"]
+          vn = os.environ["VERSION_NAME"]
+          path = "android/app/build.gradle"
+          content = open(path).read()
+          content = re.sub(r'versionCode\s+\d+', f'versionCode {vc}', content)
+          content = re.sub(r'versionName\s+"[^"]*"', f'versionName "{vn}"', content)
+          open(path, "w").write(content)
+          print(f"Patched: versionCode={vc}, versionName={vn}")
+          PYEOF
+        env:
+          VERSION_CODE: ${{ github.event.inputs.version_code }}
+          VERSION_NAME: ${{ github.event.inputs.version_name }}
+
+      - name: Generate assets (icons & splash)
+        run: |
+          if [ -f "assets/icon.png" ] && [ -f "assets/splash.png" ]; then
+            npx @capacitor/assets generate --android
+            echo "✅ Assets generated from assets/"
+          else
+            echo "⚠️  assets/icon.png veya assets/splash.png eksik — asset üretimi atlandı"
+            echo "   Gerçek ikonlar için: assets/icon.png (1024×1024) ve assets/splash.png (2732×2732) ekle"
+          fi
+
+      - name: Sync Capacitor assets
+        run: npx cap sync android
+        env:
+          CI: "true"
+          NODE_ENV: production
+
+      - name: Decode keystore from GitHub Secret
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/release.jks
+
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build release AAB
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew bundleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file="$GITHUB_WORKSPACE/android/release.jks" \
+            -Pandroid.injected.signing.store.password="${{ secrets.ANDROID_STORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantix-os-release-aab
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+          if-no-files-found: error

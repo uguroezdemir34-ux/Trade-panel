@@ -62,6 +62,10 @@ function initialFeeds(): Record<Pair, PairFeedState> {
   return feeds as Record<Pair, PairFeedState>;
 }
 
+// Sentinel değerler — feeds[pair] undefined olduğunda (BTC/ETH dışı paritelerde) güvenli fallback
+const EMPTY_TRADES: readonly Trade[] = [];
+const EMPTY_BUFFER: TradeRingBuffer = { capacity: 0, totalAdded: 0, items: [] };
+
 export const useTradeFeedStore = create<TradeFeedStoreState>((set, get) => ({
   feeds: initialFeeds(),
 
@@ -83,9 +87,12 @@ export const useTradeFeedStore = create<TradeFeedStoreState>((set, get) => ({
     }));
   },
 
-  getTrades: (pair) => getTrades(get().feeds[pair]),
+  getTrades: (pair) => {
+    const feed = get().feeds[pair];
+    return feed ? getTrades(feed) : EMPTY_TRADES;
+  },
 
-  getBuffer: (pair) => get().feeds[pair].buffer,
+  getBuffer: (pair) => get().feeds[pair]?.buffer ?? EMPTY_BUFFER,
 
   _reset: () => {
     set({ feeds: initialFeeds() });
@@ -97,19 +104,19 @@ export const useTradeFeedStore = create<TradeFeedStoreState>((set, get) => ({
 // useTradeFeedStore(selectXxx) ile kullan; sadece ilgili kısım değişince render.
 
 export const selectFeed = (pair: Pair) =>
-  (s: TradeFeedStoreState): PairFeedState =>
+  (s: TradeFeedStoreState): PairFeedState | undefined =>
     s.feeds[pair];
 
 export const selectTrades = (pair: Pair) =>
   (s: TradeFeedStoreState): readonly Trade[] =>
-    s.feeds[pair].buffer.items;
+    s.feeds[pair]?.buffer?.items ?? EMPTY_TRADES;
 
 export const selectConnectionState = (pair: Pair) =>
   (s: TradeFeedStoreState): FeedConnectionState =>
-    s.feeds[pair].connectionState;
+    s.feeds[pair]?.connectionState ?? "idle";
 
 export const selectLastTrade = (pair: Pair) =>
   (s: TradeFeedStoreState): Trade | null => {
-    const items = s.feeds[pair].buffer.items;
-    return items.length > 0 ? items[items.length - 1] : null;
+    const items = s.feeds[pair]?.buffer?.items;
+    return items && items.length > 0 ? items[items.length - 1] : null;
   };

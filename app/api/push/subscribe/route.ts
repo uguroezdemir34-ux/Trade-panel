@@ -6,7 +6,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth } from "@/lib/auth/serverStubs";
 import { saveSubscription, deleteSubscription } from "@/lib/push/db";
 
 export async function POST(req: NextRequest): Promise<NextResponse> {

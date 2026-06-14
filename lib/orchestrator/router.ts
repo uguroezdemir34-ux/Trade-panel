@@ -23,6 +23,7 @@ import type { DisciplineEntry } from "@/lib/risk/discipline-log";
 import type { NotifyMessage, NotifyResult } from "@/lib/notify/types";
 import { runPreflightChecks } from "./preflight";
 import { buildDedupeKey, signalToOrderInput } from "./types";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 
 /**
  * Ana orchestrate fonksiyonu.
@@ -63,7 +64,25 @@ export async function orchestrate(
   // Kaydet — execution başlamadan dedupe pencere açılır
   deps.dedupeStore.record(dedupeKey, now);
 
-  // ─── 3. EXECUTION ÖNCE ───
+  // ─── 3. EXECUTION (flag kontrol) ───
+  if (!EXECUTION_ENABLED) {
+    // Execution devre dışı — GO sinyali Telegram'a gider, OKX'e emir GİTMEZ.
+    const notifyMsg = buildNotifyMessage(input, now);
+    const notifyResults: NotifyResult[] = [];
+    for (const channel of deps.channels) {
+      try {
+        notifyResults.push(await channel.send(notifyMsg));
+      } catch { /* notify hatası execution'ı etkilemez */ }
+    }
+    return {
+      ok: false,
+      decision: "execution_disabled",
+      reasonHuman: `Signal detected (${input.pair} ${input.signal.direction} score=${input.signal.score}) — execution disabled, notify only`,
+      notifyResults,
+      journalEntry: buildJournalEntry("execution_disabled", input, now),
+    };
+  }
+
   const orderInput = signalToOrderInput(input);
   if (!orderInput) {
     return makeBlockedOutput(
@@ -157,6 +176,8 @@ function buildJournalEntry(
     type = "rule_violation";
   } else if (decision === "failed_exchange") {
     type = "rule_violation";
+  } else if (decision === "execution_disabled") {
+    type = "verdict_no";
   } else {
     type = "verdict_no";
   }

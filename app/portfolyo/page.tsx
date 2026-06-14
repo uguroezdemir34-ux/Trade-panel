@@ -7,14 +7,19 @@ import RiskPage from "@/app/risk/page";
 import PnlPage from "@/app/pnl/page";
 import { VaRCard } from "@/components/portfolio/VaRCard";
 import { CorrelationMatrix } from "@/components/portfolio/CorrelationMatrix";
+import { PortfolioOverviewCard } from "@/components/portfolio/PortfolioOverviewCard";
+import { GoSignalLog } from "@/components/karar/GoSignalLog";
+import { CopyTradingCard } from "@/components/copy-trading/CopyTradingCard";
 
-type SubTab = "pozisyon" | "risk" | "pnl" | "analitik";
+type SubTab = "pozisyon" | "risk" | "pnl" | "analitik" | "sinyaller" | "takip";
 
 const SUB_TABS: { id: SubTab; labelKey: string }[] = [
   { id: "pozisyon", labelKey: "nav.position" },
   { id: "risk", labelKey: "nav.risk" },
   { id: "pnl", labelKey: "nav.pnl" },
   { id: "analitik", labelKey: "portfolio.analyticsTab" },
+  { id: "sinyaller", labelKey: "portfolio.signalsTab" },
+  { id: "takip", labelKey: "portfolio.copyTab" },
 ];
 
 export default function PortfolyoPage() {
@@ -23,16 +28,19 @@ export default function PortfolyoPage() {
 
   return (
     <div className="flex flex-col">
-      {/* Sub-tab bar */}
-      <div className="border-b border-border bg-bg-card sticky top-0 z-10">
-        <div className="flex">
+      {/* Portfolio equity overview — always visible above tabs */}
+      <PortfolioOverviewCard />
+
+      {/* Sub-tab bar — scrollable so 6 tabs fit on narrow phones */}
+      <div className="border-b border-border bg-bg-card sticky top-0 z-10 overflow-x-auto scrollbar-none">
+        <div className="flex min-w-max">
           {SUB_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setActive(tab.id)}
               className={[
-                "flex-1 py-3 font-mono text-xs tracking-wider transition-colors",
+                "shrink-0 px-4 py-3 font-mono text-xs tracking-wider transition-colors whitespace-nowrap",
                 active === tab.id
                   ? "text-brand border-b-2 border-brand"
                   : "text-text-t3 hover:text-text-t2",
@@ -53,6 +61,20 @@ export default function PortfolyoPage() {
           <div className="flex flex-col gap-4 p-4">
             <VaRCard />
             <CorrelationMatrix />
+          </div>
+        )}
+        {active === "sinyaller" && (
+          <div className="flex flex-col gap-4 p-4">
+            <GoSignalLog emptyFallback={
+              <div className="border border-border bg-bg-card rounded-lg px-4 py-8 text-center font-mono text-2xs text-text-t4">
+                Henüz GO sinyali yok — sistem çalıştıkça otomatik dolar.
+              </div>
+            } />
+          </div>
+        )}
+        {active === "takip" && (
+          <div className="p-4">
+            <CopyTradingCard />
           </div>
         )}
       </div>

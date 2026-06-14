@@ -1,0 +1,129 @@
+name: Android Debug APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - claude/quantix-os-deployment-YXhhF
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      # ubuntu-latest'te Android SDK kurulu gelir ($ANDROID_HOME set).
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
+
+      - name: Install npm dependencies
+        run: npm install --legacy-peer-deps
+
+      # NODE_ENV=production: capacitor.config.ts'de server.url → Vercel URL
+      - name: Add Android platform
+        run: npx cap add android
+        env:
+          CI: "true"
+          NODE_ENV: production
+
+      # hardware acceleration açıkça manifest'e yaz — Xiaomi/MIUI WebView siyah ekran fix
+      - name: Patch AndroidManifest — hardwareAccelerated
+        run: |
+          python3 - << 'PYEOF'
+          import re
+          path = "android/app/src/main/AndroidManifest.xml"
+          content = open(path).read()
+          if "android:hardwareAccelerated" not in content:
+              content = content.replace(
+                  "<application",
+                  '<application android:hardwareAccelerated="true"',
+                  1
+              )
+              open(path, "w").write(content)
+              print("Patched: android:hardwareAccelerated added to <application>")
+          else:
+              print("Already present, no patch needed")
+          PYEOF
+
+      # versionCode + versionName — Play Store hazırlığı için
+      - name: Set versionCode=1, versionName="1.0.0"
+        run: |
+          python3 - << 'PYEOF'
+          import re
+          path = "android/app/build.gradle"
+          content = open(path).read()
+          content = re.sub(r'versionCode\s+\d+', 'versionCode 1', content)
+          content = re.sub(r'versionName\s+"[^"]*"', 'versionName "1.0.0"', content)
+          open(path, "w").write(content)
+          print("Patched: versionCode=1, versionName=1.0.0")
+          PYEOF
+
+      - name: Print variables.gradle (SDK confirmation)
+        run: cat android/variables.gradle
+
+      # Theme.SplashScreen kaldır — HyperOS 3'te sistem splash dondurabilir
+      - name: Patch styles.xml — remove Theme.SplashScreen
+        run: |
+          python3 - << 'PYEOF'
+          import re
+          path = "android/app/src/main/res/values/styles.xml"
+          content = open(path).read()
+          print("=== ORIGINAL styles.xml ===")
+          print(content)
+          print("===========================")
+
+          content = content.replace(
+              'parent="Theme.SplashScreen"',
+              'parent="AppTheme.NoActionBar"'
+          )
+          content = re.sub(r'\s*<item name="windowSplashScreen[^"]*">[^<]*</item>', '', content)
+          content = re.sub(r'\s*<item name="postSplashScreenTheme">[^<]*</item>', '', content)
+
+          open(path, "w").write(content)
+          print("=== PATCHED styles.xml ===")
+          print(open(path).read())
+          PYEOF
+
+      - name: Sync Capacitor assets
+        run: npx cap sync android
+        env:
+          CI: "true"
+          NODE_ENV: production
+
+      # Gradle caches — ilk build'de yavaş, sonraki build'lerde hızlanır
+      - name: Cache Gradle
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('android/**/*.gradle*', 'android/**/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Build debug APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: quantix-os-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
+          if-no-files-found: error

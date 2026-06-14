@@ -73,14 +73,22 @@ export async function signVapidJwt(
   return `${unsigned}.${base64url(new Uint8Array(sigBuf))}`;
 }
 
+/** Şifreli payload için subscription anahtar bilgileri */
+export interface PushPayload {
+  plaintext: string;
+  p256dh: string;
+  auth: string;
+}
+
 /**
- * Subscription endpoint'ine ping-push gönder (encrypted body yok).
- * VAPID auth header ile imzalanır, browser push event'i tetikler.
- * Service worker push event handler gösterilen bildirimi oluşturur.
+ * Subscription endpoint'ine push gönder.
+ * payload sağlanırsa RFC 8291 ile şifrelenir; yoksa boş ping gönderilir.
+ * VAPID auth header ile imzalanır, browser/native push event'i tetikler.
  */
 export async function sendPushToEndpoint(
   endpoint: string,
   config: VapidConfig,
+  payload?: PushPayload | null,
   fetchFn: typeof fetch = fetch,
 ): Promise<{ ok: boolean; status?: number }> {
   const url = new URL(endpoint);
@@ -88,16 +96,43 @@ export async function sendPushToEndpoint(
 
   const jwt = await signVapidJwt(config, audience);
 
+  const headers: Record<string, string> = {
+    Authorization: `vapid t=${jwt},k=${config.publicKey}`,
+    TTL: "86400",
+  };
+
+  let body: BodyInit | undefined;
+
+  if (payload?.p256dh && payload?.auth && payload?.plaintext) {
+    try {
+      const { encryptPushPayload } = await import("./encrypt");
+      const encrypted = await encryptPushPayload(
+        payload.plaintext,
+        payload.p256dh,
+        payload.auth,
+      );
+      headers["Content-Encoding"] = "aes128gcm";
+      headers["Content-Type"] = "application/octet-stream";
+      headers["Content-Length"] = String(encrypted.length);
+      // ArrayBuffer for BodyInit compatibility
+      body = encrypted.buffer.slice(
+        encrypted.byteOffset,
+        encrypted.byteOffset + encrypted.byteLength,
+      ) as ArrayBuffer;
+    } catch {
+      // Şifreleme başarısız → ping-push ile devam et
+      headers["Content-Length"] = "0";
+    }
+  } else {
+    headers["Content-Length"] = "0";
+  }
+
   try {
     const res = await fetchFn(endpoint, {
       method: "POST",
-      headers: {
-        Authorization: `vapid t=${jwt},k=${config.publicKey}`,
-        "Content-Length": "0",
-        TTL: "60",
-      },
+      headers,
+      body,
     });
-
     // 201 Created = success for web push
     // 410 Gone = subscription expired, should delete
     return { ok: res.status === 201 || res.status === 200, status: res.status };

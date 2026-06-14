@@ -2,29 +2,102 @@
   "name": "QUANTIX OS",
   "short_name": "QUANTIX",
   "description": "Kripto vadeli işlem trading paneli — algoritmik sinyal motoru",
-  "start_url": "/",
+  "start_url": "/karar",
   "scope": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "portrait-primary",
   "theme_color": "#0A0A0A",
   "background_color": "#0A0A0A",
   "lang": "tr",
+  "dir": "ltr",
+  "id": "com.quantixos.trading",
   "categories": ["finance", "productivity"],
   "icons": [
     {
-      "src": "/icon.svg",
-      "type": "image/svg+xml",
-      "sizes": "any",
+      "src": "/icons/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
       "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512-maskable.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "maskable"
     },
     {
       "src": "/icon.svg",
       "type": "image/svg+xml",
       "sizes": "any",
-      "purpose": "maskable"
+      "purpose": "any"
     }
   ],
-  "screenshots": [],
-  "related_applications": [],
-  "prefer_related_applications": false
+  "shortcuts": [
+    {
+      "name": "Sinyal Motoru",
+      "short_name": "Karar",
+      "description": "Algoritmik sinyal — GO/WAIT/NO",
+      "url": "/karar",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Açık Pozisyonlar",
+      "short_name": "Pozisyon",
+      "description": "Canlı pozisyon ve P&L",
+      "url": "/pozisyon",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Piyasa",
+      "short_name": "Piyasa",
+      "description": "15 parite canlı fiyat",
+      "url": "/piyasa",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Risk",
+      "short_name": "Risk",
+      "description": "Drawdown protokolü",
+      "url": "/risk",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/screenshots/karar.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "Sinyal Motoru",
+      "form_factor": "narrow"
+    },
+    {
+      "src": "/screenshots/pozisyon.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "label": "Pozisyonlar",
+      "form_factor": "narrow"
+    }
+  ],
+  "related_applications": [
+    {
+      "platform": "play",
+      "url": "https://play.google.com/store/apps/details?id=com.quantixos.trading",
+      "id": "com.quantixos.trading"
+    },
+    {
+      "platform": "itunes",
+      "url": "https://apps.apple.com/app/quantix-os/id0000000000"
+    }
+  ],
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 480
+  }
 }

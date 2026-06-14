@@ -135,22 +135,33 @@ function PnlPageInner() {
   );
 
   function downloadCsv() {
-    if (trades.length === 0) return;
-    const header = "closedAt,openedAt,pair,direction,pnlUsd,pnlPct,rMultiple,score,closeReason,isPaper";
-    const rows = trades.map((t) =>
-      [
-        new Date(t.closedAt).toISOString(),
-        t.openedAt ? new Date(t.openedAt).toISOString() : "",
+    const cutoff = dateRange !== "all" ? Date.now() - DATE_RANGE_MS[dateRange] : 0;
+    const csvSnaps = [...snapshots, ...archivedSnapshots].filter((t) => {
+      if (t.status !== "closed" || !t.exit) return false;
+      if (filter === "live" && t.isPaper) return false;
+      if (filter === "paper" && !t.isPaper) return false;
+      if (dateRange !== "all" && t.exit.closedAt < cutoff) return false;
+      if (pairFilter !== "ALL" && t.pair !== pairFilter) return false;
+      return true;
+    });
+    if (csvSnaps.length === 0) return;
+    const header = "closedAt,openedAt,pair,direction,pnlUsd,pnlPct,rMultiple,score,closeReason,isPaper,notes";
+    const rows = csvSnaps.map((t) => {
+      const notesCsv = t.notes ? `"${t.notes.replace(/"/g, '""')}"` : "";
+      return [
+        new Date(t.exit!.closedAt).toISOString(),
+        new Date(t.openedAt).toISOString(),
         t.pair,
         t.direction,
-        t.pnlUsd.toFixed(4),
-        (t.pnlPct ?? "").toString(),
-        t.rMultiple !== undefined ? t.rMultiple.toFixed(4) : "",
-        (t.score ?? "").toString(),
-        t.closeReason ?? "",
+        t.exit!.pnlUsd.toFixed(4),
+        t.exit!.pnlPct.toString(),
+        t.exit!.rMultiple !== undefined ? t.exit!.rMultiple.toFixed(4) : "",
+        t.entryContext.score.toString(),
+        t.exit!.reason,
         t.isPaper ? "true" : "false",
-      ].join(","),
-    );
+        notesCsv,
+      ].join(",");
+    });
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);

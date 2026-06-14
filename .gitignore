@@ -7,3 +7,7 @@ build/
 *.log
 .DS_Store
 tsconfig.tsbuildinfo
+
+# Android release keystore — asla commit'leme
+*.jks
+*.keystore

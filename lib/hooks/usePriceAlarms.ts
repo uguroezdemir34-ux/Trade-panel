@@ -12,6 +12,7 @@ import type { Pair } from "@/lib/constants/pairs";
 export function usePriceAlarms(): void {
   const prices = useMarketStore((s) => s.prices);
   const audioEnabled = useSettingsStore((s) => s.audioAlertsEnabled);
+  const goAlertsEnabled = useSettingsStore((s) => s.goAlertsEnabled);
   // Load alarms from localStorage on mount
   const load = usePriceAlarmStore((s) => s.load);
   const loaded = useRef(false);
@@ -51,12 +52,12 @@ export function usePriceAlarms(): void {
           `🔔 ${alarm.pair} Price Alarm`,
           `${alarm.label ? alarm.label + " — " : ""}${alarm.targetPrice.toLocaleString()} ${condStr}`,
         );
-        sendAlarmNotification(alarm.pair as Pair, alarm.targetPrice, alarm.condition, currentPrice, alarm.label).catch(() => {
-          // fire-and-forget
-        });
+        if (goAlertsEnabled) {
+          sendAlarmNotification(alarm.pair as Pair, alarm.targetPrice, alarm.condition, currentPrice, alarm.label).catch(() => {});
+        }
       }
     }
-  }, [prices]);
+  }, [prices, goAlertsEnabled]);
 }
 
 async function sendAlarmNotification(

@@ -57,7 +57,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   const clientCreds = parsed.clientCreds?.key ? parsed.clientCreds : null;
 
   const result = await handleOkxProxy(
-    { method: "POST", path, body: parsed.body, isDemo: !!parsed.isDemo, clientCreds },
+    {
+      // If no OKX body payload, this is a credential-authenticated read → use GET for OKX.
+      // If body is present, it's an order/write operation → use POST.
+      method: parsed.body !== undefined ? "POST" : "GET",
+      path,
+      body: parsed.body,
+      isDemo: !!parsed.isDemo,
+      clientCreds,
+    },
     config,
   );
   return NextResponse.json(result);

@@ -34,6 +34,7 @@ export type NotifyKind =
   | "price_alarm"
   | "score_momentum"
   | "consecutive_loss"
+  | "sl_proximity"
   | "test"; // health check
 
 /**

@@ -15,6 +15,7 @@ import { TvWebhookCard } from "@/components/ayarlar/TvWebhookCard";
 import { ScorerWeightsCard } from "@/components/ayarlar/ScorerWeightsCard";
 import { BotModeCard } from "@/components/ayarlar/BotModeCard";
 import { BinanceCredsCard } from "@/components/ayarlar/BinanceCredsCard";
+import { BybitCredsCard } from "@/components/ayarlar/BybitCredsCard";
 import { PwaCard } from "@/components/ayarlar/PwaCard";
 import { DiscordWebhookCard } from "@/components/ayarlar/DiscordWebhookCard";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
@@ -71,6 +72,7 @@ export default function AyarlarPage() {
             <OkxCredsCard />
             <BinanceCredsCard />
           </div>
+          <BybitCredsCard />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <TelegramTestCard />
             <DiscordWebhookCard />
