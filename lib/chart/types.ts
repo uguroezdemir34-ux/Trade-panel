@@ -68,6 +68,20 @@ export interface DrawnLine {
   label?: string;
 }
 
+export interface TrendLine {
+  id: string;
+  p1: { time: number; price: number };
+  p2: { time: number; price: number };
+  color: string;
+}
+
+export interface FibLevel {
+  id: string;
+  p1Price: number;
+  p2Price: number;
+  color: string;
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
@@ -83,6 +97,8 @@ export interface ChartSeries {
   srLevels?: SrLevel[];
   tradeLevels?: TradeLevelLine[];
   drawnLines?: DrawnLine[];
+  trendLines?: TrendLine[];
+  fibLevels?: FibLevel[];
   /** Canlı fiyat — grafik üzerinde mavi kesikli "LIVE" çizgisi */
   currentPrice?: number;
 }

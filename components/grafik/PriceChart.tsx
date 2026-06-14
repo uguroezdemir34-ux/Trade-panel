@@ -30,8 +30,8 @@ interface Props {
   series: ChartSeries;
   height?: number;
   theme?: "dark" | "light";
-  /** Called when user clicks on the chart (y-coordinate → price) */
-  onPriceClick?: (price: number) => void;
+  /** Called when user clicks on the chart: price from coordinateToPrice + bar time */
+  onChartClick?: (price: number, time: number) => void;
   /** Change when pair/TF changes to trigger a fitContent() reset */
   resetKey?: string;
 }
@@ -92,12 +92,14 @@ function fmtVol(n: number): string {
   return n.toFixed(2);
 }
 
-export function PriceChart({ series, height = 400, theme = "dark", onPriceClick, resetKey }: Props): React.ReactElement {
+export function PriceChart({ series, height = 400, theme = "dark", onChartClick, resetKey }: Props): React.ReactElement {
   const containerRef  = useRef<HTMLDivElement>(null);
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
-  const drawnLinesMapRef = useRef<Map<string, IPriceLine>>(new Map());
-  const onPriceClickRef = useRef(onPriceClick);
+  const drawnLinesMapRef    = useRef<Map<string, IPriceLine>>(new Map());
+  const trendLinesMapRef    = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
+  const fibLinesMapRef      = useRef<Map<string, IPriceLine[]>>(new Map());
+  const onChartClickRef = useRef(onChartClick);
   const ema20Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema200Ref     = useRef<ISeriesApi<"Line"> | null>(null);
@@ -171,12 +173,15 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick,
     });
     ro.observe(container);
 
-    // Wire click → price callback
+    // Wire click → {price, time} callback
+    // price: coordinateToPrice from y-pixel (accurate)
+    // time: param.time = bar time at cursor (may be undefined in blank areas)
     chart.subscribeClick((param) => {
       if (!param.point || !candleRef.current) return;
       const price = candleRef.current.coordinateToPrice(param.point.y);
-      if (price !== null && price > 0) {
-        onPriceClickRef.current?.(price);
+      const time  = param.time;
+      if (price !== null && price > 0 && time !== undefined) {
+        onChartClickRef.current?.(price, time as number);
       }
     });
 
@@ -196,6 +201,8 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick,
       ro.disconnect();
       chart.remove();
       drawnLinesMapRef.current.clear();
+      trendLinesMapRef.current.clear();
+      fibLinesMapRef.current.clear();
       chartRef.current  = null;
       candleRef.current = null;
       ema20Ref.current  = null;
@@ -218,8 +225,8 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick,
 
   // ─── Keep click callback ref fresh ─────────────────────────────────────
   useEffect(() => {
-    onPriceClickRef.current = onPriceClick;
-  }, [onPriceClick]);
+    onChartClickRef.current = onChartClick;
+  }, [onChartClick]);
 
   // ─── Sync drawn horizontal lines ────────────────────────────────────────
   useEffect(() => {
@@ -248,6 +255,86 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick,
       }
     }
   }, [series.drawnLines]);
+
+  // ─── Sync trend lines (diagonal LineSeries) ──────────────────────────────
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const incoming = series.trendLines ?? [];
+    const incomingIds = new Set(incoming.map((l) => l.id));
+
+    for (const [id, ls] of trendLinesMapRef.current) {
+      if (!incomingIds.has(id)) {
+        try { chart.removeSeries(ls); } catch { /* ignore */ }
+        trendLinesMapRef.current.delete(id);
+      }
+    }
+    for (const tl of incoming) {
+      if (trendLinesMapRef.current.has(tl.id)) continue;
+      // Ensure ascending time order (lightweight-charts requires unique sorted times)
+      let pt1 = tl.p1, pt2 = tl.p2;
+      if (tl.p1.time > tl.p2.time) { pt1 = tl.p2; pt2 = tl.p1; }
+      else if (tl.p1.time === tl.p2.time) { pt2 = { ...tl.p2, time: tl.p2.time + 1 }; }
+      const ls = chart.addLineSeries({
+        color: tl.color,
+        lineWidth: 1,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      });
+      ls.setData([
+        { time: pt1.time as Time, value: pt1.price },
+        { time: pt2.time as Time, value: pt2.price },
+      ]);
+      trendLinesMapRef.current.set(tl.id, ls);
+    }
+  }, [series.trendLines]);
+
+  // ─── Sync Fibonacci levels (7 price lines per fib) ───────────────────────
+  const FIB_RATIOS = [
+    { r: 0,     label: "0%" },
+    { r: 0.236, label: "23.6%" },
+    { r: 0.382, label: "38.2%" },
+    { r: 0.5,   label: "50%" },
+    { r: 0.618, label: "61.8%" },
+    { r: 0.786, label: "78.6%" },
+    { r: 1,     label: "100%" },
+  ];
+
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    const incoming = series.fibLevels ?? [];
+    const incomingIds = new Set(incoming.map((f) => f.id));
+
+    for (const [id, lines] of fibLinesMapRef.current) {
+      if (!incomingIds.has(id)) {
+        for (const pl of lines) {
+          try { candle.removePriceLine(pl); } catch { /* ignore */ }
+        }
+        fibLinesMapRef.current.delete(id);
+      }
+    }
+    for (const fib of incoming) {
+      if (fibLinesMapRef.current.has(fib.id)) continue;
+      const high  = Math.max(fib.p1Price, fib.p2Price);
+      const low   = Math.min(fib.p1Price, fib.p2Price);
+      const range = high - low;
+      const lines: IPriceLine[] = [];
+      for (const { r, label } of FIB_RATIOS) {
+        const pl = candle.createPriceLine({
+          price: high - range * r,
+          color: fib.color,
+          lineWidth: 1,
+          lineStyle: 2,
+          axisLabelVisible: true,
+          title: label,
+        });
+        lines.push(pl);
+      }
+      fibLinesMapRef.current.set(fib.id, lines);
+    }
+  }, [series.fibLevels]);
 
   // ─── Theme color update (no chart recreation) ───────────────────────────
   useEffect(() => {

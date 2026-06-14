@@ -18,10 +18,11 @@ import { vwapSeries } from "@/lib/indicators/vwap";
 import { findAllSwingHighs, findAllSwingLows } from "@/lib/sr/swing";
 import { toIndicatorCandle, fetchCandles, type Timeframe, type Candle } from "@/lib/okx/candles";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
-import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine } from "@/lib/chart/types";
+import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine, TrendLine, FibLevel } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel } from "@/components/grafik/WatchlistPanel";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
+import { DrawingToolbar } from "@/components/grafik/DrawingToolbar";
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
@@ -61,6 +62,29 @@ function saveLines(pair: string, lines: DrawnLine[]): void {
   } catch { /* ignore */ }
 }
 
+const TL_KEY  = "qx_tl_v1_";
+const FIB_KEY = "qx_fib_v1_";
+function loadTrendLines(pair: string): TrendLine[] {
+  try { return JSON.parse(localStorage.getItem(TL_KEY + pair) ?? "[]") as TrendLine[]; }
+  catch { return []; }
+}
+function saveTrendLines(pair: string, lines: TrendLine[]): void {
+  try {
+    if (lines.length === 0) localStorage.removeItem(TL_KEY + pair);
+    else localStorage.setItem(TL_KEY + pair, JSON.stringify(lines));
+  } catch { /* ignore */ }
+}
+function loadFibLevels(pair: string): FibLevel[] {
+  try { return JSON.parse(localStorage.getItem(FIB_KEY + pair) ?? "[]") as FibLevel[]; }
+  catch { return []; }
+}
+function saveFibLevels(pair: string, levels: FibLevel[]): void {
+  try {
+    if (levels.length === 0) localStorage.removeItem(FIB_KEY + pair);
+    else localStorage.setItem(FIB_KEY + pair, JSON.stringify(levels));
+  } catch { /* ignore */ }
+}
+
 /** Build ChartSeries from a candle array + overlay flags */
 function buildSeries(
   candles: Candle[],
@@ -70,7 +94,7 @@ function buildSeries(
     ema20: boolean; ema50: boolean; ema200: boolean; volume: boolean;
     rsi: boolean; macd: boolean; bb: boolean; vwap: boolean; sr: boolean;
     trades: boolean; alarmLevels: AlarmLevel[]; tradeLevels: TradeLevelLine[];
-    drawnLines: DrawnLine[]; livePrice?: number;
+    drawnLines: DrawnLine[]; trendLines: TrendLine[]; fibLevels: FibLevel[]; livePrice?: number;
   },
 ): ChartSeries {
   const candlePoints = candles.map((c) => ({
@@ -180,6 +204,8 @@ function buildSeries(
     bb: bbBands, vwap: vwapBands, alarmLevels: opts.alarmLevels,
     markers, srLevels, tradeLevels: opts.tradeLevels,
     drawnLines: opts.drawnLines,
+    trendLines: opts.trendLines,
+    fibLevels:  opts.fibLevels,
     currentPrice: opts.livePrice,
   };
 }
@@ -205,7 +231,10 @@ export default function GrafikPage() {
   const [showFlow, setShowFlow]         = useState(false);
   const [showQuick, setShowQuick]       = useState(false);
   const [clickMode, setClickMode]       = useState<ChartClickMode>("none");
-  const [drawnLines, setDrawnLines]     = useState<DrawnLine[]>([]);
+  const [drawnLines, setDrawnLines]       = useState<DrawnLine[]>([]);
+  const [trendLines, setTrendLines]       = useState<TrendLine[]>([]);
+  const [fibLevels, setFibLevels]         = useState<FibLevel[]>([]);
+  const [pendingPoint, setPendingPoint]   = useState<{ time: number; price: number } | null>(null);
   const [capturedPrice, setCapturedPrice] = useState<number | null>(null);
   const [secCandles, setSecCandles]     = useState<Candle[]>([]);
   const [secLoading, setSecLoading]     = useState(false);
@@ -247,8 +276,10 @@ export default function GrafikPage() {
         }
       }
     } catch { /* ignore */ }
-    // Load drawn lines for restored pair (do this AFTER chartStorage parse)
+    // Load all drawings for restored pair (after chartStorage parse)
     setDrawnLines(loadLines(loadedPair));
+    setTrendLines(loadTrendLines(loadedPair));
+    setFibLevels(loadFibLevels(loadedPair));
     hasLoadedRef.current = true;
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -265,11 +296,19 @@ export default function GrafikPage() {
     } catch { /* ignore */ }
   }, [pair, timeframe, chartHeight, showEma20, showEma50, showEma200, showVolume, showRsi, showMacd, showBb, showVwap, showSr, showTrades]);
 
-  // Persist drawn lines per pair (skip initial mount)
+  // Persist drawings per pair (skip initial mount)
   useEffect(() => {
     if (!hasLoadedRef.current) return;
     saveLines(pair, drawnLines);
   }, [pair, drawnLines]);
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+    saveTrendLines(pair, trendLines);
+  }, [pair, trendLines]);
+  useEffect(() => {
+    if (!hasLoadedRef.current) return;
+    saveFibLevels(pair, fibLevels);
+  }, [pair, fibLevels]);
 
   // Fetch 1m/5m candles locally (not in global poller)
   useEffect(() => {
@@ -292,13 +331,16 @@ export default function GrafikPage() {
     };
   }, [pair, timeframe]);
 
-  // ESC exits fullscreen
+  // ESC: pendingPoint iptal et, sonra fullscreen kapat
   useEffect(() => {
-    if (!isFullscreen) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") setIsFullscreen(false); };
+    const handler = (e: KeyboardEvent) => {
+      if (e.key !== "Escape") return;
+      if (pendingPoint) { setPendingPoint(null); return; }
+      if (isFullscreen) { setIsFullscreen(false); }
+    };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [isFullscreen]);
+  }, [pendingPoint, isFullscreen]);
 
   // Fetch secondary TF candles when split view is active
   const secTf = SEC_TF[timeframe];
@@ -311,9 +353,13 @@ export default function GrafikPage() {
       .finally(() => { setSecLoading(false); });
   }, [showSplit, pair, secTf]);
 
-  // Switch pair: load new pair's drawn lines, clear old ones
+  // Switch pair: load new pair's drawings, clear pending
   const handlePairChange = useCallback((newPair: Pair) => {
     setDrawnLines(loadLines(newPair));
+    setTrendLines(loadTrendLines(newPair));
+    setFibLevels(loadFibLevels(newPair));
+    setPendingPoint(null);
+    setClickMode("none");
     setPair(newPair);
   }, []);
 
@@ -371,15 +417,15 @@ export default function GrafikPage() {
       ema20: showEma20, ema50: showEma50, ema200: showEma200,
       volume: showVolume, rsi: showRsi, macd: showMacd, bb: showBb,
       vwap: showVwap, sr: showSr, trades: showTrades,
-      alarmLevels, tradeLevels, drawnLines,
+      alarmLevels, tradeLevels, drawnLines, trendLines, fibLevels,
       livePrice: livePrice ?? undefined,
     }),
     [candles, trades, pair, showEma20, showEma50, showEma200, showVolume,
      showRsi, showMacd, showBb, showVwap, showSr, showTrades,
-     alarmLevels, tradeLevels, drawnLines, livePrice],
+     alarmLevels, tradeLevels, drawnLines, trendLines, fibLevels, livePrice],
   );
 
-  // Secondary series (split view — EMA200 + volume only, same drawnLines)
+  // Secondary series (split view — EMA200 + volume only, no drawings)
   const secSeries = useMemo<ChartSeries | null>(() => {
     if (!showSplit || secCandles.length === 0) return null;
     return buildSeries(secCandles, trades, pair, {
@@ -387,31 +433,54 @@ export default function GrafikPage() {
       volume: showVolume, rsi: false, macd: false, bb: false,
       vwap: false, sr: showSr, trades: false,
       alarmLevels: [], tradeLevels, drawnLines,
+      trendLines: [], fibLevels: [],
       livePrice: livePrice ?? undefined,
     });
   }, [showSplit, secCandles, trades, pair, showVolume, showSr, tradeLevels, drawnLines, livePrice]);
 
+  const DRAW_COLORS = ["#f59e0b", "#3b82f6", "#ec4899", "#22c55e", "#8b5cf6", "#f97316"];
+
   // Click handler dispatched to the appropriate mode
-  const handlePriceClick = useCallback((price: number) => {
+  const handleChartClick = useCallback((price: number, time: number) => {
     if (clickMode === "hline") {
-      const label = price >= 1000
-        ? price.toFixed(0)
-        : price >= 1
-          ? price.toFixed(2)
-          : price.toFixed(4);
+      const label = price >= 1000 ? price.toFixed(0) : price >= 1 ? price.toFixed(2) : price.toFixed(4);
       setDrawnLines((prev) => [
         ...prev,
-        { id: `dl_${Date.now()}`, price, color: "#f59e0b", label },
+        { id: `dl_${Date.now()}`, price, color: DRAW_COLORS[prev.length % DRAW_COLORS.length], label },
       ]);
     } else if (clickMode === "price") {
       setCapturedPrice(price);
+    } else if (clickMode === "trendline") {
+      if (!pendingPoint) {
+        setPendingPoint({ time, price });
+      } else {
+        const id = `tl_${Date.now()}`;
+        const color = DRAW_COLORS[trendLines.length % DRAW_COLORS.length];
+        setTrendLines((prev) => [...prev, { id, p1: pendingPoint, p2: { time, price }, color }]);
+        setPendingPoint(null);
+      }
+    } else if (clickMode === "fibonacci") {
+      if (!pendingPoint) {
+        setPendingPoint({ time, price });
+      } else {
+        const id = `fib_${Date.now()}`;
+        setFibLevels((prev) => [...prev, { id, p1Price: pendingPoint.price, p2Price: price, color: "#a78bfa" }]);
+        setPendingPoint(null);
+      }
     }
-  }, [clickMode]);
+  }, [clickMode, pendingPoint, trendLines.length]);
 
   const handleSetClickMode = useCallback((mode: ChartClickMode) => {
     setClickMode(mode);
-    // Reset captured price when leaving price mode
+    setPendingPoint(null);
     if (mode !== "price") setCapturedPrice(null);
+  }, []);
+
+  const clearAllDrawings = useCallback(() => {
+    setDrawnLines([]);
+    setTrendLines([]);
+    setFibLevels([]);
+    setPendingPoint(null);
   }, []);
 
   // Format for the captured price display
@@ -483,17 +552,32 @@ export default function GrafikPage() {
         <div className={`flex items-center gap-2 rounded border px-3 py-1.5 text-xs font-mono ${
           clickMode === "hline"
             ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-400"
+            : clickMode === "trendline"
+            ? "border-blue-500/40 bg-blue-500/10 text-blue-400"
+            : clickMode === "fibonacci"
+            ? "border-purple-500/40 bg-purple-500/10 text-purple-400"
             : "border-green-500/40 bg-green-500/10 text-green-400"
         }`}>
           <span className="animate-pulse">●</span>
           {clickMode === "hline"
-            ? "H-LINE MODE — Grafik üzerine tıkla → yatay çizgi çiz"
+            ? "Y-ÇİZGİ — Grafik üzerine tıkla → yatay çizgi"
+            : clickMode === "trendline"
+            ? pendingPoint
+              ? "TREND — 2. nokta: bitiş noktasına tıkla (ESC = iptal)"
+              : "TREND — 1. nokta: başlangıç noktasına tıkla"
+            : clickMode === "fibonacci"
+            ? pendingPoint
+              ? "FİBONACCİ — 2. nokta: bitiş fiyatına tıkla (ESC = iptal)"
+              : "FİBONACCİ — 1. nokta: başlangıç fiyatına tıkla"
             : "PRICE MODE — Grafik üzerine tıkla → fiyat yakala"}
           <button
-            onClick={() => handleSetClickMode("none")}
+            onClick={() => {
+              if (pendingPoint) setPendingPoint(null);
+              else handleSetClickMode("none");
+            }}
             className="ml-auto opacity-60 hover:opacity-100"
           >
-            ✕ İptal
+            {pendingPoint ? "↩ 1.nokta iptal" : "✕ İptal"}
           </button>
         </div>
       )}
@@ -557,25 +641,35 @@ export default function GrafikPage() {
                 </button>
               </div>
             )}
-            <div className={isFullscreen ? "flex-1 relative" : "relative"}>
-              {!isFullscreen && (
-                <button
-                  onClick={() => setIsFullscreen(true)}
-                  className="absolute top-1 right-1 z-20 rounded border border-border bg-bg-card/80 px-1.5 py-0.5 font-mono text-2xs text-text-t4 hover:text-text-t2 hover:border-text-t3 transition-colors"
-                  title="Tam ekran"
-                >
-                  ⛶
-                </button>
-              )}
-              <PriceChart
-                series={series}
-                height={isFullscreen
-                  ? (typeof window !== "undefined" ? window.innerHeight - 56 : 700)
-                  : (showSplit ? 360 : chartHeight)}
-                theme={theme}
-                onPriceClick={handlePriceClick}
-                resetKey={`${pair}_${timeframe}`}
+            <div className={isFullscreen ? "flex-1 flex" : "flex"}>
+              {/* Drawing toolbar — left of chart canvas */}
+              <DrawingToolbar
+                clickMode={clickMode}
+                onSetClickMode={handleSetClickMode}
+                hasDrawings={drawnLines.length > 0 || trendLines.length > 0 || fibLevels.length > 0}
+                pendingPoint={!!pendingPoint}
+                onClearAll={clearAllDrawings}
               />
+              <div className={isFullscreen ? "flex-1 relative" : "relative flex-1"}>
+                {!isFullscreen && (
+                  <button
+                    onClick={() => setIsFullscreen(true)}
+                    className="absolute top-1 right-1 z-20 rounded border border-border bg-bg-card/80 px-1.5 py-0.5 font-mono text-2xs text-text-t4 hover:text-text-t2 hover:border-text-t3 transition-colors"
+                    title="Tam ekran"
+                  >
+                    ⛶
+                  </button>
+                )}
+                <PriceChart
+                  series={series}
+                  height={isFullscreen
+                    ? (typeof window !== "undefined" ? window.innerHeight - 56 : 700)
+                    : (showSplit ? 360 : chartHeight)}
+                  theme={theme}
+                  onChartClick={handleChartClick}
+                  resetKey={`${pair}_${timeframe}`}
+                />
+              </div>
             </div>
           </div>
           {/* Resize handle (only when not split or fullscreen) */}
@@ -600,7 +694,7 @@ export default function GrafikPage() {
                 series={secSeries}
                 height={360}
                 theme={theme}
-                onPriceClick={handlePriceClick}
+                onChartClick={handleChartClick}
                 resetKey={`${pair}_${secTf}`}
               />
             ) : (

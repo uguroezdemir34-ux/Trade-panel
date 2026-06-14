@@ -38,6 +38,7 @@ function okxBar(tf: Timeframe): string {
     case "1h": return "candle1H";
     case "15m": return "candle15m";
     case "5m": return "candle5m";
+    case "1m": return "candle1m";
   }
 }
 

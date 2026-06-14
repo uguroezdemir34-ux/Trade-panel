@@ -8,7 +8,7 @@ import { useT } from "@/lib/i18n/context";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
 
-export type ChartClickMode = "none" | "hline" | "price";
+export type ChartClickMode = "none" | "hline" | "price" | "trendline" | "fibonacci";
 
 interface Props {
   pair: Pair;
