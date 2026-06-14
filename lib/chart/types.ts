@@ -82,6 +82,35 @@ export interface FibLevel {
   color: string;
 }
 
+export interface RayLine {
+  id: string;
+  price: number;
+  color: string;
+  label?: string;
+}
+
+export interface ExtendedLine {
+  id: string;
+  p1: { time: number; price: number };
+  p2: { time: number; price: number };
+  color: string;
+}
+
+export interface ParallelChannel {
+  id: string;
+  p1: { time: number; price: number };
+  p2: { time: number; price: number };
+  offset: number;
+  color: string;
+}
+
+export interface FibExtension {
+  id: string;
+  p1Price: number;
+  p2Price: number;
+  color: string;
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
@@ -99,6 +128,10 @@ export interface ChartSeries {
   drawnLines?: DrawnLine[];
   trendLines?: TrendLine[];
   fibLevels?: FibLevel[];
+  rayLines?: RayLine[];
+  extLines?: ExtendedLine[];
+  channels?: ParallelChannel[];
+  fibExtensions?: FibExtension[];
   /** Canlı fiyat — grafik üzerinde mavi kesikli "LIVE" çizgisi */
   currentPrice?: number;
 }

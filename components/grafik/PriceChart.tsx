@@ -53,6 +53,21 @@ const THEME_COLORS = {
   light: { grid: "#e5e5e5", text: "#525252",  border: "#e5e5e5" },
 } as const;
 
+const EXT_SECONDS = 100_000_000;
+
+const FIB_EXT_RATIOS = [
+  { r: 0,     label: "0%",     ext: false },
+  { r: 0.236, label: "23.6%",  ext: false },
+  { r: 0.382, label: "38.2%",  ext: false },
+  { r: 0.5,   label: "50%",    ext: false },
+  { r: 0.618, label: "61.8%",  ext: false },
+  { r: 0.786, label: "78.6%",  ext: false },
+  { r: 1,     label: "100%",   ext: false },
+  { r: 1.272, label: "127.2%", ext: true  },
+  { r: 1.414, label: "141.4%", ext: true  },
+  { r: 1.618, label: "161.8%", ext: true  },
+];
+
 const PANEL_H = 0.20;
 const BOT_PAD = 0.01;
 
@@ -99,6 +114,10 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
   const drawnLinesMapRef    = useRef<Map<string, IPriceLine>>(new Map());
   const trendLinesMapRef    = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
   const fibLinesMapRef      = useRef<Map<string, IPriceLine[]>>(new Map());
+  const rayLinesMapRef      = useRef<Map<string, IPriceLine>>(new Map());
+  const extLinesMapRef      = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
+  const channelsMapRef      = useRef<Map<string, [ISeriesApi<"Line">, ISeriesApi<"Line">, ISeriesApi<"Line">]>>(new Map());
+  const fibExtMapRef        = useRef<Map<string, IPriceLine[]>>(new Map());
   const onChartClickRef = useRef(onChartClick);
   const ema20Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50Ref      = useRef<ISeriesApi<"Line"> | null>(null);
@@ -203,6 +222,10 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       drawnLinesMapRef.current.clear();
       trendLinesMapRef.current.clear();
       fibLinesMapRef.current.clear();
+      rayLinesMapRef.current.clear();
+      extLinesMapRef.current.clear();
+      channelsMapRef.current.clear();
+      fibExtMapRef.current.clear();
       chartRef.current  = null;
       candleRef.current = null;
       ema20Ref.current  = null;
@@ -335,6 +358,144 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       fibLinesMapRef.current.set(fib.id, lines);
     }
   }, [series.fibLevels]);
+
+  // ─── Sync ray lines (horizontal rays, identical render to drawnLines) ────
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    const incoming = series.rayLines ?? [];
+    const incomingIds = new Set(incoming.map((l) => l.id));
+    for (const [id, pl] of rayLinesMapRef.current) {
+      if (!incomingIds.has(id)) {
+        try { candle.removePriceLine(pl); } catch { /* ignore */ }
+        rayLinesMapRef.current.delete(id);
+      }
+    }
+    for (const rl of incoming) {
+      if (rayLinesMapRef.current.has(rl.id)) continue;
+      const pl = candle.createPriceLine({
+        price: rl.price,
+        color: rl.color,
+        lineWidth: 1,
+        lineStyle: 0,
+        axisLabelVisible: true,
+        title: rl.label ?? "",
+      });
+      rayLinesMapRef.current.set(rl.id, pl);
+    }
+  }, [series.rayLines]);
+
+  // ─── Sync extended lines (diagonal, extrapolated ~3yr each direction) ────
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const incoming = series.extLines ?? [];
+    const incomingIds = new Set(incoming.map((l) => l.id));
+    for (const [id, ls] of extLinesMapRef.current) {
+      if (!incomingIds.has(id)) {
+        try { chart.removeSeries(ls); } catch { /* ignore */ }
+        extLinesMapRef.current.delete(id);
+      }
+    }
+    for (const el of incoming) {
+      if (extLinesMapRef.current.has(el.id)) continue;
+      let pt1 = el.p1, pt2 = el.p2;
+      if (pt1.time > pt2.time) { [pt1, pt2] = [pt2, pt1]; }
+      else if (pt1.time === pt2.time) { pt2 = { ...pt2, time: pt2.time + 1 }; }
+      const dt = pt2.time - pt1.time;
+      const slope = (pt2.price - pt1.price) / dt;
+      const farLeft  = pt1.time - EXT_SECONDS;
+      const farRight = pt2.time + EXT_SECONDS;
+      const ls = chart.addLineSeries({
+        color: el.color,
+        lineWidth: 1,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      });
+      ls.setData([
+        { time: farLeft  as Time, value: pt1.price + slope * (farLeft  - pt1.time) },
+        { time: farRight as Time, value: pt1.price + slope * (farRight - pt1.time) },
+      ]);
+      extLinesMapRef.current.set(el.id, ls);
+    }
+  }, [series.extLines]);
+
+  // ─── Sync parallel channels (3 LineSeries: base / mid dashed / outer) ────
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const incoming = series.channels ?? [];
+    const incomingIds = new Set(incoming.map((c) => c.id));
+    for (const [id, [ls1, ls2, ls3]] of channelsMapRef.current) {
+      if (!incomingIds.has(id)) {
+        try { chart.removeSeries(ls1); chart.removeSeries(ls2); chart.removeSeries(ls3); } catch { /* ignore */ }
+        channelsMapRef.current.delete(id);
+      }
+    }
+    for (const ch of incoming) {
+      if (channelsMapRef.current.has(ch.id)) continue;
+      let pt1 = ch.p1, pt2 = ch.p2;
+      if (pt1.time > pt2.time) { [pt1, pt2] = [pt2, pt1]; }
+      else if (pt1.time === pt2.time) { pt2 = { ...pt2, time: pt2.time + 1 }; }
+      const lineOpts = {
+        color: ch.color,
+        lineWidth: 1 as const,
+        priceLineVisible: false,
+        lastValueVisible: false,
+        crosshairMarkerVisible: false,
+      };
+      const ls1 = chart.addLineSeries(lineOpts);
+      const ls2 = chart.addLineSeries({ ...lineOpts, lineStyle: 2 as const });
+      const ls3 = chart.addLineSeries(lineOpts);
+      ls1.setData([
+        { time: pt1.time as Time, value: pt1.price },
+        { time: pt2.time as Time, value: pt2.price },
+      ]);
+      ls2.setData([
+        { time: pt1.time as Time, value: pt1.price + ch.offset / 2 },
+        { time: pt2.time as Time, value: pt2.price + ch.offset / 2 },
+      ]);
+      ls3.setData([
+        { time: pt1.time as Time, value: pt1.price + ch.offset },
+        { time: pt2.time as Time, value: pt2.price + ch.offset },
+      ]);
+      channelsMapRef.current.set(ch.id, [ls1, ls2, ls3]);
+    }
+  }, [series.channels]);
+
+  // ─── Sync Fibonacci extensions (10 levels: retracement + 127/141/161%) ───
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    const incoming = series.fibExtensions ?? [];
+    const incomingIds = new Set(incoming.map((f) => f.id));
+    for (const [id, lines] of fibExtMapRef.current) {
+      if (!incomingIds.has(id)) {
+        for (const pl of lines) { try { candle.removePriceLine(pl); } catch { /* ignore */ } }
+        fibExtMapRef.current.delete(id);
+      }
+    }
+    for (const fib of incoming) {
+      if (fibExtMapRef.current.has(fib.id)) continue;
+      const high  = Math.max(fib.p1Price, fib.p2Price);
+      const low   = Math.min(fib.p1Price, fib.p2Price);
+      const range = high - low;
+      const lines: IPriceLine[] = [];
+      for (const { r, label, ext } of FIB_EXT_RATIOS) {
+        const pl = candle.createPriceLine({
+          price: high - range * r,
+          color: fib.color,
+          lineWidth: 1,
+          lineStyle: ext ? 0 : 2,
+          axisLabelVisible: true,
+          title: label,
+        });
+        lines.push(pl);
+      }
+      fibExtMapRef.current.set(fib.id, lines);
+    }
+  }, [series.fibExtensions]);
 
   // ─── Theme color update (no chart recreation) ───────────────────────────
   useEffect(() => {

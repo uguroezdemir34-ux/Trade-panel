@@ -8,7 +8,7 @@
 import { useT } from "@/lib/i18n/context";
 import type { Timeframe } from "@/lib/okx/candles";
 
-export type ChartClickMode = "none" | "hline" | "price" | "trendline" | "fibonacci";
+export type ChartClickMode = "none" | "hline" | "price" | "trendline" | "fibonacci" | "ray" | "extline" | "channel" | "fibext";
 
 interface Props {
   timeframe: Timeframe;
