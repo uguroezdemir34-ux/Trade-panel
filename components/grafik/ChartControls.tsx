@@ -1,17 +1,16 @@
 "use client";
 
 /**
- * CHART CONTROLS — Pair + Timeframe + Overlay + Tool seçici.
+ * CHART CONTROLS — Timeframe + Overlay + Tool seçici.
+ * Pair seçimi sağ WatchlistPanel'e taşındı.
  */
 
 import { useT } from "@/lib/i18n/context";
-import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
 
 export type ChartClickMode = "none" | "hline" | "price" | "trendline" | "fibonacci";
 
 interface Props {
-  pair: Pair;
   timeframe: Timeframe;
   showEma20: boolean;
   showEma50: boolean;
@@ -28,7 +27,6 @@ interface Props {
   showQuick: boolean;
   clickMode: ChartClickMode;
   hasDrawnLines: boolean;
-  onPairChange: (p: Pair) => void;
   onTimeframeChange: (tf: Timeframe) => void;
   onToggleEma20: () => void;
   onToggleEma50: () => void;
@@ -50,7 +48,6 @@ interface Props {
 const TIMEFRAMES: Timeframe[] = ["1m", "5m", "15m", "1h", "4h", "1d"];
 
 export function ChartControls({
-  pair,
   timeframe,
   showEma20,
   showEma50,
@@ -67,7 +64,6 @@ export function ChartControls({
   showQuick,
   clickMode,
   hasDrawnLines,
-  onPairChange,
   onTimeframeChange,
   onToggleEma20,
   onToggleEma50,
@@ -89,28 +85,6 @@ export function ChartControls({
 
   return (
     <div className="border-border bg-bg-card flex flex-wrap items-center gap-3 rounded-lg border p-3">
-      {/* Pair — scrollable row */}
-      <div className="flex min-w-0 flex-1 items-center gap-1.5">
-        <span className="text-text-t3 shrink-0 font-mono text-2xs tracking-widest uppercase">
-          {t("grafik.pairLabel")}
-        </span>
-        <div className="flex gap-0.5 overflow-x-auto">
-          {PAIRS.map((p) => (
-            <button
-              key={p}
-              onClick={() => onPairChange(p)}
-              className={`shrink-0 rounded border px-1.5 py-0.5 font-mono text-2xs font-bold tracking-widest uppercase ${
-                pair === p
-                  ? "border-text-t1 bg-text-t1 text-bg-page"
-                  : "border-border text-text-t2 hover:bg-bg-page"
-              }`}
-            >
-              {p}
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Timeframe */}
       <div className="flex items-center gap-1.5">
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
