@@ -110,17 +110,6 @@ export function FlowAlignmentRow({ flow }: Props) {
       {expanded && (
         <div className="border-t border-border px-3 py-2 space-y-1.5" data-testid="flow-drilldown">
 
-          {/* Delta Divergence */}
-          <DetailRow
-            label="Divergence"
-            value={
-              flow.flowVerdict.divergence.confluence
-                ? `⚠ ${flow.flowVerdict.divergence.confluenceType.replace("_", " ").toUpperCase()}`
-                : t("karar.flowNoDivergence")
-            }
-            tone={flow.flowVerdict.divergence.confluence ? "down" : "neutral"}
-          />
-
           {/* SMC son event */}
           {flow.smc.recentEvents.length > 0 && (
             <DetailRow

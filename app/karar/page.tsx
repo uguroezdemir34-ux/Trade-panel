@@ -34,6 +34,8 @@ import { TradeConfirmModal } from "@/components/karar/TradeConfirmModal";
 import { computePositionSize } from "@/lib/sizer/position";
 import { atr } from "@/lib/indicators/atr";
 import { adx } from "@/lib/indicators/adx";
+import { ema } from "@/lib/indicators/ema";
+import { rsi as rsiIndicator } from "@/lib/indicators/rsi";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import { findSwingLevels } from "@/lib/sr/swing";
 import type { PositionSizerResult } from "@/lib/sizer/types";
@@ -71,6 +73,10 @@ export default function KararPage() {
   const [showConfirm, setShowConfirm] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [execError, setExecError] = useState<string | null>(null);
+  const [showTrend, setShowTrend] = useState(false);
+  const [showHacim, setShowHacim] = useState(false);
+  const [showMomentum, setShowMomentum] = useState(false);
+  const [showDivergence, setShowDivergence] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
 
   const result = useScoreStore((s) => s.results[activePair]);
@@ -82,6 +88,8 @@ export default function KararPage() {
   const candles4hRaw = useCandleStore((s) => s.candles[`${activePair}_4h`]);
   const candles1h = candles1hRaw ?? EMPTY_CANDLES;
   const candles4h = candles4hRaw ?? EMPTY_CANDLES;
+  const candles15mRaw = useCandleStore((s) => s.candles[`${activePair}_15m`]);
+  const candles15m = candles15mRaw ?? EMPTY_CANDLES;
   const livePrice = useMarketStore((s) => s.prices[activePair]?.last ?? null);
   const allTicks = useMarketStore((s) => s.prices);
   const balanceTotal = useAccountStore((s) => s.balanceTotal);
@@ -237,6 +245,26 @@ export default function KararPage() {
     if (candles1h.length < 29) return null;
     return adx(candles1h.map(toIndicatorCandle), 14)?.adx ?? null;
   }, [candles1h]);
+
+  const rsiValue = useMemo(() => {
+    if (candles1h.length < 15) return null;
+    return rsiIndicator(candles1h.map((c) => c.close), { period: 14 });
+  }, [candles1h]);
+
+  const ema200_4h = useMemo(
+    () => (candles4h.length >= 200 ? ema(candles4h.map((c) => c.close), { period: 200 }) : null),
+    [candles4h],
+  );
+
+  const ema200_1h = useMemo(
+    () => (candles1h.length >= 200 ? ema(candles1h.map((c) => c.close), { period: 200 }) : null),
+    [candles1h],
+  );
+
+  const ema200_15m = useMemo(
+    () => (candles15m.length >= 200 ? ema(candles15m.map((c) => c.close), { period: 200 }) : null),
+    [candles15m],
+  );
 
   const swingLevels = useMemo(() => {
     const sw4h =
@@ -652,17 +680,97 @@ export default function KararPage() {
               {/* Flow drilldown */}
               <FlowAlignmentRow flow={flowResult} />
 
-              {/* Details accordion — hidden by default */}
-              <div>
-                <button
-                  onClick={() => setShowDetails((v) => !v)}
-                  className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-surface-s1 font-mono text-2xs text-text-t3 hover:text-text-t2 transition-colors"
-                >
-                  <span>{showDetails ? t("karar.hideDetails") : t("karar.showDetails")}</span>
-                </button>
+              {/* 4 analysis accordions + Detaylar */}
+              <div className="flex flex-col gap-2">
 
-                {showDetails && (
-                  <div className="flex flex-col gap-3 mt-3">
+                {/* TREND */}
+                <AccordionSection
+                  title="TREND"
+                  badge={`${result.sub.trend}/25`}
+                  open={showTrend}
+                  onToggle={() => setShowTrend((v) => !v)}
+                >
+                  <div className="bg-surface-s1 rounded-lg border border-border px-3 py-2 space-y-2">
+                    <div className="flex items-center justify-between text-2xs font-mono">
+                      <span className="text-text-t4 uppercase tracking-widest">Skor</span>
+                      <span className="font-bold tabular-nums text-text-t1">{result.sub.trend} / 25</span>
+                    </div>
+                    {result.reasons.trend && (
+                      <p className="text-2xs font-mono text-text-t3 leading-relaxed">{result.reasons.trend}</p>
+                    )}
+                    <div className="border-t border-border/40 pt-2 space-y-1.5">
+                      <EmaAlignRow label="4H" close={candles4h.at(-1)?.close ?? null} ema200={ema200_4h} />
+                      <EmaAlignRow label="1H" close={candles1h.at(-1)?.close ?? null} ema200={ema200_1h} />
+                      <EmaAlignRow label="15M" close={candles15m.at(-1)?.close ?? null} ema200={ema200_15m} />
+                    </div>
+                  </div>
+                  <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} t={t} />
+                </AccordionSection>
+
+                {/* HACİM */}
+                <AccordionSection
+                  title="HACİM"
+                  badge={`vol ${result.sub.vol}/8 · bb ${result.sub.bb}/8 · vwap ${result.sub.vwap}/10`}
+                  open={showHacim}
+                  onToggle={() => setShowHacim((v) => !v)}
+                >
+                  <div className="bg-surface-s1 rounded-lg border border-border px-3 py-2 space-y-2">
+                    <SubScoreRow label="Vol" value={result.sub.vol} max={8} reason={result.reasons.vol} />
+                    <SubScoreRow label="BB" value={result.sub.bb} max={8} reason={result.reasons.bb} />
+                    <SubScoreRow label="VWAP" value={result.sub.vwap} max={10} reason={result.reasons.vwap} />
+                  </div>
+                </AccordionSection>
+
+                {/* ADX & RSI */}
+                <AccordionSection
+                  title="ADX & RSI"
+                  badge={`adx ${result.sub.adx}/12 · rsi ${result.sub.rsi}/12`}
+                  open={showMomentum}
+                  onToggle={() => setShowMomentum((v) => !v)}
+                >
+                  <div className="bg-surface-s1 rounded-lg border border-border px-3 py-2 space-y-2">
+                    <SubScoreRow
+                      label="ADX"
+                      value={result.sub.adx}
+                      max={12}
+                      reason={result.reasons.adx}
+                      rawValue={adxValue !== null ? adxValue.toFixed(1) : undefined}
+                    />
+                    <SubScoreRow
+                      label="RSI"
+                      value={result.sub.rsi}
+                      max={12}
+                      reason={result.reasons.rsi}
+                      rawValue={rsiValue !== null ? rsiValue.toFixed(1) : undefined}
+                    />
+                  </div>
+                </AccordionSection>
+
+                {/* DIVERGENCE */}
+                <AccordionSection
+                  title="DIVERGENCE"
+                  badge={
+                    flowResult?.flowVerdict.divergence.confluence
+                      ? `⚠ ${flowResult.flowVerdict.divergence.confluenceType.replace(/_/g, " ").toUpperCase()}`
+                      : "—"
+                  }
+                  open={showDivergence}
+                  onToggle={() => setShowDivergence((v) => !v)}
+                >
+                  {flowResult ? (
+                    <DivergencePanel div={flowResult.flowVerdict.divergence} />
+                  ) : (
+                    <div className="text-2xs font-mono text-text-t4 px-3 py-2">—</div>
+                  )}
+                </AccordionSection>
+
+                {/* Detaylar */}
+                <AccordionSection
+                  title={showDetails ? t("karar.hideDetails") : t("karar.showDetails")}
+                  open={showDetails}
+                  onToggle={() => setShowDetails((v) => !v)}
+                >
+                  <div className="flex flex-col gap-3">
                     {/* Alarm + Candle patterns */}
                     <div className="flex flex-wrap items-start gap-2">
                       <div className="flex-1 min-w-[180px]">
@@ -682,9 +790,6 @@ export default function KararPage() {
                       <HistoricalEdge pair={activePair} />
                       <LiveEdgeBadge pair={activePair} />
                     </div>
-
-                    {/* Score trend chart */}
-                    <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} t={t} />
 
                     {/* Score breakdown + Blocks + Reasons */}
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -736,7 +841,7 @@ export default function KararPage() {
                       />
                     </div>
                   </div>
-                )}
+                </AccordionSection>
               </div>
 
               {sizerResult && (
@@ -777,6 +882,139 @@ export default function KararPage() {
 
       {showShortcuts && (
         <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />
+      )}
+    </div>
+  );
+}
+
+function AccordionSection({
+  title,
+  badge,
+  open,
+  onToggle,
+  children,
+}: React.PropsWithChildren<{
+  title: string;
+  badge?: string;
+  open: boolean;
+  onToggle: () => void;
+}>) {
+  return (
+    <div>
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-surface-s1 font-mono text-2xs text-text-t3 hover:text-text-t2 transition-colors"
+      >
+        <span className="flex items-center gap-2 min-w-0">
+          <span className="tracking-widest uppercase shrink-0">{title}</span>
+          {badge && <span className="text-text-t4 tabular-nums truncate">{badge}</span>}
+        </span>
+        <span className="shrink-0 ml-2">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && <div className="flex flex-col gap-2 mt-2">{children}</div>}
+    </div>
+  );
+}
+
+function SubScoreRow({
+  label,
+  value,
+  max,
+  reason,
+  rawValue,
+}: {
+  label: string;
+  value: number;
+  max: number;
+  reason?: string;
+  rawValue?: string;
+}) {
+  const pct = Math.max(0, Math.min(1, value / max));
+  const barColor =
+    value >= max * 0.7 ? "bg-signal-up" : value >= max * 0.35 ? "bg-warning" : "bg-signal-down/60";
+  return (
+    <div className="space-y-0.5">
+      <div className="flex items-center justify-between text-2xs font-mono">
+        <span className="text-text-t4 uppercase tracking-wide">{label}</span>
+        <span className="flex items-center gap-2">
+          {rawValue !== undefined && (
+            <span className="text-text-t3 tabular-nums">{rawValue}</span>
+          )}
+          <span className="text-text-t1 font-bold tabular-nums">{value}/{max}</span>
+        </span>
+      </div>
+      <div className="w-full h-1 bg-surface-s3 rounded-full overflow-hidden">
+        <div
+          className={`h-full rounded-full ${barColor}`}
+          style={{ width: `${Math.round(pct * 100)}%` }}
+        />
+      </div>
+      {reason && <p className="text-[10px] font-mono text-text-t4 leading-relaxed">{reason}</p>}
+    </div>
+  );
+}
+
+function EmaAlignRow({
+  label,
+  close,
+  ema200,
+}: {
+  label: string;
+  close: number | null;
+  ema200: number | null;
+}) {
+  const status =
+    ema200 === null || close === null ? "nodata" : close > ema200 ? "above" : "below";
+  const statusText =
+    status === "above" ? "Üstünde ▲" : status === "below" ? "Altında ▼" : "Veri Yok";
+  const statusColor =
+    status === "above" ? "text-signal-up" : status === "below" ? "text-signal-down" : "text-text-t4";
+  return (
+    <div className="flex items-center justify-between text-2xs font-mono">
+      <span className="text-text-t4 uppercase tracking-wide">{label} EMA200</span>
+      <span className={`${statusColor} font-medium`}>{statusText}</span>
+    </div>
+  );
+}
+
+function DivergencePanel({
+  div,
+}: {
+  div: import("@/lib/orderflow/divergence").MultiFrameDivergence;
+}) {
+  const formatDiv = (type: string) => {
+    if (type === "bullish_divergence") return "↑ Bullish";
+    if (type === "bearish_divergence") return "↓ Bearish";
+    return "—";
+  };
+  const toneColor = (type: string) =>
+    type === "bullish_divergence"
+      ? "text-signal-up"
+      : type === "bearish_divergence"
+      ? "text-signal-down"
+      : "text-text-t3";
+  return (
+    <div className="bg-surface-s1 rounded-lg border border-border px-3 py-2 space-y-2">
+      <div className="flex items-center justify-between text-2xs font-mono">
+        <span className="text-text-t4 uppercase tracking-wide">5M</span>
+        <span className={toneColor(div.d5m.type)}>{formatDiv(div.d5m.type)}</span>
+      </div>
+      {(div.d5m.type === "bullish_divergence" || div.d5m.type === "bearish_divergence") && (
+        <p className="text-[10px] font-mono text-text-t4 leading-relaxed">{div.d5m.humanReason}</p>
+      )}
+      <div className="flex items-center justify-between text-2xs font-mono border-t border-border/40 pt-2">
+        <span className="text-text-t4 uppercase tracking-wide">15M</span>
+        <span className={toneColor(div.d15m.type)}>{formatDiv(div.d15m.type)}</span>
+      </div>
+      {(div.d15m.type === "bullish_divergence" || div.d15m.type === "bearish_divergence") && (
+        <p className="text-[10px] font-mono text-text-t4 leading-relaxed">{div.d15m.humanReason}</p>
+      )}
+      {div.confluence && (
+        <div className="border-t border-border/40 pt-2">
+          <span className={`text-2xs font-mono font-bold ${toneColor(div.confluenceType)}`}>
+            ⚠ CONFLUENCE: {div.confluenceType.replace(/_/g, " ").toUpperCase()}
+          </span>
+        </div>
       )}
     </div>
   );
