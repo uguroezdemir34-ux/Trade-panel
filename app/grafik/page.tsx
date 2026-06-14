@@ -425,9 +425,6 @@ export default function GrafikPage() {
 
   return (
     <div className="flex gap-3 items-start">
-      {/* WatchlistPanel — TradingView-style right column */}
-      <WatchlistPanel activePair={pair} onPairChange={setPair} />
-
       {/* Main chart column */}
       <div className="flex-1 min-w-0 flex flex-col gap-3">
 
@@ -649,6 +646,9 @@ export default function GrafikPage() {
       )}
 
       </div>{/* end main chart column */}
+
+      {/* WatchlistPanel — TradingView-style right column */}
+      <WatchlistPanel activePair={pair} onPairChange={handlePairChange} />
     </div>
   );
 }
