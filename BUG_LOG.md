@@ -12,6 +12,57 @@ Format:
 
 ---
 
+## OI Velocity Kartı Tamamen Boş — 3 Fix (2026-06-14)
+
+### Sorun
+Piyasa sekmesindeki OI Hızı kartı her oturumda 15 pariterinin tamamında
+REJİM ve SKOR sütunlarını "—", OI% ve FİYAT% sütunlarını boş gösteriyordu.
+
+### Kök Neden
+`computeOiVelocityWindow` çalışmak için **en az 2 OI snapshot** ister
+(`oi-velocity.ts:191`). `oiSnapshots` yalnızca bellekte tutulduğundan her
+sayfa yenilemesinde sıfırlanıyor; ilk OI poll'u (t=3s) 1 snapshot üretiyor,
+velocity hesaplanamıyor, `oiVelocity = {}` kalıyor, kart tamamen boş görünüyor.
+5 dakika sonraki ikinci poll'da kart doluyordu ama kullanıcı bunu görmüyordu.
+
+**Compounding:** `appendOiSnapshot` (macroStore:88) `price <= 0` ise snapshot
+atmıyor. İlk poll'da WS henüz tüm paritelere fiyat iletmemiş olabileceğinden
+bazı paritelerde ilk snapshot bile oluşmuyordu.
+
+### 3 Fix (lib/store/macroStore.ts)
+
+**Fix 3 — oiSnapshots persist** (satır 53-83, 172-180, 287-288):
+- `loadOiSnapshots()` / `saveOiSnapshots()` — `scoreHistoryStore` ile aynı pattern
+- localStorage key: `quantix_oi_snaps_v1`
+- TTL filtresi: yüklemede 2 saatten eski snapshot'lar atılır
+- Kayıt: her başarılı OI refresh'inin sonunda snapshot map'i yazılır
+- Hydration: `create()` içinde `setTimeout(0)` ile SSR-safe
+
+**Fix 2 — price=0 fallback** (satır 257, 266-273):
+- `prices[pair]?.last ?? 0` yerine price=0 ise `lastKnownGood[pair]` fallback
+- Kısıtlama: `lastKnownGood.cachedAt` 30 dakikadan eskiyse kullanma (stale OI)
+- `marketStore.lastKnownGood` alanının varlığı doğrulandı (marketStore.ts:43)
+
+**Fix 1 — bootstrap ikinci fetch** (satır 49-51, 290-299):
+- Modül seviyesi `_oiBootstrapScheduled` flag
+- İlk poll sonrası `oiVelocity` hâlâ boşsa (yeni kullanıcı) 30sn'de TEK SEFERLİK
+  `oiFetchedAt = 0` + `refreshOpenInterest()` çağrısı
+- Sadece OI TTL'yi etkiler — funding/F&G/dominance poller'ları dokunulmaz
+
+### Etki Tahmini — İlk Açılış Sonrası Kart Dolma Süresi
+| Senaryo | Önceki | Sonraki |
+|---------|--------|---------|
+| Daha önce kullanılmış (localStorage dolu) | ~5 dakika | **~3 saniye** (hydration + ilk poll) |
+| İlk kez kullanıcı / temiz localStorage | ~5 dakika | **~33 saniye** (bootstrap fetch) |
+| Her oturum (genel) | ~5 dakika | **~3 saniye** |
+
+### Test
+OI velocity için ayrı integration test yok. `macro-regime.test.ts` (saf
+fonksiyonlar) etkilenmedi. Gerçek hata TS kontrolüyle (`npx tsc --noEmit`)
+doğrulandı: 3 fix sonrası sıfır hata.
+
+---
+
 ## Faz 1b Paket #3 — OKX HTTP Katmanı
 
 ### AC-3.1 · Yanlış bilinen vektörler (HMAC test)
@@ -3138,7 +3189,7 @@ Bu weight'leri test ile sabitledim.
 
 **KARAR 7 — Adjustment clamp ±10**
 
-E�er 5 recent event hepsi aynı yönde olursa weight toplam 15-25 olabilir.
+E�er 5 recent event hepsi aynı yönde olursa weight toplam 15-25 olabilir.
 Bu skor engine için çok agresif. ±10 clamp = "flow filter dominant
 olmasın" prensibi.
 
