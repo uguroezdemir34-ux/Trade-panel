@@ -21,6 +21,7 @@ import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel } from "@/components/grafik/WatchlistPanel";
+import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
@@ -237,6 +238,9 @@ export default function GrafikPage() {
       .catch(() => { setSecCandles([]); })
       .finally(() => { setSecLoading(false); });
   }, [showSplit, pair, secTf]);
+
+  // Live candle stream — updates last candle via RAF-throttled WS (ADIM 3)
+  useOkxCandleStream(pair, timeframe);
 
   const candlesRaw = useCandleStore((s) => s.candles[`${pair}_${timeframe}`]);
   const candles    = candlesRaw ?? EMPTY_CANDLES;
