@@ -424,7 +424,7 @@ export default function GrafikPage() {
   }
 
   return (
-    <div className="flex gap-3 items-start">
+    <div className="flex gap-3 items-stretch">
       {/* Main chart column */}
       <div className="flex-1 min-w-0 flex flex-col gap-3">
 
