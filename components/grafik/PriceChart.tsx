@@ -31,6 +31,12 @@ interface Props {
   theme?: "dark" | "light";
   /** Called when user clicks on the chart (y-coordinate → price) */
   onPriceClick?: (price: number) => void;
+  /**
+   * Opaque key — when this value changes (e.g. pair or timeframe switch),
+   * fitContent() is called once to reset the camera. Stable across live-price
+   * updates so the viewport doesn't jump on every tick.
+   */
+  resetKey?: string;
 }
 
 const COLOR_UP       = "#22c55e";
@@ -75,10 +81,12 @@ function computeSlots(hasVol: boolean, hasRsi: boolean, hasMacd: boolean) {
   return slots;
 }
 
-export function PriceChart({ series, height = 400, theme = "dark", onPriceClick }: Props): React.ReactElement {
+export function PriceChart({ series, height = 400, theme = "dark", onPriceClick, resetKey }: Props): React.ReactElement {
   const containerRef  = useRef<HTMLDivElement>(null);
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  // Track last resetKey so fitContent() only fires on pair/TF switch, not every live-price tick
+  const resetKeyRef   = useRef<string>("");
   // Drawn lines (horizontal user-placed lines) — keyed by DrawnLine.id
   const drawnLinesMapRef = useRef<Map<string, IPriceLine>>(new Map());
   // Stable ref for the click callback to avoid recreating chart on callback change
@@ -537,8 +545,13 @@ export function PriceChart({ series, height = 400, theme = "dark", onPriceClick 
       candle.setMarkers([]);
     }
 
-    chart.timeScale().fitContent();
-  }, [series]);
+    // Only reset camera when pair or timeframe actually changes, not on every live-price update
+    const key = resetKey ?? "";
+    if (key !== resetKeyRef.current || key === "") {
+      chart.timeScale().fitContent();
+      resetKeyRef.current = key;
+    }
+  }, [series, resetKey]);
 
   return <div ref={containerRef} className="w-full" style={{ height }} />;
 }
