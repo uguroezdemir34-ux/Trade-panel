@@ -61,19 +61,25 @@ export async function fetchOpenInterest(
 
     const raw = (await res.json()) as Record<string, unknown>;
 
-    // Proxy unwrap (mevcut OKX wrap pattern — funding ile aynı)
-    let inner: Record<string, unknown> = raw;
-    if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
-      const d = raw.data as Record<string, unknown>;
-      if (typeof d.code === "string") inner = d;
+    // Proxy döndürdüğü iki formatı tanı:
+    //   1. { ok: true, data: [...] }   — parseOkxEnvelope (aktif proxy)
+    //   2. { code: "0", data: [...] }  — ham OKX formatı (geriye dönük uyum)
+    let dataArr: Array<Record<string, unknown>> | undefined;
+    if (raw.ok === true && Array.isArray(raw.data)) {
+      dataArr = raw.data as Array<Record<string, unknown>>;
+    } else {
+      let inner: Record<string, unknown> = raw;
+      if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
+        const d = raw.data as Record<string, unknown>;
+        if (typeof d.code === "string") inner = d;
+      }
+      if (inner.code !== "0") return fallback;
+      dataArr = inner.data as Array<Record<string, unknown>> | undefined;
     }
 
-    if (inner.code !== "0") return fallback;
+    if (!dataArr || dataArr.length === 0) return fallback;
 
-    const data = inner.data as Array<Record<string, unknown>> | undefined;
-    if (!data || data.length === 0) return fallback;
-
-    const first = data[0];
+    const first = dataArr[0];
     const oiStr = first.oi as string | undefined;
     const oiCcyStr = first.oiCcy as string | undefined;
 

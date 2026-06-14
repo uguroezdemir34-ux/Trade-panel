@@ -12,54 +12,102 @@ Format:
 
 ---
 
-## OI Velocity Kartı Tamamen Boş — 3 Fix (2026-06-14)
+## OI Velocity Kartı Tamamen Boş — Gerçek Kök Neden + 4 Fix (2026-06-14)
 
 ### Sorun
-Piyasa sekmesindeki OI Hızı kartı her oturumda 15 pariterinin tamamında
-REJİM ve SKOR sütunlarını "—", OI% ve FİYAT% sütunlarını boş gösteriyordu.
+Piyasa sekmesindeki OI Hızı kartı 15 pariterinin tamamında daima "—"
+gösteriyordu. Deploy sonrasında da devam etti.
 
-### Kök Neden
-`computeOiVelocityWindow` çalışmak için **en az 2 OI snapshot** ister
-(`oi-velocity.ts:191`). `oiSnapshots` yalnızca bellekte tutulduğundan her
-sayfa yenilemesinde sıfırlanıyor; ilk OI poll'u (t=3s) 1 snapshot üretiyor,
-velocity hesaplanamıyor, `oiVelocity = {}` kalıyor, kart tamamen boş görünüyor.
-5 dakika sonraki ikinci poll'da kart doluyordu ama kullanıcı bunu görmüyordu.
+---
 
-**Compounding:** `appendOiSnapshot` (macroStore:88) `price <= 0` ise snapshot
-atmıyor. İlk poll'da WS henüz tüm paritelere fiyat iletmemiş olabileceğinden
-bazı paritelerde ilk snapshot bile oluşmuyordu.
+### ⚠ İlk Teşhis YANLIŞ / EKSİKTİ
 
-### 3 Fix (lib/store/macroStore.ts)
+İlk analizde "snapshot yeterince birikmeden 5dk TTL engel oluyor" denildi
+ve 3 fix (persist + price fallback + bootstrap) yazıldı. Ancak bu fixler
+**asıl kök nedeni** çözmüyordu:
 
-**Fix 3 — oiSnapshots persist** (satır 53-83, 172-180, 287-288):
-- `loadOiSnapshots()` / `saveOiSnapshots()` — `scoreHistoryStore` ile aynı pattern
-- localStorage key: `quantix_oi_snaps_v1`
-- TTL filtresi: yüklemede 2 saatten eski snapshot'lar atılır
-- Kayıt: her başarılı OI refresh'inin sonunda snapshot map'i yazılır
-- Hydration: `create()` içinde `setTimeout(0)` ile SSR-safe
+> OI verisi hiçbir zaman başarılı dönmüyordu. Dolayısıyla persist edilecek
+> snapshot da yoktu; bootstrap yeniden fetch etse de aynı sıfır değeri geliyordu.
 
-**Fix 2 — price=0 fallback** (satır 257, 266-273):
-- `prices[pair]?.last ?? 0` yerine price=0 ise `lastKnownGood[pair]` fallback
-- Kısıtlama: `lastKnownGood.cachedAt` 30 dakikadan eskiyse kullanma (stale OI)
-- `marketStore.lastKnownGood` alanının varlığı doğrulandı (marketStore.ts:43)
+---
 
-**Fix 1 — bootstrap ikinci fetch** (satır 49-51, 290-299):
-- Modül seviyesi `_oiBootstrapScheduled` flag
-- İlk poll sonrası `oiVelocity` hâlâ boşsa (yeni kullanıcı) 30sn'de TEK SEFERLİK
-  `oiFetchedAt = 0` + `refreshOpenInterest()` çağrısı
-- Sadece OI TTL'yi etkiler — funding/F&G/dominance poller'ları dokunulmaz
+### Asıl Kök Neden — Proxy Format Mismatch (Fix A)
 
-### Etki Tahmini — İlk Açılış Sonrası Kart Dolma Süresi
-| Senaryo | Önceki | Sonraki |
-|---------|--------|---------|
-| Daha önce kullanılmış (localStorage dolu) | ~5 dakika | **~3 saniye** (hydration + ilk poll) |
-| İlk kez kullanıcı / temiz localStorage | ~5 dakika | **~33 saniye** (bootstrap fetch) |
-| Her oturum (genel) | ~5 dakika | **~3 saniye** |
+`fetchOpenInterest` ve `fetchFundingRate`, `/api/okx/...` proxy'sinden
+dönen JSON formatını yanlış okuyordu.
+
+**Proxy'nin döndürdüğü format** (`parseOkxEnvelope` sonrası):
+```
+{ "ok": true, "data": [{ "oi": "12345", "oiCcy": "1.23" }] }
+```
+
+**Fetch fonksiyonlarının beklediği format** (eski ham OKX):
+```
+{ "code": "0", "data": [{ "oi": "12345", "oiCcy": "1.23" }] }
+```
+
+Kontrol satırı (`openInterest.ts:71`, `fundingRate.ts:57`):
+```typescript
+if (inner.code !== "0") return fallback;
+// inner.code = undefined (alan yok, "ok" var)
+// undefined !== "0" → HER ZAMAN fallback döner → oi=0, oiCcy=0
+```
+
+`appendOiSnapshot` guard:
+```typescript
+const oiVal = oi.oiCcy > 0 ? oi.oiCcy : oi.oi;  // 0
+if (oiVal <= 0) return prev;  // snapshot HİÇ oluşmaz
+```
+
+Sonuç: snapshot yok → velocity yok → kart "—"
+
+**Neden Funding kartı görünüyordu?** `fundingRate=0` → "neutral" olarak
+render edilir (satır görünür). OI'de sıfır oi=0 guard'a takılır (kart boş).
+
+**Neden Korelasyon kartı çalışıyordu?** `CorrelationCard` macro/OI verisine
+hiç dokunmaz — `candleStore` 1d kapanışlarıyla Pearson korelasyonu hesaplar.
+
+---
+
+### Fix A — Proxy format düzeltmesi (asıl fix)
+
+**Dosyalar:** `lib/market/openInterest.ts`, `lib/market/fundingRate.ts`
+
+İki formatı tanıyan dual-format parser yazıldı:
+```typescript
+if (raw.ok === true && Array.isArray(raw.data)) {
+  // Aktif format: { ok: true, data: [...] } — parseOkxEnvelope proxy çıktısı
+  dataArr = raw.data;
+} else {
+  // Geriye dönük uyum: { code: "0", data: [...] } — ham OKX formatı
+  if (inner.code !== "0") return fallback;
+  dataArr = inner.data;
+}
+```
+
+Bu fix tek başına kartı çözer. Diğer fixler olmadan bile OI verisi doğru gelir.
+
+---
+
+### Fix B — oiSnapshots bellekte sıfırlanıyordu (ikincil sorun)
+
+Fix A olmadan anlamsız, ama Fix A ile birlikte kullanıcı deneyimini hızlandırır.
+`lib/store/macroStore.ts` — commit `bb5d9e7`
+
+**Fix 3 — persist:** localStorage `quantix_oi_snaps_v1`, 2 saatlik TTL
+**Fix 2 — price=0 fallback:** `lastKnownGood[pair]` (30dk içinde) kullan
+**Fix 1 — bootstrap:** Velocity boşsa 30sn'de tek seferlik TTL-bypass fetch
+
+### Etki
+| Senaryo | Kök neden düzeltilmeden | Fix A+B ile |
+|---------|------------------------|-------------|
+| Her oturum | ∞ (hiç çalışmıyor) | **~3 saniye** |
+| Yeni kullanıcı | ∞ (hiç çalışmıyor) | **~33 saniye** |
 
 ### Test
-OI velocity için ayrı integration test yok. `macro-regime.test.ts` (saf
-fonksiyonlar) etkilenmedi. Gerçek hata TS kontrolüyle (`npx tsc --noEmit`)
-doğrulandı: 3 fix sonrası sıfır hata.
+`tests/integration/oi-velocity.test.ts` — `computeOiVelocity` ve `computeOiVelocityWindow`
+`tests/integration/oi-snaps-persist.test.ts` — localStorage TTL filter (jsdom)
+Proxy format fix için: `tests/integration/oi-fetch-proxy.test.ts` — mock fetch ile `{ ok: true }` format testi
 
 ---
 
