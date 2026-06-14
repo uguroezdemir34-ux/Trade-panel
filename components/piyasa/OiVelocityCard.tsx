@@ -18,13 +18,13 @@ interface Props {
 
 const REGIME_META: Record<
   string,
-  { label: string; color: string }
+  { label: string; short: string; color: string }
 > = {
-  aggressive_long:    { label: "Aggressive Long",  color: "#22C55E" },
-  short_squeeze_risk: { label: "Squeeze Risk",     color: "#EF4444" },
-  long_unwind:        { label: "Long Unwind",      color: "#F59E0B" },
-  bear_exhaustion:    { label: "Bear Exhaustion",  color: "#3B82F6" },
-  neutral:            { label: "Neutral",          color: "rgb(var(--text-t3))" },
+  aggressive_long:    { label: "Aggressive Long",  short: "Agg. Long",    color: "#22C55E" },
+  short_squeeze_risk: { label: "Squeeze Risk",     short: "Squeeze Risk", color: "#EF4444" },
+  long_unwind:        { label: "Long Unwind",      short: "Long Unwind",  color: "#F59E0B" },
+  bear_exhaustion:    { label: "Bear Exhaustion",  short: "Bear Exh.",    color: "#3B82F6" },
+  neutral:            { label: "Neutral",          short: "Neutral",      color: "rgb(var(--text-t3))" },
 };
 
 function scoreColor(s: number): string {
@@ -77,7 +77,7 @@ export function OiVelocityCard({ velocity, loading }: Props): React.ReactElement
                     className="truncate font-mono text-[9px] font-medium"
                     style={{ color: regime.color }}
                   >
-                    {regime.label}
+                    {regime.short}
                   </span>
                   <span
                     className="text-right font-mono text-xs font-bold tabular-nums"
