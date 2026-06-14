@@ -236,6 +236,55 @@ export default function KararPage() {
 
   const flowResult = useFlowIntelligence(activePair, signalDir);
 
+  const flowDir: "up" | "down" | "neutral" = flowResult
+    ? flowResult.vetoed || flowResult.totalAdjustment < 0
+      ? "down"
+      : flowResult.totalAdjustment > 0
+      ? "up"
+      : "neutral"
+    : "neutral";
+
+  const prevPairRef = useRef<string>("");
+  const prevFlowDirRef = useRef<"up" | "down" | "neutral" | null>(null);
+  const pulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [flowPulseClass, setFlowPulseClass] = useState("");
+
+  useEffect(() => {
+    const cancelTimer = () => {
+      if (pulseTimerRef.current !== null) {
+        clearTimeout(pulseTimerRef.current);
+        pulseTimerRef.current = null;
+      }
+    };
+
+    // First render or pair switch: initialize without pulsing
+    if (prevFlowDirRef.current === null || activePair !== prevPairRef.current) {
+      prevPairRef.current = activePair;
+      prevFlowDirRef.current = flowDir;
+      setFlowPulseClass("");
+      cancelTimer();
+      return cancelTimer;
+    }
+
+    const prevDir = prevFlowDirRef.current;
+    prevFlowDirRef.current = flowDir;
+
+    if (flowDir === prevDir) return cancelTimer;
+
+    // Direction changed — trigger one-shot pulse
+    cancelTimer();
+    const cls = flowDir === "up" ? "flow-pulse-up" : flowDir === "down" ? "flow-pulse-down" : "";
+    setFlowPulseClass(cls);
+    if (cls) {
+      pulseTimerRef.current = setTimeout(() => {
+        setFlowPulseClass("");
+        pulseTimerRef.current = null;
+      }, 1500);
+    }
+
+    return cancelTimer;
+  }, [activePair, flowDir]);
+
   const atrValue = useMemo(() => {
     if (candles1h.length < 15) return null;
     return atr(candles1h.map(toIndicatorCandle), { period: 14 });
@@ -658,7 +707,7 @@ export default function KararPage() {
                       : flowResult.totalAdjustment > 5
                       ? "border-green-500/30 bg-green-500/5"
                       : "border-border bg-surface-s1"
-                  }`}>
+                  } ${flowPulseClass}`}>
                     <span className="text-[9px] font-mono text-text-t4 tracking-widest uppercase leading-tight">FLOW</span>
                     <span className={`text-base font-mono font-bold tabular-nums leading-tight ${
                       flowResult.vetoed || flowResult.totalAdjustment < 0
