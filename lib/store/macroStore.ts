@@ -7,6 +7,11 @@
  *   - Dominance: macro/cache layer (30dk TTL)
  *   - Funding: 5dk TTL, tüm PAIRS
  *   - OI: 5dk TTL, tüm PAIRS (+ velocity snapshot geçmişi)
+ *
+ * OI Snapshot persist:
+ *   oiSnapshots localStorage'a kaydedilir (quantix_oi_snaps_v1).
+ *   Sayfa yenilemede önceki snapshot'lardan velocity anında hesaplanır.
+ *   2 saatten eski snapshot'lar yükleme ve yazımda otomatik filtrelenir.
  */
 
 import { create } from "zustand";
@@ -40,6 +45,42 @@ import type {
 const FUNDING_TTL_MS = 5 * 60_000;
 const OI_TTL_MS = 5 * 60_000;
 const MAX_OI_HISTORY = 10;
+
+// Bootstrap flag: ilk poll'dan sonra velocity hâlâ boşsa 30s'de tek seferlik
+// TTL bypass fetch yapar. Sadece OI'yi etkiler — funding/F&G/dominance dokunulmaz.
+let _oiBootstrapScheduled = false;
+
+// ─── OI Snapshot Persist (scoreHistoryStore ile aynı pattern) ───
+const OI_SNAPS_KEY = "quantix_oi_snaps_v1";
+const OI_SNAP_MAX_AGE_MS = 2 * 60 * 60_000; // 2 saat
+
+function loadOiSnapshots(): Partial<Record<Pair, OiSnapshot[]>> {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = localStorage.getItem(OI_SNAPS_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Partial<Record<Pair, OiSnapshot[]>>;
+    const now = Date.now();
+    const fresh: Partial<Record<Pair, OiSnapshot[]>> = {};
+    for (const [pair, snaps] of Object.entries(parsed)) {
+      if (!Array.isArray(snaps)) continue;
+      const kept = snaps.filter((s) => now - s.timestamp < OI_SNAP_MAX_AGE_MS);
+      if (kept.length > 0) fresh[pair as Pair] = kept;
+    }
+    return fresh;
+  } catch {
+    return {};
+  }
+}
+
+function saveOiSnapshots(snaps: Partial<Record<Pair, OiSnapshot[]>>): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(OI_SNAPS_KEY, JSON.stringify(snaps));
+  } catch {
+    // storage full — skip persist
+  }
+}
 
 function appendOiSnapshot(
   history: OiSnapshot[] | undefined,
@@ -133,7 +174,18 @@ const initialState = {
   marketSummary: null,
 };
 
-export const useMacroStore = create<MacroStoreState>((set, get) => ({
+export const useMacroStore = create<MacroStoreState>((set, get) => {
+  // Hydrate oiSnapshots from localStorage on client (scoreHistoryStore pattern)
+  if (typeof window !== "undefined") {
+    setTimeout(() => {
+      const loaded = loadOiSnapshots();
+      if (Object.keys(loaded).length > 0) {
+        set({ oiSnapshots: loaded });
+      }
+    }, 0);
+  }
+
+  return {
   ...initialState,
 
   refreshFg: async (fetchFn) => {
@@ -211,7 +263,7 @@ export const useMacroStore = create<MacroStoreState>((set, get) => ({
         PAIRS.map((pair) => fetchOpenInterest(pair, fetchFn).then((r) => [pair, r] as const)),
       );
 
-      const prices = useMarketStore.getState().prices;
+      const { prices, lastKnownGood } = useMarketStore.getState();
       const prevSnapshots = get().oiSnapshots;
 
       const newOi: Partial<Record<Pair, OpenInterestResult>> = {};
@@ -220,7 +272,14 @@ export const useMacroStore = create<MacroStoreState>((set, get) => ({
 
       for (const [pair, oiResult] of results) {
         newOi[pair] = oiResult;
-        const price = prices[pair]?.last ?? 0;
+        let price = prices[pair]?.last ?? 0;
+        if (price <= 0) {
+          // WS henüz bağlanmadıysa lastKnownGood'dan fallback (max 30 dk)
+          const lkg = lastKnownGood[pair];
+          if (lkg && now - lkg.cachedAt < 30 * 60_000) {
+            price = lkg.tick.last;
+          }
+        }
         const snaps = appendOiSnapshot(prevSnapshots[pair], oiResult, price, now);
         newSnapshots[pair] = snaps;
         const vel = computeOiVelocityWindow(snaps, pair, 5);
@@ -234,6 +293,19 @@ export const useMacroStore = create<MacroStoreState>((set, get) => ({
         oiSnapshots: newSnapshots,
         oiVelocity: newVelocity,
       });
+      // Persist snapshots so velocity is available immediately on next page load
+      saveOiSnapshots(newSnapshots);
+
+      // Bootstrap: yeni kullanıcı veya localStorage temizlendiyse ilk poll'dan
+      // sonra velocity hâlâ boşsa 30sn'de tek seferlik TTL-bypass re-fetch yap.
+      // Diğer macro poller'lara (funding/F&G/dom) dokunmaz.
+      if (!_oiBootstrapScheduled && Object.keys(newVelocity).length === 0) {
+        _oiBootstrapScheduled = true;
+        setTimeout(() => {
+          set({ oiFetchedAt: 0 }); // sadece OI TTL'yi sıfırla
+          void get().refreshOpenInterest();
+        }, 30_000);
+      }
     } catch {
       set({ oiLoading: false });
     }
@@ -249,4 +321,5 @@ export const useMacroStore = create<MacroStoreState>((set, get) => ({
   },
 
   _reset: () => set(initialState),
-}));
+  };
+});
