@@ -20,6 +20,7 @@ import { toIndicatorCandle, fetchCandles, type Timeframe, type Candle } from "@/
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
+import { WatchlistPanel } from "@/components/grafik/WatchlistPanel";
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
@@ -419,7 +420,13 @@ export default function GrafikPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex gap-3 items-start">
+      {/* WatchlistPanel — TradingView-style right column */}
+      <WatchlistPanel activePair={pair} onPairChange={setPair} />
+
+      {/* Main chart column */}
+      <div className="flex-1 min-w-0 flex flex-col gap-3">
+
       <ChartControls
         pair={pair}
         timeframe={timeframe}
@@ -636,6 +643,8 @@ export default function GrafikPage() {
           ))}
         </div>
       )}
+
+      </div>{/* end main chart column */}
     </div>
   );
 }

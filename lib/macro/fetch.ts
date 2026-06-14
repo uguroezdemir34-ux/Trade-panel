@@ -32,10 +32,16 @@ interface DominanceResponse {
   data?: {
     market_cap_percentage?: {
       btc?: number;
+      eth?: number;
       usdt?: number;
     };
   };
 }
+
+/** Module-level 24h baseline for dominance change computation (server-side only). */
+let _domBaseline: { btcD: number; ethD: number; savedAt: number } | null = null;
+const DOM_BASELINE_WINDOW_MS = 24 * 60 * 60_000; // 24h
+const DOM_BASELINE_MAX_AGE_MS = 25 * 60 * 60_000; // 25h — reset after this
 
 /**
  * Fetch helper — timeout + try/catch + safe JSON parse.
@@ -124,6 +130,7 @@ export async function fetchBtcDominance(
 
   if (data && data.data && data.data.market_cap_percentage) {
     const btcD = data.data.market_cap_percentage.btc;
+    const ethD = data.data.market_cap_percentage.eth;
     const usdtD = data.data.market_cap_percentage.usdt;
     if (
       typeof btcD === "number" &&
@@ -131,9 +138,30 @@ export async function fetchBtcDominance(
       btcD > 0 &&
       usdtD > 0
     ) {
+      const ethDVal = typeof ethD === "number" && ethD > 0 ? ethD : 0;
+
+      // 24h change tracking (best-effort; module state persists while server is warm)
+      let btcDChange24h: number | null = null;
+      let ethDChange24h: number | null = null;
+      if (_domBaseline === null) {
+        _domBaseline = { btcD, ethD: ethDVal, savedAt: now };
+      } else if (now - _domBaseline.savedAt > DOM_BASELINE_MAX_AGE_MS) {
+        // Baseline too old — reset with current value
+        _domBaseline = { btcD, ethD: ethDVal, savedAt: now };
+      } else if (now - _domBaseline.savedAt >= DOM_BASELINE_WINDOW_MS) {
+        // Baseline is ~24h old — compute change and reset
+        btcDChange24h = Math.round((btcD - _domBaseline.btcD) * 100) / 100;
+        ethDChange24h = Math.round((ethDVal - _domBaseline.ethD) * 100) / 100;
+        _domBaseline = { btcD, ethD: ethDVal, savedAt: now };
+      }
+      // else: baseline is < 24h old — no change yet (null)
+
       const result: DominanceResult = {
         btcD,
         usdtD,
+        ethD: ethDVal,
+        btcDChange24h,
+        ethDChange24h,
         fetchedAt: now,
         source: "api",
       };
@@ -145,6 +173,9 @@ export async function fetchBtcDominance(
   return {
     btcD: MACRO_CONSTANTS.DOM_BTC_FALLBACK,
     usdtD: MACRO_CONSTANTS.DOM_USDT_FALLBACK,
+    ethD: 0,
+    btcDChange24h: null,
+    ethDChange24h: null,
     fetchedAt: now,
     source: "fallback",
   };

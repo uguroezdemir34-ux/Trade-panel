@@ -84,6 +84,12 @@ export interface FearGreedResult {
 export interface DominanceResult {
   btcD: number;
   usdtD: number;
+  /** ETH dominance % (CoinGecko /global endpoint'ten) */
+  ethD: number;
+  /** 24h change in BTC dominance (percentage points). null if no baseline yet. */
+  btcDChange24h: number | null;
+  /** 24h change in ETH dominance (percentage points). null if no baseline yet. */
+  ethDChange24h: number | null;
   fetchedAt: number;
   source: "api" | "cache" | "fallback";
 }
@@ -92,8 +98,8 @@ export interface DominanceResult {
 export const MACRO_CONSTANTS = {
   /** F&G cache TTL — F&G günde 1 değişir, 30dk yeterli */
   FG_CACHE_TTL_MS: 30 * 60_000,
-  /** Dominance cache TTL — dakikalar mertebesinde değişir */
-  DOM_CACHE_TTL_MS: 30 * 60_000,
+  /** Dominance cache TTL — 5 dk (watchlist panel için yeterince taze) */
+  DOM_CACHE_TTL_MS: 5 * 60_000,
   /** HTTP fetch timeout */
   FETCH_TIMEOUT_MS: 4_000,
   /** F&G fallback (servis erişilemezse) */
