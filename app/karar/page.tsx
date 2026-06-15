@@ -575,6 +575,18 @@ export default function KararPage() {
               const isWatched = watchlistPairs.includes(p);
               return (
                 <div key={p} className="relative group">
+
+                  {/* GO pulse ring — separate overlay so card content stays steady */}
+                  {v === "go" && !isActive && (
+                    <>
+                      <div className="absolute inset-0 rounded ring-1 ring-green-400/70 animate-pulse pointer-events-none" />
+                      <span className="absolute top-0.5 left-0.5 flex h-2 w-2 pointer-events-none">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+                      </span>
+                    </>
+                  )}
+
                   <button
                     onClick={() => setActivePair(p as Pair)}
                     className={[
@@ -582,6 +594,8 @@ export default function KararPage() {
                       verdictBorder,
                       isActive
                         ? "bg-surface-s2 text-text-t1"
+                        : v === "go"
+                        ? "bg-green-500/5 text-text-t3 hover:text-text-t2"
                         : "text-text-t3 hover:text-text-t2",
                     ].join(" ")}
                   >
