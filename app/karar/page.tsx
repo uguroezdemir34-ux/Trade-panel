@@ -723,6 +723,12 @@ export default function KararPage() {
                 )}
               </div>
 
+              {/* AI Market Note */}
+              <div className="flex items-start gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2">
+                <span className="shrink-0 font-mono text-[8px] tracking-widest text-brand/60 border border-brand/25 rounded px-1 py-0.5 leading-none mt-0.5 select-none">YZ</span>
+                <p className="font-mono text-[11px] text-text-t3 leading-relaxed">{aiMarketNote(result)}</p>
+              </div>
+
               {/* Smart Money + Volume Delta 5m mini cards */}
               <FlowMiniCards flow={flowResult} />
 
@@ -736,6 +742,7 @@ export default function KararPage() {
                 <AccordionSection
                   title="TREND"
                   badge={`${result.sub.trend}/25`}
+                  dotColor={result.sub.trend >= 17 ? "#22c55e" : result.sub.trend >= 10 ? "#f59e0b" : "#ef4444"}
                   open={showTrend}
                   onToggle={() => setShowTrend((v) => !v)}
                 >
@@ -760,6 +767,7 @@ export default function KararPage() {
                 <AccordionSection
                   title="HACİM"
                   badge={`vol ${result.sub.vol}/8 · bb ${result.sub.bb}/8 · vwap ${result.sub.vwap}/10`}
+                  dotColor={(result.sub.vol + result.sub.bb + result.sub.vwap) >= 17 ? "#22c55e" : (result.sub.vol + result.sub.bb + result.sub.vwap) >= 10 ? "#f59e0b" : "#ef4444"}
                   open={showHacim}
                   onToggle={() => setShowHacim((v) => !v)}
                 >
@@ -774,6 +782,7 @@ export default function KararPage() {
                 <AccordionSection
                   title="ADX & RSI"
                   badge={`adx ${result.sub.adx}/12 · rsi ${result.sub.rsi}/12`}
+                  dotColor={(result.sub.adx + result.sub.rsi) >= 16 ? "#22c55e" : (result.sub.adx + result.sub.rsi) >= 10 ? "#f59e0b" : "#ef4444"}
                   open={showMomentum}
                   onToggle={() => setShowMomentum((v) => !v)}
                 >
@@ -803,6 +812,7 @@ export default function KararPage() {
                       ? `⚠ ${flowResult.flowVerdict.divergence.confluenceType.replace(/_/g, " ").toUpperCase()}`
                       : "—"
                   }
+                  dotColor={flowResult?.flowVerdict.divergence.confluence ? "#f59e0b" : "#22c55e"}
                   open={showDivergence}
                   onToggle={() => setShowDivergence((v) => !v)}
                 >
@@ -936,15 +946,40 @@ export default function KararPage() {
   );
 }
 
+function aiMarketNote(result: {
+  score: number;
+  verdict: string;
+  direction: string;
+  effectiveThreshold: number;
+  pullbackActive: boolean;
+  sub: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number };
+}): string {
+  const { score, direction, effectiveThreshold, pullbackActive, sub } = result;
+  const dir = direction === "LONG" ? "LONG" : direction === "SHORT" ? "SHORT" : "FLAT";
+  const trendStr = sub.trend >= 17 ? "güçlü trend" : sub.trend >= 10 ? "orta trend" : "zayıf trend";
+  const volTotal = sub.vol + sub.bb + sub.vwap;
+  const volStr = volTotal >= 17 ? "hacim destekli" : volTotal >= 10 ? "hacim kısmi" : "hacim yetersiz";
+  const modeStr = pullbackActive ? " · geri çekilme modu" : "";
+  const gap = effectiveThreshold - score;
+  const postureStr = score >= effectiveThreshold
+    ? `eşik aşıldı (${score}/${effectiveThreshold}) → GO`
+    : gap <= 8
+    ? `eşiğe ${gap} puan kaldı (${score}/${effectiveThreshold})`
+    : `eşiğin altında (${score}/${effectiveThreshold})`;
+  return `${dir} · ${trendStr} · ${volStr}${modeStr} · ${postureStr}.`;
+}
+
 function AccordionSection({
   title,
   badge,
+  dotColor,
   open,
   onToggle,
   children,
 }: React.PropsWithChildren<{
   title: string;
   badge?: string;
+  dotColor?: string;
   open: boolean;
   onToggle: () => void;
 }>) {
@@ -952,13 +987,17 @@ function AccordionSection({
     <div>
       <button
         onClick={onToggle}
-        className="w-full flex items-center justify-between px-3 py-2 rounded-lg border border-border bg-surface-s1 font-mono text-2xs text-text-t3 hover:text-text-t2 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border bg-surface-s1 font-mono text-2xs text-text-t3 hover:text-text-t2 transition-colors"
       >
-        <span className="flex items-center gap-2 min-w-0">
-          <span className="tracking-widest uppercase shrink-0">{title}</span>
-          {badge && <span className="text-text-t4 tabular-nums truncate">{badge}</span>}
-        </span>
-        <span className="shrink-0 ml-2">{open ? "▲" : "▼"}</span>
+        {dotColor && (
+          <span
+            className="shrink-0 w-2 h-2 rounded-full"
+            style={{ backgroundColor: dotColor }}
+          />
+        )}
+        <span className="flex-1 tracking-widest uppercase text-left">{title}</span>
+        {badge && <span className="text-text-t4 tabular-nums shrink-0">{badge}</span>}
+        <span className="shrink-0 text-text-t4">{open ? "▲" : "▼"}</span>
       </button>
       {open && <div className="flex flex-col gap-2 mt-2">{children}</div>}
     </div>

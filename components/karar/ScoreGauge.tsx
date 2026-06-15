@@ -144,27 +144,15 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
 
       {/* ── Score number (neon) */}
       <text
-        x={cx} y={cy - 20}
+        x={cx} y={cy - 14}
         textAnchor="middle"
         fill={color}
-        fontSize="30" fontWeight="700"
+        fontSize="32" fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
         filter="url(#sg-glow)"
       >
         {v}
       </text>
-      <text
-        x={cx} y={cy - 6}
-        textAnchor="middle"
-        fill="#6b7280" fontSize="9"
-        fontFamily="ui-monospace, SFMono-Regular, monospace"
-      >
-        / 100
-      </text>
-
-      {/* ── Edge labels */}
-      <text x="8"   y={cy + 5} textAnchor="start" fill="#4b5563" fontSize="9" fontFamily="ui-monospace, SFMono-Regular, monospace">0</text>
-      <text x="192" y={cy + 5} textAnchor="end"   fill="#4b5563" fontSize="9" fontFamily="ui-monospace, SFMono-Regular, monospace">100</text>
     </svg>
   );
 }
