@@ -55,6 +55,13 @@ export interface SrLevel {
   type: "support" | "resistance";
 }
 
+export interface LiqBand {
+  id: string;
+  price: number;
+  side: "long" | "short";
+  intensity: number;
+}
+
 export interface TradeLevelLine {
   price: number;
   kind: "entry" | "sl" | "tp1" | "tp2";
@@ -144,6 +151,7 @@ export interface ChartSeries {
   alarmLevels?: AlarmLevel[];
   markers?: ChartMarker[];
   srLevels?: SrLevel[];
+  liqBands?: LiqBand[];
   tradeLevels?: TradeLevelLine[];
   drawnLines?: DrawnLine[];
   trendLines?: TrendLine[];

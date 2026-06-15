@@ -15,6 +15,7 @@
 import { useState } from "react";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { useMarketStore } from "@/lib/store/marketStore";
+import { useScoreStore } from "@/lib/store/scoreStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 
 interface Props {
@@ -72,7 +73,7 @@ function domChgColor(v: number | null): string {
 }
 
 // Grid column template — shared between header and data rows
-const GRID_COLS = "grid-cols-[1fr_56px_54px_44px]";
+const GRID_COLS = "grid-cols-[1fr_56px_46px_40px_28px]";
 
 /** Ortak içerik (masaüstü panel + mobil drawer) */
 function WatchlistContent({ activePair, onPairChange }: Props) {
@@ -82,6 +83,7 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
   const btcDChange24h = useMacroStore((s) => s.btcDChange24h);
   const ethDChange24h = useMacroStore((s) => s.ethDChange24h);
   const prices       = useMarketStore((s) => s.prices);
+  const allScores    = useScoreStore((s) => s.results);
 
   return (
     <>
@@ -117,6 +119,7 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">Son</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">Değ</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">%</span>
+        <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">QX</span>
       </div>
 
       {/* ── Coin listesi (kaydırılabilir) ── */}
@@ -173,6 +176,16 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
               >
                 {fmtPct(chg)}
               </span>
+              {/* QX Score */}
+              {(() => {
+                const sc = allScores[pair]?.score;
+                const cls = sc == null ? "text-text-t4" : sc >= 70 ? "text-green-400" : sc >= 50 ? "text-yellow-400" : "text-red-400/80";
+                return (
+                  <span className={`font-mono text-[9px] tabular-nums text-right font-semibold ${cls}`}>
+                    {sc ?? "—"}
+                  </span>
+                );
+              })()}
             </button>
           );
         })}
@@ -200,7 +213,7 @@ export function WatchlistPanel({ activePair, onPairChange }: Props): React.React
         className={[
           "hidden md:flex flex-col",
           "border border-border bg-bg-card rounded-lg overflow-hidden",
-          "select-none w-[236px] shrink-0",
+          "select-none w-[258px] shrink-0",
         ].join(" ")}
       >
         <WatchlistContent activePair={activePair} onPairChange={onPairChange} />

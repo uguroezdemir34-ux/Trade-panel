@@ -18,11 +18,13 @@ import { vwapSeries } from "@/lib/indicators/vwap";
 import { findAllSwingHighs, findAllSwingLows } from "@/lib/sr/swing";
 import { toIndicatorCandle, fetchCandles, type Timeframe, type Candle } from "@/lib/okx/candles";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
-import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine, TrendLine, FibLevel, RayLine, ExtendedLine, ParallelChannel, FibExtension, VerticalLine, CrossLine, FibTimeZone } from "@/lib/chart/types";
+import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine, TrendLine, FibLevel, RayLine, ExtendedLine, ParallelChannel, FibExtension, VerticalLine, CrossLine, FibTimeZone, LiqBand } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel } from "@/components/grafik/WatchlistPanel";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
 import { DrawingToolbar } from "@/components/grafik/DrawingToolbar";
+import { useLiqFeedStore } from "@/lib/store/liqFeedStore";
+import { buildLiquidationMapFromEvents } from "@/lib/orderflow/liquidationMap";
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
@@ -313,6 +315,7 @@ export default function GrafikPage() {
   const [showBb, setShowBb]         = useState(false);
   const [showVwap, setShowVwap]     = useState(false);
   const [showSr, setShowSr]         = useState(false);
+  const [showLiqMagnet, setShowLiqMagnet] = useState(true);
 
   // New tool state (not persisted — session only)
   const [showSplit, setShowSplit]       = useState(false);
@@ -372,6 +375,7 @@ export default function GrafikPage() {
           if (o.vwap   !== undefined) setShowVwap(o.vwap);
           if (o.sr     !== undefined) setShowSr(o.sr);
           if (o.trades !== undefined) setShowTrades(o.trades);
+          if (o.liqMagnet !== undefined) setShowLiqMagnet(o.liqMagnet);
         }
       }
     } catch { /* ignore */ }
@@ -397,10 +401,11 @@ export default function GrafikPage() {
       localStorage.setItem(CHART_STORAGE_KEY, JSON.stringify({
         pair, tf: timeframe, chartHeight,
         o: { ema20: showEma20, ema50: showEma50, ema200: showEma200, vol: showVolume,
-             rsi: showRsi, macd: showMacd, bb: showBb, vwap: showVwap, sr: showSr, trades: showTrades },
+             rsi: showRsi, macd: showMacd, bb: showBb, vwap: showVwap, sr: showSr, trades: showTrades,
+             liqMagnet: showLiqMagnet },
       }));
     } catch { /* ignore */ }
-  }, [pair, timeframe, chartHeight, showEma20, showEma50, showEma200, showVolume, showRsi, showMacd, showBb, showVwap, showSr, showTrades]);
+  }, [pair, timeframe, chartHeight, showEma20, showEma50, showEma200, showVolume, showRsi, showMacd, showBb, showVwap, showSr, showTrades, showLiqMagnet]);
 
   // Persist drawings per pair (skip initial mount)
   useEffect(() => {
@@ -556,6 +561,7 @@ export default function GrafikPage() {
   const trades     = useTradesStore((s) => s.trades);
   const alarms     = usePriceAlarmStore((s) => s.alarms);
   const livePrice  = useMarketStore((s) => s.prices[pair]?.last ?? null);
+  const liqEvents  = useLiqFeedStore((s) => s.events[pair] ?? []);
 
   const tradeLevels = useMemo<TradeLevelLine[]>(() => {
     const open = trades.filter((t) => t.status === "open" && t.pair === pair);
@@ -578,9 +584,29 @@ export default function GrafikPage() {
     [alarms, pair],
   );
 
+  // Liq Magnet bands
+  const liqBands = useMemo<LiqBand[]>(() => {
+    if (!showLiqMagnet || liqEvents.length < 20) return [];
+    if (!livePrice) return [];
+    try {
+      const liqMap = buildLiquidationMapFromEvents(pair, liqEvents, livePrice);
+      const bands: LiqBand[] = [];
+      if (liqMap.nearestLongLiq) {
+        bands.push({ id: "liq_long", price: liqMap.nearestLongLiq.price, side: "long", intensity: liqMap.nearestLongLiq.intensity });
+      }
+      if (liqMap.nearestShortLiq) {
+        bands.push({ id: "liq_short", price: liqMap.nearestShortLiq.price, side: "short", intensity: liqMap.nearestShortLiq.intensity });
+      }
+      liqMap.magnetZones.slice(0, 2).forEach((z, i) => {
+        bands.push({ id: `liq_zone_${i}`, price: z.price, side: z.price < livePrice ? "long" : "short", intensity: z.intensity * 0.6 });
+      });
+      return bands;
+    } catch { return []; }
+  }, [showLiqMagnet, liqEvents, pair, livePrice]);
+
   // Primary series
-  const series = useMemo(() =>
-    buildSeries(candles, trades, pair, {
+  const series = useMemo(() => ({
+    ...buildSeries(candles, trades, pair, {
       ema20: showEma20, ema50: showEma50, ema200: showEma200,
       volume: showVolume, rsi: showRsi, macd: showMacd, bb: showBb,
       vwap: showVwap, sr: showSr, trades: showTrades,
@@ -588,10 +614,12 @@ export default function GrafikPage() {
       rayLines, extLines, channels, fibExtensions, verticalLines, crossLines, fibTimeZones,
       livePrice: livePrice ?? undefined,
     }),
+    liqBands,
+  }),
     [candles, trades, pair, showEma20, showEma50, showEma200, showVolume,
      showRsi, showMacd, showBb, showVwap, showSr, showTrades,
      alarmLevels, tradeLevels, drawnLines, trendLines, fibLevels,
-     rayLines, extLines, channels, fibExtensions, verticalLines, crossLines, fibTimeZones, livePrice],
+     rayLines, extLines, channels, fibExtensions, verticalLines, crossLines, fibTimeZones, livePrice, liqBands],
   );
 
   // Secondary series (split view — EMA200 + volume only, no drawings)
@@ -784,6 +812,8 @@ export default function GrafikPage() {
         onToggleFlow={() => setShowFlow((v) => !v)}
         showQuick={showQuick}
         onToggleQuick={() => setShowQuick((v) => !v)}
+        showLiqMagnet={showLiqMagnet}
+        onToggleLiqMagnet={() => setShowLiqMagnet((v) => !v)}
         onSetClickMode={handleSetClickMode}
         onClearDrawnLines={() => setDrawnLines([])}
       />

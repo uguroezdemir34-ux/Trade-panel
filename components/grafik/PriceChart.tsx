@@ -115,6 +115,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const drawnLinesMapRef    = useRef<Map<string, IPriceLine>>(new Map());
+  const liqBandsMapRef      = useRef<Map<string, IPriceLine[]>>(new Map());
   const trendLinesMapRef    = useRef<Map<string, ISeriesApi<"Line">>>(new Map());
   const fibLinesMapRef      = useRef<Map<string, IPriceLine[]>>(new Map());
   const rayLinesMapRef      = useRef<Map<string, IPriceLine>>(new Map());
@@ -231,6 +232,10 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       ro.disconnect();
       chart.remove();
       drawnLinesMapRef.current.clear();
+      for (const lines of liqBandsMapRef.current.values()) {
+        for (const pl of lines) { try { candle.removePriceLine(pl); } catch { /* ignore */ } }
+      }
+      liqBandsMapRef.current.clear();
       trendLinesMapRef.current.clear();
       fibLinesMapRef.current.clear();
       rayLinesMapRef.current.clear();
@@ -292,6 +297,55 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       }
     }
   }, [series.drawnLines]);
+
+  // ─── Sync Liq Magnet bands ─────────────────────────────────────────────────
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    const incoming = series.liqBands ?? [];
+    const incomingIds = new Set(incoming.map((b) => b.id));
+
+    for (const [id, lines] of liqBandsMapRef.current) {
+      if (!incomingIds.has(id)) {
+        for (const pl of lines) { try { candle.removePriceLine(pl); } catch { /* ignore */ } }
+        liqBandsMapRef.current.delete(id);
+      }
+    }
+    for (const band of incoming) {
+      if (liqBandsMapRef.current.has(band.id)) continue;
+      const isLong = band.side === "long";
+      const baseColor = isLong ? "#22c55e" : "#ef4444";
+      const alpha = Math.max(0.25, Math.min(0.65, band.intensity));
+      const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, "0");
+      const dimHex = "20";
+      const bw = band.price * 0.003;
+      const center = candle.createPriceLine({
+        price: band.price,
+        color: `${baseColor}${alphaHex}`,
+        lineWidth: 2,
+        lineStyle: 2,
+        axisLabelVisible: true,
+        title: isLong ? `Liq↓ ${(band.intensity * 100).toFixed(0)}%` : `Liq↑ ${(band.intensity * 100).toFixed(0)}%`,
+      });
+      const upper = candle.createPriceLine({
+        price: band.price + bw,
+        color: `${baseColor}${dimHex}`,
+        lineWidth: 1,
+        lineStyle: 2,
+        axisLabelVisible: false,
+        title: "",
+      });
+      const lower = candle.createPriceLine({
+        price: band.price - bw,
+        color: `${baseColor}${dimHex}`,
+        lineWidth: 1,
+        lineStyle: 2,
+        axisLabelVisible: false,
+        title: "",
+      });
+      liqBandsMapRef.current.set(band.id, [center, upper, lower]);
+    }
+  }, [series.liqBands]);
 
   // ─── Sync trend lines (diagonal LineSeries) ──────────────────────────────
   useEffect(() => {
