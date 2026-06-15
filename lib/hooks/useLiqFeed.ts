@@ -34,7 +34,7 @@ const OKX_CONTRACT_SIZE: Partial<Record<Pair, number>> = {
   SHIB: 100_000,
   SUI: 1,
   NEAR: 1,
-  FET: 10,
+  TRX: 1_000,
 };
 
 // ── Symbol → Pair maps ───────────────────────────────────────────────────────
@@ -42,14 +42,14 @@ const BINANCE_PAIR: Record<string, Pair> = {
   BTCUSDT: "BTC", ETHUSDT: "ETH", XRPUSDT: "XRP", SOLUSDT: "SOL",
   BNBUSDT: "BNB", ADAUSDT: "ADA", AVAXUSDT: "AVAX", DOTUSDT: "DOT",
   LINKUSDT: "LINK", POLUSDT: "POL", MATICUSDT: "POL", DOGEUSDT: "DOGE",
-  "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR", FETUSDT: "FET",
+  "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR", TRXUSDT: "TRX",
 };
 
 const BYBIT_PAIR: Record<string, Pair> = {
   BTCUSDT: "BTC", ETHUSDT: "ETH", XRPUSDT: "XRP", SOLUSDT: "SOL",
   BNBUSDT: "BNB", ADAUSDT: "ADA", AVAXUSDT: "AVAX", DOTUSDT: "DOT",
   LINKUSDT: "LINK", POLUSDT: "POL", MATICUSDT: "POL", DOGEUSDT: "DOGE",
-  "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR", FETUSDT: "FET",
+  "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR", TRXUSDT: "TRX",
 };
 
 // Binance / Bybit "1000X" symbols: reported size is in 1000 units

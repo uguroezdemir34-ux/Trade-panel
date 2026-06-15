@@ -18,7 +18,7 @@ import { useT } from "@/lib/i18n/context";
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
   majors: ["BTC", "ETH", "BNB", "XRP", "SOL"],
-  alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "FET", "SUI"],
+  alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "TRX", "SUI"],
   meme:   ["DOGE", "SHIB"],
 };
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";

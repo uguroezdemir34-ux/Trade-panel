@@ -13,7 +13,7 @@ export const PAIRS = [
   "SHIB", // Shiba Inu — whale flows
   "SUI",  // Sui — emerging breakouts
   "NEAR", // Near Protocol — AI-aligned
-  "FET",  // Artificial Superintelligence — AI narrative
+  "TRX",  // TRON — top-5 OKX perp volume, strong trend structure
 ] as const;
 
 export type Pair = (typeof PAIRS)[number];
