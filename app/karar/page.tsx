@@ -649,11 +649,11 @@ export default function KararPage() {
 
           {result && (
             <>
-              {/* Desktop 2-col: left = info/badges, right = score gauge (top-right) */}
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
+              {/* 2-col from md (768px): left = info/badges, right = score gauge */}
+              <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
 
                 {/* Left sub-col: price header + position strip + verdict + protection badges */}
-                <div className="flex flex-col gap-3 lg:flex-1 lg:min-w-0">
+                <div className="flex flex-col gap-3 md:flex-1 md:min-w-0">
 
                   {/* Price header */}
                   <PairPriceHeader
@@ -712,8 +712,8 @@ export default function KararPage() {
                 </div>
 
                 {/* Right sub-col: Score gauge + FLOW badge */}
-                <div className="flex gap-3 items-start lg:flex-col lg:gap-2 lg:w-52 lg:shrink-0">
-                  <div className="flex-1 min-w-0 lg:flex-none lg:w-full">
+                <div className="flex gap-3 items-center md:flex-col md:gap-2 md:w-44 md:shrink-0">
+                  <div className="flex-1 min-w-0 max-w-[200px] md:max-w-none md:flex-none md:w-full">
                     <ScoreGauge
                       score={result.score}
                       threshold={result.effectiveThreshold}
@@ -721,7 +721,7 @@ export default function KararPage() {
                     />
                   </div>
                   {flowResult && (
-                    <div className={`shrink-0 lg:w-full flex flex-col items-center justify-center rounded-lg border px-3 py-2 min-w-[64px] lg:min-w-0 ${
+                    <div className={`shrink-0 md:w-full flex flex-col items-center justify-center rounded-lg border px-3 py-2 min-w-[64px] md:min-w-0 ${
                       flowResult.vetoed || flowResult.totalAdjustment < -5
                         ? "border-red-500/30 bg-red-500/5"
                         : flowResult.totalAdjustment > 5

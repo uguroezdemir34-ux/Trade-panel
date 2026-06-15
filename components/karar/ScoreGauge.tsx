@@ -142,11 +142,14 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       {/* ── Center hub */}
       <circle cx={cx} cy={cy} r="5" fill="#0f172a" stroke={color} strokeWidth="1.5" />
 
-      {/* ── Score number (neon) */}
+      {/* ── Score number — dark outline ensures readability over any arc color */}
       <text
         x={cx} y={cy - 14}
         textAnchor="middle"
         fill={color}
+        stroke="#0f172a"
+        strokeWidth="5"
+        paintOrder="stroke fill"
         fontSize="32" fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
         filter="url(#sg-glow)"
