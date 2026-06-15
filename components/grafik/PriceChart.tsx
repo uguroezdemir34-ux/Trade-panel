@@ -650,18 +650,22 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
   useEffect(() => {
     const candle = candleRef.current;
     if (!candle) return;
-    if (currentPriceLineRef.current) {
+    if (currentPrice && currentPrice > 0) {
+      if (currentPriceLineRef.current) {
+        // Update in-place — no flicker
+        try { currentPriceLineRef.current.applyOptions({ price: currentPrice }); } catch { /* ignore */ }
+      } else {
+        try {
+          currentPriceLineRef.current = candle.createPriceLine({
+            price: currentPrice,
+            color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
+            axisLabelVisible: true, title: "LIVE",
+          });
+        } catch { /* ignore */ }
+      }
+    } else if (currentPriceLineRef.current) {
       try { candle.removePriceLine(currentPriceLineRef.current); } catch { /* ignore */ }
       currentPriceLineRef.current = null;
-    }
-    if (currentPrice && currentPrice > 0) {
-      try {
-        currentPriceLineRef.current = candle.createPriceLine({
-          price: currentPrice,
-          color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
-          axisLabelVisible: true, title: "LIVE",
-        });
-      } catch { /* ignore */ }
     }
   }, [currentPrice]);
 
