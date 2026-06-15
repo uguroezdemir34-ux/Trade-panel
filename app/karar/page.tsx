@@ -542,9 +542,38 @@ export default function KararPage() {
               const dir = pr?.direction;
               const isActive = activePair === p;
 
+              // GO signal strength: score gap above threshold
+              const goGap = v === "go" && score !== undefined && pr?.effectiveThreshold !== undefined
+                ? score - pr.effectiveThreshold
+                : -1;
+              const goStrength: "strong" | "medium" | "weak" | null =
+                goGap >= 15 ? "strong"
+                : goGap >= 8  ? "medium"
+                : goGap >= 0  ? "weak"
+                : null;
+
+              // Ring + ping + bg color per strength
+              const goRingClass =
+                goStrength === "strong" ? "ring-green-400/90"
+                : goStrength === "medium" ? "ring-green-400/60"
+                : goStrength === "weak"   ? "ring-yellow-400/70"
+                : "";
+              const goPingClass =
+                goStrength === "strong" ? "bg-green-300"
+                : goStrength === "medium" ? "bg-green-400"
+                : "bg-yellow-400";
+              const goBgClass =
+                goStrength === "strong" ? "bg-green-500/10"
+                : goStrength === "medium" ? "bg-green-500/5"
+                : "bg-yellow-500/5";
+
               const verdictBorder =
                 v === "go"
-                  ? "border-b-2 border-green-400"
+                  ? goStrength === "strong"
+                    ? "border-b-2 border-green-300"
+                    : goStrength === "weak"
+                    ? "border-b-2 border-yellow-400"
+                    : "border-b-2 border-green-400"
                   : v === "wait"
                   ? "border-b-2 border-yellow-400"
                   : v === "no"
@@ -553,7 +582,9 @@ export default function KararPage() {
 
               const scoreColor =
                 v === "go"
-                  ? "text-green-400"
+                  ? goStrength === "strong" ? "text-green-300 font-bold"
+                    : goStrength === "weak"  ? "text-yellow-400"
+                    : "text-green-400"
                   : v === "wait"
                   ? "text-yellow-400"
                   : "text-text-t4";
@@ -576,13 +607,13 @@ export default function KararPage() {
               return (
                 <div key={p} className="relative group">
 
-                  {/* GO pulse ring — separate overlay so card content stays steady */}
-                  {v === "go" && !isActive && (
+                  {/* GO pulse ring — separate overlay, color varies with signal strength */}
+                  {goStrength && !isActive && (
                     <>
-                      <div className="absolute inset-0 rounded ring-1 ring-green-400/70 animate-pulse pointer-events-none" />
+                      <div className={`absolute inset-0 rounded ring-1 ${goRingClass} animate-pulse pointer-events-none`} />
                       <span className="absolute top-0.5 left-0.5 flex h-2 w-2 pointer-events-none">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-60" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${goPingClass} opacity-60`} />
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${goPingClass}`} />
                       </span>
                     </>
                   )}
@@ -594,8 +625,8 @@ export default function KararPage() {
                       verdictBorder,
                       isActive
                         ? "bg-surface-s2 text-text-t1"
-                        : v === "go"
-                        ? "bg-green-500/5 text-text-t3 hover:text-text-t2"
+                        : goStrength
+                        ? `${goBgClass} text-text-t3 hover:text-text-t2`
                         : "text-text-t3 hover:text-text-t2",
                     ].join(" ")}
                   >
