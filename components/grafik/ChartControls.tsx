@@ -145,7 +145,7 @@ export function ChartControls({
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
           {t("grafik.tools")}
         </span>
-        <div className="flex gap-1">
+        <div className="flex flex-wrap gap-1">
           {/* Split view */}
           <Toggle active={showSplit} onClick={onToggleSplit} accent="#6366f1">
             {t("grafik.split")}
