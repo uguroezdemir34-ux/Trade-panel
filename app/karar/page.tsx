@@ -738,7 +738,7 @@ export default function KararPage() {
               {/* AI Market Note */}
               <div className="flex items-start gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2">
                 <span className="shrink-0 font-mono text-[8px] tracking-widest text-brand/60 border border-brand/25 rounded px-1 py-0.5 leading-none mt-0.5 select-none">YZ</span>
-                <p className="font-mono text-[11px] text-text-t3 leading-relaxed">{aiMarketNote(result)}</p>
+                <p className="font-mono text-[11px] text-slate-200 leading-relaxed">{aiMarketNote(result)}</p>
               </div>
 
               {/* Smart Money + Volume Delta 5m mini cards */}
@@ -1008,7 +1008,7 @@ function AccordionSection({
           />
         )}
         <span className="flex-1 tracking-widest uppercase text-left">{title}</span>
-        {badge && <span className="text-text-t4 tabular-nums shrink-0">{badge}</span>}
+        {badge && <span className="text-text-t4 tabular-nums shrink-0 pl-2.5 border-l border-border/50">{badge}</span>}
         <span className="shrink-0 text-text-t4">{open ? "▲" : "▼"}</span>
       </button>
       {open && <div className="flex flex-col gap-2 mt-2">{children}</div>}
