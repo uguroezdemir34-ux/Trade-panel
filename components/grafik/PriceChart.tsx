@@ -318,31 +318,35 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       const alpha = Math.max(0.45, Math.min(0.80, band.intensity + 0.2));
       const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, "0");
       const bw = band.price * 0.010; // 1% corridor (visible band)
-      const center = candle.createPriceLine({
-        price: band.price,
-        color: `${baseColor}${alphaHex}`,
-        lineWidth: 3,
-        lineStyle: 0, // solid
-        axisLabelVisible: true,
-        title: isLong ? `Liq Pool ↓ ${(band.intensity * 100).toFixed(0)}%` : `Liq Pool ↑ ${(band.intensity * 100).toFixed(0)}%`,
-      });
-      const upper = candle.createPriceLine({
-        price: band.price + bw,
-        color: `${baseColor}38`,
-        lineWidth: 1,
-        lineStyle: 1, // dotted
-        axisLabelVisible: false,
-        title: "",
-      });
-      const lower = candle.createPriceLine({
-        price: band.price - bw,
-        color: `${baseColor}38`,
-        lineWidth: 1,
-        lineStyle: 1,
-        axisLabelVisible: false,
-        title: "",
-      });
-      liqBandsMapRef.current.set(band.id, [center, upper, lower]);
+      try {
+        const center = candle.createPriceLine({
+          price: band.price,
+          color: `${baseColor}${alphaHex}`,
+          lineWidth: 3,
+          lineStyle: 0, // solid
+          axisLabelVisible: true,
+          title: isLong ? `Liq Pool ↓ ${(band.intensity * 100).toFixed(0)}%` : `Liq Pool ↑ ${(band.intensity * 100).toFixed(0)}%`,
+        });
+        const upper = candle.createPriceLine({
+          price: band.price + bw,
+          color: `${baseColor}38`,
+          lineWidth: 1,
+          lineStyle: 1, // dotted
+          axisLabelVisible: false,
+          title: "",
+        });
+        const lower = candle.createPriceLine({
+          price: band.price - bw,
+          color: `${baseColor}38`,
+          lineWidth: 1,
+          lineStyle: 1,
+          axisLabelVisible: false,
+          title: "",
+        });
+        liqBandsMapRef.current.set(band.id, [center, upper, lower]);
+      } catch (err) {
+        console.error("[LiqBands] createPriceLine failed, skipping band:", band.id, err);
+      }
     }
   }, [series.liqBands]);
 
