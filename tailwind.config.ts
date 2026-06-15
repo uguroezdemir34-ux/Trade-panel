@@ -18,6 +18,7 @@ const config: Config = {
           DEFAULT: "rgb(var(--bg) / <alpha-value>)",
           card: "rgb(var(--bg-card) / <alpha-value>)",
           card2: "rgb(var(--bg-card2) / <alpha-value>)",
+          hover: "rgb(var(--bg-hover) / <alpha-value>)",
         },
         border: {
           DEFAULT: "rgb(var(--border) / <alpha-value>)",

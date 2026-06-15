@@ -9,6 +9,7 @@
   --bg: 10 10 10;
   --bg-card: 20 20 20;
   --bg-card2: 28 28 28;
+  --bg-hover: 38 38 38;
   --border: 42 42 42;
   --border-strong: 58 58 58;
   --text-t1: 245 245 245;
@@ -34,6 +35,7 @@
   --bg: 247 248 250;
   --bg-card: 255 255 255;
   --bg-card2: 240 241 243;
+  --bg-hover: 224 225 230;
   /* Borders — made visible (was 220/196, barely distinguishable from bg) */
   --border: 180 180 192;
   --border-strong: 136 136 152;
