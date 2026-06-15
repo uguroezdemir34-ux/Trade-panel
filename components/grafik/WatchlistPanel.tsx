@@ -73,7 +73,7 @@ function domChgColor(v: number | null): string {
 }
 
 // Grid column template — shared between header and data rows
-const GRID_COLS = "grid-cols-[1fr_56px_46px_40px_28px]";
+const GRID_COLS = "grid-cols-[1fr_56px_46px_40px_36px]";
 
 /** Ortak içerik (masaüstü panel + mobil drawer) */
 function WatchlistContent({ activePair, onPairChange }: Props) {
@@ -183,12 +183,12 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
                   return <span className="font-mono text-[9px] text-text-t4 text-right">—</span>;
                 }
                 const bgCls = sc >= 70
-                  ? "bg-green-500/25 border-green-500/40 text-green-200"
+                  ? "bg-green-600/60"
                   : sc >= 40
-                  ? "bg-amber-500/25 border-amber-500/40 text-amber-200"
-                  : "bg-red-500/25 border-red-500/40 text-red-200";
+                  ? "bg-amber-600/60"
+                  : "bg-red-600/60";
                 return (
-                  <span className={`inline-flex items-center justify-center w-7 h-5 rounded border font-mono text-[10px] font-bold tabular-nums ${bgCls}`}>
+                  <span className={`flex items-center justify-center w-8 h-6 rounded font-mono text-xs font-bold text-white tabular-nums ${bgCls}`}>
                     {sc}
                   </span>
                 );
@@ -220,7 +220,7 @@ export function WatchlistPanel({ activePair, onPairChange }: Props): React.React
         className={[
           "hidden md:flex flex-col",
           "border border-border bg-bg-card rounded-lg overflow-hidden",
-          "select-none w-[258px] shrink-0",
+          "select-none w-[266px] shrink-0",
         ].join(" ")}
       >
         <WatchlistContent activePair={activePair} onPairChange={onPairChange} />
