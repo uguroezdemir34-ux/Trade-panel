@@ -341,6 +341,9 @@ export default function GrafikPage() {
   const [localCandles, setLocalCandles] = useState<Candle[]>([]);
   // Guard against saving before initial load completes
   const hasLoadedRef = useRef(false);
+  // Loading state for main chart — tracks whether candle data has arrived
+  const chartLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [chartLoadState, setChartLoadState] = useState<"loading" | "ready" | "failed">("loading");
 
   // Load persisted settings on mount
   useEffect(() => {
@@ -526,6 +529,30 @@ export default function GrafikPage() {
   const storedCandles = candlesRaw ?? EMPTY_CANDLES;
   // For 1m/5m use locally-fetched candles; global poller doesn't cover these TFs
   const candles = (timeframe === "1m" || timeframe === "5m") ? localCandles : storedCandles;
+  const candlesReady = candles.length > 0;
+
+  // Drive loading overlay: reset on pair/TF switch, set ready when data arrives, timeout after 25s
+  useEffect(() => {
+    if (chartLoadTimerRef.current) {
+      clearTimeout(chartLoadTimerRef.current);
+      chartLoadTimerRef.current = null;
+    }
+    if (candlesReady) {
+      setChartLoadState("ready");
+      return;
+    }
+    setChartLoadState("loading");
+    chartLoadTimerRef.current = setTimeout(() => {
+      setChartLoadState("failed");
+    }, 25_000);
+    return () => {
+      if (chartLoadTimerRef.current) {
+        clearTimeout(chartLoadTimerRef.current);
+        chartLoadTimerRef.current = null;
+      }
+    };
+  }, [pair, timeframe, candlesReady]);
+
   const trades     = useTradesStore((s) => s.trades);
   const alarms     = usePriceAlarmStore((s) => s.alarms);
   const livePrice  = useMarketStore((s) => s.prices[pair]?.last ?? null);
@@ -927,6 +954,18 @@ export default function GrafikPage() {
                   onChartClick={handleChartClick}
                   resetKey={`${pair}_${timeframe}`}
                 />
+                {chartLoadState !== "ready" && (
+                  <div className="absolute inset-0 z-10 flex items-center justify-center bg-bg-card/70 rounded pointer-events-none">
+                    {chartLoadState === "loading" ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <div className="h-4 w-4 rounded-full border-2 border-brand/40 border-t-brand animate-spin" />
+                        <span className="font-mono text-[10px] text-text-t4">Yükleniyor…</span>
+                      </div>
+                    ) : (
+                      <span className="font-mono text-[10px] text-text-t4">Veri yüklenemedi, tekrar deneniyor…</span>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           </div>

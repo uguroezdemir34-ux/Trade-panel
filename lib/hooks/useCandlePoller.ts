@@ -4,8 +4,9 @@
  * Stale-while-revalidate: mount'ta önce localStorage cache'den anında yükler,
  * sonra arka planda taze veri çeker. Böylece ~1dk bekleme → anlık görüntü.
  *
- * Rate-limit fix: OKX public endpoint limiti 10 req/2s.
- * 60 eşzamanlı istek yerine max 5 eşzamanlı → sıralı batch → hız artışı.
+ * Rate-limit fix: OKX public endpoint limiti 20 req/2s (paylaşımlı Vercel IP).
+ * Max 3 eşzamanlı istek; fetchShort tamamlanınca fetchLong başlar (sıralı).
+ * Başarısız fetch → 1.5s sonra 1 otomatik retry, sonra bir sonraki poll'a bırak.
  */
 
 "use client";
@@ -26,8 +27,8 @@ const CANDLE_LIMIT_1D = 60;
 const CACHE_MAX_AGE_MS = 10 * 60 * 1000;
 const CACHE_PREFIX = "qx_c_";
 
-/** Max eşzamanlı OKX isteği — rate limit koruması (10 req/2s) */
-const MAX_CONCURRENT = 5;
+/** Max eşzamanlı OKX isteği — paylaşımlı Vercel IP rate limit koruması */
+const MAX_CONCURRENT = 3;
 
 function cacheKey(pair: string, tf: string): string {
   return `${CACHE_PREFIX}${pair}_${tf}`;
@@ -55,7 +56,6 @@ function saveCache(pair: string, tf: string, data: Candle[]): void {
 
 /**
  * Görevleri max N eşzamanlı çalıştır.
- * OKX rate limit (10 req/2s) aşımını önler.
  */
 async function runBatched(
   tasks: Array<() => Promise<void>>,
@@ -72,6 +72,18 @@ async function runBatched(
   await Promise.all(Array.from({ length: Math.min(concurrency, tasks.length) }, worker));
 }
 
+/** Tek fetch — başarısız olursa 1.5s sonra 1 retry. */
+async function fetchWithRetry(
+  pair: string,
+  tf: Timeframe,
+  limit: number,
+): Promise<Candle[] | null> {
+  const result = await fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
+  if (result) return result;
+  await new Promise<void>((r) => setTimeout(r, 1_500));
+  return fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
+}
+
 function makeFetchTask(
   pair: string,
   tf: Timeframe,
@@ -80,7 +92,7 @@ function makeFetchTask(
   setError: (p: string, tf: Timeframe, e: string) => void,
 ) {
   return async () => {
-    const candles = await fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
+    const candles = await fetchWithRetry(pair, tf, limit);
     if (candles) {
       setCandles(pair as Parameters<typeof fetchCandles>[0], tf, candles, Date.now());
       saveCache(pair, tf, candles);
@@ -124,9 +136,11 @@ export function useCandlePoller(): void {
       });
     }
 
-    // Initial fetch — batched to avoid rate limiting
-    fetchShort();
-    fetchLong();
+    // Sıralı: short tamamlanınca long başlar → eşzamanlı OKX istek sayısı ≤ MAX_CONCURRENT
+    void (async () => {
+      await fetchShort();
+      await fetchLong();
+    })();
 
     shortTimerRef.current = setInterval(fetchShort, POLL_INTERVAL_SHORT_MS);
     longTimerRef.current = setInterval(fetchLong, POLL_INTERVAL_LONG_MS);
