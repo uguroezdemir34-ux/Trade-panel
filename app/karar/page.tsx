@@ -649,96 +649,106 @@ export default function KararPage() {
 
           {result && (
             <>
-              {/* Price header */}
-              <PairPriceHeader
-                pair={activePair}
-                price={livePrice}
-                chg={allTicks[activePair]?.chg ?? null}
-              />
+              {/* Desktop 2-col: left = info/badges, right = score gauge (top-right) */}
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
 
-              {/* Active position strip — shown when this pair has an open position */}
-              {activePosition && (
-                <Link
-                  href="/portfolyo"
-                  className="flex items-center gap-3 rounded-lg border border-border/50 bg-surface-s1 px-3 py-2 font-mono text-2xs hover:bg-surface-s2 transition-colors"
-                >
-                  <span className={`font-bold shrink-0 ${activePosition.direction === "LONG" ? "text-green-400" : "text-red-400"}`}>
-                    {activePosition.direction === "LONG" ? "▲ LONG" : "▼ SHORT"}
-                  </span>
-                  <span className="text-text-t3 shrink-0">
-                    @{fmtPx(activePosition.entryPx)}
-                  </span>
-                  <span translate="no" className={`font-semibold tabular-nums shrink-0 ${activePosition.upl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
-                    {`${activePosition.upl >= 0 ? "+" : ""}${activePosition.upl.toFixed(0)}$`}
-                  </span>
-                  {activeTrade && (
-                    <span className="text-text-t4 shrink-0">{holdingStr(activeTrade.openedAt)}</span>
-                  )}
-                  <span className="text-text-t4 ml-auto shrink-0">→</span>
-                </Link>
-              )}
+                {/* Left sub-col: price header + position strip + verdict + protection badges */}
+                <div className="flex flex-col gap-3 lg:flex-1 lg:min-w-0">
 
-              {/* HERO: Verdict + Direction + Regime */}
-              <div className="flex flex-wrap items-center gap-2">
-                <VerdictBadge
-                  verdict={result.verdict}
-                  signalType={result.pullbackActive ? "pullback" : "classic"}
-                />
-                <DirectionBadge
-                  direction={result.direction}
-                  confidence={result.dirConfidence}
-                />
-                <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
-              </div>
-
-              {/* Protection badges */}
-              <div className="flex flex-wrap gap-1.5">
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/25 bg-brand/8 font-mono text-[9px] text-brand/70 tracking-wide select-none">
-                  <span className="w-1.5 h-1.5 rounded-full bg-brand/60 shrink-0" />
-                  Profil: {result.pullbackActive ? "Geri Çekilme (Otomatik)" : "Trend Modu (Otomatik)"}
-                </span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-500/25 bg-emerald-500/8 font-mono text-[9px] text-emerald-400/70 tracking-wide select-none">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shrink-0" />
-                  Sinyal: Bar Kapanış Onaylı
-                </span>
-              </div>
-
-              {/* Score gauge + compact FLOW badge */}
-              <div className="flex gap-3 items-start">
-                <div className="flex-1 min-w-0">
-                  <ScoreGauge
-                    score={result.score}
-                    threshold={result.effectiveThreshold}
-                    goThreshold={result.goThreshold}
+                  {/* Price header */}
+                  <PairPriceHeader
+                    pair={activePair}
+                    price={livePrice}
+                    chg={allTicks[activePair]?.chg ?? null}
                   />
-                </div>
-                {flowResult && (
-                  <div className={`shrink-0 flex flex-col items-center justify-center rounded-lg border px-3 py-2 min-w-[64px] ${
-                    flowResult.vetoed || flowResult.totalAdjustment < -5
-                      ? "border-red-500/30 bg-red-500/5"
-                      : flowResult.totalAdjustment > 5
-                      ? "border-green-500/30 bg-green-500/5"
-                      : "border-border bg-surface-s1"
-                  } ${flowPulseClass}`}>
-                    <span className="text-[9px] font-mono text-text-t4 tracking-widest uppercase leading-tight">FLOW</span>
-                    <span className={`text-base font-mono font-bold tabular-nums leading-tight ${
-                      flowResult.vetoed || flowResult.totalAdjustment < 0
-                        ? "text-signal-down"
-                        : flowResult.totalAdjustment > 0
-                        ? "text-signal-up"
-                        : "text-text-t3"
-                    }`}>
-                      {flowResult.totalAdjustment > 0 ? `+${flowResult.totalAdjustment}` : `${flowResult.totalAdjustment}`}
-                    </span>
-                    <span className="text-[9px] font-mono text-text-t4 tabular-nums leading-tight">×{flowResult.confidenceMultiplier.toFixed(2)}</span>
+
+                  {/* Active position strip — shown when this pair has an open position */}
+                  {activePosition && (
+                    <Link
+                      href="/portfolyo"
+                      className="flex items-center gap-3 rounded-lg border border-border/50 bg-surface-s1 px-3 py-2 font-mono text-2xs hover:bg-surface-s2 transition-colors"
+                    >
+                      <span className={`font-bold shrink-0 ${activePosition.direction === "LONG" ? "text-green-400" : "text-red-400"}`}>
+                        {activePosition.direction === "LONG" ? "▲ LONG" : "▼ SHORT"}
+                      </span>
+                      <span className="text-text-t3 shrink-0">
+                        @{fmtPx(activePosition.entryPx)}
+                      </span>
+                      <span translate="no" className={`font-semibold tabular-nums shrink-0 ${activePosition.upl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
+                        {`${activePosition.upl >= 0 ? "+" : ""}${activePosition.upl.toFixed(0)}$`}
+                      </span>
+                      {activeTrade && (
+                        <span className="text-text-t4 shrink-0">{holdingStr(activeTrade.openedAt)}</span>
+                      )}
+                      <span className="text-text-t4 ml-auto shrink-0">→</span>
+                    </Link>
+                  )}
+
+                  {/* HERO: Verdict + Direction + Regime */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <VerdictBadge
+                      verdict={result.verdict}
+                      signalType={result.pullbackActive ? "pullback" : "classic"}
+                    />
+                    <DirectionBadge
+                      direction={result.direction}
+                      confidence={result.dirConfidence}
+                    />
+                    <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
                   </div>
-                )}
+
+                  {/* Protection badges */}
+                  <div className="flex flex-wrap gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/25 bg-brand/8 font-mono text-[9px] text-brand/70 tracking-wide select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand/60 shrink-0" />
+                      Profil: {result.pullbackActive ? "Geri Çekilme (Otomatik)" : "Trend Modu (Otomatik)"}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-500/25 bg-emerald-500/8 font-mono text-[9px] text-emerald-400/70 tracking-wide select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shrink-0" />
+                      Sinyal: Bar Kapanış Onaylı
+                    </span>
+                  </div>
+
+                </div>
+
+                {/* Right sub-col: Score gauge + FLOW badge */}
+                <div className="flex gap-3 items-start lg:flex-col lg:gap-2 lg:w-52 lg:shrink-0">
+                  <div className="flex-1 min-w-0 lg:flex-none lg:w-full">
+                    <ScoreGauge
+                      score={result.score}
+                      threshold={result.effectiveThreshold}
+                      goThreshold={result.goThreshold}
+                    />
+                  </div>
+                  {flowResult && (
+                    <div className={`shrink-0 lg:w-full flex flex-col items-center justify-center rounded-lg border px-3 py-2 min-w-[64px] lg:min-w-0 ${
+                      flowResult.vetoed || flowResult.totalAdjustment < -5
+                        ? "border-red-500/30 bg-red-500/5"
+                        : flowResult.totalAdjustment > 5
+                        ? "border-green-500/30 bg-green-500/5"
+                        : "border-border bg-surface-s1"
+                    } ${flowPulseClass}`}>
+                      <span className="text-[9px] font-mono text-text-t4 tracking-widest uppercase leading-tight">FLOW</span>
+                      <span className={`text-base font-mono font-bold tabular-nums leading-tight ${
+                        flowResult.vetoed || flowResult.totalAdjustment < 0
+                          ? "text-signal-down"
+                          : flowResult.totalAdjustment > 0
+                          ? "text-signal-up"
+                          : "text-text-t3"
+                      }`}>
+                        {flowResult.totalAdjustment > 0 ? `+${flowResult.totalAdjustment}` : `${flowResult.totalAdjustment}`}
+                      </span>
+                      <span className="text-[9px] font-mono text-text-t4 tabular-nums leading-tight">×{flowResult.confidenceMultiplier.toFixed(2)}</span>
+                    </div>
+                  )}
+                </div>
+
               </div>
 
               {/* AI Market Note */}
               <div className="flex items-start gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2">
                 <span className="shrink-0 font-mono text-[8px] tracking-widest text-brand/60 border border-brand/25 rounded px-1 py-0.5 leading-none mt-0.5 select-none">YZ</span>
-                <p className="font-mono text-[11px] text-slate-200 leading-relaxed">{aiMarketNote(result)}</p>
+                <p className="font-mono text-[11px] text-text-t1 leading-relaxed">{aiMarketNote(result)}</p>
               </div>
 
               {/* Smart Money + Volume Delta 5m mini cards */}
