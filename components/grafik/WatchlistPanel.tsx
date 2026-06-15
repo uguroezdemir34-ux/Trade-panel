@@ -203,7 +203,7 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
   const allScores     = useScoreStore((s) => s.results);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* ── Dominance ── */}
       <div className="shrink-0 px-2 pt-2 pb-1.5 border-b border-border/50">
         <p className="text-text-t4 font-mono text-[9px] uppercase tracking-widest mb-1.5">Dominance</p>
