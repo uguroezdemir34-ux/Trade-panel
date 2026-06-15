@@ -118,7 +118,8 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
                          "bg-zinc-800 text-zinc-500 border-zinc-700";
 
   return (
-    <div className="shrink-0 mx-2 mb-2 mt-1 rounded-lg border border-zinc-700 bg-zinc-900/80 p-3">
+    <div className="shrink-0 mx-2 mb-2 mt-1 rounded-lg border-2 border-red-500 p-3" style={{ backgroundColor: 'red', minHeight: '200px' }}>
+      <p style={{ color: 'white', fontWeight: 'bold', fontSize: '16px', textAlign: 'center' }}>KART BURADA</p>
       {/* Üst satır: pair adı + yön + QX skor rozeti */}
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
