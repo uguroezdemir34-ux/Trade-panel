@@ -179,16 +179,17 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
               {/* QX Score */}
               {(() => {
                 const sc = allScores[pair]?.score;
-                const badgeCls = sc == null
-                  ? "text-text-t4"
-                  : sc >= 70
-                  ? "text-green-300 bg-green-500/20 border border-green-500/30"
+                if (sc == null) {
+                  return <span className="font-mono text-[9px] text-text-t4 text-right">—</span>;
+                }
+                const bgCls = sc >= 70
+                  ? "bg-green-500/25 border-green-500/40 text-green-200"
                   : sc >= 40
-                  ? "text-amber-300 bg-amber-500/20 border border-amber-500/30"
-                  : "text-red-300 bg-red-500/20 border border-red-500/30";
+                  ? "bg-amber-500/25 border-amber-500/40 text-amber-200"
+                  : "bg-red-500/25 border-red-500/40 text-red-200";
                 return (
-                  <span className={`font-mono text-[8px] tabular-nums text-center font-bold rounded px-0.5 leading-none py-0.5 ${badgeCls}`}>
-                    {sc ?? "—"}
+                  <span className={`inline-flex items-center justify-center w-7 h-5 rounded border font-mono text-[10px] font-bold tabular-nums ${bgCls}`}>
+                    {sc}
                   </span>
                 );
               })()}
