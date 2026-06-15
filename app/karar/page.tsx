@@ -23,7 +23,7 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
 };
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
-import { ScoreBar } from "@/components/karar/ScoreBar";
+import { ScoreGauge } from "@/components/karar/ScoreGauge";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
 import { BlocksList } from "@/components/karar/BlocksList";
 import { ReasonsList } from "@/components/karar/ReasonsList";
@@ -691,10 +691,10 @@ export default function KararPage() {
                 <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
               </div>
 
-              {/* Score bar + compact FLOW badge */}
+              {/* Score gauge + compact FLOW badge */}
               <div className="flex gap-3 items-start">
                 <div className="flex-1 min-w-0">
-                  <ScoreBar
+                  <ScoreGauge
                     score={result.score}
                     threshold={result.effectiveThreshold}
                     goThreshold={result.goThreshold}
