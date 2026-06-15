@@ -17,7 +17,6 @@ const META_FIELDS: Array<{
   { key: "regime", labelKey: "reasons.regime", icon: "🌐" },
   { key: "regimeRelax", labelKey: "reasons.regimeRelax", icon: "🔓" },
   { key: "atrRegime", labelKey: "reasons.atrRegime", icon: "📊" },
-  { key: "sweep", labelKey: "reasons.sweep", icon: "🌊" },
   { key: "volBreakout", labelKey: "reasons.volBreakout", icon: "💥" },
   { key: "drawdownGate", labelKey: "reasons.drawdownGate", icon: "🛑" },
   { key: "adaptiveCut", labelKey: "reasons.adaptiveCut", icon: "✂️" },
