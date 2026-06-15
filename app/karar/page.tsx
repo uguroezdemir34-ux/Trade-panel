@@ -824,7 +824,7 @@ export default function KararPage() {
                       ? `⚠ ${flowResult.flowVerdict.divergence.confluenceType.replace(/_/g, " ").toUpperCase()}`
                       : "—"
                   }
-                  dotColor={flowResult?.flowVerdict.divergence.confluence ? "#f59e0b" : "#22c55e"}
+                  dotColor={flowResult == null ? "#6b7280" : flowResult.flowVerdict.divergence.confluence ? "#f59e0b" : "#22c55e"}
                   open={showDivergence}
                   onToggle={() => setShowDivergence((v) => !v)}
                 >

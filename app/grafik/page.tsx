@@ -344,8 +344,9 @@ export default function GrafikPage() {
   const [localCandles, setLocalCandles] = useState<Candle[]>([]);
   // Guard against saving before initial load completes
   const hasLoadedRef = useRef(false);
-  // Loading state for main chart — tracks whether candle data has arrived
-  const chartLoadTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Loading state for main chart — two separate refs to avoid nested-timer leak
+  const showLoadingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const failTimerRef        = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [chartLoadState, setChartLoadState] = useState<"loading" | "ready" | "failed">("loading");
 
   // Load persisted settings on mount
@@ -538,27 +539,25 @@ export default function GrafikPage() {
 
   // Drive loading overlay: ready immediately if data exists, otherwise debounce 400ms
   // before showing "loading" (prevents flash for cached pairs on quick switches).
+  // Two separate refs ensure the inner 24.6s fail-timer is always reachable for cleanup.
   useEffect(() => {
-    if (chartLoadTimerRef.current) {
-      clearTimeout(chartLoadTimerRef.current);
-      chartLoadTimerRef.current = null;
-    }
+    if (showLoadingTimerRef.current) { clearTimeout(showLoadingTimerRef.current); showLoadingTimerRef.current = null; }
+    if (failTimerRef.current)        { clearTimeout(failTimerRef.current);        failTimerRef.current = null; }
     if (candlesReady) {
       setChartLoadState("ready");
       return;
     }
-    // Delay showing overlay — if data arrives within 400ms (cached) overlay never shown
-    chartLoadTimerRef.current = setTimeout(() => {
-      chartLoadTimerRef.current = setTimeout(() => {
+    showLoadingTimerRef.current = setTimeout(() => {
+      showLoadingTimerRef.current = null;
+      setChartLoadState("loading");
+      failTimerRef.current = setTimeout(() => {
+        failTimerRef.current = null;
         setChartLoadState("failed");
       }, 24_600);
-      setChartLoadState("loading");
     }, 400);
     return () => {
-      if (chartLoadTimerRef.current) {
-        clearTimeout(chartLoadTimerRef.current);
-        chartLoadTimerRef.current = null;
-      }
+      if (showLoadingTimerRef.current) { clearTimeout(showLoadingTimerRef.current); showLoadingTimerRef.current = null; }
+      if (failTimerRef.current)        { clearTimeout(failTimerRef.current);        failTimerRef.current = null; }
     };
   }, [pair, timeframe, candlesReady]);
 
