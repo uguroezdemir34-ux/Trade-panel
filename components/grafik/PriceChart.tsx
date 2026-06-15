@@ -33,8 +33,8 @@ interface Props {
   series: ChartSeries;
   height?: number;
   theme?: "dark" | "light";
-  /** Called when user clicks on the chart: price from coordinateToPrice + bar time */
-  onChartClick?: (price: number, time: number) => void;
+  /** Called when user clicks on the chart: price from coordinateToPrice + bar time (undefined in empty areas) */
+  onChartClick?: (price: number, time: number | undefined) => void;
   /** Change when pair/TF changes to trigger a fitContent() reset */
   resetKey?: string;
 }
@@ -199,15 +199,20 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     ro.observe(container);
 
     // Wire click → {price, time} callback
-    // price: coordinateToPrice from y-pixel (accurate)
-    // time: param.time = bar time at cursor (may be undefined in blank areas)
+    // On mobile, param.time is undefined when tapping empty/future areas.
+    // Fall back to coordinateToTime so horizontal tools still work.
     chart.subscribeClick((param) => {
       if (!param.point || !candleRef.current) return;
       const price = candleRef.current.coordinateToPrice(param.point.y);
-      const time  = param.time;
-      if (price !== null && price > 0 && time !== undefined) {
-        onChartClickRef.current?.(price, time as number);
+      if (price === null || price <= 0) return;
+
+      let time: number | undefined = param.time as number | undefined;
+      if (time === undefined) {
+        const resolved = chart.timeScale().coordinateToTime(param.point.x);
+        if (resolved != null) time = resolved as number;
       }
+
+      onChartClickRef.current?.(price, time);
     });
 
     // Wire crosshair → OHLCV overlay

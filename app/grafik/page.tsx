@@ -584,8 +584,10 @@ export default function GrafikPage() {
 
   const DRAW_COLORS = ["#f59e0b", "#3b82f6", "#ec4899", "#22c55e", "#8b5cf6", "#f97316"];
 
-  // Click handler dispatched to the appropriate mode
-  const handleChartClick = useCallback((price: number, time: number) => {
+  // Click handler dispatched to the appropriate mode.
+  // time may be undefined when tapping empty chart areas on mobile.
+  // hline/ray/price ignore time; all other modes guard and require it.
+  const handleChartClick = useCallback((price: number, time: number | undefined) => {
     if (clickMode === "hline") {
       const label = price >= 1000 ? price.toFixed(0) : price >= 1 ? price.toFixed(2) : price.toFixed(4);
       setDrawnLines((prev) => [
@@ -594,7 +596,14 @@ export default function GrafikPage() {
       ]);
     } else if (clickMode === "price") {
       setCapturedPrice(price);
+    } else if (clickMode === "ray") {
+      const label = price >= 1000 ? price.toFixed(0) : price >= 1 ? price.toFixed(2) : price.toFixed(4);
+      setRayLines((prev) => [
+        ...prev,
+        { id: `ray_${Date.now()}`, price, color: DRAW_COLORS[prev.length % DRAW_COLORS.length], label },
+      ]);
     } else if (clickMode === "trendline") {
+      if (time === undefined) return;
       if (!pendingPoint) {
         setPendingPoint({ time, price });
       } else {
@@ -604,6 +613,7 @@ export default function GrafikPage() {
         setPendingPoint(null);
       }
     } else if (clickMode === "fibonacci") {
+      if (time === undefined) return;
       if (!pendingPoint) {
         setPendingPoint({ time, price });
       } else {
@@ -611,13 +621,8 @@ export default function GrafikPage() {
         setFibLevels((prev) => [...prev, { id, p1Price: pendingPoint.price, p2Price: price, color: "#a78bfa" }]);
         setPendingPoint(null);
       }
-    } else if (clickMode === "ray") {
-      const label = price >= 1000 ? price.toFixed(0) : price >= 1 ? price.toFixed(2) : price.toFixed(4);
-      setRayLines((prev) => [
-        ...prev,
-        { id: `ray_${Date.now()}`, price, color: DRAW_COLORS[prev.length % DRAW_COLORS.length], label },
-      ]);
     } else if (clickMode === "extline") {
+      if (time === undefined) return;
       if (!pendingPoint) {
         setPendingPoint({ time, price });
       } else {
@@ -628,6 +633,7 @@ export default function GrafikPage() {
         setPendingPoint(null);
       }
     } else if (clickMode === "channel") {
+      if (time === undefined) return;
       if (!pendingPoint && !pendingChannelLine) {
         setPendingPoint({ time, price });
       } else if (pendingPoint && !pendingChannelLine) {
@@ -646,6 +652,7 @@ export default function GrafikPage() {
         setPendingChannelLine(null);
       }
     } else if (clickMode === "fibext") {
+      if (time === undefined) return;
       if (!pendingPoint) {
         setPendingPoint({ time, price });
       } else {
@@ -656,16 +663,19 @@ export default function GrafikPage() {
         setPendingPoint(null);
       }
     } else if (clickMode === "vline") {
+      if (time === undefined) return;
       setVerticalLines((prev) => [
         ...prev,
         { id: `vl_${Date.now()}`, time, color: DRAW_COLORS[prev.length % DRAW_COLORS.length] },
       ]);
     } else if (clickMode === "crossline") {
+      if (time === undefined) return;
       setCrossLines((prev) => [
         ...prev,
         { id: `cl_${Date.now()}`, time, price, color: DRAW_COLORS[prev.length % DRAW_COLORS.length] },
       ]);
     } else if (clickMode === "fibtimezone") {
+      if (time === undefined) return;
       if (!pendingPoint) {
         setPendingPoint({ time, price });
       } else {

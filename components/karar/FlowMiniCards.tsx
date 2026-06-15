@@ -1,5 +1,6 @@
 "use client";
 
+import { useT } from "@/lib/i18n/context";
 import type { FlowIntelligenceResult } from "@/lib/orderflow/flowIntelligence";
 import { formatCvd } from "@/lib/orderflow/cvd";
 
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export function FlowMiniCards({ flow }: Props): React.ReactElement | null {
+  const t = useT();
   if (!flow) return null;
 
   const vpin = flow.flowVerdict.vpin;
@@ -47,7 +49,7 @@ export function FlowMiniCards({ flow }: Props): React.ReactElement | null {
             </div>
           </>
         ) : (
-          <div className="text-sm font-mono text-text-t4 leading-tight">—</div>
+          <div className="text-[10px] font-mono text-text-t4 leading-tight">{t("karar.flowComputing")}</div>
         )}
       </div>
 
