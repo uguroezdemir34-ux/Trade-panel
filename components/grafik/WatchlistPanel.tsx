@@ -197,6 +197,117 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
           );
         })}
       </div>
+
+      {/* ── Seçili pair detay kartı ── */}
+      {(() => {
+        const activeScore = allScores[activePair];
+        const activeTick  = prices[activePair];
+        const last        = activeTick?.last  ?? 0;
+        const chg         = activeTick?.chg   ?? null;
+        const sc          = activeScore?.score ?? null;
+        const direction   = activeScore?.direction ?? null;
+        const verdict     = activeScore?.verdict   ?? null;
+        const regime      = activeScore?.regime    ?? null;
+        const volBreak    = activeScore?.volBreakoutActive ?? false;
+
+        const volScore    = activeScore?.sub.vol   ?? null;
+        const trendScore  = activeScore?.sub.trend ?? null;
+
+        const volLabel  = volScore  == null ? "—" : volScore  >= 18 ? "Güçlü" : volScore  >= 10 ? "Orta" : "Zayıf";
+        const volClr    = volScore  == null ? "text-text-t4" : volScore  >= 18 ? "text-signal-green" : volScore  >= 10 ? "text-amber-400" : "text-signal-red";
+        const trendLabel = trendScore == null ? "—" : trendScore >= 17 ? "Güçlü" : trendScore >= 10 ? "Orta" : "Zayıf";
+        const trendClr   = trendScore == null ? "text-text-t4" : trendScore >= 17 ? "text-signal-green" : trendScore >= 10 ? "text-amber-400" : "text-signal-red";
+
+        const regimeLabel: Record<string, string> = {
+          trending_strong:  "Güçlü Trend",
+          trending_weak:    "Zayıf Trend",
+          ranging_meanrev:  "Yatay/MR",
+          ranging:          "Yatay",
+          transitioning:    "Geçiş",
+          mixed:            "Karışık",
+          unknown:          "—",
+        };
+
+        const scoreBg = sc == null ? "" : sc >= 70 ? "bg-green-600/60" : sc >= 40 ? "bg-amber-600/60" : "bg-red-600/60";
+        const verdictBg = verdict === "go"   ? "bg-green-500/15 text-green-400 border-green-500/30" :
+                          verdict === "wait"  ? "bg-amber-500/15 text-amber-400 border-amber-500/30" :
+                          verdict === "no"    ? "bg-red-500/15 text-red-400 border-red-500/30"       :
+                          "bg-bg-hover text-text-t3 border-border";
+
+        return (
+          <div className="shrink-0 border-t border-border/60 p-2.5 bg-bg-page/50">
+            {/* Pair adı + yön + skor rozeti */}
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-mono text-[11px] font-bold text-text-t1 tracking-wide truncate">
+                  {activePair}
+                </span>
+                {direction && direction !== "NEUTRAL" && (
+                  <span className={`font-mono text-[7px] font-bold px-1 py-0.5 rounded leading-none ${
+                    direction === "LONG"
+                      ? "bg-green-500/20 text-green-400"
+                      : "bg-red-500/20 text-red-400"
+                  }`}>
+                    {direction}
+                  </span>
+                )}
+              </div>
+              {sc != null && (
+                <span className={`flex items-center justify-center w-8 h-6 rounded font-mono text-xs font-bold text-white shrink-0 ${scoreBg}`}>
+                  {sc}
+                </span>
+              )}
+            </div>
+
+            {/* Anlık fiyat */}
+            <div className="mb-2.5">
+              <div className="font-mono text-[17px] font-bold text-text-t1 tabular-nums leading-tight">
+                {last > 0 ? fmtPrice(last) : "—"}
+              </div>
+              <div className={`font-mono text-[10px] tabular-nums ${chgColor(chg)}`}>
+                {fmtPct(chg)}
+              </div>
+            </div>
+
+            {/* 2×2 metrik ızgarası */}
+            <div className="grid grid-cols-2 gap-x-3 gap-y-2 mb-2">
+              {/* Hacim Çarpanı */}
+              <div>
+                <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Hacim</p>
+                <p className={`font-mono text-[10px] font-semibold ${volClr}`}>
+                  {volLabel}{volScore != null ? <span className="text-text-t4 font-normal"> ({volScore})</span> : null}
+                </p>
+              </div>
+              {/* Smart Money */}
+              <div>
+                <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Smart Money</p>
+                <p className={`font-mono text-[10px] font-semibold ${volBreak ? "text-signal-green" : "text-text-t4"}`}>
+                  {volBreak ? "Aktif ↑" : activeScore == null ? "Hesaplamada" : "—"}
+                </p>
+              </div>
+              {/* Trend skoru */}
+              <div>
+                <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Trend</p>
+                <p className={`font-mono text-[10px] font-semibold ${trendClr}`}>
+                  {trendLabel}{trendScore != null ? <span className="text-text-t4 font-normal"> ({trendScore})</span> : null}
+                </p>
+              </div>
+              {/* Rejim */}
+              <div>
+                <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Rejim</p>
+                <p className="font-mono text-[10px] font-semibold text-text-t2">
+                  {regime ? (regimeLabel[regime] ?? regime) : "—"}
+                </p>
+              </div>
+            </div>
+
+            {/* Verdict çubuğu */}
+            <div className={`rounded border py-1 text-center font-mono text-[9px] font-bold tracking-[0.12em] uppercase ${verdictBg}`}>
+              {verdict ? verdict.toUpperCase() : "—"}
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }
