@@ -55,12 +55,13 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
+const CLERK_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <ClerkProvider>
-      <html lang="tr" dir="ltr" suppressHydrationWarning translate="no">
+  const inner = (
+    <html lang="tr" dir="ltr" suppressHydrationWarning translate="no">
         <head>
           {/* Prevent theme FOUC — reads localStorage before React hydrates */}
           <script
@@ -96,6 +97,6 @@ export default function RootLayout({
           </I18nProvider>
         </body>
       </html>
-    </ClerkProvider>
   );
+  return CLERK_KEY ? <ClerkProvider>{inner}</ClerkProvider> : inner;
 }
