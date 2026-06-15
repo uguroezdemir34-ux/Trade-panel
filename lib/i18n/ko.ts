@@ -780,6 +780,7 @@ export const ko: Dictionary = {
     pairLabel: "페어",
     timeframeLabel: "타임프레임",
     overlays: "오버레이",
+    indicators: "INDICATORS",
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "거래 표시",

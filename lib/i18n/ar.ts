@@ -780,6 +780,7 @@ export const ar: Dictionary = {
     pairLabel: "الزوج",
     timeframeLabel: "الإطار الزمني",
     overlays: "التراكبات",
+    indicators: "INDICATORS",
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "عرض الصفقات",

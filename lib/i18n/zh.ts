@@ -780,6 +780,7 @@ export const zh: Dictionary = {
     pairLabel: "交易对",
     timeframeLabel: "时间框架",
     overlays: "叠加",
+    indicators: "INDICATORS",
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "显示交易",

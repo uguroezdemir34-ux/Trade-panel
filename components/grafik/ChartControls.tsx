@@ -92,10 +92,10 @@ export function ChartControls({
     <div className="border-border bg-bg-card flex flex-wrap items-center gap-3 rounded-lg border p-3">
       {/* Timeframe */}
       <div className="flex items-center gap-1.5">
-        <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
+        <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase shrink-0">
           {t("grafik.timeframeLabel")}
         </span>
-        <div className="flex gap-1 overflow-x-auto">
+        <div className="flex flex-wrap gap-1">
           {TIMEFRAMES.map((tf) => (
             <button
               key={tf}
@@ -114,15 +114,16 @@ export function ChartControls({
 
       {/* Overlays */}
       <div className="flex items-center gap-1.5">
-        <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
+        <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase shrink-0">
           {t("grafik.overlays")}
         </span>
-        <div className="flex gap-1 overflow-x-auto">
+        <div className="flex flex-wrap gap-1">
           <IndicatorDropdown
             showEma20={showEma20} showEma50={showEma50} showEma200={showEma200}
             showRsi={showRsi} showMacd={showMacd} showBb={showBb}
             onToggleEma20={onToggleEma20} onToggleEma50={onToggleEma50} onToggleEma200={onToggleEma200}
             onToggleRsi={onToggleRsi} onToggleMacd={onToggleMacd} onToggleBb={onToggleBb}
+            label={t("grafik.indicators")}
           />
           <Toggle active={showTrades} onClick={onToggleTrades}>
             {t("grafik.showTrades")}
@@ -200,11 +201,13 @@ export function ChartControls({
 function IndicatorDropdown({
   showEma20, showEma50, showEma200, showRsi, showMacd, showBb,
   onToggleEma20, onToggleEma50, onToggleEma200, onToggleRsi, onToggleMacd, onToggleBb,
+  label,
 }: {
   showEma20: boolean; showEma50: boolean; showEma200: boolean;
   showRsi: boolean; showMacd: boolean; showBb: boolean;
   onToggleEma20: () => void; onToggleEma50: () => void; onToggleEma200: () => void;
   onToggleRsi: () => void; onToggleMacd: () => void; onToggleBb: () => void;
+  label: string;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -238,7 +241,7 @@ function IndicatorDropdown({
             : "border-border text-text-t3 hover:bg-bg-page"
         }`}
       >
-        İNDİKATÖRLER
+        {label}
         {activeCount > 0 && (
           <span className="rounded-full bg-brand text-bg-page text-[8px] font-bold w-3.5 h-3.5 flex items-center justify-center shrink-0">
             {activeCount}

@@ -778,6 +778,7 @@ export const fr: Dictionary = {
     pairLabel: "Paire",
     timeframeLabel: "Unité de temps",
     overlays: "Superpositions",
+    indicators: "INDICATORS",
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "Afficher les trades",

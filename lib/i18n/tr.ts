@@ -995,6 +995,7 @@ export const tr: Dictionary = {
     pairLabel: "Parite",
     timeframeLabel: "Zaman dilimi",
     overlays: "Katmanlar",
+    indicators: "İNDİKATÖRLER",
     ema20: "EMA 20",
     ema50: "EMA 50",
     ema200: "EMA 200",

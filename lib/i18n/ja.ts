@@ -780,6 +780,7 @@ export const ja: Dictionary = {
     pairLabel: "ペア",
     timeframeLabel: "タイムフレーム",
     overlays: "オーバーレイ",
+    indicators: "INDICATORS",
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "トレードを表示",

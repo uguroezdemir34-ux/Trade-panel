@@ -780,6 +780,7 @@ export const hi: Dictionary = {
     pairLabel: "पेयर",
     timeframeLabel: "टाइमफ्रेम",
     overlays: "ओवरले",
+    indicators: "INDICATORS",
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "ट्रेड दिखाएं",

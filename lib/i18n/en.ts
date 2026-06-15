@@ -995,6 +995,7 @@ export const en: Dictionary = {
     pairLabel: "Pair",
     timeframeLabel: "Timeframe",
     overlays: "Overlays",
+    indicators: "INDICATORS",
     ema20: "EMA 20",
     ema50: "EMA 50",
     ema200: "EMA 200",

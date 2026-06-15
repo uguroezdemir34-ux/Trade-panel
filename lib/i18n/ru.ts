@@ -780,6 +780,7 @@ export const ru: Dictionary = {
     pairLabel: "Пара",
     timeframeLabel: "Таймфрейм",
     overlays: "Наложения",
+    indicators: "INDICATORS",
     ema20: "EMA 20",
     ema50: "EMA 50",
     showTrades: "Показать сделки",
