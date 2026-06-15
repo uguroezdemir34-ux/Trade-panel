@@ -24,7 +24,7 @@ import {
   type Time,
   type MouseEventParams,
 } from "lightweight-charts";
-import type { ChartSeries } from "@/lib/chart/types";
+import type { ChartSeries, LiqBand } from "@/lib/chart/types";
 import { VerticalLinePrimitive } from "@/lib/chart/primitives/VerticalLinePrimitive";
 import { CrossLinePrimitive } from "@/lib/chart/primitives/CrossLinePrimitive";
 import { FibTimeZonePrimitive } from "@/lib/chart/primitives/FibTimeZonePrimitive";
@@ -37,6 +37,10 @@ interface Props {
   onChartClick?: (price: number, time: number | undefined) => void;
   /** Change when pair/TF changes to trigger a fitContent() reset */
   resetKey?: string;
+  /** Liq magnet bands — separate prop so price-tick updates don't re-run the full series effect */
+  liqBands?: LiqBand[];
+  /** Live price line — separate prop so price-tick updates don't re-run the full series effect */
+  currentPrice?: number;
 }
 
 const COLOR_UP       = "#22c55e";
@@ -110,7 +114,7 @@ function fmtVol(n: number): string {
   return n.toFixed(2);
 }
 
-export function PriceChart({ series, height = 400, theme = "dark", onChartClick, resetKey }: Props): React.ReactElement {
+export function PriceChart({ series, height = 400, theme = "dark", onChartClick, resetKey, liqBands, currentPrice }: Props): React.ReactElement {
   const containerRef  = useRef<HTMLDivElement>(null);
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -298,13 +302,14 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     }
   }, [series.drawnLines]);
 
-  // ─── Sync Liq Magnet bands ─────────────────────────────────────────────────
+  // ─── Sync Liq Magnet bands (direct prop — not via series to avoid full chart re-sync on every price tick) ───
   useEffect(() => {
     const candle = candleRef.current;
     if (!candle) return;
-    const incoming = series.liqBands ?? [];
+    const incoming = liqBands ?? [];
     const incomingIds = new Set(incoming.map((b) => b.id));
 
+    // Remove bands no longer in incoming
     for (const [id, lines] of liqBandsMapRef.current) {
       if (!incomingIds.has(id)) {
         for (const pl of lines) { try { candle.removePriceLine(pl); } catch { /* ignore */ } }
@@ -312,18 +317,28 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       }
     }
     for (const band of incoming) {
-      if (liqBandsMapRef.current.has(band.id)) continue;
+      const bw = band.price * 0.010;
+      const existing = liqBandsMapRef.current.get(band.id);
+      if (existing) {
+        // Update price lines in-place (Fix 4: band price changes with livePrice)
+        const [center, upper, lower] = existing;
+        try {
+          center.applyOptions({ price: band.price });
+          upper.applyOptions({ price: band.price + bw });
+          lower.applyOptions({ price: band.price - bw });
+        } catch { /* ignore */ }
+        continue;
+      }
       const isLong = band.side === "long";
       const baseColor = isLong ? "#22c55e" : "#ef4444";
       const alpha = Math.max(0.45, Math.min(0.80, band.intensity + 0.2));
       const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, "0");
-      const bw = band.price * 0.010; // 1% corridor (visible band)
       try {
         const center = candle.createPriceLine({
           price: band.price,
           color: `${baseColor}${alphaHex}`,
           lineWidth: 3,
-          lineStyle: 0, // solid
+          lineStyle: 0,
           axisLabelVisible: true,
           title: isLong ? `Liq Pool ↓ ${(band.intensity * 100).toFixed(0)}%` : `Liq Pool ↑ ${(band.intensity * 100).toFixed(0)}%`,
         });
@@ -331,7 +346,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           price: band.price + bw,
           color: `${baseColor}38`,
           lineWidth: 1,
-          lineStyle: 1, // dotted
+          lineStyle: 1,
           axisLabelVisible: false,
           title: "",
         });
@@ -348,7 +363,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         console.error("[LiqBands] createPriceLine failed, skipping band:", band.id, err);
       }
     }
-  }, [series.liqBands]);
+  }, [liqBands]);
 
   // ─── Sync trend lines (diagonal LineSeries) ──────────────────────────────
   useEffect(() => {
@@ -631,6 +646,25 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     }
   }, [series.fibTimeZones]);
 
+  // ─── Live price line (separate prop — updates every WS tick without re-running full series effect) ──
+  useEffect(() => {
+    const candle = candleRef.current;
+    if (!candle) return;
+    if (currentPriceLineRef.current) {
+      try { candle.removePriceLine(currentPriceLineRef.current); } catch { /* ignore */ }
+      currentPriceLineRef.current = null;
+    }
+    if (currentPrice && currentPrice > 0) {
+      try {
+        currentPriceLineRef.current = candle.createPriceLine({
+          price: currentPrice,
+          color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
+          axisLabelVisible: true, title: "LIVE",
+        });
+      } catch { /* ignore */ }
+    }
+  }, [currentPrice]);
+
   // ─── Theme color update (no chart recreation) ───────────────────────────
   useEffect(() => {
     const chart = chartRef.current;
@@ -882,19 +916,6 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         });
         tradeLinesRef.current.push(line);
       }
-    }
-
-    // Live price line
-    if (currentPriceLineRef.current) {
-      try { candle.removePriceLine(currentPriceLineRef.current); } catch { /* ignore */ }
-      currentPriceLineRef.current = null;
-    }
-    if (series.currentPrice && series.currentPrice > 0) {
-      currentPriceLineRef.current = candle.createPriceLine({
-        price: series.currentPrice,
-        color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
-        axisLabelVisible: true, title: "LIVE",
-      });
     }
 
     // Trade markers

@@ -23,8 +23,11 @@ import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel } from "@/components/grafik/WatchlistPanel";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
 import { DrawingToolbar } from "@/components/grafik/DrawingToolbar";
-import { useLiqFeedStore } from "@/lib/store/liqFeedStore";
+import { useLiqFeedStore, type LiqEvent } from "@/lib/store/liqFeedStore";
 import { buildLiquidationMapFromEvents } from "@/lib/orderflow/liquidationMap";
+
+// Stable empty fallback — prevents new [] reference on every selector call (Zustand re-render bug)
+const EMPTY_LIQ_EVENTS: LiqEvent[] = [];
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
@@ -564,7 +567,7 @@ export default function GrafikPage() {
   const trades     = useTradesStore((s) => s.trades);
   const alarms     = usePriceAlarmStore((s) => s.alarms);
   const livePrice  = useMarketStore((s) => s.prices[pair]?.last ?? null);
-  const liqEvents  = useLiqFeedStore((s) => s.events[pair] ?? []);
+  const liqEvents  = useLiqFeedStore((s) => s.events[pair] ?? EMPTY_LIQ_EVENTS);
 
   const tradeLevels = useMemo<TradeLevelLine[]>(() => {
     const open = trades.filter((t) => t.status === "open" && t.pair === pair);
@@ -607,25 +610,22 @@ export default function GrafikPage() {
     } catch { return []; }
   }, [showLiqMagnet, liqEvents, pair, livePrice]);
 
-  // Primary series
-  const series = useMemo(() => ({
-    ...buildSeries(candles, trades, pair, {
+  // Primary series — excludes livePrice and liqBands so price ticks don't re-run the full chart sync
+  const series = useMemo(() =>
+    buildSeries(candles, trades, pair, {
       ema20: showEma20, ema50: showEma50, ema200: showEma200,
       volume: showVolume, rsi: showRsi, macd: showMacd, bb: showBb,
       vwap: showVwap, sr: showSr, trades: showTrades,
       alarmLevels, tradeLevels, drawnLines, trendLines, fibLevels,
       rayLines, extLines, channels, fibExtensions, verticalLines, crossLines, fibTimeZones,
-      livePrice: livePrice ?? undefined,
     }),
-    liqBands,
-  }),
     [candles, trades, pair, showEma20, showEma50, showEma200, showVolume,
      showRsi, showMacd, showBb, showVwap, showSr, showTrades,
      alarmLevels, tradeLevels, drawnLines, trendLines, fibLevels,
-     rayLines, extLines, channels, fibExtensions, verticalLines, crossLines, fibTimeZones, livePrice, liqBands],
+     rayLines, extLines, channels, fibExtensions, verticalLines, crossLines, fibTimeZones],
   );
 
-  // Secondary series (split view — EMA200 + volume only, no drawings)
+  // Secondary series (split view — EMA200 + volume only, no drawings, no livePrice)
   const secSeries = useMemo<ChartSeries | null>(() => {
     if (!showSplit || secCandles.length === 0) return null;
     return buildSeries(secCandles, trades, pair, {
@@ -636,9 +636,8 @@ export default function GrafikPage() {
       trendLines: [], fibLevels: [],
       rayLines: [], extLines: [], channels: [], fibExtensions: [], verticalLines: [],
       crossLines: [], fibTimeZones: [],
-      livePrice: livePrice ?? undefined,
     });
-  }, [showSplit, secCandles, trades, pair, showVolume, showSr, tradeLevels, drawnLines, livePrice]);
+  }, [showSplit, secCandles, trades, pair, showVolume, showSr, tradeLevels, drawnLines]);
 
   const DRAW_COLORS = ["#f59e0b", "#3b82f6", "#ec4899", "#22c55e", "#8b5cf6", "#f97316"];
 
@@ -986,6 +985,8 @@ export default function GrafikPage() {
                   theme={theme}
                   onChartClick={handleChartClick}
                   resetKey={`${pair}_${timeframe}`}
+                  liqBands={liqBands}
+                  currentPrice={livePrice ?? undefined}
                 />
                 {chartLoadState !== "ready" && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-bg-card/70 rounded pointer-events-none">
@@ -1026,6 +1027,7 @@ export default function GrafikPage() {
                 theme={theme}
                 onChartClick={handleChartClick}
                 resetKey={`${pair}_${secTf}`}
+                currentPrice={livePrice ?? undefined}
               />
             ) : (
               <div className="flex items-center justify-center h-[360px] rounded border border-border bg-bg-card">
