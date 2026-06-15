@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
+import { useCandleStore } from "@/lib/store/candleStore";
+import { useTradeFeedStore, selectTrades } from "@/lib/store/tradeFeedStore";
+import { computeCvdMultiFrame } from "@/lib/orderflow/cvd";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 
 interface Props {
@@ -61,43 +64,52 @@ function domChgColor(v: number | null): string {
 
 const GRID_COLS = "grid-cols-[1fr_56px_46px_40px_36px]";
 
-const REGIME_LABELS: Record<string, string> = {
-  trending_strong: "Güçlü Trend",
-  trending_weak:   "Zayıf Trend",
-  ranging_meanrev: "Yatay/MR",
-  ranging:         "Yatay",
-  transitioning:   "Geçiş",
-  mixed:           "Karışık",
-  unknown:         "—",
-};
 
 /* ── Detail Card ── */
 function PairDetailCard({ activePair }: { activePair: Pair }) {
   const prices    = useMarketStore((s) => s.prices);
   const allScores = useScoreStore((s) => s.results);
+  const candles1d = useCandleStore((s) => s.candles[`${activePair}_1d`]);
+  const trades    = useTradeFeedStore(selectTrades(activePair));
 
-  const tick       = prices[activePair];
-  const last       = tick?.last  ?? 0;
-  const chg        = tick?.chg   ?? null;
-  const result     = allScores[activePair];
-  const sc         = result?.score      ?? null;
-  const direction  = result?.direction  ?? null;
-  const verdict    = result?.verdict    ?? null;
-  const regime     = result?.regime     ?? null;
-  const volBreak   = result?.volBreakoutActive ?? false;
-  const volScore   = result?.sub.vol    ?? null;
-  const trendScore = result?.sub.trend  ?? null;
+  const tick      = prices[activePair];
+  const last      = tick?.last  ?? 0;
+  const chg       = tick?.chg   ?? null;
+  const result    = allScores[activePair];
+  const sc        = result?.score     ?? null;
+  const direction = result?.direction ?? null;
+  const verdict   = result?.verdict   ?? null;
 
-  const volLabel   = volScore   == null ? "—" : volScore   >= 18 ? "Güçlü" : volScore   >= 10 ? "Orta" : "Zayıf";
-  const volClr     = volScore   == null ? "text-zinc-500" : volScore   >= 18 ? "text-emerald-400" : volScore   >= 10 ? "text-amber-400" : "text-red-400";
-  const trendLabel = trendScore == null ? "—" : trendScore >= 17 ? "Güçlü" : trendScore >= 10 ? "Orta" : "Zayıf";
-  const trendClr   = trendScore == null ? "text-zinc-500" : trendScore >= 17 ? "text-emerald-400" : trendScore >= 10 ? "text-amber-400" : "text-red-400";
+  // 24h High / Low — son 1d bar
+  const lastBar  = candles1d && candles1d.length > 0 ? candles1d[candles1d.length - 1] : null;
+  const high24   = lastBar?.high ?? null;
+  const low24    = lastBar?.low  ?? null;
+
+  // CVD Vol Delta — 15dk pencere, buy/sell oranı
+  const cvd = useMemo(() => {
+    if (trades.length < 10) return null;
+    return computeCvdMultiFrame(activePair, trades, Date.now());
+  }, [activePair, trades]);
+
+  const cvdRatio: string | null = useMemo(() => {
+    if (!cvd) return null;
+    const { buyUsd, sellUsd } = cvd.w15m;
+    if (sellUsd === 0) return null;
+    const ratio = buyUsd / sellUsd;
+    return `${ratio >= 1 ? "+" : ""}${ratio.toFixed(2)}x`;
+  }, [cvd]);
+
+  const cvdClr = cvd
+    ? cvd.w15m.direction === "bullish" ? "text-emerald-400"
+    : cvd.w15m.direction === "bearish" ? "text-red-400"
+    : "text-zinc-400"
+    : "text-zinc-500";
 
   const scoreBg =
-    sc == null   ? "bg-zinc-700"    :
-    sc >= 70     ? "bg-emerald-600" :
-    sc >= 40     ? "bg-amber-600"   :
-                   "bg-red-600";
+    sc == null ? "bg-zinc-700"    :
+    sc >= 70   ? "bg-emerald-600" :
+    sc >= 40   ? "bg-amber-600"   :
+                 "bg-red-600";
 
   const verdictBg =
     verdict === "go"   ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" :
@@ -107,14 +119,14 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
 
   return (
     <div className="shrink-0 mx-2 mb-2 mt-1 rounded-lg border border-zinc-700 bg-zinc-900/80 p-3">
-      {/* Başlık: pair + yön + skor */}
-      <div className="flex items-center justify-between mb-2.5">
+      {/* Üst satır: pair adı + yön + QX skor rozeti */}
+      <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="font-mono text-[11px] font-bold text-white tracking-wide truncate">
-            {activePair}
+          <span className="font-mono text-[11px] font-bold text-white tracking-wide">
+            {activePair.replace("USDT-SWAP", "")} /&nbsp;USDT
           </span>
           {direction && direction !== "NEUTRAL" && (
-            <span className={`font-mono text-[7px] font-bold px-1 py-0.5 rounded leading-none ${
+            <span className={`font-mono text-[7px] font-bold px-1 py-0.5 rounded leading-none shrink-0 ${
               direction === "LONG" ? "bg-emerald-500/25 text-emerald-400" : "bg-red-500/25 text-red-400"
             }`}>
               {direction}
@@ -126,47 +138,53 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
         </span>
       </div>
 
-      {/* Fiyat */}
-      <div className="mb-3">
-        <div className="font-mono text-[18px] font-bold text-white tabular-nums leading-tight">
+      {/* Orta satır: büyük fiyat + % değişim */}
+      <div className="mb-2.5">
+        <div className="font-mono text-[20px] font-bold text-white tabular-nums leading-none">
           {last > 0 ? fmtPrice(last) : "—"}
         </div>
-        <div className={`font-mono text-[11px] tabular-nums font-semibold ${chgColor(chg)}`}>
-          {fmtPct(chg)}
+        <div className={`font-mono text-[11px] tabular-nums font-semibold mt-0.5 ${chgColor(chg)}`}>
+          {fmtPct(chg)} (24s)
         </div>
       </div>
 
-      {/* 2×2 Metrik */}
-      <div className="grid grid-cols-2 gap-x-3 gap-y-2.5 mb-3">
+      {/* Alt satır: 2×2 mini metrik ızgarası */}
+      <div className="grid grid-cols-2 gap-x-3 gap-y-2 mb-2.5">
+        {/* Hacim Deltası */}
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Hacim Çarpanı</p>
-          <p className={`font-mono text-[10px] font-semibold ${volClr}`}>
-            {volLabel}
-            {volScore != null && <span className="text-zinc-500 font-normal"> ({volScore})</span>}
+          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Hacim Deltası</p>
+          <p className={`font-mono text-[11px] font-semibold tabular-nums ${cvdClr}`}>
+            {cvdRatio ?? "—"}
           </p>
         </div>
+        {/* 24s Yüksek */}
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Smart Money</p>
-          <p className={`font-mono text-[10px] font-semibold ${volBreak ? "text-emerald-400" : "text-zinc-500"}`}>
-            {volBreak ? "Aktif ↑" : result == null ? "Hesaplamada" : "—"}
+          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">24s Yüksek</p>
+          <p className="font-mono text-[10px] font-semibold text-emerald-400 tabular-nums">
+            {high24 != null && high24 > 0 ? fmtPrice(high24) : "—"}
           </p>
         </div>
+        {/* Verdict */}
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Trend</p>
-          <p className={`font-mono text-[10px] font-semibold ${trendClr}`}>
-            {trendLabel}
-            {trendScore != null && <span className="text-zinc-500 font-normal"> ({trendScore})</span>}
+          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Karar</p>
+          <p className={`font-mono text-[11px] font-bold uppercase ${
+            verdict === "go"   ? "text-emerald-400" :
+            verdict === "wait" ? "text-amber-400"   :
+            verdict === "no"   ? "text-red-400"     : "text-zinc-500"
+          }`}>
+            {verdict ? verdict.toUpperCase() : "—"}
           </p>
         </div>
+        {/* 24s Düşük */}
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Rejim</p>
-          <p className="font-mono text-[10px] font-semibold text-zinc-300">
-            {regime ? (REGIME_LABELS[regime] ?? regime) : "—"}
+          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">24s Düşük</p>
+          <p className="font-mono text-[10px] font-semibold text-red-400 tabular-nums">
+            {low24 != null && low24 > 0 ? fmtPrice(low24) : "—"}
           </p>
         </div>
       </div>
 
-      {/* Verdict */}
+      {/* Verdict çubuğu */}
       <div className={`rounded border py-1 text-center font-mono text-[9px] font-bold tracking-[0.12em] uppercase ${verdictBg}`}>
         {verdict ? verdict.toUpperCase() : "—"}
       </div>
