@@ -58,11 +58,6 @@ export interface ComposeInput {
    * undefined/null → computeScore'da 0 olarak işlenir.
    */
   oiVelocityScore?: number | null;
-  /**
-   * Whale inflow skoru [-10, +10] — whale-flow.ts'ten hesaplanmış.
-   * undefined/null → computeScore'da 0 olarak işlenir.
-   */
-  whaleInflowScore?: number | null;
 }
 
 /**
@@ -95,7 +90,6 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     timeQuality,
     now,
     oiVelocityScore,
-    whaleInflowScore,
   } = input;
 
   // Önkoşullar
@@ -188,6 +182,5 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     trades,
     now,
     oiVelocityScore: oiVelocityScore ?? null,
-    whaleInflowScore: whaleInflowScore ?? null,
   };
 }

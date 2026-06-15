@@ -144,12 +144,6 @@ export interface ScoreInput {
    */
   oiVelocityScore?: number | null;
 
-  /**
-   * Whale inflow skoru [-10, +10] — whale-flow.ts çıktısından beslenir.
-   * null/undefined → 0 (tarafsız).
-   */
-  whaleInflowScore?: number | null;
-
   /** Scorer ağırlık çarpanları — ayarlar sayfasından gelir. Default: tümü 1.0 */
   scorerWeights?: ScorerWeights | null;
 }
@@ -364,10 +358,9 @@ export function computeScore(input: ScoreInput): ScoreResult {
 
   // ───── 5. Total ─────
   const oiBonus = input.oiVelocityScore ?? 0;
-  const whaleBonus = input.whaleInflowScore ?? 0;
   const total = Math.min(
     100,
-    Math.max(0, baseScore + sweepRes.bonus + regimeRes.bonus + srModifier + oiBonus + whaleBonus),
+    Math.max(0, baseScore + sweepRes.bonus + regimeRes.bonus + srModifier + oiBonus),
   );
   const score = Math.round(total);
 

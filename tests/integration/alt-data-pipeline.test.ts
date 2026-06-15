@@ -3,10 +3,9 @@
  *
  * Kapsam:
  *   1. OI Velocity Engine (lib/market/oi-velocity.ts) — boundary değer testleri
- *   2. Whale Flow Parser (lib/market/whale-flow.ts) — boundary değer testleri
- *   3. Score Engine entegrasyonu — oiVelocityScore + whaleInflowScore'un
+ *   2. Score Engine entegrasyonu — oiVelocityScore'un
  *      computeScore() içinde total'a doğru katkı yaptığını kanıtla
- *   4. composeScoreInput() geçişi — yeni alanlar ScoreInput'a aktarılıyor
+ *   3. composeScoreInput() geçişi — yeni alanlar ScoreInput'a aktarılıyor
  */
 
 import { describe, it, expect } from "vitest";
@@ -19,14 +18,6 @@ import {
   type OiSnapshot,
   type OiVelocityConfig,
 } from "@/lib/market/oi-velocity";
-
-// ── Whale Flow ────────────────────────────────────────────────
-import {
-  computeWhaleFlow,
-  computeWhaleFlowWindow,
-  whaleInflowScoreOrZero,
-  type WhaleFlowSnapshot,
-} from "@/lib/market/whale-flow";
 
 // ── Score Engine ──────────────────────────────────────────────
 import { computeScore, type ScoreInput } from "@/lib/score/orchestrator";
@@ -52,22 +43,6 @@ function makeOiPair(
     { timestamp: 1000, openInterest: oiFirst, price: priceFirst },
     { timestamp: 2000, openInterest: oiLast, price: priceLast },
   ];
-}
-
-/** Minimal geçerli whale snapshot */
-function makeWhaleSnap(
-  btcIn: number,
-  btcOut: number,
-  stableIn: number,
-  stableOut: number,
-): WhaleFlowSnapshot {
-  return {
-    timestamp: Date.now(),
-    btcExchangeInflow: btcIn,
-    btcExchangeOutflow: btcOut,
-    stablecoinInflow: stableIn,
-    stablecoinOutflow: stableOut,
-  };
 }
 
 /** Minimal ScoreInput — gerçek computeScore çağrısı için */
@@ -298,162 +273,6 @@ describe("OI Velocity Engine", () => {
 });
 
 // ═══════════════════════════════════════════════════════════════
-// WHALE FLOW TESTS
-// ═══════════════════════════════════════════════════════════════
-
-describe("Whale Flow Parser", () => {
-  describe("computeWhaleFlow — null guard", () => {
-    it("null on empty array", () => {
-      expect(computeWhaleFlow([])).toBeNull();
-    });
-
-    it("null when all snapshots have negative values", () => {
-      const invalid: WhaleFlowSnapshot = {
-        timestamp: 1,
-        btcExchangeInflow: -1,
-        btcExchangeOutflow: 1000,
-        stablecoinInflow: 100_000_000,
-        stablecoinOutflow: 0,
-      };
-      expect(computeWhaleFlow([invalid])).toBeNull();
-    });
-
-    it("filters invalid snapshots and processes valid ones", () => {
-      const invalid = makeWhaleSnap(-1, 1000, 100_000_000, 0);
-      const valid = makeWhaleSnap(0, 2000, 200_000_000, 0);
-      const result = computeWhaleFlow([invalid, valid]);
-      expect(result).not.toBeNull();
-      expect(result?.snapshotCount).toBe(1);
-    });
-  });
-
-  describe("computeWhaleFlow — bias classification", () => {
-    it("strong_bullish: BTC outflow dominant + stablecoin inflow", () => {
-      // Net BTC: +5000 (full normRef), net stablecoin: +500M (full normRef)
-      const snap = makeWhaleSnap(0, 5000, 500_000_000, 0);
-      const result = computeWhaleFlow([snap]);
-      expect(result?.bias).toBe("strong_bullish");
-      expect(result?.whaleInflowScore).toBeGreaterThan(0);
-    });
-
-    it("strong_bearish: BTC inflow dominant + stablecoin outflow", () => {
-      const snap = makeWhaleSnap(5000, 0, 0, 500_000_000);
-      const result = computeWhaleFlow([snap]);
-      expect(result?.bias).toBe("strong_bearish");
-      expect(result?.whaleInflowScore).toBeLessThan(0);
-    });
-
-    it("neutral when below noise threshold", () => {
-      // Very small flows relative to normRef
-      const snap = makeWhaleSnap(100, 101, 1_000_000, 999_000);
-      const result = computeWhaleFlow([snap]);
-      expect(result?.bias).toBe("neutral");
-      expect(result?.whaleInflowScore).toBeCloseTo(0, 1);
-    });
-
-    it("mild_bullish for moderate net positive signal", () => {
-      // Net BTC outflow: 1000/5000 = 0.2 norm, net stable: 100M/500M = 0.2 norm
-      // combined = 0.2*0.4 + 0.2*0.6 = 0.08 + 0.12 = 0.20 (mild_bullish threshold 0.05-0.5)
-      const snap = makeWhaleSnap(0, 1000, 100_000_000, 0);
-      const result = computeWhaleFlow([snap]);
-      expect(result?.bias).toBe("mild_bullish");
-    });
-
-    it("mild_bearish for moderate net negative signal", () => {
-      const snap = makeWhaleSnap(1000, 0, 0, 100_000_000);
-      const result = computeWhaleFlow([snap]);
-      expect(result?.bias).toBe("mild_bearish");
-    });
-  });
-
-  describe("computeWhaleFlow — score boundary values", () => {
-    it("score clamped to +10 on maximum bullish signal", () => {
-      // Both at 100% normRef bullish
-      const snap = makeWhaleSnap(0, 10000, 1_000_000_000, 0); // over normRef
-      const result = computeWhaleFlow([snap]);
-      expect(result?.whaleInflowScore).toBe(10);
-    });
-
-    it("score clamped to -10 on maximum bearish signal", () => {
-      const snap = makeWhaleSnap(10000, 0, 0, 1_000_000_000);
-      const result = computeWhaleFlow([snap]);
-      expect(result?.whaleInflowScore).toBe(-10);
-    });
-
-    it("score ∈ [-10, +10] always", () => {
-      const scenarios = [
-        makeWhaleSnap(0, 5000, 500_000_000, 0),
-        makeWhaleSnap(5000, 0, 0, 500_000_000),
-        makeWhaleSnap(2500, 2500, 250_000_000, 250_000_000),
-        makeWhaleSnap(0, 0, 0, 0),
-      ];
-      for (const snap of scenarios) {
-        const result = computeWhaleFlow([snap]);
-        if (result) {
-          expect(result.whaleInflowScore).toBeGreaterThanOrEqual(-10);
-          expect(result.whaleInflowScore).toBeLessThanOrEqual(10);
-        }
-      }
-    });
-
-    it("custom scoreFactor=5 halves the score vs default 10", () => {
-      const snap = makeWhaleSnap(0, 2500, 250_000_000, 0);
-      const r10 = computeWhaleFlow([snap], { scoreFactor: 10 });
-      const r5 = computeWhaleFlow([snap], { scoreFactor: 5 });
-      expect(r5!.whaleInflowScore).toBeCloseTo(r10!.whaleInflowScore / 2, 3);
-    });
-  });
-
-  describe("computeWhaleFlow — normalization", () => {
-    it("netBtcFlowNorm +1 when net BTC outflow = btcNormRef", () => {
-      const snap = makeWhaleSnap(0, 5000, 0, 0);
-      const result = computeWhaleFlow([snap], { btcNormRef: 5000, stableNormRef: 500_000_000 });
-      expect(result?.netBtcFlowNorm).toBeCloseTo(1, 4);
-    });
-
-    it("netStableFlowNorm -1 when net stable outflow = stableNormRef", () => {
-      const snap = makeWhaleSnap(0, 0, 0, 500_000_000);
-      const result = computeWhaleFlow([snap], { btcNormRef: 5000, stableNormRef: 500_000_000 });
-      expect(result?.netStableFlowNorm).toBeCloseTo(-1, 4);
-    });
-
-    it("averages multiple snapshots correctly", () => {
-      const snap1 = makeWhaleSnap(0, 0, 500_000_000, 0); // +1.0 stable
-      const snap2 = makeWhaleSnap(0, 0, 0, 0); // 0 stable
-      const result = computeWhaleFlow([snap1, snap2], { stableNormRef: 500_000_000 });
-      // avg stable net = 250M → norm = 0.5
-      expect(result?.netStableFlowNorm).toBeCloseTo(0.5, 4);
-    });
-  });
-
-  describe("computeWhaleFlowWindow", () => {
-    it("uses last windowSize snapshots", () => {
-      const snaps = Array.from({ length: 10 }, (_, i) =>
-        makeWhaleSnap(0, i * 500, (i + 1) * 50_000_000, 0),
-      );
-      const windowed = computeWhaleFlowWindow(snaps, 3);
-      expect(windowed?.snapshotCount).toBe(3);
-    });
-
-    it("null on empty array", () => {
-      expect(computeWhaleFlowWindow([])).toBeNull();
-    });
-  });
-
-  describe("whaleInflowScoreOrZero", () => {
-    it("returns 0 for null", () => {
-      expect(whaleInflowScoreOrZero(null)).toBe(0);
-    });
-
-    it("returns whaleInflowScore from result", () => {
-      const snap = makeWhaleSnap(0, 2000, 200_000_000, 0);
-      const result = computeWhaleFlow([snap]);
-      expect(whaleInflowScoreOrZero(result)).toBe(result!.whaleInflowScore);
-    });
-  });
-});
-
-// ═══════════════════════════════════════════════════════════════
 // SCORE ENGINE INTEGRATION TESTS
 // ═══════════════════════════════════════════════════════════════
 
@@ -499,61 +318,6 @@ describe("Score Engine — alternative data integration", () => {
     });
   });
 
-  describe("whaleInflowScore → total contribution", () => {
-    it("whaleInflowScore=+8 increases total by 8 vs baseline", () => {
-      const baseline = computeScore(makeMinimalScoreInput());
-      const withWhale = computeScore(makeMinimalScoreInput({ whaleInflowScore: 8 }));
-      const diff = withWhale.total - baseline.total;
-      expect(diff).toBeCloseTo(8, 0);
-    });
-
-    it("whaleInflowScore=-8 decreases total by 8 vs baseline", () => {
-      const baseline = computeScore(makeMinimalScoreInput());
-      const withWhale = computeScore(makeMinimalScoreInput({ whaleInflowScore: -8 }));
-      expect(baseline.total - withWhale.total).toBeCloseTo(8, 0);
-    });
-
-    it("whaleInflowScore=null treated as 0", () => {
-      const baseline = computeScore(makeMinimalScoreInput());
-      const withNull = computeScore(makeMinimalScoreInput({ whaleInflowScore: null }));
-      expect(withNull.total).toBe(baseline.total);
-    });
-  });
-
-  describe("combined OI + whale bonuses", () => {
-    it("both +5 additively increases total by 10", () => {
-      const baseline = computeScore(makeMinimalScoreInput());
-      const combined = computeScore(
-        makeMinimalScoreInput({ oiVelocityScore: 5, whaleInflowScore: 5 }),
-      );
-      const diff = combined.total - baseline.total;
-      expect(diff).toBeCloseTo(10, 0);
-    });
-
-    it("opposing signals partially cancel (+5 OI, -5 whale → net 0)", () => {
-      const baseline = computeScore(makeMinimalScoreInput());
-      const combined = computeScore(
-        makeMinimalScoreInput({ oiVelocityScore: 5, whaleInflowScore: -5 }),
-      );
-      expect(combined.total).toBeCloseTo(baseline.total, 0);
-    });
-
-    it("verdict can change from wait to go with sufficient alt data bonus", () => {
-      // Construct a score just below go threshold (80) — at ~74
-      // srModifier -6 will bring a ~80 score down to ~74 → "wait"
-      const waitInput = makeMinimalScoreInput({ srModifier: -6 });
-      const waitResult = computeScore(waitInput);
-      // Should be below 80 → wait or no
-      expect(["wait", "no"]).toContain(waitResult.verdict);
-
-      // Adding +10 OI bonus should push total ≥ 80 → go (if no hard blocks)
-      const goInput = makeMinimalScoreInput({ srModifier: -6, oiVelocityScore: 10 });
-      const goResult = computeScore(goInput);
-      // total should be higher
-      expect(goResult.total).toBeGreaterThan(waitResult.total);
-    });
-  });
-
   describe("score field types and ranges", () => {
     it("score is integer (Math.round applied)", () => {
       const result = computeScore(makeMinimalScoreInput({ oiVelocityScore: 3.7 }));
@@ -561,14 +325,8 @@ describe("Score Engine — alternative data integration", () => {
     });
 
     it("total is between 0 and 100", () => {
-      for (const [oi, whale] of [
-        [10, 10],
-        [-10, -10],
-        [0, 0],
-        [7, -3],
-        [-5, 8],
-      ] as const) {
-        const result = computeScore(makeMinimalScoreInput({ oiVelocityScore: oi, whaleInflowScore: whale }));
+      for (const oi of [10, -10, 0, 7, -5]) {
+        const result = computeScore(makeMinimalScoreInput({ oiVelocityScore: oi }));
         expect(result.total).toBeGreaterThanOrEqual(0);
         expect(result.total).toBeLessThanOrEqual(100);
       }
@@ -626,11 +384,6 @@ describe("composeScoreInput — alt data passthrough", () => {
     expect(result?.oiVelocityScore).toBe(7);
   });
 
-  it("whaleInflowScore passes through to ScoreInput", () => {
-    const result = composeScoreInput({ ...baseComposeInput, whaleInflowScore: -4 });
-    expect(result?.whaleInflowScore).toBe(-4);
-  });
-
   it("oiVelocityScore=null passes through as null", () => {
     const result = composeScoreInput({ ...baseComposeInput, oiVelocityScore: null });
     expect(result?.oiVelocityScore).toBeNull();
@@ -641,21 +394,10 @@ describe("composeScoreInput — alt data passthrough", () => {
     expect(result?.oiVelocityScore).toBeNull();
   });
 
-  it("both scores passed through simultaneously", () => {
-    const result = composeScoreInput({
-      ...baseComposeInput,
-      oiVelocityScore: 5,
-      whaleInflowScore: -3,
-    });
-    expect(result?.oiVelocityScore).toBe(5);
-    expect(result?.whaleInflowScore).toBe(-3);
-  });
-
   it("ScoreInput with alt data feeds into computeScore without error", () => {
     const scoreInput = composeScoreInput({
       ...baseComposeInput,
       oiVelocityScore: 4,
-      whaleInflowScore: 3,
     });
     expect(scoreInput).not.toBeNull();
     const result = computeScore(scoreInput!);
