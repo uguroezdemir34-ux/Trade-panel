@@ -315,31 +315,30 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       if (liqBandsMapRef.current.has(band.id)) continue;
       const isLong = band.side === "long";
       const baseColor = isLong ? "#22c55e" : "#ef4444";
-      const alpha = Math.max(0.25, Math.min(0.65, band.intensity));
+      const alpha = Math.max(0.45, Math.min(0.80, band.intensity + 0.2));
       const alphaHex = Math.round(alpha * 255).toString(16).padStart(2, "0");
-      const dimHex = "20";
-      const bw = band.price * 0.003;
+      const bw = band.price * 0.010; // 1% corridor (visible band)
       const center = candle.createPriceLine({
         price: band.price,
         color: `${baseColor}${alphaHex}`,
-        lineWidth: 2,
-        lineStyle: 2,
+        lineWidth: 3,
+        lineStyle: 0, // solid
         axisLabelVisible: true,
-        title: isLong ? `Liq↓ ${(band.intensity * 100).toFixed(0)}%` : `Liq↑ ${(band.intensity * 100).toFixed(0)}%`,
+        title: isLong ? `Liq Pool ↓ ${(band.intensity * 100).toFixed(0)}%` : `Liq Pool ↑ ${(band.intensity * 100).toFixed(0)}%`,
       });
       const upper = candle.createPriceLine({
         price: band.price + bw,
-        color: `${baseColor}${dimHex}`,
+        color: `${baseColor}38`,
         lineWidth: 1,
-        lineStyle: 2,
+        lineStyle: 1, // dotted
         axisLabelVisible: false,
         title: "",
       });
       const lower = candle.createPriceLine({
         price: band.price - bw,
-        color: `${baseColor}${dimHex}`,
+        color: `${baseColor}38`,
         lineWidth: 1,
-        lineStyle: 2,
+        lineStyle: 1,
         axisLabelVisible: false,
         title: "",
       });

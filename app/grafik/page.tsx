@@ -536,7 +536,8 @@ export default function GrafikPage() {
   const candles = (timeframe === "1m" || timeframe === "5m") ? localCandles : storedCandles;
   const candlesReady = candles.length > 0;
 
-  // Drive loading overlay: reset on pair/TF switch, set ready when data arrives, timeout after 25s
+  // Drive loading overlay: ready immediately if data exists, otherwise debounce 400ms
+  // before showing "loading" (prevents flash for cached pairs on quick switches).
   useEffect(() => {
     if (chartLoadTimerRef.current) {
       clearTimeout(chartLoadTimerRef.current);
@@ -546,10 +547,13 @@ export default function GrafikPage() {
       setChartLoadState("ready");
       return;
     }
-    setChartLoadState("loading");
+    // Delay showing overlay — if data arrives within 400ms (cached) overlay never shown
     chartLoadTimerRef.current = setTimeout(() => {
-      setChartLoadState("failed");
-    }, 25_000);
+      chartLoadTimerRef.current = setTimeout(() => {
+        setChartLoadState("failed");
+      }, 24_600);
+      setChartLoadState("loading");
+    }, 400);
     return () => {
       if (chartLoadTimerRef.current) {
         clearTimeout(chartLoadTimerRef.current);
