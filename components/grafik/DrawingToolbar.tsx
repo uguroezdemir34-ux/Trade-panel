@@ -16,12 +16,12 @@ const TOOLS: Array<{ mode: ChartClickMode; icon: string; title: string }> = [
   { mode: "ray",         icon: "→", title: "Yatay Işın"         },
   { mode: "trendline",   icon: "╱", title: "Trend Çizgisi"      },
   { mode: "extline",     icon: "↔", title: "Uzayan Çizgi"       },
-  { mode: "channel",     icon: "≡", title: "Paralel Kanal"      },
+  { mode: "channel",     icon: "∥", title: "Paralel Kanal"      },
   { mode: "fibonacci",   icon: "φ", title: "Fibonacci"           },
   { mode: "fibext",      icon: "Φ", title: "Fib Extension"       },
   { mode: "vline",       icon: "│", title: "Dikey Çizgi"         },
-  { mode: "crossline",   icon: "✛", title: "Cross Çizgi"         },
-  { mode: "fibtimezone", icon: "ƒ", title: "Fib Zaman Dilimi"   },
+  { mode: "crossline",   icon: "⊕", title: "Cross Çizgi"         },
+  { mode: "fibtimezone", icon: "Ψ", title: "Fib Zaman Dilimi"   },
 ];
 
 export function DrawingToolbar({
