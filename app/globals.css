@@ -228,3 +228,11 @@ textarea {
 }
 .flow-pulse-up   { animation: flow-pulse-up   1.5s ease-out forwards; }
 .flow-pulse-down { animation: flow-pulse-down 1.5s ease-out forwards; }
+
+/* FLOW nabız LED — sürekli neon halka */
+@keyframes flow-led-ring {
+  0%   { box-shadow: 0 0 0 0 var(--led-color, rgb(34 197 94 / 0.7)), 0 0 4px 1px var(--led-color, rgb(34 197 94 / 0.4)); }
+  60%  { box-shadow: 0 0 0 5px rgb(0 0 0 / 0), 0 0 6px 2px var(--led-color, rgb(34 197 94 / 0.2)); }
+  100% { box-shadow: 0 0 0 0 rgb(0 0 0 / 0), 0 0 4px 1px var(--led-color, rgb(34 197 94 / 0.4)); }
+}
+.flow-led { animation: flow-led-ring 2s ease-in-out infinite; }

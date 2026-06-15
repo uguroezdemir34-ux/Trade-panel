@@ -691,6 +691,18 @@ export default function KararPage() {
                 <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
               </div>
 
+              {/* Protection badges */}
+              <div className="flex flex-wrap gap-1.5">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/25 bg-brand/8 font-mono text-[9px] text-brand/70 tracking-wide select-none">
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand/60 shrink-0" />
+                  Profil: {result.pullbackActive ? "Geri Çekilme (Otomatik)" : "Trend Modu (Otomatik)"}
+                </span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-500/25 bg-emerald-500/8 font-mono text-[9px] text-emerald-400/70 tracking-wide select-none">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shrink-0" />
+                  Sinyal: Bar Kapanış Onaylı
+                </span>
+              </div>
+
               {/* Score gauge + compact FLOW badge */}
               <div className="flex gap-3 items-start">
                 <div className="flex-1 min-w-0">

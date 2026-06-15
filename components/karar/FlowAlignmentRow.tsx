@@ -91,7 +91,21 @@ export function FlowAlignmentRow({ flow }: Props) {
         aria-expanded={expanded}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-text-t4 text-xs font-mono shrink-0">🧠</span>
+          <span
+            className="flow-led shrink-0 w-2.5 h-2.5 rounded-full"
+            style={{
+              backgroundColor: flow.vetoed || flow.totalAdjustment < -5
+                ? "#ef4444"
+                : flow.totalAdjustment > 5
+                ? "#22c55e"
+                : "#f59e0b",
+              ["--led-color" as string]: flow.vetoed || flow.totalAdjustment < -5
+                ? "rgb(239 68 68 / 0.7)"
+                : flow.totalAdjustment > 5
+                ? "rgb(34 197 94 / 0.7)"
+                : "rgb(245 158 11 / 0.7)",
+            }}
+          />
           <span className="text-text-t2 text-xs font-medium shrink-0">FLOW</span>
           <span className={`${colorClass} text-xs font-medium truncate`}>
             {icon} {flow.humanSummary}
