@@ -488,6 +488,10 @@ export const tr: Dictionary = {
       used: "kullanıldı",
       free: "serbest",
       dailyTotal: "Günlük Toplam",
+      posSize: "Pozisyon Büyüklüğü",
+      usedMargin: "Kullanılan Teminat",
+      liqPriceLabel: "Likidasyon",
+      qxScore: "QX SKOR",
     },
   },
 
