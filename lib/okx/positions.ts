@@ -198,7 +198,9 @@ async function fetchAlgoMap(
   const ordTypes = ["conditional", "oco"] as const;
 
   async function fetchOneType(ordType: string): Promise<void> {
-    const path = `/api/okx/api/v5/trade/orders-algo-pending?ordType=${ordType}`;
+    // instType=SWAP zorunlu — OKX dokümantasyonu: ordType=conditional|oco için
+    // instType veya instId gerekir, aksi halde boş array döner.
+    const path = `/api/okx/api/v5/trade/orders-algo-pending?ordType=${ordType}&instType=SWAP`;
     try {
       let res: Response;
       if (clientCreds?.key) {
