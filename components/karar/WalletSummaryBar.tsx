@@ -8,7 +8,7 @@ import { useScoreStore } from "@/lib/store/scoreStore";
 import { useT } from "@/lib/i18n/context";
 import type { Pair } from "@/lib/constants/pairs";
 
-// ─── Formatting helpers ───────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 function fmt(n: number, dec = 0): string {
   return n.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
 }
@@ -21,28 +21,44 @@ function fmtPx(n: number): string {
   if (n >= 1)      return n.toFixed(4);
   return n.toFixed(6);
 }
+function safe(n: number): number {
+  return isFinite(n) ? n : 0;
+}
+function safeDiv(a: number, b: number): number {
+  return b !== 0 && isFinite(b) ? safe(a / b) : 0;
+}
 
-// ─── Color constants (Neon Emerald / Neon Crimson — user spec) ───────────────
+// ─── Color tokens ─────────────────────────────────────────────────────────────
 const EMERALD = "#10b981";
 const CRIMSON = "#ef4444";
 const AMBER   = "#f59e0b";
+const GREY    = "#6b7280";
 
-// ─── Score badge ──────────────────────────────────────────────────────────────
-function scoreBadgeColor(
+// ─── QX Score color — direction-aware thresholds ─────────────────────────────
+// LONG:  ≥55 → emerald (uyumlu), 40–54 → amber (uyarı), <40 → crimson (ters)
+// SHORT: ≤45 → emerald (uyumlu), 46–60 → amber (uyarı), >60 → crimson (ters)
+function qxScoreColor(
   score: number | null,
   posDir: "LONG" | "SHORT" | "NEUTRAL",
-  scoreDir: "LONG" | "SHORT" | "NEUTRAL" | undefined,
 ): string {
-  if (score === null) return "#6b7280"; // grey — no data
-  const conflict =
-    (posDir === "LONG"  && scoreDir === "SHORT") ||
-    (posDir === "SHORT" && scoreDir === "LONG");
-  if (conflict || score < 50) return CRIMSON;
-  if (score >= 70) return EMERALD;
-  return AMBER;
+  if (score === null) return GREY;
+  if (posDir === "LONG") {
+    if (score >= 55) return EMERALD;
+    if (score >= 40) return AMBER;
+    return CRIMSON;
+  }
+  if (posDir === "SHORT") {
+    if (score <= 45) return EMERALD;
+    if (score <= 60) return AMBER;
+    return CRIMSON;
+  }
+  // NEUTRAL
+  if (score >= 55) return EMERALD;
+  if (score >= 40) return AMBER;
+  return CRIMSON;
 }
 
-// ─── QX Score Rozeti ─────────────────────────────────────────────────────────
+// ─── QX Score mini-LED rozeti ─────────────────────────────────────────────────
 function QxScoreBadge({
   pair,
   posDir,
@@ -51,34 +67,34 @@ function QxScoreBadge({
   posDir: "LONG" | "SHORT" | "NEUTRAL";
 }) {
   const result = useScoreStore((s) => s.results[pair]);
-  const score    = result?.score    ?? null;
-  const scoreDir = result?.direction;
-  const color    = scoreBadgeColor(score, posDir, scoreDir);
+  const score  = result?.score ?? null;
+  const color  = qxScoreColor(score, posDir);
 
   return (
     <div
-      className="flex items-center gap-1 rounded px-1.5 py-0.5 font-mono shrink-0"
+      className="inline-flex items-center gap-1.5 rounded px-2 py-0.5 font-mono shrink-0"
       style={{
-        border: `1px solid ${color}40`,
-        background: `${color}12`,
+        border: `1px solid ${color}38`,
+        background: `${color}0e`,
       }}
     >
-      <span className="text-2xs font-bold tracking-wider" style={{ color }}>QX</span>
+      <span className="text-2xs font-bold tracking-widest" style={{ color }}>QX</span>
       <span className="text-xs font-bold tabular-nums" style={{ color }}>
         {score !== null ? Math.round(score) : "—"}
       </span>
-      <div
-        className="w-1.5 h-1.5 rounded-full shrink-0"
+      {/* LED nokta */}
+      <span
+        className="inline-block w-2 h-2 rounded-full shrink-0"
         style={{
           background: color,
-          boxShadow: `0 0 5px ${color}90`,
+          boxShadow: `0 0 5px 1px ${color}80, 0 0 10px 2px ${color}40`,
         }}
       />
     </div>
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
+// ─── WalletSummaryBar ─────────────────────────────────────────────────────────
 export function WalletSummaryBar() {
   const t = useT();
 
@@ -93,22 +109,21 @@ export function WalletSummaryBar() {
     () =>
       trades
         .filter((tr) => tr.status === "closed" && (tr.exit?.closedAt ?? 0) >= lastDailyResetAt)
-        .reduce((sum, tr) => sum + (tr.exit?.pnlUsd ?? 0), 0),
+        .reduce((sum, tr) => sum + safe(tr.exit?.pnlUsd ?? 0), 0),
     [trades, lastDailyResetAt],
   );
 
   const unrealizedPnl = useMemo(
-    () => openPositions.reduce((sum, p) => sum + p.upl, 0),
+    () => openPositions.reduce((sum, p) => sum + safe(p.upl), 0),
     [openPositions],
   );
 
   const dailyTotalUsd  = todayRealizedPnl + unrealizedPnl;
   const marginUsed     = balanceTotal - balanceFree;
   const marginRatioPct = balanceTotal > 0
-    ? Math.min(100, (marginUsed / balanceTotal) * 100)
+    ? Math.min(100, safeDiv(marginUsed, balanceTotal) * 100)
     : 0;
 
-  // Margin bar colours (existing token system)
   const marginBarColor   = marginRatioPct >= 80 ? "bg-signal-red"   : marginRatioPct >= 50 ? "bg-signal-amber"   : "bg-signal-green";
   const marginLabelColor = marginRatioPct >= 80 ? "text-signal-red" : marginRatioPct >= 50 ? "text-signal-amber" : "text-signal-green";
   const marginStatus     = marginRatioPct >= 80
@@ -117,14 +132,13 @@ export function WalletSummaryBar() {
     ? t("portfolio.wallet.caution")
     : t("portfolio.wallet.safe");
 
-  // Daily PnL colours (Neon spec)
   const dailyColor = dailyTotalUsd >= 0 ? EMERALD : CRIMSON;
   const noData     = balanceTotal === 0;
 
   return (
-    <div className="rounded-lg border border-border bg-surface-s1 overflow-hidden">
+    <div className="rounded-xl border border-border bg-surface-s1 overflow-hidden">
 
-      {/* ── Satır 1: Equity / Margin Bar / Daily PnL ─────────────────── */}
+      {/* ── Üst: Equity / Margin Barı / Günlük P&L ──────────────────── */}
       <div className="grid grid-cols-3 gap-3 px-3 py-2.5">
 
         {/* Toplam Özsermaye */}
@@ -173,7 +187,9 @@ export function WalletSummaryBar() {
             {t("portfolio.wallet.dailyTotal")}
           </span>
           <span
-            className={`font-mono text-sm font-bold tabular-nums ${noData ? "text-text-t3" : dailyTotalUsd >= 0 ? "pnl-breathe-green" : "pnl-breathe-red"}`}
+            className={`font-mono text-sm font-bold tabular-nums ${
+              noData ? "text-text-t3" : dailyTotalUsd >= 0 ? "pnl-breathe-green" : "pnl-breathe-red"
+            }`}
             style={noData ? undefined : { color: dailyColor }}
           >
             {noData ? "—" : `${dailyTotalUsd >= 0 ? "+" : ""}$${fmt(Math.abs(dailyTotalUsd), 2)}`}
@@ -186,54 +202,59 @@ export function WalletSummaryBar() {
         </div>
       </div>
 
-      {/* ── Satır 2+: Açık Pozisyon Kartları (QUANTIX × OKX stili) ──── */}
+      {/* ── Pozisyon Kartları ─────────────────────────────────────────── */}
       {openPositions.map((pos) => {
-        const isLong   = pos.direction === "LONG";
+        const isLong  = pos.direction === "LONG";
         const dirColor = isLong ? EMERALD : CRIMSON;
-        const pnlColor = pos.upl >= 0 ? EMERALD : CRIMSON;
-        const roePct   = pos.uplRatio * 100;
-        const margin   = pos.leverage > 0 ? pos.notional / pos.leverage : 0;
-
-        // Aurora glow — yön bazlı, hafif
-        const cardStyle = {
-          background: `linear-gradient(135deg, ${dirColor}05 0%, transparent 55%)`,
-          boxShadow: `inset 0 0 0 1px ${dirColor}18`,
-        };
+        const uplSafe  = safe(pos.upl);
+        const roePct   = safe(pos.uplRatio) * 100;
+        const pnlColor = uplSafe >= 0 ? EMERALD : CRIMSON;
+        const margin   = safeDiv(pos.notional, pos.leverage > 0 ? pos.leverage : 1);
 
         return (
-          <div key={pos.instId} className="border-t border-border px-3 py-2.5" style={cardStyle}>
+          <div
+            key={pos.instId}
+            className="border-t border-border px-3 py-3"
+            style={{
+              // Hafif aurora: yön rengi sol üstten soluklaşır → sayfa bg'si görünür
+              background: `linear-gradient(150deg, ${dirColor}09 0%, transparent 62%)`,
+              boxShadow: `inset 0 0 0 1px ${dirColor}20, inset 0 0 28px 0 ${dirColor}05`,
+            }}
+          >
+            {/* ── Başlık satırı ───────────────────────────────────────── */}
+            <div className="flex items-start justify-between gap-2 mb-3">
 
-            {/* ── Üst satır: Yön rozeti + Parite + Borsa bilgisi | QX Skor | P&L ── */}
-            <div className="flex items-start justify-between gap-2 mb-2.5">
+              {/* Sol: yön+kaldıraç rozeti · pair · mod · QX skor */}
+              <div className="flex flex-col gap-1.5 min-w-0">
 
-              {/* Sol: rozet + pair + borsa */}
-              <div className="flex flex-col gap-1 min-w-0">
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {/* Yön rozeti */}
+                  {/* Yön + kaldıraç tek rozette */}
                   <div
-                    className="font-mono text-2xs font-bold px-2 py-0.5 rounded shrink-0"
+                    className="inline-flex items-center gap-1 font-mono text-2xs font-bold px-2 py-0.5 rounded-md shrink-0"
                     style={{
                       color: dirColor,
-                      background: `${dirColor}18`,
-                      border: `1px solid ${dirColor}35`,
-                      letterSpacing: "0.08em",
+                      background: `${dirColor}16`,
+                      border: `1px solid ${dirColor}40`,
+                      letterSpacing: "0.05em",
                     }}
                   >
-                    {isLong ? "▲ LONG" : "▼ SHORT"}
+                    <span>{isLong ? "▲ LONG" : "▼ SHORT"}</span>
+                    <span style={{ opacity: 0.45 }}>·</span>
+                    <span>{pos.leverage}x</span>
                   </div>
 
-                  {/* Pair */}
+                  {/* Parite */}
                   <span className="font-mono text-sm font-bold text-text-t1 shrink-0">
                     {pos.pair}
                   </span>
 
-                  {/* Borsa modu + kaldıraç */}
+                  {/* Margin modu */}
                   <span className="font-mono text-2xs text-text-t3 shrink-0">
-                    {pos.mgnMode === "isolated" ? "Isolated" : "Cross"} · {pos.leverage}×
+                    {pos.mgnMode === "isolated" ? "Isolated" : "Cross"}
                   </span>
                 </div>
 
-                {/* QX Skor rozeti */}
+                {/* QX Skor satırı */}
                 <div className="flex items-center gap-1.5">
                   <span className="font-mono text-2xs text-text-t4 tracking-widest uppercase">
                     {t("portfolio.wallet.qxScore")}
@@ -242,27 +263,29 @@ export function WalletSummaryBar() {
                 </div>
               </div>
 
-              {/* Sağ: Büyük P&L */}
+              {/* Sağ: Büyük P&L — ROE% üst, USD alt */}
               <div className="flex flex-col items-end gap-0.5 shrink-0">
                 <span
-                  className={`font-mono text-lg font-bold tabular-nums leading-tight ${pos.upl >= 0 ? "pnl-breathe-green" : "pnl-breathe-red"}`}
+                  className={`font-mono text-xl font-bold tabular-nums leading-none ${
+                    uplSafe >= 0 ? "pnl-breathe-green" : "pnl-breathe-red"
+                  }`}
                   style={{ color: pnlColor }}
                 >
-                  {pos.upl >= 0 ? "+" : ""}{roePct.toFixed(2)}%
+                  {signed(roePct)}%
                 </span>
                 <span
                   className="font-mono text-sm font-semibold tabular-nums"
                   style={{ color: pnlColor }}
                 >
-                  {pos.upl >= 0 ? "+" : ""}${fmt(Math.abs(pos.upl), 2)}
+                  {uplSafe >= 0 ? "+" : ""}${fmt(Math.abs(uplSafe), 2)}
                 </span>
               </div>
             </div>
 
-            {/* ── Grid: 3 sütun × 2 satır ─────────────────────────────── */}
-            <div className="grid grid-cols-3 gap-x-2 gap-y-2">
+            {/* ── Detay grid: 3 × 2 ───────────────────────────────────── */}
+            <div className="grid grid-cols-3 gap-x-2 gap-y-2.5">
 
-              {/* Satır 1 */}
+              {/* Satır 1: Pozisyon Büyüklüğü / Kullanılan Teminat / Likidasyon */}
               <div>
                 <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
                   {t("portfolio.wallet.posSize")}
@@ -293,7 +316,7 @@ export function WalletSummaryBar() {
                 </div>
               </div>
 
-              {/* Satır 2 */}
+              {/* Satır 2: Giriş / Mark / ROE */}
               <div>
                 <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
                   {t("position.entry")}
