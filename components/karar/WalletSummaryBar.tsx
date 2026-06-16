@@ -79,7 +79,7 @@ function QxScoreBadge({
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
-export function WalletSummaryBar(): React.ReactElement {
+export function WalletSummaryBar() {
   const t = useT();
 
   const balanceTotal     = useAccountStore((s) => s.balanceTotal);
