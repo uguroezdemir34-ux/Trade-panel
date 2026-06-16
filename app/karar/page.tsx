@@ -476,13 +476,18 @@ export default function KararPage() {
             )}
           </div>
 
-          <ScoreLeaderboard
-            results={allResults}
-            activePair={activePair}
-            onSelect={setActivePair}
-          />
+          {/* Scores + pair grid: side by side on wider screens */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {/* Left col: top scores */}
+            <ScoreLeaderboard
+              results={allResults}
+              activePair={activePair}
+              onSelect={setActivePair}
+            />
 
-          <GoSignalLog />
+            {/* Right col: signal log + filter + pair grid */}
+            <div className="flex flex-col gap-2">
+              <GoSignalLog />
 
           {/* Pair group filter */}
           <div className="flex flex-wrap gap-1">
@@ -537,7 +542,7 @@ export default function KararPage() {
           </div>
 
           {/* Pair grid */}
-          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(displayPairs.length, 5)}, 1fr)` }}>
+          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(displayPairs.length, 3)}, 1fr)` }}>
             {displayPairs.map((p) => {
               const pr = allResults[p];
               const v = pr?.verdict;
@@ -685,6 +690,8 @@ export default function KararPage() {
               );
             })}
           </div>
+            </div>{/* end right col */}
+          </div>{/* end md:grid-cols-2 */}
         </div>
 
         {/* RIGHT MAIN — active pair details */}
