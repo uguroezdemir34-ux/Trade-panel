@@ -244,6 +244,14 @@ export const ar: Dictionary = {
     goSignalEmptyNote: "No GO signals yet — fills automatically as the system runs.",
     // TODO: translate
     scoreFilterAll: "All",
+    // TODO: translate
+volumeSection: "VOLUME",
+    // TODO: translate
+    execForwardTestRequired: "Activate Forward Test Mode — order placement disabled.",
+    // TODO: translate
+    keyboardShortcutHint: "Keyboard shortcuts (? key)",
+    // TODO: translate
+    pairGoHistory: "{pair} GO History",
 },
 
     // TODO: translate
@@ -256,6 +264,10 @@ export const ar: Dictionary = {
     signalModeApiNote: "⚙ Signal mode: API key is used for balance and position display only. No trade permission required — read-only key is sufficient.",
   settings: {
     title: "الإعدادات",
+    // TODO: translate
+signalModeLabel: "⚙ SIGNAL MODE",
+    // TODO: translate
+    signalModeManageExchange: "Order management disabled. Manage positions from OKX, Binance or Bybit.",
     demoMode: {
       label: "وضع التجريبي",
       description: "الاتصال بنقطة نهاية التداول التجريبي لـ OKX. لا أموال حقيقية.",
@@ -943,6 +955,36 @@ export const ar: Dictionary = {
     loadError: "Failed to load, retrying...",
     // TODO: translate
     heightAdjust: "Adjust chart height",
+    // TODO: translate
+toolCursor: "Cursor",
+    // TODO: translate
+    toolHline: "H-Line",
+    // TODO: translate
+    toolRay: "Ray",
+    // TODO: translate
+    toolTrendline: "Trend Line",
+    // TODO: translate
+    toolExtline: "Extended Line",
+    // TODO: translate
+    toolChannel: "Parallel Channel",
+    // TODO: translate
+    toolVline: "V-Line",
+    // TODO: translate
+    toolCrossline: "Cross Line",
+    // TODO: translate
+    toolFibTimezone: "Fib Time Zone",
+    // TODO: translate
+    watchlistVolumeDelta: "Volume Delta",
+    // TODO: translate
+    watchlist24hHigh: "24h High",
+    // TODO: translate
+    watchlist24hLow: "24h Low",
+    // TODO: translate
+    watchlistChange: "Chg",
+    // TODO: translate
+    watchlistTitle: "Watchlist",
+    fibonacci: "Fibonacci",
+    fibext: "Fib Extension",
     legend: {
       candleUp: "شمعة صاعدة",
       candleDown: "شمعة هابطة",

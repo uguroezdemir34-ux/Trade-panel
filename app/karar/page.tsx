@@ -408,7 +408,7 @@ export default function KararPage() {
       return;
     }
 
-    setExecError("Forward Test Modunu etkinleştirin — emir gönderme devre dışı.");
+    setExecError(t("karar.execForwardTestRequired"));
     setIsExecuting(false);
   }
 
@@ -453,7 +453,7 @@ export default function KararPage() {
         <button
           onClick={() => setShowShortcuts(true)}
           className="font-mono text-2xs text-text-t4 hover:text-text-t2 transition-colors border border-border/40 rounded px-2 py-0.5"
-          title="Klavye kısayolları (? tuşu)"
+          title={t("karar.keyboardShortcutHint")}
         >
           ⌨ ?
         </button>
@@ -756,11 +756,11 @@ export default function KararPage() {
                   <div className="flex flex-wrap gap-1.5">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/25 bg-brand/8 font-mono text-[9px] text-brand/70 tracking-wide select-none">
                       <span className="w-1.5 h-1.5 rounded-full bg-brand/60 shrink-0" />
-                      Profil: {result.pullbackActive ? "Geri Çekilme (Otomatik)" : "Trend Modu (Otomatik)"}
+                      {result.pullbackActive ? t("karar.profilePullback") : t("karar.profileTrend")}
                     </span>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-500/25 bg-emerald-500/8 font-mono text-[9px] text-emerald-400/70 tracking-wide select-none">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shrink-0" />
-                      Sinyal: Bar Kapanış Onaylı
+                      {t("karar.signalBarClose")}
                     </span>
                   </div>
 
@@ -842,7 +842,7 @@ export default function KararPage() {
 
                 {/* HACİM */}
                 <AccordionSection
-                  title="HACİM"
+                  title={t("karar.volumeSection")}
                   badge={`vol ${result.sub.vol}/8 · bb ${result.sub.bb}/8 · vwap ${result.sub.vwap}/10`}
                   dotColor={(result.sub.vol + result.sub.bb + result.sub.vwap) >= 17 ? "#22c55e" : (result.sub.vol + result.sub.bb + result.sub.vwap) >= 10 ? "#f59e0b" : "#ef4444"}
                   open={showHacim}

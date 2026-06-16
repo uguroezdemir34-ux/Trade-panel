@@ -1,6 +1,7 @@
 "use client";
 
 import type { ChartClickMode } from "./ChartControls";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   clickMode: ChartClickMode;
@@ -10,18 +11,18 @@ interface Props {
   onClearAll: () => void;
 }
 
-const TOOLS: Array<{ mode: ChartClickMode; icon: string; title: string }> = [
-  { mode: "none",        icon: "↖", title: "İmleç"              },
-  { mode: "hline",       icon: "─", title: "Yatay Çizgi"        },
-  { mode: "ray",         icon: "→", title: "Yatay Işın"         },
-  { mode: "trendline",   icon: "╱", title: "Trend Çizgisi"      },
-  { mode: "extline",     icon: "↔", title: "Uzayan Çizgi"       },
-  { mode: "channel",     icon: "∥", title: "Paralel Kanal"      },
-  { mode: "fibonacci",   icon: "φ", title: "Fibonacci"           },
-  { mode: "fibext",      icon: "Φ", title: "Fib Extension"       },
-  { mode: "vline",       icon: "│", title: "Dikey Çizgi"         },
-  { mode: "crossline",   icon: "⊕", title: "Cross Çizgi"         },
-  { mode: "fibtimezone", icon: "Ψ", title: "Fib Zaman Dilimi"   },
+const TOOLS: Array<{ mode: ChartClickMode; icon: string; titleKey: string }> = [
+  { mode: "none",        icon: "↖", titleKey: "grafik.toolCursor"      },
+  { mode: "hline",       icon: "─", titleKey: "grafik.toolHline"        },
+  { mode: "ray",         icon: "→", titleKey: "grafik.toolRay"          },
+  { mode: "trendline",   icon: "╱", titleKey: "grafik.toolTrendline"    },
+  { mode: "extline",     icon: "↔", titleKey: "grafik.toolExtline"      },
+  { mode: "channel",     icon: "∥", titleKey: "grafik.toolChannel"      },
+  { mode: "fibonacci",   icon: "φ", titleKey: "grafik.fibonacci"        },
+  { mode: "fibext",      icon: "Φ", titleKey: "grafik.fibext"           },
+  { mode: "vline",       icon: "│", titleKey: "grafik.toolVline"        },
+  { mode: "crossline",   icon: "⊕", titleKey: "grafik.toolCrossline"   },
+  { mode: "fibtimezone", icon: "Ψ", titleKey: "grafik.toolFibTimezone" },
 ];
 
 export function DrawingToolbar({
@@ -31,15 +32,16 @@ export function DrawingToolbar({
   pendingPoint,
   onClearAll,
 }: Props): React.ReactElement {
+  const t = useT();
   return (
     <div className="flex flex-col items-center gap-0.5 px-0.5 py-1 bg-bg-card border-r border-border shrink-0 rounded-l-lg">
-      {TOOLS.map(({ mode, icon, title }) => {
+      {TOOLS.map(({ mode, icon, titleKey }) => {
         const isActive  = clickMode === mode && mode !== "none";
         const isPending = pendingPoint && clickMode === mode;
         return (
           <button
             key={mode}
-            title={title}
+            title={t(titleKey)}
             onClick={() => onSetClickMode(isActive ? "none" : mode)}
             className={[
               "w-7 h-7 rounded flex items-center justify-center font-mono text-sm transition-colors select-none",
@@ -58,7 +60,7 @@ export function DrawingToolbar({
         <>
           <div className="w-5 border-t border-border/40 my-0.5" />
           <button
-            title="Tüm çizgileri sil"
+            title={t("grafik.clearLines")}
             onClick={onClearAll}
             className="w-7 h-7 rounded flex items-center justify-center font-mono text-xs text-text-t4 hover:text-red-400 hover:bg-bg-hover transition-colors border border-transparent"
           >
