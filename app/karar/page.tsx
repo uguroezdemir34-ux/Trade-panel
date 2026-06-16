@@ -59,6 +59,7 @@ import { RegimeBadge } from "@/components/karar/RegimeBadge";
 import { usePairNotesStore } from "@/lib/store/pairNotesStore";
 import { PairSignalHistory } from "@/components/karar/PairSignalHistory";
 import { PairTradeStats } from "@/components/karar/PairTradeStats";
+import { WalletSummaryBar } from "@/components/karar/WalletSummaryBar";
 
 export default function KararPage() {
   const t = useT();
@@ -424,6 +425,8 @@ export default function KararPage() {
           </span>
         </div>
       )}
+
+      <WalletSummaryBar />
 
       <StreakBanner />
 
