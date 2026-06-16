@@ -963,13 +963,16 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         onPointerDown={(e) => {
           pointerStartRef.current = { x: e.clientX, y: e.clientY };
         }}
+        onPointerCancel={() => {
+          pointerStartRef.current = null;
+        }}
         onPointerUp={(e) => {
           const start = pointerStartRef.current;
           pointerStartRef.current = null;
           if (!start) return;
           const dx = e.clientX - start.x;
           const dy = e.clientY - start.y;
-          if (dx * dx + dy * dy > 100) return; // >10px = pan/drag, not a tap
+          if (dx * dx + dy * dy > 900) return; // >30px = pan/drag, not a tap (mobile ~11-15px jitter)
           const chart = chartRef.current;
           const candle = candleRef.current;
           if (!chart || !candle) return;
