@@ -125,7 +125,18 @@ export const hi: Dictionary = {
     disclaimer1: "• TP1 पर 50% बंद करें और Stop को Break-Even पर ले जाएं",
     disclaimer2: "• प्रतिदिन अधिकतम 2 ट्रेड नियम लागू होता है",
     disclaimer3: "• जोखिम {pct}% तक सीमित है",
-  },
+  
+    check1: "I'm acting on a GO signal — not FOMO",
+    check2: "{amount} — I accept this as my risk",
+    check3: "I'm emotionally balanced — no revenge trading",
+    check4: "I trust the system, I'm following the plan",
+    remaining: "{n} left",
+    historicalEdge: "Historical Edge",
+    mentalChecklist: "Mental Checklist",
+    marginMode: "Margin Mode",
+    cross: "Cross",
+    isolated: "Isolated",
+},
 
   karar: {
     title: "🎯 निर्णय",
@@ -520,7 +531,17 @@ export const hi: Dictionary = {
       insufficientBalance: "अपर्याप्त शेष या पैरामीटर त्रुटि",
       alreadyClosed: "पोजीशन पहले से बंद है",
     },
-  },
+  
+    liqDanger: "LIQ ZONE",
+    liqFrom: "to liq",
+    scaleIn: "Add",
+    scaleOut: "Scale Out",
+    scaleInLabel: "Qty (coin)",
+    scaleInSubmit: "Add to Position",
+    editSlTp: "Edit SL/TP",
+    updateSlTp: "Update",
+    cancelEdit: "Cancel",
+},
 
   risk: {
     title: "🛡️ जोखिम और अनुशासन",
@@ -820,7 +841,13 @@ export const hi: Dictionary = {
       srSupport: "Support",
       srResistance: "Resistance",
     },
-  },
+  
+    ema200: "EMA 200",
+    showVolume: "Volume",
+    showRsi: "RSI",
+    showMacd: "MACD",
+    showBb: "BB(20)",
+},
 
   trades: {
     empty: "अभी कोई ट्रेड नहीं",

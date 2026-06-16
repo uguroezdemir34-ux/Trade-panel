@@ -125,7 +125,18 @@ export const ko: Dictionary = {
     disclaimer1: "• TP1 달성 시 50% 청산하고 스탑을 손익분기점으로 이동",
     disclaimer2: "• 하루 최대 2회 거래 규칙 적용",
     disclaimer3: "• 리스크는 {pct}%로 제한",
-  },
+  
+    check1: "I'm acting on a GO signal — not FOMO",
+    check2: "{amount} — I accept this as my risk",
+    check3: "I'm emotionally balanced — no revenge trading",
+    check4: "I trust the system, I'm following the plan",
+    remaining: "{n} left",
+    historicalEdge: "Historical Edge",
+    mentalChecklist: "Mental Checklist",
+    marginMode: "Margin Mode",
+    cross: "Cross",
+    isolated: "Isolated",
+},
 
   karar: {
     title: "🎯 결정",
@@ -520,7 +531,17 @@ export const ko: Dictionary = {
       insufficientBalance: "잔고 부족 또는 매개변수 오류",
       alreadyClosed: "포지션이 이미 청산됨",
     },
-  },
+  
+    liqDanger: "LIQ ZONE",
+    liqFrom: "to liq",
+    scaleIn: "Add",
+    scaleOut: "Scale Out",
+    scaleInLabel: "Qty (coin)",
+    scaleInSubmit: "Add to Position",
+    editSlTp: "Edit SL/TP",
+    updateSlTp: "Update",
+    cancelEdit: "Cancel",
+},
 
   risk: {
     title: "🛡️ 리스크 & 규율",
@@ -820,7 +841,13 @@ export const ko: Dictionary = {
       srSupport: "Support",
       srResistance: "Resistance",
     },
-  },
+  
+    ema200: "EMA 200",
+    showVolume: "Volume",
+    showRsi: "RSI",
+    showMacd: "MACD",
+    showBb: "BB(20)",
+},
 
   trades: {
     empty: "아직 거래 없음",

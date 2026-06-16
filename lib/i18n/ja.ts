@@ -125,7 +125,18 @@ export const ja: Dictionary = {
     disclaimer1: "• TP1到達時に50%決済し、ストップをブレイクイーブンに移動",
     disclaimer2: "• 1日最大2トレードルール適用",
     disclaimer3: "• リスクは{pct}%に制限",
-  },
+  
+    check1: "I'm acting on a GO signal — not FOMO",
+    check2: "{amount} — I accept this as my risk",
+    check3: "I'm emotionally balanced — no revenge trading",
+    check4: "I trust the system, I'm following the plan",
+    remaining: "{n} left",
+    historicalEdge: "Historical Edge",
+    mentalChecklist: "Mental Checklist",
+    marginMode: "Margin Mode",
+    cross: "Cross",
+    isolated: "Isolated",
+},
 
   karar: {
     title: "🎯 判断",
@@ -520,7 +531,17 @@ export const ja: Dictionary = {
       insufficientBalance: "残高不足またはパラメーターエラー",
       alreadyClosed: "ポジションはすでに決済されています",
     },
-  },
+  
+    liqDanger: "LIQ ZONE",
+    liqFrom: "to liq",
+    scaleIn: "Add",
+    scaleOut: "Scale Out",
+    scaleInLabel: "Qty (coin)",
+    scaleInSubmit: "Add to Position",
+    editSlTp: "Edit SL/TP",
+    updateSlTp: "Update",
+    cancelEdit: "Cancel",
+},
 
   risk: {
     title: "🛡️ リスク & 規律",
@@ -820,7 +841,13 @@ export const ja: Dictionary = {
       srSupport: "Support",
       srResistance: "Resistance",
     },
-  },
+  
+    ema200: "EMA 200",
+    showVolume: "Volume",
+    showRsi: "RSI",
+    showMacd: "MACD",
+    showBb: "BB(20)",
+},
 
   trades: {
     empty: "まだトレードがありません",

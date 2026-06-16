@@ -125,7 +125,18 @@ export const pt: Dictionary = {
     disclaimer1: "• Ao atingir TP1, fechar 50% e mover Stop para Break-Even",
     disclaimer2: "• Regra de máximo 2 trades/dia se aplica",
     disclaimer3: "• Risco limitado a {pct}%",
-  },
+  
+    check1: "I'm acting on a GO signal — not FOMO",
+    check2: "{amount} — I accept this as my risk",
+    check3: "I'm emotionally balanced — no revenge trading",
+    check4: "I trust the system, I'm following the plan",
+    remaining: "{n} left",
+    historicalEdge: "Historical Edge",
+    mentalChecklist: "Mental Checklist",
+    marginMode: "Margin Mode",
+    cross: "Cross",
+    isolated: "Isolated",
+},
 
   karar: {
     title: "🎯 DECISÃO",
@@ -520,7 +531,17 @@ export const pt: Dictionary = {
       insufficientBalance: "Saldo insuficiente ou erro de parâmetro",
       alreadyClosed: "Posição já fechada",
     },
-  },
+  
+    liqDanger: "LIQ ZONE",
+    liqFrom: "to liq",
+    scaleIn: "Add",
+    scaleOut: "Scale Out",
+    scaleInLabel: "Qty (coin)",
+    scaleInSubmit: "Add to Position",
+    editSlTp: "Edit SL/TP",
+    updateSlTp: "Update",
+    cancelEdit: "Cancel",
+},
 
   risk: {
     title: "🛡️ RISCO & DISCIPLINA",
@@ -818,7 +839,13 @@ export const pt: Dictionary = {
       srSupport: "Support",
       srResistance: "Resistance",
     },
-  },
+  
+    ema200: "EMA 200",
+    showVolume: "Volume",
+    showRsi: "RSI",
+    showMacd: "MACD",
+    showBb: "BB(20)",
+},
 
   trades: {
     empty: "Sem trades ainda",
