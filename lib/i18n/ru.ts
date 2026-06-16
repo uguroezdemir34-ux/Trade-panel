@@ -556,6 +556,15 @@ volumeSection: "ОБЪЁМ",
       liqPriceLabel: "Liq. Price",
       qxScore: "QX SCORE",
     },
+    wallet: {
+      marginUsed: "Margin Usage",
+      safe: "Safe",
+      caution: "Caution",
+      danger: "Critical",
+      used: "used",
+      free: "free",
+      dailyTotal: "Daily Total",
+    },
   },
 
   position: {
