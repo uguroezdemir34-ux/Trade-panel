@@ -485,6 +485,10 @@ export const fr: Dictionary = {
       used: "used",
       free: "free",
       dailyTotal: "Daily Total",
+      posSize: "Position Size",
+      usedMargin: "Used Margin",
+      liqPriceLabel: "Liq. Price",
+      qxScore: "QX SCORE",
     },
   },
 
