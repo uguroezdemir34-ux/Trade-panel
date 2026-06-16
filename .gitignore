@@ -11,3 +11,6 @@ tsconfig.tsbuildinfo
 # Android release keystore — asla commit'leme
 *.jks
 *.keystore
+
+# Claude Code internal
+.claude/
