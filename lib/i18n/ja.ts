@@ -223,6 +223,8 @@ export const ja: Dictionary = {
       clearKeys: "クリア",
       keySaved: "キーを保存（暗号化済み）",
       keyActive: "有効",
+      withdrawalNote: "DISABLE withdrawal permissions on this API key. Read + trade only — no withdrawals.",
+      noAuthWarning: "Sign in to save API keys securely to your account. Anonymous mode does not support credential storage.",
     },
     telegram: {
       title: "💬 Telegram VIPチャンネル",

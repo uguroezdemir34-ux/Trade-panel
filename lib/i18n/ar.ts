@@ -223,6 +223,8 @@ export const ar: Dictionary = {
       clearKeys: "مسح",
       keySaved: "تم حفظ المفاتيح (مشفرة)",
       keyActive: "نشط",
+      withdrawalNote: "DISABLE withdrawal permissions on this API key. Read + trade only — no withdrawals.",
+      noAuthWarning: "Sign in to save API keys securely to your account. Anonymous mode does not support credential storage.",
     },
     telegram: {
       title: "💬 قناة Telegram VIP",

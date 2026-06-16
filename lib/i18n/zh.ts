@@ -223,6 +223,8 @@ export const zh: Dictionary = {
       clearKeys: "清除",
       keySaved: "密钥已保存（已加密）",
       keyActive: "已激活",
+      withdrawalNote: "DISABLE withdrawal permissions on this API key. Read + trade only — no withdrawals.",
+      noAuthWarning: "Sign in to save API keys securely to your account. Anonymous mode does not support credential storage.",
     },
     telegram: {
       title: "💬 Telegram VIP频道",

@@ -235,6 +235,8 @@ export const tr: Dictionary = {
       clearKeys: "Temizle",
       keySaved: "Anahtarlar kaydedildi (şifreli)",
       keyActive: "Aktif",
+      withdrawalNote: "Bu API anahtarında para çekme (withdrawal) yetkisini KAPATIN. Yalnızca okuma + işlem izni verin.",
+      noAuthWarning: "API anahtarlarını hesabınıza güvenli kaydetmek için oturum açın. Anonim modda anahtar kaydı desteklenmez.",
     },
     telegram: {
       title: "💬 Telegram VIP Kanalı",
