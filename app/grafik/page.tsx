@@ -41,7 +41,8 @@ const SEC_TF: Record<Timeframe, Timeframe> = {
   "4h": "1h",
   "1h": "15m",
   "15m": "5m",
-  "5m": "5m",
+  "5m": "1m",
+  "1m": "1m",
 };
 
 /** Build ChartSeries from a candle array + overlay flags */
