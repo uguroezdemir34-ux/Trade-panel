@@ -68,6 +68,13 @@ export interface DrawnLine {
   label?: string;
 }
 
+export interface LiqBand {
+  id: string;
+  price: number;
+  side: "long" | "short";
+  intensity: number;
+}
+
 export interface ChartSeries {
   candles: CandlePoint[];
   ema20?: LinePoint[];
