@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import type { Pair } from "@/lib/constants/pairs";
+import { useT } from "@/lib/i18n/context";
 
 /**
  * PairTradeStats — karar sayfası pair detayında kompakt performans özeti.
@@ -14,6 +15,7 @@ import type { Pair } from "@/lib/constants/pairs";
  * yeterli live history için 48h içi işlem yapanlar için yeterli.
  */
 export function PairTradeStats({ pair }: { pair: Pair }): React.ReactElement | null {
+  const t = useT();
   const trades = useTradesStore((s) => s.trades);
 
   const stats = useMemo(() => {
@@ -55,7 +57,7 @@ export function PairTradeStats({ pair }: { pair: Pair }): React.ReactElement | n
 
   return (
     <div className="flex items-center gap-3 px-3 py-1.5 rounded border border-border/30 bg-surface-s1/50 font-mono text-2xs">
-      <span className="text-text-t4 tracking-wider shrink-0">{stats.count} işlem</span>
+      <span className="text-text-t4 tracking-wider shrink-0">{t("common.tradeCount", { n: stats.count })}</span>
       <span className={`tabular-nums font-semibold ${wrColor}`}>
         {stats.winRate.toFixed(0)}% W
       </span>

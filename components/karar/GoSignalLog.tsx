@@ -5,19 +5,20 @@ import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
+import { useT } from "@/lib/i18n/context";
 
 const PAGE_SIZE = 50;
 type DirFilter = "all" | "LONG" | "SHORT";
 type RangeFilter = "all" | "today" | "7d" | "30d";
 
-function timeAgo(ts: number): string {
+function timeAgo(ts: number, t: (key: string, params?: Record<string, string | number>) => string): string {
   const delta = Date.now() - ts;
   const m = Math.floor(delta / 60_000);
-  if (m < 1) return "şimdi";
-  if (m < 60) return `${m}dk`;
+  if (m < 1) return t("common.timeNow");
+  if (m < 60) return t("common.timeMinutes", { n: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}sa`;
-  return `${Math.floor(h / 24)}g`;
+  if (h < 24) return t("common.timeHours", { n: h });
+  return t("common.timeDays", { n: Math.floor(h / 24) });
 }
 
 function fullTime(ts: number): string {
@@ -50,6 +51,7 @@ function Chip({
 }
 
 export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode } = {}): React.ReactElement | null {
+  const t = useT();
   const history = useScoreHistoryStore((s) => s.history);
   const trades = useTradesStore((s) => s.trades);
   const goAlertsEnabled = useSettingsStore((s) => s.goAlertsEnabled);
@@ -131,11 +133,11 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
       {/* Header */}
       <div className="flex items-center justify-between px-3 py-2 border-b border-border/50">
         <span className="text-text-t4 font-mono text-2xs tracking-widest uppercase">
-          GO Sinyal Geçmişi
+          {t("karar.goSignalTitle")}
         </span>
         <div className="flex items-center gap-2">
           {goAlertsEnabled && (
-            <span className="text-green-400 font-mono text-2xs" title="Telegram bildirimleri açık">
+            <span className="text-green-400 font-mono text-2xs" title={t("karar.telegramAlertsOn")}>
               📡
             </span>
           )}
@@ -148,7 +150,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
       {/* Pair filter chips */}
       <div className="flex gap-1.5 overflow-x-auto px-3 py-2 border-b border-border/30 -scrollbar-thin">
         <Chip active={filterPair === "all"} onClick={() => { setFilterPair("all"); setPage(1); }}>
-          Tümü
+          {t("common.all")}
         </Chip>
         {activePairs.map((p) => (
           <Chip key={p} active={filterPair === p} onClick={() => { setFilterPair(p); setPage(1); }}>
@@ -185,7 +187,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
               active={minScore === s}
               onClick={() => { setMinScore(s); setPage(1); }}
             >
-              {s === 0 ? "Hepsi" : `${s}+`}
+              {s === 0 ? t("karar.scoreFilterAll") : `${s}+`}
             </Chip>
           ))}
         </div>
@@ -195,7 +197,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
       <div className="flex gap-1 px-3 py-1.5 border-b border-border/20">
         {(["all", "today", "7d", "30d"] as RangeFilter[]).map((r) => (
           <Chip key={r} active={filterRange === r} onClick={() => { setFilterRange(r); setPage(1); }}>
-            {r === "all" ? "Tümü" : r === "today" ? "Bugün" : r === "7d" ? "7G" : "30G"}
+            {r === "all" ? t("common.all") : r === "today" ? t("common.today") : r === "7d" ? t("common.days7") : t("common.days30")}
           </Chip>
         ))}
       </div>
@@ -203,7 +205,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
       {/* Rows */}
       {filtered.length === 0 ? (
         <div className="px-3 py-6 text-center text-text-t4 font-mono text-2xs">
-          Bu filtre için sinyal yok
+          {t("karar.noSignalsFilter")}
         </div>
       ) : (
         <>
@@ -224,7 +226,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
                   <span className="text-green-400 tabular-nums font-bold">{e.score}</span>
                   <span
                     className={converted ? "text-green-400" : "text-text-t4/30"}
-                    title={converted ? "Bu sinyalden sonra işlem açıldı" : "İşlem açılmadı"}
+                    title={converted ? t("karar.tradeAfterSignal") : t("karar.noTradeAfterSignal")}
                   >
                     {converted ? "✓" : "·"}
                   </span>
@@ -232,7 +234,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
                     className="text-text-t4 tabular-nums text-right"
                     title={fullTime(e.ts)}
                   >
-                    {timeAgo(e.ts)}
+                    {timeAgo(e.ts, t)}
                   </span>
                 </div>
               );
@@ -243,7 +245,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
               onClick={() => setPage((p) => p + 1)}
               className="w-full py-2 text-center font-mono text-2xs text-text-t4 hover:text-brand border-t border-border/30 transition-colors"
             >
-              Daha fazla göster ({filtered.length - paginated.length} kaldı)
+              {t("common.showMore", { n: filtered.length - paginated.length })}
             </button>
           )}
         </>

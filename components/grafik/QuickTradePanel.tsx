@@ -1,10 +1,22 @@
 "use client";
 
-import { useState, useEffect } from "react";
+/**
+ * QUICK TRADE PANEL — Grafik sayfasında tek tıkla emir girişi.
+ *
+ * Tasarım: Full modal ve checklist'i atlar. Notional + kaldıraç gir,
+ * LONG/SHORT seç, 3 saniyelik onay geri sayımıyla emir gönder.
+ * Checklist yoktur — bilinçli bir karar olduğu varsayılır.
+ */
+
+import { useState, useEffect, useRef } from "react";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useMarketStore } from "@/lib/store/marketStore";
+import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useTradesStore } from "@/lib/store/tradesStore";
+import { getAdapter } from "@/lib/exchange";
 import { formatPrice } from "@/lib/i18n/format";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 import type { Pair } from "@/lib/constants/pairs";
 
 interface Props {
@@ -16,17 +28,115 @@ export function QuickTradePanel({ pair }: Props) {
   const locale = useLocale();
   const result = useScoreStore((s) => s.results[pair]);
   const livePrice = useMarketStore((s) => s.prices[pair]?.last ?? null);
+  const demoMode = useSettingsStore((s) => s.demoMode);
+  const openPending = useTradesStore((s) => s.openPending);
 
   const [direction, setDirection] = useState<"LONG" | "SHORT">("LONG");
   const [notionalUsd, setNotionalUsd] = useState("100");
   const [leverage, setLeverage] = useState("5");
   const [marginMode, setMarginMode] = useState<"cross" | "isolated">("cross");
 
+  // Pending confirmation state
+  const [pending, setPending] = useState(false);
+  const [countdown, setCountdown] = useState(3);
+  const [executing, setExecuting] = useState(false);
+  const [execError, setExecError] = useState<string | null>(null);
+  const [lastOk, setLastOk] = useState(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Sync direction to score when pair changes
   useEffect(() => {
     if (result?.direction === "LONG" || result?.direction === "SHORT") {
       setDirection(result.direction);
     }
   }, [pair, result?.direction]);
+
+  // Countdown logic — auto-execute at 0
+  useEffect(() => {
+    if (!pending) return;
+    if (countdown <= 0) {
+      void executeOrder();
+      return;
+    }
+    timerRef.current = setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending, countdown]);
+
+  function startPending() {
+    setExecError(null);
+    setLastOk(false);
+    setPending(true);
+    setCountdown(3);
+  }
+
+  function cancelPending() {
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setPending(false);
+    setCountdown(3);
+  }
+
+  async function executeOrder() {
+    if (!EXECUTION_ENABLED) {
+      setExecError(t("settings.signalModeActive"));
+      setPending(false);
+      return;
+    }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    setPending(false);
+    setExecuting(true);
+    setExecError(null);
+
+    try {
+      const notional = parseFloat(notionalUsd);
+      const lev = parseInt(leverage, 10);
+      if (!livePrice || isNaN(notional) || isNaN(lev) || notional <= 0 || lev <= 0) {
+        setExecError("Invalid parameters");
+        return;
+      }
+
+      // qty in base coin (round to 6 decimal places)
+      const qty = Math.round((notional / livePrice) * 1_000_000) / 1_000_000;
+
+      const adapter = getAdapter(demoMode);
+      const res = await adapter.openPosition({
+        pair,
+        direction,
+        qty,
+        leverage: lev,
+        marginMode,
+      });
+
+      if (res.ok) {
+        openPending({
+          pair,
+          direction,
+          entryPrice: livePrice,
+          qty,
+          leverage: lev,
+          stopPrice: 0,
+          riskAmountUsd: notional / lev,
+          isPaper: demoMode,
+          entryContext: {
+            score: result?.score ?? 0,
+            verdict: result?.verdict ?? "wait",
+            drawdownTier: "normal",
+          },
+          orderId: res.data?.orderId,
+        });
+        setLastOk(true);
+      } else {
+        setExecError(res.errorMessage ?? "Order failed");
+      }
+    } catch (e) {
+      setExecError(e instanceof Error ? e.message : "Unknown error");
+    } finally {
+      setExecuting(false);
+      setCountdown(3);
+    }
+  }
 
   const isLong = direction === "LONG";
   const approxQty = livePrice && parseFloat(notionalUsd) > 0
@@ -125,10 +235,51 @@ export function QuickTradePanel({ pair }: Props) {
         </div>
       )}
 
-      {/* Sinyal modu */}
-      <div className="rounded border border-amber-500/30 bg-amber-500/10 py-2 text-center font-mono text-2xs text-amber-400">
-        ⚙ Sinyal modu — emir gönderme devre dışı
-      </div>
+      {/* Execute / Countdown */}
+      {!EXECUTION_ENABLED ? (
+        <div className="rounded border border-amber-500/30 bg-amber-500/10 py-2 text-center font-mono text-2xs text-amber-400">
+          {t("settings.signalModeNote")}
+        </div>
+      ) : !pending ? (
+        <button
+          onClick={startPending}
+          disabled={executing}
+          className={`w-full rounded border py-2 font-mono text-xs font-bold tracking-widest transition-all disabled:cursor-wait disabled:opacity-50 ${
+            isLong
+              ? "border-signal-green/50 bg-signal-green/10 text-signal-green hover:bg-signal-green hover:text-bg-page"
+              : "border-signal-red/50 bg-signal-red/10 text-signal-red hover:bg-signal-red hover:text-bg-page"
+          }`}
+        >
+          {executing ? "⏳" : `${isLong ? "▲" : "▼"} ${direction}`}
+        </button>
+      ) : (
+        <div className="space-y-1.5">
+          <button
+            onClick={executeOrder}
+            className={`w-full animate-pulse rounded py-2 font-mono text-xs font-bold tracking-widest ${
+              isLong ? "bg-signal-green text-bg-page" : "bg-signal-red text-bg-page"
+            }`}
+          >
+            {t("grafik.holdConfirm")} ({countdown}s)
+          </button>
+          <button
+            onClick={cancelPending}
+            className="w-full rounded border border-border py-1.5 font-mono text-2xs text-text-t3 hover:text-text-t1"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      {/* Feedback */}
+      {execError && (
+        <div className="mt-2 font-mono text-2xs text-signal-red">{execError}</div>
+      )}
+      {lastOk && (
+        <div className="mt-2 font-mono text-2xs text-signal-green">
+          ✓ {t("grafik.quickSuccess")}
+        </div>
+      )}
     </div>
   );
 }

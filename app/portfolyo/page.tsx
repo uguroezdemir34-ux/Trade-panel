@@ -55,7 +55,7 @@ export default function PortfolyoPage() {
           <div className="flex flex-col gap-4 p-4">
             <GoSignalLog emptyFallback={
               <div className="border border-border bg-bg-card rounded-lg px-4 py-8 text-center font-mono text-2xs text-text-t4">
-                Henüz GO sinyali yok — sistem çalıştıkça otomatik dolar.
+                {t("karar.goSignalEmptyNote")}
               </div>
             } />
           </div>
