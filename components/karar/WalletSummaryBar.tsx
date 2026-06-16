@@ -348,6 +348,45 @@ export function WalletSummaryBar() {
                 </div>
               </div>
 
+              {/* Satır 3: TP / SL */}
+              <div>
+                <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                  {t("position.takeProfit")}
+                </div>
+                {pos.tpTriggerPx !== null && pos.entryPx > 0 ? (
+                  <>
+                    <div className="font-mono text-xs font-semibold tabular-nums" style={{ color: EMERALD }}>
+                      ${fmtPx(pos.tpTriggerPx)}
+                    </div>
+                    <div className="font-mono text-2xs tabular-nums text-text-t4">
+                      {signed(safeDiv(pos.tpTriggerPx - pos.entryPx, pos.entryPx) * 100)}%
+                    </div>
+                  </>
+                ) : (
+                  <div className="font-mono text-xs text-text-t3">—</div>
+                )}
+              </div>
+
+              <div>
+                <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                  {t("position.stopLoss")}
+                </div>
+                {pos.slTriggerPx !== null && pos.entryPx > 0 ? (
+                  <>
+                    <div className="font-mono text-xs font-semibold tabular-nums" style={{ color: CRIMSON }}>
+                      ${fmtPx(pos.slTriggerPx)}
+                    </div>
+                    <div className="font-mono text-2xs tabular-nums text-text-t4">
+                      {signed(safeDiv(pos.slTriggerPx - pos.entryPx, pos.entryPx) * 100)}%
+                    </div>
+                  </>
+                ) : (
+                  <div className="font-mono text-xs text-text-t3">—</div>
+                )}
+              </div>
+
+              <div /> {/* 3. kolon boş — simetri */}
+
             </div>
           </div>
         );
