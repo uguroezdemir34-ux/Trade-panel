@@ -500,6 +500,15 @@ export const tr: Dictionary = {
       noDataHint: "Mum verisi arka planda otomatik yüklenir.",
       pearsonNote: "Pearson r — 4s getiriler — yeşil = birlikte hareket, kırmızı = ters yön",
     },
+    wallet: {
+      marginUsed: "Teminat Kullanımı",
+      safe: "Güvenli",
+      caution: "Dikkatli",
+      danger: "Kritik",
+      used: "kullanıldı",
+      free: "serbest",
+      dailyTotal: "Günlük Toplam",
+    },
   },
 
   position: {

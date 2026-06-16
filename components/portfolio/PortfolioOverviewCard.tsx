@@ -31,16 +31,38 @@ export function PortfolioOverviewCard(): React.ReactElement {
   const total = closedTrades.length;
   const winRate = total > 0 ? (wins / total) * 100 : null;
 
-  // Today's realized P&L: trades closed since the last daily reset
-  // Consistent with dailyPnlPct temporal window.
   const todayRealizedPnl = closedTrades
     .filter((tr) => (tr.exit?.closedAt ?? 0) >= lastDailyResetAt)
     .reduce((sum, tr) => sum + (tr.exit?.pnlUsd ?? 0), 0);
 
-  // All-time realized shown as context in sub-label
   const allTimeRealizedPnl = closedTrades.reduce((sum, tr) => sum + (tr.exit?.pnlUsd ?? 0), 0);
 
   const unrealizedPnl = openPositions.reduce((sum, p) => sum + p.upl, 0);
+
+  // Margin ratio: portion of balance in use as margin
+  const marginUsed = balanceTotal - balanceFree;
+  const marginRatioPct = balanceTotal > 0 ? Math.min(100, (marginUsed / balanceTotal) * 100) : 0;
+  const marginBarColor =
+    marginRatioPct >= 80
+      ? "bg-signal-red"
+      : marginRatioPct >= 50
+      ? "bg-signal-amber"
+      : "bg-signal-green";
+  const marginLabelColor =
+    marginRatioPct >= 80
+      ? "text-signal-red"
+      : marginRatioPct >= 50
+      ? "text-signal-amber"
+      : "text-signal-green";
+  const marginStatus =
+    marginRatioPct >= 80
+      ? t("portfolio.wallet.danger")
+      : marginRatioPct >= 50
+      ? t("portfolio.wallet.caution")
+      : t("portfolio.wallet.safe");
+
+  // Daily total P&L in USD (realized today + unrealized)
+  const dailyTotalUsd = todayRealizedPnl + unrealizedPnl;
 
   const tierStyle: Record<string, string> = {
     normal: "bg-green-500/10 text-green-400 border-green-500/30",
@@ -49,6 +71,12 @@ export function PortfolioOverviewCard(): React.ReactElement {
     locked: "bg-red-500/10 text-red-400 border-red-500/30 animate-pulse",
   };
   const tierCls = tierStyle[drawdownProtocol.tier] ?? tierStyle.normal;
+
+  const dailyPnlColor = dailyTotalUsd >= 0 ? "text-signal-green" : "text-signal-red";
+  const dailyPnlGlow =
+    dailyTotalUsd >= 0
+      ? "0 0 8px rgba(34,197,94,0.5)"
+      : "0 0 8px rgba(239,68,68,0.5)";
 
   return (
     <div className="border-b border-border bg-bg-card px-4 pt-3 pb-3">
@@ -65,10 +93,52 @@ export function PortfolioOverviewCard(): React.ReactElement {
             {t("portfolio.overview.free")} ${fmt(balanceFree)}
           </div>
         </div>
-        <span className={`font-mono text-2xs px-2.5 py-1 rounded border font-bold shrink-0 ${tierCls}`}>
-          {drawdownProtocol.label}
-        </span>
+        <div className="flex flex-col items-end gap-1.5">
+          <span className={`font-mono text-2xs px-2.5 py-1 rounded border font-bold shrink-0 ${tierCls}`}>
+            {drawdownProtocol.label}
+          </span>
+          {/* Daily total P&L with glow */}
+          {balanceTotal > 0 && (
+            <div
+              className={`font-mono text-sm font-bold tabular-nums ${dailyPnlColor}`}
+              style={{ textShadow: dailyPnlGlow }}
+            >
+              {dailyTotalUsd >= 0 ? "+" : ""}${fmt(dailyTotalUsd, 2)}{" "}
+              <span className="text-2xs font-normal opacity-80">
+                ({signed(dailyPnlPct)}%)
+              </span>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Wallet & Margin Summary */}
+      {balanceTotal > 0 && (
+        <div className="mb-3 rounded-lg border border-border bg-bg-hover px-3 py-2">
+          <div className="flex items-center justify-between mb-1.5">
+            <span className="font-mono text-2xs text-text-t4 tracking-widest uppercase">
+              {t("portfolio.wallet.marginUsed")}
+            </span>
+            <span className={`font-mono text-2xs font-semibold ${marginLabelColor}`}>
+              {marginRatioPct.toFixed(1)}% · {marginStatus}
+            </span>
+          </div>
+          <div className="h-1.5 w-full rounded-full bg-bg-card overflow-hidden">
+            <div
+              className={`h-full rounded-full transition-all duration-700 ${marginBarColor}`}
+              style={{ width: `${marginRatioPct}%` }}
+            />
+          </div>
+          <div className="flex justify-between mt-1">
+            <span className="font-mono text-2xs text-text-t4 tabular-nums">
+              ${fmt(marginUsed, 0)} {t("portfolio.wallet.used")}
+            </span>
+            <span className="font-mono text-2xs text-text-t4 tabular-nums">
+              ${fmt(balanceFree, 0)} {t("portfolio.wallet.free")}
+            </span>
+          </div>
+        </div>
+      )}
 
       {/* Stats grid 4×2 */}
       <div className="grid grid-cols-4 gap-x-3 gap-y-2">

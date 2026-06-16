@@ -500,6 +500,15 @@ export const en: Dictionary = {
       noDataHint: "Candle data loads automatically in the background.",
       pearsonNote: "Pearson r — 4h returns — green = co-movement, red = inverse",
     },
+    wallet: {
+      marginUsed: "Margin Usage",
+      safe: "Safe",
+      caution: "Caution",
+      danger: "Critical",
+      used: "used",
+      free: "free",
+      dailyTotal: "Daily Total",
+    },
   },
 
   position: {
