@@ -130,6 +130,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
   const crossLinesMapRef     = useRef<Map<string, CrossLinePrimitive>>(new Map());
   const fibTimeZonesMapRef   = useRef<Map<string, FibTimeZonePrimitive>>(new Map());
   const onChartClickRef = useRef(onChartClick);
+  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
   const ema20Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema200Ref     = useRef<ISeriesApi<"Line"> | null>(null);
@@ -203,23 +204,6 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     });
     ro.observe(container);
 
-    // Wire click → {price, time} callback
-    // On mobile, param.time is undefined when tapping empty/future areas.
-    // Fall back to coordinateToTime so horizontal tools still work.
-    chart.subscribeClick((param) => {
-      if (!param.point || !candleRef.current) return;
-      const price = candleRef.current.coordinateToPrice(param.point.y);
-      if (price === null || price <= 0) return;
-
-      let time: number | undefined = param.time as number | undefined;
-      if (time === undefined) {
-        const resolved = chart.timeScale().coordinateToTime(param.point.x);
-        if (resolved != null) time = resolved as number;
-      }
-
-      onChartClickRef.current?.(price, time);
-    });
-
     // Wire crosshair → OHLCV overlay
     const crosshairHandler = (param: MouseEventParams<Time>) => {
       if (!param.point) { setCrosshairData(null); return; }
@@ -267,12 +251,18 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       vwapLowerRef.current    = null;
       currentPriceLineRef.current = null;
     };
-  }, [height]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Keep click callback ref fresh ─────────────────────────────────────
   useEffect(() => {
     onChartClickRef.current = onChartClick;
   }, [onChartClick]);
+
+  // ─── Height resize (applyOptions, no chart recreation) ──────────────────
+  useEffect(() => {
+    chartRef.current?.applyOptions({ height });
+  }, [height]);
 
   // ─── Sync drawn horizontal lines ────────────────────────────────────────
   useEffect(() => {
@@ -949,7 +939,30 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
 
   return (
     <div className="relative w-full" style={{ height }}>
-      <div ref={containerRef} className="w-full h-full" />
+      <div
+        ref={containerRef}
+        className="w-full h-full"
+        onMouseDown={(e) => { mouseDownPosRef.current = { x: e.clientX, y: e.clientY }; }}
+        onClick={(e) => {
+          // Ignore drag-pan gestures (moved > 4px)
+          if (mouseDownPosRef.current) {
+            const dx = e.clientX - mouseDownPosRef.current.x;
+            const dy = e.clientY - mouseDownPosRef.current.y;
+            if (dx * dx + dy * dy > 16) return;
+          }
+          const chart = chartRef.current;
+          const candle = candleRef.current;
+          if (!chart || !candle) return;
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const price = candle.coordinateToPrice(y);
+          if (price === null || price <= 0) return;
+          const resolved = chart.timeScale().coordinateToTime(x);
+          const time = resolved != null ? (resolved as number) : undefined;
+          onChartClickRef.current?.(price, time);
+        }}
+      />
       {crosshairData && (
         <div className="absolute top-1 left-1 z-10 flex gap-2.5 rounded bg-bg-card/90 border border-border px-2 py-1 font-mono text-2xs text-text-t2 pointer-events-none select-none">
           <span>
