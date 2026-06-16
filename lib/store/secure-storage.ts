@@ -13,9 +13,9 @@
  * Anahtar yönetimi:
  *   1. İlk yükleme: `crypto.subtle.generateKey` ile AES-256-GCM key üretilir.
  *   2. Anahtar bellekte tutulur (module singleton).
- *   3. Tarayıcıda: JWK olarak sessionStorage'a yazılır — sayfa yenileme sonrası
- *      aynı tab veriyi çözebilir, tab kapatılınca anahtar ölür.
- *   4. Node.js (test): sessionStorage yok, key sadece bellekte yaşar.
+ *   3. Tarayıcıda: JWK olarak localStorage'a yazılır — tab kapatma/yenileme
+ *      sonrası aynı cihazdan veri çözülebilir.
+ *   4. Node.js (test): localStorage yok, key sadece bellekte yaşar.
  *
  * Depolama formatı:
  *   localStorage değeri: "ENC1:<base64(IV + ciphertext)>"
@@ -61,12 +61,12 @@ function getCrypto(): Crypto {
   throw new Error("Web Crypto API kullanılamıyor.");
 }
 
-// ─── sessionStorage (browser only) ───────────────────────────
+// ─── localStorage (key depolama — browser only) ───────────────
 
-function getSessionStorage(): Storage | null {
+function getKeyStorage(): Storage | null {
   try {
-    if (typeof window !== "undefined" && window.sessionStorage) {
-      return window.sessionStorage;
+    if (typeof window !== "undefined" && window.localStorage) {
+      return window.localStorage;
     }
   } catch {
     // Private mod veya SSR
@@ -132,8 +132,8 @@ export async function importKey(encoded: string): Promise<CryptoKey> {
  *
  * Öncelik sırası:
  *   1. Bellek cache (_cachedKey)
- *   2. sessionStorage'dan yükle (aynı tab, sayfa yenileme)
- *   3. Yeni üret + sessionStorage'a kaydet
+ *   2. localStorage'dan yükle (tab kapatma/yenileme sonrası aynı cihazda devam)
+ *   3. Yeni üret + localStorage'a kaydet
  *
  * DI: `_keyOverride` sadece testlerde kullanılır.
  */
@@ -143,11 +143,11 @@ export async function getOrCreateSessionKey(
   if (_keyOverride) return _keyOverride;
   if (_cachedKey) return _cachedKey;
 
-  // Browser: sessionStorage'dan yükle
-  const ss = getSessionStorage();
-  if (ss) {
+  // Browser: localStorage'dan yükle
+  const ks = getKeyStorage();
+  if (ks) {
     try {
-      const stored = ss.getItem(SESSION_KEY_NAME);
+      const stored = ks.getItem(SESSION_KEY_NAME);
       if (stored) {
         const key = await importKey(stored);
         _cachedKey = key;
@@ -155,7 +155,7 @@ export async function getOrCreateSessionKey(
       }
     } catch {
       // Bozuk kayıt — yeni üret
-      ss.removeItem(SESSION_KEY_NAME);
+      ks.removeItem(SESSION_KEY_NAME);
     }
   }
 
@@ -163,12 +163,12 @@ export async function getOrCreateSessionKey(
   const key = await generateSessionKey();
   _cachedKey = key;
 
-  // Browser: sessionStorage'a kaydet
-  if (ss) {
+  // Browser: localStorage'a kaydet
+  if (ks) {
     try {
-      ss.setItem(SESSION_KEY_NAME, await exportKey(key));
+      ks.setItem(SESSION_KEY_NAME, await exportKey(key));
     } catch {
-      // sessionStorage dolu veya erişilemiyor — bellekte devam et
+      // localStorage dolu veya erişilemiyor — bellekte devam et
     }
   }
 
