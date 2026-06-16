@@ -10,6 +10,7 @@
 
 import type { Pair } from "@/lib/constants/pairs";
 import { pairToInstId } from "@/lib/exchange/okx/symbol-format";
+import { parseProxyItems } from "@/lib/market/parseProxyItems";
 
 export interface FundingRateResult {
   pair: Pair;
@@ -47,21 +48,10 @@ export async function fetchFundingRate(
 
     const raw = (await res.json()) as Record<string, unknown>;
 
-    // Proxy zarfı: { ok: true, data: [...] } | Direkt OKX: { code, data: [...] }
-    let items: unknown;
-    if (typeof raw.ok === "boolean") {
-      if (!raw.ok) return { pair, fundingRate: 0, annualizedPct: 0, source: "fallback" };
-      items = raw.data;
-    } else if (raw.code === "0") {
-      items = raw.data;
-    } else {
-      return { pair, fundingRate: 0, annualizedPct: 0, source: "fallback" };
-    }
-    if (!Array.isArray(items) || items.length === 0) {
-      return { pair, fundingRate: 0, annualizedPct: 0, source: "fallback" };
-    }
+    const items = parseProxyItems(raw);
+    if (!items) return { pair, fundingRate: 0, annualizedPct: 0, source: "fallback" };
 
-    const first = items[0] as Record<string, unknown>;
+    const first = items[0];
     const rateStr = first.fundingRate as string | undefined;
     const rate = rateStr ? parseFloat(rateStr) : 0;
     if (!isFinite(rate)) {
