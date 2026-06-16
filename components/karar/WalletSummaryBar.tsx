@@ -202,7 +202,8 @@ export function WalletSummaryBar() {
         </div>
       </div>
 
-      {/* ── Pozisyon Kartları ─────────────────────────────────────────── */}
+      {/* ── Pozisyon Kartları — masaüstünde 2 kolon ─────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2">
       {openPositions.map((pos) => {
         const isLong  = pos.direction === "LONG";
         const dirColor = isLong ? EMERALD : CRIMSON;
@@ -214,7 +215,7 @@ export function WalletSummaryBar() {
         return (
           <div
             key={pos.instId}
-            className="border-t border-border px-3 py-3"
+            className="border-t border-border lg:even:border-l px-3 py-3"
             style={{
               // Hafif aurora: yön rengi sol üstten soluklaşır → sayfa bg'si görünür
               background: `linear-gradient(150deg, ${dirColor}09 0%, transparent 62%)`,
@@ -263,7 +264,7 @@ export function WalletSummaryBar() {
                 </div>
               </div>
 
-              {/* Sağ: Büyük P&L — ROE% üst, USD alt */}
+              {/* Sağ: Büyük P&L — USD üst (büyük), ROE% alt (küçük) */}
               <div className="flex flex-col items-end gap-0.5 shrink-0">
                 <span
                   className={`font-mono text-xl font-bold tabular-nums leading-none ${
@@ -271,13 +272,13 @@ export function WalletSummaryBar() {
                   }`}
                   style={{ color: pnlColor }}
                 >
-                  {signed(roePct)}%
+                  {uplSafe >= 0 ? "+" : ""}${fmt(Math.abs(uplSafe), 2)}
                 </span>
                 <span
                   className="font-mono text-sm font-semibold tabular-nums"
                   style={{ color: pnlColor }}
                 >
-                  {uplSafe >= 0 ? "+" : ""}${fmt(Math.abs(uplSafe), 2)}
+                  {signed(roePct)}%
                 </span>
               </div>
             </div>
@@ -351,6 +352,7 @@ export function WalletSummaryBar() {
           </div>
         );
       })}
+      </div>
 
     </div>
   );
