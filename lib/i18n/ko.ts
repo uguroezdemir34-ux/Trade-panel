@@ -491,6 +491,8 @@ export const ko: Dictionary = {
     margin: "증거금",
     stopLoss: "SL",
     takeProfit: "TP",
+    tp: "Take Profit",
+    sl: "Stop Loss",
     noSlSet: "SL 없음",
     noTpSet: "TP 없음",
     liqPrice: "청산가",

@@ -491,6 +491,8 @@ export const ja: Dictionary = {
     margin: "証拠金",
     stopLoss: "SL",
     takeProfit: "TP",
+    tp: "Take Profit",
+    sl: "Stop Loss",
     noSlSet: "SLなし",
     noTpSet: "TPなし",
     liqPrice: "清算価格",

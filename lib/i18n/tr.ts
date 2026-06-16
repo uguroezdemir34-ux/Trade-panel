@@ -514,6 +514,8 @@ export const tr: Dictionary = {
     margin: "MARJ",
     stopLoss: "SL",
     takeProfit: "TP",
+    tp: "KAR AL",
+    sl: "ZARAR DURDUR",
     noSlSet: "SL yok",
     noTpSet: "TP yok",
     liqPrice: "LIQ",

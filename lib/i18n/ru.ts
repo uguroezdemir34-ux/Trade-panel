@@ -491,6 +491,8 @@ export const ru: Dictionary = {
     margin: "МАРЖА",
     stopLoss: "SL",
     takeProfit: "TP",
+    tp: "Take Profit",
+    sl: "Stop Loss",
     noSlSet: "нет SL",
     noTpSet: "нет TP",
     liqPrice: "LIQ",

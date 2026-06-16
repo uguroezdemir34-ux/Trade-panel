@@ -491,6 +491,8 @@ export const zh: Dictionary = {
     margin: "保证金",
     stopLoss: "止损",
     takeProfit: "止盈",
+    tp: "Take Profit",
+    sl: "Stop Loss",
     noSlSet: "无止损",
     noTpSet: "无止盈",
     liqPrice: "强平价",

@@ -491,6 +491,8 @@ export const hi: Dictionary = {
     margin: "मार्जिन",
     stopLoss: "SL",
     takeProfit: "TP",
+    tp: "Take Profit",
+    sl: "Stop Loss",
     noSlSet: "SL नहीं",
     noTpSet: "TP नहीं",
     liqPrice: "लिक्विडेशन",

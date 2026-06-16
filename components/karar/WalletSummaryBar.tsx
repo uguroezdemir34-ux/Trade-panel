@@ -349,7 +349,7 @@ export function WalletSummaryBar() {
               </div>
 
               {/* Satır 3: TP / SL */}
-              <div>
+              <div title={t("position.tp")}>
                 <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
                   {t("position.takeProfit")}
                 </div>
@@ -367,7 +367,7 @@ export function WalletSummaryBar() {
                 )}
               </div>
 
-              <div>
+              <div title={t("position.sl")}>
                 <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
                   {t("position.stopLoss")}
                 </div>

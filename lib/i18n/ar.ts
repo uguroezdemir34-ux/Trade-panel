@@ -491,6 +491,8 @@ export const ar: Dictionary = {
     margin: "هامش",
     stopLoss: "SL",
     takeProfit: "TP",
+    tp: "Take Profit",
+    sl: "Stop Loss",
     noSlSet: "لا SL",
     noTpSet: "لا TP",
     liqPrice: "سعر التصفية",

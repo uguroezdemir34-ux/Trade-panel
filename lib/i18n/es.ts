@@ -491,6 +491,8 @@ export const es: Dictionary = {
     margin: "MARGEN",
     stopLoss: "SL",
     takeProfit: "TP",
+    tp: "Take Profit",
+    sl: "Stop Loss",
     noSlSet: "sin SL",
     noTpSet: "sin TP",
     liqPrice: "LIQ",
