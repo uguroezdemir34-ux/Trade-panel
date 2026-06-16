@@ -71,7 +71,7 @@ function interpolate(template: string, params?: Record<string, string | number>)
 
 /**
  * Translate fonksiyonu.
- * Path yoksa key'i döner (developer için debug, kullanıcı için "nav.decision" görünür).
+ * Zincir: aktif dil → EN fallback → key path (son çare).
  */
 export function translate(
   dict: Dictionary,
@@ -79,7 +79,9 @@ export function translate(
   params?: Record<string, string | number>,
 ): string {
   const raw = getNested(dict, path);
-  return interpolate(raw, params);
+  // EN fallback: aktif dilde key bulunamazsa İngilizce'ye düş
+  const value = raw === path ? getNested(en, path) : raw;
+  return interpolate(value, params);
 }
 
 /**
