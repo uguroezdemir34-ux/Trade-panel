@@ -2,17 +2,15 @@
 
 import { useState } from "react";
 import { useT } from "@/lib/i18n/context";
-import PozisyonPage from "@/app/pozisyon/page";
 import RiskPage from "@/app/risk/page";
 import PnlPage from "@/app/pnl/page";
 import { PortfolioOverviewCard } from "@/components/portfolio/PortfolioOverviewCard";
 import { GoSignalLog } from "@/components/karar/GoSignalLog";
 import { CopyTradingCard } from "@/components/copy-trading/CopyTradingCard";
 
-type SubTab = "pozisyon" | "risk" | "pnl" | "sinyaller" | "takip";
+type SubTab = "risk" | "pnl" | "sinyaller" | "takip";
 
 const SUB_TABS: { id: SubTab; labelKey: string }[] = [
-  { id: "pozisyon", labelKey: "nav.position" },
   { id: "risk", labelKey: "nav.risk" },
   { id: "pnl", labelKey: "nav.pnl" },
   { id: "sinyaller", labelKey: "portfolio.signalsTab" },
@@ -21,7 +19,7 @@ const SUB_TABS: { id: SubTab; labelKey: string }[] = [
 
 export default function PortfolyoPage() {
   const t = useT();
-  const [active, setActive] = useState<SubTab>("pozisyon");
+  const [active, setActive] = useState<SubTab>("risk");
 
   return (
     <div className="flex flex-col">
@@ -51,7 +49,6 @@ export default function PortfolyoPage() {
 
       {/* Sub-tab content */}
       <div>
-        {active === "pozisyon" && <PozisyonPage />}
         {active === "risk" && <RiskPage />}
         {active === "pnl" && <PnlPage />}
         {active === "sinyaller" && (
