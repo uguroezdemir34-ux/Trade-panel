@@ -987,6 +987,7 @@ export default function GrafikPage() {
                   resetKey={`${pair}_${timeframe}`}
                   liqBands={liqBands}
                   currentPrice={livePrice ?? undefined}
+                  isDrawingMode={clickMode !== "none"}
                 />
                 {chartLoadState !== "ready" && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-bg-card/70 rounded pointer-events-none">
@@ -1028,6 +1029,7 @@ export default function GrafikPage() {
                 onChartClick={handleChartClick}
                 resetKey={`${pair}_${secTf}`}
                 currentPrice={livePrice ?? undefined}
+                isDrawingMode={clickMode !== "none"}
               />
             ) : (
               <div className="flex items-center justify-center h-[360px] rounded border border-border bg-bg-card">

@@ -41,6 +41,8 @@ interface Props {
   liqBands?: LiqBand[];
   /** Live price line — separate prop so price-tick updates don't re-run the full series effect */
   currentPrice?: number;
+  /** When true, overlay div captures pointer events for drawing input; false = transparent (LWC pan/zoom normal) */
+  isDrawingMode?: boolean;
 }
 
 const COLOR_UP       = "#22c55e";
@@ -114,7 +116,7 @@ function fmtVol(n: number): string {
   return n.toFixed(2);
 }
 
-export function PriceChart({ series, height = 400, theme = "dark", onChartClick, resetKey, liqBands, currentPrice }: Props): React.ReactElement {
+export function PriceChart({ series, height = 400, theme = "dark", onChartClick, resetKey, liqBands, currentPrice, isDrawingMode = false }: Props): React.ReactElement {
   const containerRef  = useRef<HTMLDivElement>(null);
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -129,8 +131,8 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
   const verticalLinesMapRef  = useRef<Map<string, VerticalLinePrimitive>>(new Map());
   const crossLinesMapRef     = useRef<Map<string, CrossLinePrimitive>>(new Map());
   const fibTimeZonesMapRef   = useRef<Map<string, FibTimeZonePrimitive>>(new Map());
-  const onChartClickRef = useRef(onChartClick);
-  const mouseDownPosRef = useRef<{ x: number; y: number } | null>(null);
+  const onChartClickRef  = useRef(onChartClick);
+  const pointerStartRef  = useRef<{ x: number; y: number } | null>(null);
   const ema20Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema200Ref     = useRef<ISeriesApi<"Line"> | null>(null);
@@ -939,17 +941,35 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
 
   return (
     <div className="relative w-full" style={{ height }}>
+      {/* LWC mount point — no event handlers; all drawing input comes from overlay below */}
+      <div ref={containerRef} className="w-full h-full" />
+      {/*
+        Drawing input overlay — architecture rationale:
+        - LWC canvas absorbs touch events internally (preventDefault) and subscribeClick is
+          unreliable on mobile ("working as intended" per LWC issue #1417).
+        - When drawing mode is OFF: pointer-events:none → fully transparent, LWC pan/zoom unaffected.
+        - When drawing mode is ON:  pointer-events:auto + touch-action:none → overlay captures all
+          pointer input before the browser can interpret it as scroll/pan. PointerEvent API fires
+          identically on mouse, iOS touch, Android touch, and PWA. 10px tap threshold handles
+          mobile finger jitter (vs. 4px which was too tight).
+      */}
       <div
-        ref={containerRef}
-        className="w-full h-full"
-        onMouseDown={(e) => { mouseDownPosRef.current = { x: e.clientX, y: e.clientY }; }}
-        onClick={(e) => {
-          // Ignore drag-pan gestures (moved > 4px)
-          if (mouseDownPosRef.current) {
-            const dx = e.clientX - mouseDownPosRef.current.x;
-            const dy = e.clientY - mouseDownPosRef.current.y;
-            if (dx * dx + dy * dy > 16) return;
-          }
+        className="absolute inset-0"
+        style={{
+          pointerEvents: isDrawingMode ? "auto" : "none",
+          touchAction: "none",
+          cursor: isDrawingMode ? "crosshair" : "default",
+        }}
+        onPointerDown={(e) => {
+          pointerStartRef.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerUp={(e) => {
+          const start = pointerStartRef.current;
+          pointerStartRef.current = null;
+          if (!start) return;
+          const dx = e.clientX - start.x;
+          const dy = e.clientY - start.y;
+          if (dx * dx + dy * dy > 100) return; // >10px = pan/drag, not a tap
           const chart = chartRef.current;
           const candle = candleRef.current;
           if (!chart || !candle) return;
