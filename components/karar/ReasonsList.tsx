@@ -14,6 +14,7 @@ const META_FIELDS: Array<{
   labelKey: string;
   icon: string;
 }> = [
+  { key: "sweep", labelKey: "reasons.sweep", icon: "🌊" },
   { key: "regime", labelKey: "reasons.regime", icon: "🌐" },
   { key: "regimeRelax", labelKey: "reasons.regimeRelax", icon: "🔓" },
   { key: "atrRegime", labelKey: "reasons.atrRegime", icon: "📊" },
