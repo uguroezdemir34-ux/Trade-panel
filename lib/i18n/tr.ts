@@ -223,6 +223,7 @@ export const tr: Dictionary = {
     execForwardTestRequired: "Forward Test Modunu etkinleştirin — emir gönderme devre dışı.",
     keyboardShortcutHint: "Klavye kısayolları (? tuşu)",
     pairGoHistory: "{pair} GO Geçmişi",
+    aiBadge: "AI",
 },
 
     signalModeNote: "⚙ Sinyal modu — emir gönderme devre dışı",

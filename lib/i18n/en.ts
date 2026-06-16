@@ -223,6 +223,7 @@ export const en: Dictionary = {
     execForwardTestRequired: "Activate Forward Test Mode — order placement disabled.",
     keyboardShortcutHint: "Keyboard shortcuts (? key)",
     pairGoHistory: "{pair} GO History",
+    aiBadge: "AI",
 },
 
     signalModeNote: "⚙ Signal mode — order placement disabled",

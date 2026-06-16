@@ -802,8 +802,8 @@ export default function KararPage() {
 
               {/* AI Market Note */}
               <div className="flex items-start gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2">
-                <span className="shrink-0 font-mono text-[8px] tracking-widest text-brand/60 border border-brand/25 rounded px-1 py-0.5 leading-none mt-0.5 select-none">YZ</span>
-                <p className="font-mono text-[11px] text-text-t1 leading-relaxed">{aiMarketNote(result)}</p>
+                <span className="shrink-0 font-mono text-[8px] tracking-widest text-brand/60 border border-brand/25 rounded px-1 py-0.5 leading-none mt-0.5 select-none">{t("karar.aiBadge")}</span>
+                <p className="font-mono text-[11px] text-text-t1 leading-relaxed">{aiMarketNote(result, t)}</p>
               </div>
 
               {/* Smart Money + Volume Delta 5m mini cards */}
@@ -1023,26 +1023,29 @@ export default function KararPage() {
   );
 }
 
-function aiMarketNote(result: {
-  score: number;
-  verdict: string;
-  direction: string;
-  effectiveThreshold: number;
-  pullbackActive: boolean;
-  sub: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number };
-}): string {
+function aiMarketNote(
+  result: {
+    score: number;
+    verdict: string;
+    direction: string;
+    effectiveThreshold: number;
+    pullbackActive: boolean;
+    sub: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number };
+  },
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
   const { score, direction, effectiveThreshold, pullbackActive, sub } = result;
   const dir = direction === "LONG" ? "LONG" : direction === "SHORT" ? "SHORT" : "FLAT";
-  const trendStr = sub.trend >= 17 ? "güçlü trend" : sub.trend >= 10 ? "orta trend" : "zayıf trend";
+  const trendStr = sub.trend >= 17 ? t("karar.trendStrong") : sub.trend >= 10 ? t("karar.trendMedium") : t("karar.trendWeak");
   const volTotal = sub.vol + sub.bb + sub.vwap;
-  const volStr = volTotal >= 17 ? "hacim destekli" : volTotal >= 10 ? "hacim kısmi" : "hacim yetersiz";
-  const modeStr = pullbackActive ? " · geri çekilme modu" : "";
+  const volStr = volTotal >= 17 ? t("karar.volumeSupported") : volTotal >= 10 ? t("karar.volumePartial") : t("karar.volumeInsufficient");
+  const modeStr = pullbackActive ? t("karar.pullbackMode") : "";
   const gap = effectiveThreshold - score;
   const postureStr = score >= effectiveThreshold
-    ? `eşik aşıldı (${score}/${effectiveThreshold}) → GO`
+    ? t("karar.thresholdCrossed", { score, threshold: effectiveThreshold })
     : gap <= 8
-    ? `eşiğe ${gap} puan kaldı (${score}/${effectiveThreshold})`
-    : `eşiğin altında (${score}/${effectiveThreshold})`;
+    ? t("karar.thresholdGap", { gap, score, threshold: effectiveThreshold })
+    : t("karar.thresholdBelow", { score, threshold: effectiveThreshold });
   return `${dir} · ${trendStr} · ${volStr}${modeStr} · ${postureStr}.`;
 }
 

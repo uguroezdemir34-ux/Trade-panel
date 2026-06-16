@@ -252,6 +252,7 @@ volumeSection: "VOLUME",
     keyboardShortcutHint: "Keyboard shortcuts (? key)",
     // TODO: translate
     pairGoHistory: "{pair} GO History",
+    aiBadge: "AI",
 },
 
     // TODO: translate
