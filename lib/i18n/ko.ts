@@ -223,8 +223,6 @@ export const ko: Dictionary = {
       clearKeys: "삭제",
       keySaved: "키 저장됨 (암호화됨)",
       keyActive: "활성",
-      withdrawalNote: "DISABLE withdrawal permissions on this API key. Read + trade only — no withdrawals.",
-      noAuthWarning: "Sign in to save API keys securely to your account. Anonymous mode does not support credential storage.",
     },
     telegram: {
       title: "💬 Telegram VIP 채널",

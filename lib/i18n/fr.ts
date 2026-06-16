@@ -223,8 +223,6 @@ export const fr: Dictionary = {
       clearKeys: "Effacer",
       keySaved: "Clés enregistrées (chiffrées)",
       keyActive: "Actif",
-      withdrawalNote: "DISABLE withdrawal permissions on this API key. Read + trade only — no withdrawals.",
-      noAuthWarning: "Sign in to save API keys securely to your account. Anonymous mode does not support credential storage.",
     },
     telegram: {
       title: "💬 Canal VIP Telegram",
