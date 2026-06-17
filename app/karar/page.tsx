@@ -408,7 +408,7 @@ export default function KararPage() {
       return;
     }
 
-    setExecError("Forward Test Modunu etkinleştirin — emir gönderme devre dışı.");
+    setExecError(t("karar.execForwardTestRequired"));
     setIsExecuting(false);
   }
 
@@ -453,7 +453,7 @@ export default function KararPage() {
         <button
           onClick={() => setShowShortcuts(true)}
           className="font-mono text-2xs text-text-t4 hover:text-text-t2 transition-colors border border-border/40 rounded px-2 py-0.5"
-          title="Klavye kısayolları (? tuşu)"
+          title={t("karar.keyboardShortcutHint")}
         >
           ⌨ ?
         </button>
@@ -476,13 +476,18 @@ export default function KararPage() {
             )}
           </div>
 
-          <ScoreLeaderboard
-            results={allResults}
-            activePair={activePair}
-            onSelect={setActivePair}
-          />
+          {/* Scores + pair grid: side by side on wider screens */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            {/* Left col: top scores */}
+            <ScoreLeaderboard
+              results={allResults}
+              activePair={activePair}
+              onSelect={setActivePair}
+            />
 
-          <GoSignalLog />
+            {/* Right col: signal log + filter + pair grid */}
+            <div className="flex flex-col gap-2">
+              <GoSignalLog />
 
           {/* Pair group filter */}
           <div className="flex flex-wrap gap-1">
@@ -537,7 +542,7 @@ export default function KararPage() {
           </div>
 
           {/* Pair grid */}
-          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(displayPairs.length, 5)}, 1fr)` }}>
+          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(displayPairs.length, 3)}, 1fr)` }}>
             {displayPairs.map((p) => {
               const pr = allResults[p];
               const v = pr?.verdict;
@@ -685,6 +690,8 @@ export default function KararPage() {
               );
             })}
           </div>
+            </div>{/* end right col */}
+          </div>{/* end md:grid-cols-2 */}
         </div>
 
         {/* RIGHT MAIN — active pair details */}
@@ -749,11 +756,11 @@ export default function KararPage() {
                   <div className="flex flex-wrap gap-1.5">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/25 bg-brand/8 font-mono text-[9px] text-brand/70 tracking-wide select-none">
                       <span className="w-1.5 h-1.5 rounded-full bg-brand/60 shrink-0" />
-                      Profil: {result.pullbackActive ? "Geri Çekilme (Otomatik)" : "Trend Modu (Otomatik)"}
+                      {result.pullbackActive ? t("karar.profilePullback") : t("karar.profileTrend")}
                     </span>
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-500/25 bg-emerald-500/8 font-mono text-[9px] text-emerald-400/70 tracking-wide select-none">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shrink-0" />
-                      Sinyal: Bar Kapanış Onaylı
+                      {t("karar.signalBarClose")}
                     </span>
                   </div>
 
@@ -795,8 +802,8 @@ export default function KararPage() {
 
               {/* AI Market Note */}
               <div className="flex items-start gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2">
-                <span className="shrink-0 font-mono text-[8px] tracking-widest text-brand/60 border border-brand/25 rounded px-1 py-0.5 leading-none mt-0.5 select-none">YZ</span>
-                <p className="font-mono text-[11px] text-text-t1 leading-relaxed">{aiMarketNote(result)}</p>
+                <span className="shrink-0 font-mono text-[8px] tracking-widest text-brand/60 border border-brand/25 rounded px-1 py-0.5 leading-none mt-0.5 select-none">{t("karar.aiBadge")}</span>
+                <p className="font-mono text-[11px] text-text-t1 leading-relaxed">{aiMarketNote(result, t)}</p>
               </div>
 
               {/* Smart Money + Volume Delta 5m mini cards */}
@@ -835,7 +842,7 @@ export default function KararPage() {
 
                 {/* HACİM */}
                 <AccordionSection
-                  title="HACİM"
+                  title={t("karar.volumeSection")}
                   badge={`vol ${result.sub.vol}/8 · bb ${result.sub.bb}/8 · vwap ${result.sub.vwap}/10`}
                   dotColor={(result.sub.vol + result.sub.bb + result.sub.vwap) >= 17 ? "#22c55e" : (result.sub.vol + result.sub.bb + result.sub.vwap) >= 10 ? "#f59e0b" : "#ef4444"}
                   open={showHacim}
@@ -1016,26 +1023,29 @@ export default function KararPage() {
   );
 }
 
-function aiMarketNote(result: {
-  score: number;
-  verdict: string;
-  direction: string;
-  effectiveThreshold: number;
-  pullbackActive: boolean;
-  sub: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number };
-}): string {
+function aiMarketNote(
+  result: {
+    score: number;
+    verdict: string;
+    direction: string;
+    effectiveThreshold: number;
+    pullbackActive: boolean;
+    sub: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number };
+  },
+  t: (key: string, params?: Record<string, string | number>) => string,
+): string {
   const { score, direction, effectiveThreshold, pullbackActive, sub } = result;
   const dir = direction === "LONG" ? "LONG" : direction === "SHORT" ? "SHORT" : "FLAT";
-  const trendStr = sub.trend >= 17 ? "güçlü trend" : sub.trend >= 10 ? "orta trend" : "zayıf trend";
+  const trendStr = sub.trend >= 17 ? t("karar.trendStrong") : sub.trend >= 10 ? t("karar.trendMedium") : t("karar.trendWeak");
   const volTotal = sub.vol + sub.bb + sub.vwap;
-  const volStr = volTotal >= 17 ? "hacim destekli" : volTotal >= 10 ? "hacim kısmi" : "hacim yetersiz";
-  const modeStr = pullbackActive ? " · geri çekilme modu" : "";
+  const volStr = volTotal >= 17 ? t("karar.volumeSupported") : volTotal >= 10 ? t("karar.volumePartial") : t("karar.volumeInsufficient");
+  const modeStr = pullbackActive ? t("karar.pullbackMode") : "";
   const gap = effectiveThreshold - score;
   const postureStr = score >= effectiveThreshold
-    ? `eşik aşıldı (${score}/${effectiveThreshold}) → GO`
+    ? t("karar.thresholdCrossed", { score, threshold: effectiveThreshold })
     : gap <= 8
-    ? `eşiğe ${gap} puan kaldı (${score}/${effectiveThreshold})`
-    : `eşiğin altında (${score}/${effectiveThreshold})`;
+    ? t("karar.thresholdGap", { gap, score, threshold: effectiveThreshold })
+    : t("karar.thresholdBelow", { score, threshold: effectiveThreshold });
   return `${dir} · ${trendStr} · ${volStr}${modeStr} · ${postureStr}.`;
 }
 

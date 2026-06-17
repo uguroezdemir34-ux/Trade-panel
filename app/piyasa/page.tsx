@@ -98,13 +98,15 @@ export default function PiyasaPage() {
         </div>
       </div>
 
-      {/* Alt: MTF trend + OI + Funding */}
-      <MtfTrendGrid results={mtfResults} />
+      {/* Alt: MTF trend + OI yan yana (masaüstü) / Funding */}
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <MtfTrendGrid results={mtfResults} />
+        <OiVelocityCard velocity={oiVelocity} loading={oiLoading} />
+      </div>
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <FundingRateRow funding={funding} loading={fundingLoading} />
         <CorrelationCard />
       </div>
-      <OiVelocityCard velocity={oiVelocity} loading={oiLoading} />
     </div>
   );
 }

@@ -238,7 +238,6 @@ export async function runBacktest(
       fg: config.frozenFg,
       fundingRate: null,
       oiVelocityScore: null,
-      whaleInflowScore: null,
       now: bar.ts,
       ...FROZEN_STATE,
     });

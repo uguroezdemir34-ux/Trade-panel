@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useT } from "@/lib/i18n/context";
 import { useCredentialStore, type OkxCreds } from "@/lib/store/credentialStore";
-
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 
 export function OkxCredsCard(): React.ReactElement {
   const t = useT();
@@ -18,10 +18,11 @@ export function OkxCredsCard(): React.ReactElement {
         <p className="font-mono text-xs text-text-t3 mt-0.5">
           {t("settings.okx.description")}
         </p>
-        <p className="mt-1 font-mono text-xs text-amber-400/80">
-          ⚙ Sinyal modu: API key yalnızca bakiye ve pozisyon görüntüleme için kullanılır.
-          Emir gönderme izni gerekmez — <strong>read-only</strong> key yeterlidir.
-        </p>
+        {!EXECUTION_ENABLED && (
+          <p className="mt-1 font-mono text-xs text-amber-400/80">
+            {t("settings.signalModeApiNote")}
+          </p>
+        )}
       </div>
 
       {_loaded && (

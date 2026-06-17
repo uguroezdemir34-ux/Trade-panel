@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useT } from "@/lib/i18n/context";
-
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
 
 export function BybitCredsCard(): React.ReactElement {
   const t = useT();
@@ -52,9 +52,11 @@ export function BybitCredsCard(): React.ReactElement {
           <p className="mt-0.5 font-mono text-xs text-text-t3">
             {t("settings.bybitCreds.subtitle")}
           </p>
-          <p className="mt-1 font-mono text-[10px] text-amber-400/70">
-            ⚙ Sinyal modu — yalnızca bakiye görüntüleme, emir gönderme devre dışı
-          </p>
+          {!EXECUTION_ENABLED && (
+            <p className="mt-1 font-mono text-[10px] text-amber-400/70">
+              {t("settings.signalModeBalanceOnly")}
+            </p>
+          )}
         </div>
         {bybitFutures && (
           <button

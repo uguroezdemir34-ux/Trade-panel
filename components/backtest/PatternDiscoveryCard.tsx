@@ -11,6 +11,7 @@ import { useMemo, useState } from "react";
 import { discoverPatterns, summarizePatterns } from "@/lib/ml/patternStats";
 import type { PatternRow } from "@/lib/ml/patternStats";
 import type { BacktestResult } from "@/lib/backtest/types";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   result: BacktestResult;
@@ -19,6 +20,7 @@ interface Props {
 type FilterDir = "ALL" | "LONG" | "SHORT";
 
 export function PatternDiscoveryCard({ result }: Props) {
+  const t = useT();
   const [filterDir, setFilterDir] = useState<FilterDir>("ALL");
   const [showExits, setShowExits] = useState(false);
 
@@ -150,7 +152,7 @@ export function PatternDiscoveryCard({ result }: Props) {
             {filtered.length === 0 && (
               <tr>
                 <td colSpan={showExits ? 10 : 6} className="px-3 py-3 text-center text-text-t4">
-                  Bu filtre için yeterli veri yok
+                  {t("backtest.noDataFilter")}
                 </td>
               </tr>
             )}
@@ -159,8 +161,8 @@ export function PatternDiscoveryCard({ result }: Props) {
       </div>
 
       <div className="mt-3 font-mono text-2xs text-text-t4">
-        ⚠ Geçmiş performans geleceği garanti etmez. Her bucket min 3 trade ile hesaplanır.
-        EV = P(W)×AvgWinR − P(L)×AvgLossR
+        {t("backtest.disclaimer")}
+        {" "}EV = P(W)×AvgWinR − P(L)×AvgLossR
       </div>
     </div>
   );

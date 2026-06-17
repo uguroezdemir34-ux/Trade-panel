@@ -4,6 +4,11 @@
  * `/api/v5/account/positions` (private endpoint, auth gerekli).
  * Response: { code, data: [{ instId, pos, posSide, avgPx, markPx, upl, lever, ... }] }
  *
+ * TP/SL NOT: OKX positions endpoint TP/SL fiyatlarını döndürmez.
+ * Bunlar /api/v5/trade/orders-algo-pending altında conditional/oco emirler
+ * olarak tutulur. fetchPositions() her çağrıda bunları da çekip
+ * instId bazında eşleştirir.
+ *
  * Sadece BTC + ETH SWAP pozisyonları döner (v2 strategy).
  */
 
@@ -159,6 +164,84 @@ export function parsePositionResponse(raw: unknown): Position[] | null {
   return positions;
 }
 
+// ─── Algo Orders (TP/SL) ─────────────────────────────────────────────────────
+
+/** instId → { tp, sl } haritası — algo-pending emirlerden */
+type AlgoMap = Record<string, { tp: number | null; sl: number | null }>;
+
+const algoRowSchema = z.object({
+  instId: z.string(),
+  tpTriggerPx: z.string().optional(),
+  slTriggerPx: z.string().optional(),
+});
+
+const algoResponseSchema = z.object({
+  code: z.string(),
+  data: z.array(algoRowSchema).optional(),
+});
+
+/** string → pozitif sayı veya null */
+function pxOrNull(s: string | undefined): number | null {
+  if (!s) return null;
+  const n = parseFloat(s);
+  return isFinite(n) && n > 0 ? n : null;
+}
+
+/**
+ * OKX conditional/oco algo emirlerini çek, instId başına { tp, sl } haritasına çevir.
+ * Hata durumunda boş harita döner — pozisyon çağrısı bundan etkilenmez.
+ */
+async function fetchAlgoMap(
+  clientCreds?: { key: string; secret: string; pass: string } | null,
+): Promise<AlgoMap> {
+  const map: AlgoMap = {};
+  const ordTypes = ["conditional", "oco"] as const;
+
+  async function fetchOneType(ordType: string): Promise<void> {
+    // instType=SWAP zorunlu — OKX dokümantasyonu: ordType=conditional|oco için
+    // instType veya instId gerekir, aksi halde boş array döner.
+    const path = `/api/okx/api/v5/trade/orders-algo-pending?ordType=${ordType}&instType=SWAP`;
+    try {
+      let res: Response;
+      if (clientCreds?.key) {
+        res = await fetch(path, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isDemo: false, clientCreds }),
+        });
+      } else {
+        res = await fetch(path);
+      }
+      if (!res.ok) return;
+      const raw = await res.json() as unknown;
+
+      // Proxy wraps in { ok, data } — unwrap if needed
+      let envelope: unknown = raw;
+      if (raw && typeof raw === "object" && "ok" in raw) {
+        const r = raw as { ok: boolean; data?: unknown };
+        if (!r.ok) return;
+        envelope = { code: "0", data: r.data };
+      }
+
+      const parsed = algoResponseSchema.safeParse(envelope);
+      if (!parsed.success || parsed.data.code !== "0") return;
+
+      for (const row of parsed.data.data ?? []) {
+        const existing = map[row.instId] ?? { tp: null, sl: null };
+        map[row.instId] = {
+          tp: existing.tp ?? pxOrNull(row.tpTriggerPx),
+          sl: existing.sl ?? pxOrNull(row.slTriggerPx),
+        };
+      }
+    } catch {
+      // Algo fetch failure is non-fatal — TP/SL will show "—"
+    }
+  }
+
+  await Promise.all(ordTypes.map(fetchOneType));
+  return map;
+}
+
 /**
  * Açık pozisyonları çek.
  *
@@ -186,16 +269,29 @@ export async function fetchPositions(
     const raw = await res.json() as Record<string, unknown>;
     if (!raw || typeof raw !== "object") return null;
 
+    let positions: Position[] | null = null;
     // Proxy response: { ok: boolean, data: [...positions] }
     if (typeof raw.ok === "boolean") {
       if (!raw.ok) return null;
-      return parsePositionResponse({ code: "0", data: raw.data });
+      positions = parsePositionResponse({ code: "0", data: raw.data });
+    } else if (typeof raw.code === "string") {
+      // Direct OKX envelope passthrough
+      positions = parsePositionResponse(raw);
     }
-    // Direct OKX envelope passthrough
-    if (typeof raw.code === "string") {
-      return parsePositionResponse(raw);
-    }
-    return null;
+
+    if (!positions || positions.length === 0) return positions;
+
+    // Algo emirlerden TP/SL eşleştir (hata olursa positions değişmez)
+    const algoMap = await fetchAlgoMap(clientCreds).catch(() => ({} as AlgoMap));
+    return positions.map((pos) => {
+      const algo = algoMap[pos.instId];
+      if (!algo) return pos;
+      return {
+        ...pos,
+        tpTriggerPx: pos.tpTriggerPx ?? algo.tp,
+        slTriggerPx: pos.slTriggerPx ?? algo.sl,
+      };
+    });
   } catch {
     return null;
   }

@@ -202,7 +202,8 @@ export function WalletSummaryBar() {
         </div>
       </div>
 
-      {/* ── Pozisyon Kartları ─────────────────────────────────────────── */}
+      {/* ── Pozisyon Kartları — masaüstünde 2 kolon ─────────────────── */}
+      <div className="grid grid-cols-1 lg:grid-cols-2">
       {openPositions.map((pos) => {
         const isLong  = pos.direction === "LONG";
         const dirColor = isLong ? EMERALD : CRIMSON;
@@ -214,7 +215,7 @@ export function WalletSummaryBar() {
         return (
           <div
             key={pos.instId}
-            className="border-t border-border px-3 py-3"
+            className="border-t border-border lg:even:border-l px-3 py-3"
             style={{
               // Hafif aurora: yön rengi sol üstten soluklaşır → sayfa bg'si görünür
               background: `linear-gradient(150deg, ${dirColor}09 0%, transparent 62%)`,
@@ -263,7 +264,7 @@ export function WalletSummaryBar() {
                 </div>
               </div>
 
-              {/* Sağ: Büyük P&L — ROE% üst, USD alt */}
+              {/* Sağ: Büyük P&L — USD üst (büyük), ROE% alt (küçük) */}
               <div className="flex flex-col items-end gap-0.5 shrink-0">
                 <span
                   className={`font-mono text-xl font-bold tabular-nums leading-none ${
@@ -271,13 +272,13 @@ export function WalletSummaryBar() {
                   }`}
                   style={{ color: pnlColor }}
                 >
-                  {signed(roePct)}%
+                  {uplSafe >= 0 ? "+" : ""}${fmt(Math.abs(uplSafe), 2)}
                 </span>
                 <span
                   className="font-mono text-sm font-semibold tabular-nums"
                   style={{ color: pnlColor }}
                 >
-                  {uplSafe >= 0 ? "+" : ""}${fmt(Math.abs(uplSafe), 2)}
+                  {signed(roePct)}%
                 </span>
               </div>
             </div>
@@ -347,10 +348,50 @@ export function WalletSummaryBar() {
                 </div>
               </div>
 
+              {/* Satır 3: TP / SL */}
+              <div title={t("position.tp")}>
+                <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                  {t("position.takeProfit")}
+                </div>
+                {pos.tpTriggerPx !== null && pos.entryPx > 0 ? (
+                  <>
+                    <div className="font-mono text-xs font-semibold tabular-nums" style={{ color: EMERALD }}>
+                      ${fmtPx(pos.tpTriggerPx)}
+                    </div>
+                    <div className="font-mono text-2xs tabular-nums text-text-t4">
+                      {signed(safeDiv(pos.tpTriggerPx - pos.entryPx, pos.entryPx) * 100)}%
+                    </div>
+                  </>
+                ) : (
+                  <div className="font-mono text-xs text-text-t3">—</div>
+                )}
+              </div>
+
+              <div title={t("position.sl")}>
+                <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                  {t("position.stopLoss")}
+                </div>
+                {pos.slTriggerPx !== null && pos.entryPx > 0 ? (
+                  <>
+                    <div className="font-mono text-xs font-semibold tabular-nums" style={{ color: CRIMSON }}>
+                      ${fmtPx(pos.slTriggerPx)}
+                    </div>
+                    <div className="font-mono text-2xs tabular-nums text-text-t4">
+                      {signed(safeDiv(pos.slTriggerPx - pos.entryPx, pos.entryPx) * 100)}%
+                    </div>
+                  </>
+                ) : (
+                  <div className="font-mono text-xs text-text-t3">—</div>
+                )}
+              </div>
+
+              <div /> {/* 3. kolon boş — simetri */}
+
             </div>
           </div>
         );
       })}
+      </div>
 
     </div>
   );

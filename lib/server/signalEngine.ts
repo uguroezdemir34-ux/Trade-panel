@@ -108,7 +108,6 @@ async function fetchAndScore(pair: Pair): Promise<{
     fg: 50, // neutral frozen F&G
     fundingRate: null,
     oiVelocityScore: null,
-    whaleInflowScore: null,
     now: latest.ts,
     ...FROZEN_STATE,
   });
@@ -154,7 +153,6 @@ function scorePrevBar(
       fg: 50,
       fundingRate: null,
       oiVelocityScore: null,
-      whaleInflowScore: null,
       now: prevLatest.ts,
       ...FROZEN_STATE,
     });

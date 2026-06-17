@@ -8,6 +8,7 @@ import { useCandleStore } from "@/lib/store/candleStore";
 import { useTradeFeedStore, selectTrades } from "@/lib/store/tradeFeedStore";
 import { computeCvdMultiFrame } from "@/lib/orderflow/cvd";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   activePair: Pair;
@@ -67,6 +68,7 @@ const GRID_COLS = "grid-cols-[1fr_56px_46px_40px_36px]";
 
 /* ── Detail Card ── */
 function PairDetailCard({ activePair }: { activePair: Pair }) {
+  const t      = useT();
   const prices    = useMarketStore((s) => s.prices);
   const allScores = useScoreStore((s) => s.results);
   const candles1d = useCandleStore((s) => s.candles[`${activePair}_1d`]);
@@ -152,14 +154,14 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
       <div className="grid grid-cols-2 gap-x-3 gap-y-2 mb-2.5">
         {/* Hacim Deltası */}
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Hacim Deltası</p>
+          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlistVolumeDelta")}</p>
           <p className={`font-mono text-[11px] font-semibold tabular-nums ${cvdClr}`}>
             {cvdRatio ?? "—"}
           </p>
         </div>
         {/* 24s Yüksek */}
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">24s Yüksek</p>
+          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlist24hHigh")}</p>
           <p className="font-mono text-[10px] font-semibold text-emerald-400 tabular-nums">
             {high24 != null && high24 > 0 ? fmtPrice(high24) : "—"}
           </p>
@@ -177,7 +179,7 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
         </div>
         {/* 24s Düşük */}
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">24s Düşük</p>
+          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlist24hLow")}</p>
           <p className="font-mono text-[10px] font-semibold text-red-400 tabular-nums">
             {low24 != null && low24 > 0 ? fmtPrice(low24) : "—"}
           </p>
@@ -194,6 +196,7 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
 
 /* ── Watchlist İçerik ── */
 function WatchlistContent({ activePair, onPairChange }: Props) {
+  const t             = useT();
   const btcD          = useMacroStore((s) => s.btcD);
   const ethD          = useMacroStore((s) => s.ethD);
   const usdtD         = useMacroStore((s) => s.usdtD);
@@ -234,7 +237,7 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
       <div className={`shrink-0 grid ${GRID_COLS} gap-x-1 px-2 py-1 border-b border-border/50`}>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider">Sembol</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">Son</span>
-        <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">Değ</span>
+        <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">{t("grafik.watchlistChange")}</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">%</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">QX</span>
       </div>
@@ -305,6 +308,7 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
 
 /* ── WatchlistPanel (export) ── */
 export function WatchlistPanel({ activePair, onPairChange }: Props): React.ReactElement {
+  const t = useT();
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const handleDrawerPairChange = (pair: Pair) => {
@@ -323,7 +327,7 @@ export function WatchlistPanel({ activePair, onPairChange }: Props): React.React
       <button
         className="md:hidden fixed bottom-20 right-3 z-30 rounded-full bg-bg-card border border-border shadow-lg px-3 py-2 font-mono text-xs text-text-t2 active:bg-bg-hover"
         onClick={() => setDrawerOpen(true)}
-        aria-label="İzleme listesi"
+        aria-label={t("grafik.watchlistTitle")}
       >
         ☰ Liste
       </button>

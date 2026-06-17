@@ -41,6 +41,8 @@ interface Props {
   liqBands?: LiqBand[];
   /** Live price line — separate prop so price-tick updates don't re-run the full series effect */
   currentPrice?: number;
+  /** When true, overlay div captures pointer events for drawing input; false = transparent (LWC pan/zoom normal) */
+  isDrawingMode?: boolean;
 }
 
 const COLOR_UP       = "#22c55e";
@@ -114,7 +116,7 @@ function fmtVol(n: number): string {
   return n.toFixed(2);
 }
 
-export function PriceChart({ series, height = 400, theme = "dark", onChartClick, resetKey, liqBands, currentPrice }: Props): React.ReactElement {
+export function PriceChart({ series, height = 400, theme = "dark", onChartClick, resetKey, liqBands, currentPrice, isDrawingMode = false }: Props): React.ReactElement {
   const containerRef  = useRef<HTMLDivElement>(null);
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -129,7 +131,8 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
   const verticalLinesMapRef  = useRef<Map<string, VerticalLinePrimitive>>(new Map());
   const crossLinesMapRef     = useRef<Map<string, CrossLinePrimitive>>(new Map());
   const fibTimeZonesMapRef   = useRef<Map<string, FibTimeZonePrimitive>>(new Map());
-  const onChartClickRef = useRef(onChartClick);
+  const onChartClickRef  = useRef(onChartClick);
+  const pointerStartRef  = useRef<{ x: number; y: number } | null>(null);
   const ema20Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema50Ref      = useRef<ISeriesApi<"Line"> | null>(null);
   const ema200Ref     = useRef<ISeriesApi<"Line"> | null>(null);
@@ -203,23 +206,6 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     });
     ro.observe(container);
 
-    // Wire click → {price, time} callback
-    // On mobile, param.time is undefined when tapping empty/future areas.
-    // Fall back to coordinateToTime so horizontal tools still work.
-    chart.subscribeClick((param) => {
-      if (!param.point || !candleRef.current) return;
-      const price = candleRef.current.coordinateToPrice(param.point.y);
-      if (price === null || price <= 0) return;
-
-      let time: number | undefined = param.time as number | undefined;
-      if (time === undefined) {
-        const resolved = chart.timeScale().coordinateToTime(param.point.x);
-        if (resolved != null) time = resolved as number;
-      }
-
-      onChartClickRef.current?.(price, time);
-    });
-
     // Wire crosshair → OHLCV overlay
     const crosshairHandler = (param: MouseEventParams<Time>) => {
       if (!param.point) { setCrosshairData(null); return; }
@@ -267,12 +253,18 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       vwapLowerRef.current    = null;
       currentPriceLineRef.current = null;
     };
-  }, [height]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ─── Keep click callback ref fresh ─────────────────────────────────────
   useEffect(() => {
     onChartClickRef.current = onChartClick;
   }, [onChartClick]);
+
+  // ─── Height resize (applyOptions, no chart recreation) ──────────────────
+  useEffect(() => {
+    chartRef.current?.applyOptions({ height });
+  }, [height]);
 
   // ─── Sync drawn horizontal lines ────────────────────────────────────────
   useEffect(() => {
@@ -650,18 +642,22 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
   useEffect(() => {
     const candle = candleRef.current;
     if (!candle) return;
-    if (currentPriceLineRef.current) {
+    if (currentPrice && currentPrice > 0) {
+      if (currentPriceLineRef.current) {
+        // Update in-place — no flicker
+        try { currentPriceLineRef.current.applyOptions({ price: currentPrice }); } catch { /* ignore */ }
+      } else {
+        try {
+          currentPriceLineRef.current = candle.createPriceLine({
+            price: currentPrice,
+            color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
+            axisLabelVisible: true, title: "LIVE",
+          });
+        } catch { /* ignore */ }
+      }
+    } else if (currentPriceLineRef.current) {
       try { candle.removePriceLine(currentPriceLineRef.current); } catch { /* ignore */ }
       currentPriceLineRef.current = null;
-    }
-    if (currentPrice && currentPrice > 0) {
-      try {
-        currentPriceLineRef.current = candle.createPriceLine({
-          price: currentPrice,
-          color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
-          axisLabelVisible: true, title: "LIVE",
-        });
-      } catch { /* ignore */ }
     }
   }, [currentPrice]);
 
@@ -945,7 +941,51 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
 
   return (
     <div className="relative w-full" style={{ height }}>
+      {/* LWC mount point — no event handlers; all drawing input comes from overlay below */}
       <div ref={containerRef} className="w-full h-full" />
+      {/*
+        Drawing input overlay — architecture rationale:
+        - LWC canvas absorbs touch events internally (preventDefault) and subscribeClick is
+          unreliable on mobile ("working as intended" per LWC issue #1417).
+        - When drawing mode is OFF: pointer-events:none → fully transparent, LWC pan/zoom unaffected.
+        - When drawing mode is ON:  pointer-events:auto + touch-action:none → overlay captures all
+          pointer input before the browser can interpret it as scroll/pan. PointerEvent API fires
+          identically on mouse, iOS touch, Android touch, and PWA. 10px tap threshold handles
+          mobile finger jitter (vs. 4px which was too tight).
+      */}
+      <div
+        className="absolute inset-0"
+        style={{
+          pointerEvents: isDrawingMode ? "auto" : "none",
+          touchAction: "none",
+          cursor: isDrawingMode ? "crosshair" : "default",
+        }}
+        onPointerDown={(e) => {
+          pointerStartRef.current = { x: e.clientX, y: e.clientY };
+        }}
+        onPointerCancel={() => {
+          pointerStartRef.current = null;
+        }}
+        onPointerUp={(e) => {
+          const start = pointerStartRef.current;
+          pointerStartRef.current = null;
+          if (!start) return;
+          const dx = e.clientX - start.x;
+          const dy = e.clientY - start.y;
+          if (dx * dx + dy * dy > 900) return; // >30px = pan/drag, not a tap (mobile ~11-15px jitter)
+          const chart = chartRef.current;
+          const candle = candleRef.current;
+          if (!chart || !candle) return;
+          const rect = e.currentTarget.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          const price = candle.coordinateToPrice(y);
+          if (price === null || price <= 0) return;
+          const resolved = chart.timeScale().coordinateToTime(x);
+          const time = resolved != null ? (resolved as number) : undefined;
+          onChartClickRef.current?.(price, time);
+        }}
+      />
       {crosshairData && (
         <div className="absolute top-1 left-1 z-10 flex gap-2.5 rounded bg-bg-card/90 border border-border px-2 py-1 font-mono text-2xs text-text-t2 pointer-events-none select-none">
           <span>

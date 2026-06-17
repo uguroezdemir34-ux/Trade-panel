@@ -49,7 +49,6 @@ import {
   checkEventSkip,
   checkBtcCooldown,
   checkBtcSelfCooldown,
-  checkDailyTrendOpposite,
   checkFundingCrowded,
   checkLockReleaseRamp,
   checkCorrelationCluster,
@@ -143,12 +142,6 @@ export interface ScoreInput {
    * null/undefined → 0 (tarafsız, alternatif veri yoksa atlanır).
    */
   oiVelocityScore?: number | null;
-
-  /**
-   * Whale inflow skoru [-10, +10] — whale-flow.ts çıktısından beslenir.
-   * null/undefined → 0 (tarafsız).
-   */
-  whaleInflowScore?: number | null;
 
   /** Scorer ağırlık çarpanları — ayarlar sayfasından gelir. Default: tümü 1.0 */
   scorerWeights?: ScorerWeights | null;
@@ -273,7 +266,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
     ema200_1h,
     ema50_4h,
     ema200_4h,
-    ema50_1d,
+    // ema50_1d: destructure edilmiyor — checkDailyTrendOpposite devre dışı
     rsi,
     adx,
     bbPct,
@@ -364,10 +357,9 @@ export function computeScore(input: ScoreInput): ScoreResult {
 
   // ───── 5. Total ─────
   const oiBonus = input.oiVelocityScore ?? 0;
-  const whaleBonus = input.whaleInflowScore ?? 0;
   const total = Math.min(
     100,
-    Math.max(0, baseScore + sweepRes.bonus + regimeRes.bonus + srModifier + oiBonus + whaleBonus),
+    Math.max(0, baseScore + sweepRes.bonus + regimeRes.bonus + srModifier + oiBonus),
   );
   const score = Math.round(total);
 
@@ -443,8 +435,8 @@ export function computeScore(input: ScoreInput): ScoreResult {
 
   // ───── 9. Soft blocks ─────
   const softBlocks: string[] = [];
-  const dailyTrend = checkDailyTrendOpposite({ direction, px, ema50_1d });
-  if (dailyTrend) softBlocks.push(dailyTrend);
+  // checkDailyTrendOpposite devre dışı — ema50_1d alanı gerçek 1D mum değil,
+  // 4H EMA200 alias'ı. Gerçek 1D veri eklenince yeniden aktif edilecek.
   const fundingCrowded = checkFundingCrowded(fundingRate, direction);
   if (fundingCrowded) softBlocks.push(fundingCrowded);
   const lockRamp = checkLockReleaseRamp({ lockReleasedAt, now });

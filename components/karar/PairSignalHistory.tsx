@@ -4,18 +4,22 @@ import { useMemo } from "react";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import type { Pair } from "@/lib/constants/pairs";
+import { useT } from "@/lib/i18n/context";
 
-function timeAgo(ts: number): string {
+type TFn = (key: string, params?: Record<string, string | number>) => string;
+
+function timeAgo(ts: number, t: TFn): string {
   const delta = Date.now() - ts;
   const m = Math.floor(delta / 60_000);
-  if (m < 1) return "şimdi";
-  if (m < 60) return `${m}dk`;
+  if (m < 1) return t("common.timeNow");
+  if (m < 60) return t("common.timeMinutes", { n: m });
   const h = Math.floor(m / 60);
-  if (h < 24) return `${h}sa`;
-  return `${Math.floor(h / 24)}g`;
+  if (h < 24) return t("common.timeHours", { n: h });
+  return t("common.timeDays", { n: Math.floor(h / 24) });
 }
 
 export function PairSignalHistory({ pair }: { pair: Pair }): React.ReactElement | null {
+  const t = useT();
   const history = useScoreHistoryStore((s) => s.history);
   const trades = useTradesStore((s) => s.trades);
 
@@ -32,7 +36,7 @@ export function PairSignalHistory({ pair }: { pair: Pair }): React.ReactElement 
   return (
     <div className="rounded-lg border border-border bg-surface-s1 px-3 py-2 flex flex-col gap-1.5">
       <span className="font-mono text-2xs text-text-t4 tracking-wider uppercase">
-        {pair} GO Geçmişi
+        {t("karar.pairGoHistory", { pair })}
       </span>
       {signals.map((sig) => {
         const dirUp = sig.direction.toUpperCase() as "LONG" | "SHORT" | "NEUTRAL";
@@ -56,7 +60,7 @@ export function PairSignalHistory({ pair }: { pair: Pair }): React.ReactElement 
             : "text-text-t3";
         return (
           <div key={`${sig.ts}_${sig.score}`} className="flex items-center gap-2 font-mono text-2xs">
-            <span className="text-text-t4 shrink-0 tabular-nums">{timeAgo(sig.ts)}</span>
+            <span className="text-text-t4 shrink-0 tabular-nums">{timeAgo(sig.ts, t)}</span>
             <span className="text-text-t4 shrink-0 tabular-nums">{fullTime}</span>
             <span className={`shrink-0 font-semibold ${dirColor}`}>{dirLabel}</span>
             <span className="text-text-t3 tabular-nums w-6 text-right">{sig.score}</span>

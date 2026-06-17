@@ -24,6 +24,7 @@
 
 import type { Pair } from "@/lib/constants/pairs";
 import { pairToInstId } from "@/lib/exchange/okx/symbol-format";
+import { parseProxyItems } from "@/lib/market/parseProxyItems";
 
 export interface OpenInterestResult {
   pair: Pair;
@@ -61,19 +62,10 @@ export async function fetchOpenInterest(
 
     const raw = (await res.json()) as Record<string, unknown>;
 
-    // Proxy unwrap (mevcut OKX wrap pattern — funding ile aynı)
-    let inner: Record<string, unknown> = raw;
-    if (raw.data && typeof raw.data === "object" && !Array.isArray(raw.data)) {
-      const d = raw.data as Record<string, unknown>;
-      if (typeof d.code === "string") inner = d;
-    }
+    const items = parseProxyItems(raw);
+    if (!items) return fallback;
 
-    if (inner.code !== "0") return fallback;
-
-    const data = inner.data as Array<Record<string, unknown>> | undefined;
-    if (!data || data.length === 0) return fallback;
-
-    const first = data[0];
+    const first = items[0];
     const oiStr = first.oi as string | undefined;
     const oiCcyStr = first.oiCcy as string | undefined;
 

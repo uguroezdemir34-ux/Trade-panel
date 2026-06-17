@@ -27,7 +27,6 @@ interface Props {
 }
 
 export function FlowAlignmentRow({ flow }: Props) {
-  const t = useT();
   const [expanded, setExpanded] = useState(false);
 
   // Exchange feed counts — only subscribed when expanded to avoid wasted renders
@@ -46,13 +45,7 @@ export function FlowAlignmentRow({ flow }: Props) {
 
   const totalFeedEvents = allEvents.length;
 
-  if (!flow) {
-    return (
-      <div className="bg-surface-s2 rounded-md p-3 text-text-t3 text-xs">
-        {t("karar.flowPreparing")}
-      </div>
-    );
-  }
+  if (!flow) return null;
 
   const colorClass = flow.vetoed
     ? "text-signal-down"

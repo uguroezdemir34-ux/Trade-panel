@@ -17,6 +17,7 @@ import { useMemo } from "react";
 import { useTradeFeedStore } from "@/lib/store/tradeFeedStore";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Trade } from "@/lib/orderflow/types";
+import { useT } from "@/lib/i18n/context";
 
 const FEED_PAIRS = new Set<string>(["BTC", "ETH"]);
 
@@ -86,6 +87,7 @@ interface Props {
 }
 
 export function TapeReader({ pair, maxRows = 60 }: Props) {
+  const t = useT();
   // tradeFeedStore.getTrades is not reactive — use feeds selector
   const feed = useTradeFeedStore((s) => s.feeds[pair as "BTC" | "ETH"]);
 
@@ -130,7 +132,7 @@ export function TapeReader({ pair, maxRows = 60 }: Props) {
           <div className="h-full bg-green-500" style={{ width: `${buyPct}%` }} />
         </div>
         <span className="font-mono text-2xs text-red-400">SEL {100 - buyPct}%</span>
-        <span className="font-mono text-2xs text-text-t4 ml-2">{recentTrades.length} işlem</span>
+        <span className="font-mono text-2xs text-text-t4 ml-2">{t("common.tradeCount", { n: recentTrades.length })}</span>
         <span className="font-mono text-2xs text-text-t4">
           🐋 &gt;{whaleThreshold >= 1000 ? `$${whaleThreshold / 1000}K` : `$${whaleThreshold}`}
         </span>

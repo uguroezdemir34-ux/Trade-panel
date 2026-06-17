@@ -176,7 +176,7 @@ function TimelineItem({
           className={`mt-0.5 font-mono text-xs transition-colors leading-none ${
             trade.notes ? "text-brand/60 hover:text-brand" : "text-text-t4/40 hover:text-text-t3"
           }`}
-          title={trade.notes ? "Notu görüntüle / düzenle" : "Not ekle"}
+          title={trade.notes ? t("trades.noteView") : t("trades.noteAdd")}
         >
           ✎
         </button>
@@ -190,7 +190,7 @@ function TimelineItem({
             onChange={(e) => setEditNote(e.target.value)}
             onBlur={handleNoteSave}
             onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) handleNoteSave(); }}
-            placeholder="Not ekle… (odaktan çıkınca kaydedilir)"
+            placeholder={t("trades.noteAddPlaceholder")}
             rows={2}
             className="w-full resize-none bg-transparent border border-border/40 rounded px-2 py-1 font-mono text-2xs text-text-t2 placeholder:text-text-t4 focus:outline-none focus:border-brand/50 transition-colors"
           />

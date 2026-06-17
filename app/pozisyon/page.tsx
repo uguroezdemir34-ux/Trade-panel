@@ -6,21 +6,22 @@ import { PositionCard } from "@/components/pozisyon/PositionCard";
 import { PositionEmptyState } from "@/components/pozisyon/PositionEmptyState";
 import { TradeTimelineCard } from "@/components/pozisyon/TradeTimelineCard";
 import { PortfolioSummaryBanner } from "@/components/pozisyon/PortfolioSummaryBanner";
+import { useT } from "@/lib/i18n/context";
 
 export default function PozisyonPage() {
+  const t = useT();
   const positions = usePositionStore((s) => s.positions);
   const closingInstId = usePositionStore((s) => s.closingInstId);
   const trades = useTradesStore((s) => s.trades);
   const updateTradeSlTp = useTradesStore((s) => s.updateTradeSlTp);
-  const openTrades = trades.filter((t) => t.status === "open");
+  const openTrades = trades.filter((tr) => tr.status === "open");
 
   return (
     <div className="flex flex-col gap-4">
 
       <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-mono text-xs text-amber-400">
-        <span className="font-bold tracking-widest mr-2">⚙ SİNYAL MODU</span>
-        Emir yönetimi devre dışı. Pozisyonları OKX, Binance veya Bybit
-        uygulamasından yönetin.
+        <span className="font-bold tracking-widest mr-2">{t("settings.signalModeLabel")}</span>
+        {t("settings.signalModeManageExchange")}
       </div>
 
       {positions.length === 0 ? (

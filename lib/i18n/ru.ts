@@ -125,7 +125,18 @@ export const ru: Dictionary = {
     disclaimer1: "• При достижении TP1 закрыть 50% и перенести Stop на точку безубыточности",
     disclaimer2: "• Действует правило максимум 2 сделки/день",
     disclaimer3: "• Риск ограничен {pct}%",
-  },
+  
+    check1: "I'm acting on a GO signal — not FOMO",
+    check2: "{amount} — I accept this as my risk",
+    check3: "I'm emotionally balanced — no revenge trading",
+    check4: "I trust the system, I'm following the plan",
+    remaining: "{n} left",
+    historicalEdge: "Historical Edge",
+    mentalChecklist: "Mental Checklist",
+    marginMode: "Margin Mode",
+    cross: "Cross",
+    isolated: "Isolated",
+},
 
   karar: {
     title: "🎯 РЕШЕНИЕ",
@@ -181,10 +192,83 @@ export const ru: Dictionary = {
     alarmToastBelow: "BELOW",
     alarmToastTarget: "Target",
     alarmToastNow: "Now", goSignalTitle: "Recent GO Signals", leaderboardTitle: "Top Scores",
-  },
+      // TODO: translate
+    profilePullback: "Profile: Pullback (Auto)",
+    // TODO: translate
+    profileTrend: "Profile: Trend Mode (Auto)",
+    // TODO: translate
+    signalBarClose: "Signal: Bar Close Confirmed",
+    // TODO: translate
+    trendStrong: "strong trend",
+    // TODO: translate
+    trendMedium: "medium trend",
+    // TODO: translate
+    trendWeak: "weak trend",
+    // TODO: translate
+    volumeSupported: "volume supported",
+    // TODO: translate
+    volumePartial: "volume partial",
+    // TODO: translate
+    volumeInsufficient: "volume insufficient",
+    // TODO: translate
+    pullbackMode: " · pullback mode",
+    // TODO: translate
+    thresholdCrossed: "threshold crossed ({score}/{threshold}) → GO",
+    // TODO: translate
+    thresholdGap: "{gap} pts to threshold ({score}/{threshold})",
+    // TODO: translate
+    thresholdBelow: "below threshold ({score}/{threshold})",
+    // TODO: translate
+    telegramAlertsOn: "Telegram alerts on",
+    // TODO: translate
+    noSignalsFilter: "No signals for this filter",
+    // TODO: translate
+    tradeAfterSignal: "Trade opened after this signal",
+    // TODO: translate
+    noTradeAfterSignal: "No trade opened",
+    // TODO: translate
+    shortcutsTitle: "⌨ Keyboard Shortcuts",
+    // TODO: translate
+    shortcutsCloseHint: "Press ESC or ? to close",
+    // TODO: translate
+    shortcutSelectPair: "Select pair (BTC=1, ETH=2, XRP=3 ...)",
+    // TODO: translate
+    shortcutPrevNext: "Previous / next pair in active list",
+    // TODO: translate
+    shortcutNextGo: "Jump to next GO pair",
+    // TODO: translate
+    shortcutToggleHelp: "Open / close this help screen",
+    // TODO: translate
+    shortcutCloseModal: "Close open modal",
+    // TODO: translate
+    goSignalEmptyNote: "No GO signals yet — fills automatically as the system runs.",
+    // TODO: translate
+    scoreFilterAll: "All",
+    // TODO: translate
+volumeSection: "VOLUME",
+    // TODO: translate
+    execForwardTestRequired: "Activate Forward Test Mode — order placement disabled.",
+    // TODO: translate
+    keyboardShortcutHint: "Keyboard shortcuts (? key)",
+    // TODO: translate
+    pairGoHistory: "{pair} GO History",
+    aiBadge: "AI",
+},
 
+    // TODO: translate
+    signalModeNote: "⚙ Signal mode — order placement disabled",
+    // TODO: translate
+    signalModeActive: "Signal mode active — trade from exchange",
+    // TODO: translate
+    signalModeBalanceOnly: "⚙ Signal mode — balance display only, order placement disabled",
+    // TODO: translate
+    signalModeApiNote: "⚙ Signal mode: API key is used for balance and position display only. No trade permission required — read-only key is sufficient.",
   settings: {
     title: "НАСТРОЙКИ",
+    // TODO: translate
+signalModeLabel: "⚙ SIGNAL MODE",
+    // TODO: translate
+    signalModeManageExchange: "Order management disabled. Manage positions from OKX, Binance or Bybit.",
     demoMode: {
       label: "Демо режим",
       description: "Подключиться к демо-торговому эндпойнту OKX. Без реальных средств.",
@@ -469,6 +553,19 @@ export const ru: Dictionary = {
       qxScore: "QX SCORE",
     },
     },
+    wallet: {
+      marginUsed: "Margin Usage",
+      safe: "Safe",
+      caution: "Caution",
+      danger: "Critical",
+      used: "used",
+      free: "free",
+      dailyTotal: "Daily Total",
+      posSize: "Position Size",
+      usedMargin: "Used Margin",
+      liqPriceLabel: "Liq. Price",
+      qxScore: "QX SCORE",
+    },
   },
 
   position: {
@@ -490,6 +587,8 @@ export const ru: Dictionary = {
     margin: "МАРЖА",
     stopLoss: "SL",
     takeProfit: "TP",
+    tp: "Take Profit",
+    sl: "Stop Loss",
     noSlSet: "нет SL",
     noTpSet: "нет TP",
     liqPrice: "LIQ",
@@ -517,7 +616,17 @@ export const ru: Dictionary = {
       insufficientBalance: "Недостаточный баланс или ошибка параметров",
       alreadyClosed: "Позиция уже закрыта",
     },
-  },
+  
+    liqDanger: "LIQ ZONE",
+    liqFrom: "to liq",
+    scaleIn: "Add",
+    scaleOut: "Scale Out",
+    scaleInLabel: "Qty (coin)",
+    scaleInSubmit: "Add to Position",
+    editSlTp: "Edit SL/TP",
+    updateSlTp: "Update",
+    cancelEdit: "Cancel",
+},
 
   risk: {
     title: "🛡️ РИСК & ДИСЦИПЛИНА",
@@ -807,6 +916,88 @@ export const ru: Dictionary = {
     quickTrade: "Quick Trade",
     holdConfirm: "Hold to confirm",
     quickSuccess: "Order placed",
+    // TODO: translate
+    drawHline: "H-LINE — Click on chart → horizontal line",
+    // TODO: translate
+    drawRay: "RAY — Click on chart → horizontal ray",
+    // TODO: translate
+    drawTrend2: "TREND — Step 2: click endpoint (ESC = cancel)",
+    // TODO: translate
+    drawTrend1: "TREND — Step 1: click starting point",
+    // TODO: translate
+    drawExtend2: "EXTENDED LINE — Step 2: click endpoint (ESC = cancel)",
+    // TODO: translate
+    drawExtend1: "EXTENDED LINE — Step 1: click starting point",
+    // TODO: translate
+    drawChannel3: "PARALLEL CHANNEL — Step 3: set width (ESC = cancel step 2)",
+    // TODO: translate
+    drawChannel2: "PARALLEL CHANNEL — Step 2: click endpoint (ESC = cancel)",
+    // TODO: translate
+    drawChannel1: "PARALLEL CHANNEL — Step 1: click starting point",
+    // TODO: translate
+    drawFib2: "FIB — Step 2: click end price (ESC = cancel)",
+    // TODO: translate
+    drawFib1: "FIB — Step 1: click start price",
+    // TODO: translate
+    drawFibExt2: "FIB EXT — Step 2: click end price (ESC = cancel)",
+    // TODO: translate
+    drawFibExt1: "FIB EXT — Step 1: click start price",
+    // TODO: translate
+    drawVline: "V-LINE — Click on chart → vertical line",
+    // TODO: translate
+    drawCross: "CROSS — Click on chart → crosshair",
+    // TODO: translate
+    drawFibTime2: "FIB TIME — Step 2: click end point (ESC = cancel)",
+    // TODO: translate
+    drawFibTime1: "FIB TIME — Step 1: click starting point",
+    // TODO: translate
+    drawPrice: "PRICE MODE — Click on chart → snap to price",
+    // TODO: translate
+    drawCancelStep2: "↩ Cancel step 2",
+    // TODO: translate
+    drawCancelStep1: "↩ Cancel step 1",
+    // TODO: translate
+    drawCancelAll: "✕ Cancel",
+    // TODO: translate
+    priceCaptureCopied: "Copied ✓ or save",
+    // TODO: translate
+    priceCaptureLabel: "Price",
+    // TODO: translate
+    priceCopyAs: "Copy as {label}",
+    // TODO: translate
+    loadError: "Failed to load, retrying...",
+    // TODO: translate
+    heightAdjust: "Adjust chart height",
+    // TODO: translate
+toolCursor: "Cursor",
+    // TODO: translate
+    toolHline: "H-Line",
+    // TODO: translate
+    toolRay: "Ray",
+    // TODO: translate
+    toolTrendline: "Trend Line",
+    // TODO: translate
+    toolExtline: "Extended Line",
+    // TODO: translate
+    toolChannel: "Parallel Channel",
+    // TODO: translate
+    toolVline: "V-Line",
+    // TODO: translate
+    toolCrossline: "Cross Line",
+    // TODO: translate
+    toolFibTimezone: "Fib Time Zone",
+    // TODO: translate
+    watchlistVolumeDelta: "Volume Delta",
+    // TODO: translate
+    watchlist24hHigh: "24h High",
+    // TODO: translate
+    watchlist24hLow: "24h Low",
+    // TODO: translate
+    watchlistChange: "Chg",
+    // TODO: translate
+    watchlistTitle: "Watchlist",
+    fibonacci: "Fibonacci",
+    fibext: "Fib Extension",
     legend: {
       candleUp: "Бычья свеча",
       candleDown: "Медвежья свеча",
@@ -817,7 +1008,13 @@ export const ru: Dictionary = {
       srSupport: "Support",
       srResistance: "Resistance",
     },
-  },
+  
+    ema200: "EMA 200",
+    showVolume: "Volume",
+    showRsi: "RSI",
+    showMacd: "MACD",
+    showBb: "BB(20)",
+},
 
   trades: {
     empty: "Пока нет сделок",
@@ -831,7 +1028,13 @@ export const ru: Dictionary = {
       title: "ПОСЛЕДНИЕ СДЕЛКИ",
       score: "Оценка",
     },
-  },
+      // TODO: translate
+    noteView: "View / edit note",
+    // TODO: translate
+    noteAdd: "Add note",
+    // TODO: translate
+    noteAddPlaceholder: "Add note... (saved on blur)",
+},
 
   warn: {
     insufficientMargin: "⚠️ Недостаточная маржа (нужно ${need}, доступно ${free})",
@@ -870,7 +1073,27 @@ export const ru: Dictionary = {
     close: "Закрыть",
     on: "ВКЛ",
     off: "ВЫКЛ",
-  },
+      // TODO: translate
+    all: "All",
+    // TODO: translate
+    today: "Today",
+    // TODO: translate
+    days7: "7D",
+    // TODO: translate
+    days30: "30D",
+    // TODO: translate
+    tradeCount: "{n} trades",
+    // TODO: translate
+    showMore: "Show more ({n} remaining)",
+    // TODO: translate
+    timeNow: "now",
+    // TODO: translate
+    timeMinutes: "{n}m",
+    // TODO: translate
+    timeHours: "{n}h",
+    // TODO: translate
+    timeDays: "{n}d",
+},
 
   backtest: {
     title: "BACKTEST",
@@ -935,7 +1158,11 @@ export const ru: Dictionary = {
     feeNote: "Fee model: OKX taker 0.05% × 2 (entry + exit)",
     avgNetPnl: "Avg Net PnL",
     avgNetPnlHint: "After fees",
-  },
+      // TODO: translate
+    noDataFilter: "Not enough data for this filter",
+    // TODO: translate
+    disclaimer: "⚠ Past performance does not guarantee future results. Each bucket requires min 3 trades.",
+},
   reconcile: {
     title: "OKX RECONCILIATION",
     subtitle: "Match local trades against OKX order history",
