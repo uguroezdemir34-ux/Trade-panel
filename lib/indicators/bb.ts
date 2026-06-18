@@ -40,7 +40,7 @@ export function bb(
   const n = options.period ?? 20;
   const mult = options.mult ?? 2;
   if (n <= 0 || !Number.isFinite(n)) {
-    throw new Error(`bb: geçersiz period: ${n}`);
+    return null;
   }
   if (closes.length < n) return null;
 

@@ -198,14 +198,16 @@ export default function KararPage() {
   displayPairsRef.current = displayPairs;
 
   const pairMomentum = useMemo<Partial<Record<Pair, number>>>(() => {
-    const out: Partial<Record<Pair, number>> = {};
-    for (const p of PAIRS) {
-      const snaps = scoreHistory[p];
-      if (!snaps || snaps.length < 4) continue;
-      const recent = snaps.slice(-4);
-      out[p] = recent[recent.length - 1].score - recent[0].score;
-    }
-    return out;
+    try {
+      const out: Partial<Record<Pair, number>> = {};
+      for (const p of PAIRS) {
+        const snaps = scoreHistory[p];
+        if (!Array.isArray(snaps) || snaps.length < 4) continue;
+        const recent = snaps.slice(-4);
+        out[p] = recent[recent.length - 1].score - recent[0].score;
+      }
+      return out;
+    } catch { return {}; }
   }, [scoreHistory]);
 
   const pairStats = useMemo(() => {
@@ -671,7 +673,7 @@ export default function KararPage() {
                       </div>
                     )}
                     <div className="mt-0.5 h-[10px]">
-                      <ScoreSparkline snapshots={scoreHistory[p] ?? []} />
+                      <ScoreSparkline snapshots={Array.isArray(scoreHistory[p]) ? scoreHistory[p] : []} />
                     </div>
                     {pairStats[p] && (
                       <div translate="no" className={`text-[8px] tabular-nums leading-none mt-0.5 ${
@@ -848,7 +850,7 @@ export default function KararPage() {
                       <EmaAlignRow label="15M" close={candles15m.at(-1)?.close ?? null} ema200={ema200_15m} />
                     </div>
                   </div>
-                  <ScoreHistoryChart snapshots={scoreHistory[activePair] ?? []} t={t} />
+                  <ScoreHistoryChart snapshots={Array.isArray(scoreHistory[activePair]) ? scoreHistory[activePair] : []} t={t} />
                 </AccordionSection>
 
                 {/* HACİM */}

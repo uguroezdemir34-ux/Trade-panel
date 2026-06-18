@@ -22,6 +22,11 @@ export default function KararError({
         <p className="font-mono text-sm text-text-t2 mb-4">
           Karar sayfası yüklenirken bir sorun oluştu. Lütfen tekrar deneyin.
         </p>
+        {error.message && (
+          <p className="font-mono text-2xs text-red-300 mb-2 text-left break-all whitespace-pre-wrap max-h-32 overflow-auto">
+            {error.message}
+          </p>
+        )}
         {error.digest && (
           <p className="font-mono text-2xs text-text-t4 mb-4">
             Kod: {error.digest}
