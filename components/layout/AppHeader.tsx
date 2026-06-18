@@ -9,7 +9,7 @@ import { useHydrated } from "@/lib/store/hydration";
 import { useT } from "@/lib/i18n/context";
 import { ConnectionBadge } from "./ConnectionBadge";
 import { LiqFeedBadge } from "./LiqFeedBadge";
-import { UserButton } from "@clerk/nextjs";
+import { UserButtonStub } from "@/lib/auth/UserButtonStub";
 import { BrandHeader } from "@/components/brand/BrandHeader";
 import { LanguageDropdown } from "@/components/ui/LanguageDropdown";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -71,7 +71,7 @@ export function AppHeader(): React.ReactElement {
           <ThemeToggle />
           <LiqFeedBadge />
           <ConnectionBadge />
-          {hydrated && <UserButton afterSignOutUrl="/" />}
+          {hydrated && <UserButtonStub afterSignOutUrl="/" />}
           {hydrated && (
             <>
               {/* Open positions UPL badge */}
