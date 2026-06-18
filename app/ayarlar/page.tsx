@@ -19,8 +19,8 @@ import { BybitCredsCard } from "@/components/ayarlar/BybitCredsCard";
 import { PwaCard } from "@/components/ayarlar/PwaCard";
 import { DiscordWebhookCard } from "@/components/ayarlar/DiscordWebhookCard";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
-import dynamic from "next/dynamic";
-const PlanStatusCard = dynamic(
+import loadDynamic from "next/dynamic";
+const PlanStatusCard = loadDynamic(
   () => import("@/components/ayarlar/PlanStatusCard").then((m) => ({ default: m.PlanStatusCard })),
   { ssr: false }
 );
