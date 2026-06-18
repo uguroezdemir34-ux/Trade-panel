@@ -4,6 +4,7 @@ import bundleAnalyzer from "@next/bundle-analyzer";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  productionBrowserSourceMaps: true,
   typescript: {
     ignoreBuildErrors: true,
   },
