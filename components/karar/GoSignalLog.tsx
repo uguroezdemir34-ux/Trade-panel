@@ -66,7 +66,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
   const allGoEntries = useMemo(() => {
     const entries: { pair: Pair; score: number; direction: string; ts: number }[] = [];
     for (const pair of PAIRS) {
-      for (const snap of history[pair] ?? []) {
+      for (const snap of (Array.isArray(history[pair]) ? history[pair] : [])) {
         if (snap.verdict === "go") {
           entries.push({ pair, score: snap.score, direction: snap.direction, ts: snap.ts });
         }

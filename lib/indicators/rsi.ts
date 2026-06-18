@@ -26,7 +26,7 @@ export function rsi(closes: readonly number[], options: RsiOptions = {}): number
   const period = options.period ?? 14;
 
   if (period <= 0 || !Number.isFinite(period)) {
-    throw new Error(`rsi: geçersiz period değeri: ${period}`);
+    return null;
   }
   if (closes.length <= period) {
     return null;

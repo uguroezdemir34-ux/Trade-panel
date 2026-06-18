@@ -21,7 +21,7 @@ export function atr(
 ): number | null {
   const n = options.period ?? 14;
   if (n <= 0 || !Number.isFinite(n)) {
-    throw new Error(`atr: geçersiz period: ${n}`);
+    return null;
   }
   if (candles.length < n + 1) return null;
 

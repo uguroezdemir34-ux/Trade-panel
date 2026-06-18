@@ -17,7 +17,7 @@ export interface EmaOptions {
 export function ema(closes: readonly number[], options: EmaOptions): number | null {
   const n = options.period;
   if (n <= 0 || !Number.isFinite(n)) {
-    throw new Error(`ema: geçersiz period: ${n}`);
+    return null;
   }
   if (closes.length < n) return null;
 

@@ -129,8 +129,12 @@ export function useScoreEngine(): void {
       });
 
       if (input) {
-        const result = computeScore({ ...input, scorerWeights: scorerWeights ?? null });
-        setResult(pair as Pair, result, now);
+        try {
+          const result = computeScore({ ...input, scorerWeights: scorerWeights ?? null });
+          setResult(pair as Pair, result, now);
+        } catch {
+          // Ignore scoring errors — stale result remains until next candle update
+        }
       }
     }
   }, [candles, setResult, scorerWeights]);

@@ -287,48 +287,59 @@ export default function KararPage() {
   }, [activePair, flowDir]);
 
   const atrValue = useMemo(() => {
-    if (candles1h.length < 15) return null;
-    return atr(candles1h.map(toIndicatorCandle), { period: 14 });
+    try {
+      if (candles1h.length < 15) return null;
+      return atr(candles1h.map(toIndicatorCandle), { period: 14 });
+    } catch { return null; }
   }, [candles1h]);
 
   const adxValue = useMemo(() => {
-    if (candles1h.length < 29) return null;
-    return adx(candles1h.map(toIndicatorCandle), 14)?.adx ?? null;
+    try {
+      if (candles1h.length < 29) return null;
+      return adx(candles1h.map(toIndicatorCandle), 14)?.adx ?? null;
+    } catch { return null; }
   }, [candles1h]);
 
   const rsiValue = useMemo(() => {
-    if (candles1h.length < 15) return null;
-    return rsiIndicator(candles1h.map((c) => c.close), { period: 14 });
+    try {
+      if (candles1h.length < 15) return null;
+      return rsiIndicator(candles1h.map((c) => c.close), { period: 14 });
+    } catch { return null; }
   }, [candles1h]);
 
-  const ema200_4h = useMemo(
-    () => (candles4h.length >= 200 ? ema(candles4h.map((c) => c.close), { period: 200 }) : null),
-    [candles4h],
-  );
+  const ema200_4h = useMemo(() => {
+    try {
+      return candles4h.length >= 200 ? ema(candles4h.map((c) => c.close), { period: 200 }) : null;
+    } catch { return null; }
+  }, [candles4h]);
 
-  const ema200_1h = useMemo(
-    () => (candles1h.length >= 200 ? ema(candles1h.map((c) => c.close), { period: 200 }) : null),
-    [candles1h],
-  );
+  const ema200_1h = useMemo(() => {
+    try {
+      return candles1h.length >= 200 ? ema(candles1h.map((c) => c.close), { period: 200 }) : null;
+    } catch { return null; }
+  }, [candles1h]);
 
-  const ema200_15m = useMemo(
-    () => (candles15m.length >= 200 ? ema(candles15m.map((c) => c.close), { period: 200 }) : null),
-    [candles15m],
-  );
+  const ema200_15m = useMemo(() => {
+    try {
+      return candles15m.length >= 200 ? ema(candles15m.map((c) => c.close), { period: 200 }) : null;
+    } catch { return null; }
+  }, [candles15m]);
 
   const swingLevels = useMemo(() => {
-    const sw4h =
-      candles4h.length >= 10
-        ? findSwingLevels(candles4h.map(toIndicatorCandle), 20, 2)
-        : { swingLow: null, swingHigh: null };
-    const sw1h =
-      candles1h.length >= 10
-        ? findSwingLevels(candles1h.map(toIndicatorCandle), 30, 2)
-        : { swingLow: null, swingHigh: null };
-    return {
-      swingLow: sw4h.swingLow ?? sw1h.swingLow,
-      swingHigh: sw4h.swingHigh ?? sw1h.swingHigh,
-    };
+    try {
+      const sw4h =
+        candles4h.length >= 10
+          ? findSwingLevels(candles4h.map(toIndicatorCandle), 20, 2)
+          : { swingLow: null, swingHigh: null };
+      const sw1h =
+        candles1h.length >= 10
+          ? findSwingLevels(candles1h.map(toIndicatorCandle), 30, 2)
+          : { swingLow: null, swingHigh: null };
+      return {
+        swingLow: sw4h.swingLow ?? sw1h.swingLow,
+        swingHigh: sw4h.swingHigh ?? sw1h.swingHigh,
+      };
+    } catch { return { swingLow: null, swingHigh: null }; }
   }, [candles1h, candles4h]);
 
   const sizerResult = useMemo<PositionSizerResult | null>(() => {

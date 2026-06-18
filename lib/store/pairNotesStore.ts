@@ -26,8 +26,19 @@ interface PairNotesState {
   clearNote: (pair: Pair) => void;
 }
 
-export const usePairNotesStore = create<PairNotesState>((set, get) => ({
-  notes: load(),
+export const usePairNotesStore = create<PairNotesState>((set, get) => {
+  // Defer localStorage load so server and client start with identical state,
+  // preventing React 18 hydration mismatch → "Application error".
+  if (typeof window !== "undefined") {
+    setTimeout(() => {
+      const loaded = load();
+      if (Object.keys(loaded).length > 0) {
+        set({ notes: loaded });
+      }
+    }, 0);
+  }
+  return {
+  notes: {},
   setNote: (pair, note) => {
     const next = { ...get().notes, [pair]: note };
     save(next);
@@ -38,4 +49,5 @@ export const usePairNotesStore = create<PairNotesState>((set, get) => ({
     save(rest as Partial<Record<Pair, string>>);
     set({ notes: rest as Partial<Record<Pair, string>> });
   },
-}));
+  };
+});
