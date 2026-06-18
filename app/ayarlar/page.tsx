@@ -19,7 +19,11 @@ import { BybitCredsCard } from "@/components/ayarlar/BybitCredsCard";
 import { PwaCard } from "@/components/ayarlar/PwaCard";
 import { DiscordWebhookCard } from "@/components/ayarlar/DiscordWebhookCard";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
-import { PlanStatusCard } from "@/components/ayarlar/PlanStatusCard";
+import dynamic from "next/dynamic";
+const PlanStatusCard = dynamic(
+  () => import("@/components/ayarlar/PlanStatusCard").then((m) => ({ default: m.PlanStatusCard })),
+  { ssr: false }
+);
 import BacktestPage from "@/app/backtest/page";
 
 type SubTab = "genel" | "backtest";
