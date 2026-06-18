@@ -71,7 +71,7 @@ export function AppHeader(): React.ReactElement {
           <ThemeToggle />
           <LiqFeedBadge />
           <ConnectionBadge />
-          <UserButton afterSignOutUrl="/" />
+          {hydrated && <UserButton afterSignOutUrl="/" />}
           {hydrated && (
             <>
               {/* Open positions UPL badge */}
