@@ -1,22 +1,16 @@
 "use client";
 
-// Mirrors the conditional pattern in stubs.ts:
-// render UserButton only when ClerkProvider is in the tree (key set at build time).
-// Direct import of UserButton from @clerk/nextjs bypasses this guard and throws.
+import { UserButton as ClerkUserButton } from "@clerk/nextjs";
 
 const CLERK_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _UserButton: React.ComponentType<{ afterSignOutUrl?: string }> | null = null;
-
-if (CLERK_KEY) {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const clerk = require("@clerk/nextjs");
-  _UserButton = clerk.UserButton;
-}
+// Static import ensures same webpack module instance as ClerkClientWrapper,
+// so UserButton shares the same ClerkProvider context.
+const UserButtonImpl: React.ComponentType<{ afterSignOutUrl?: string }> | null =
+  CLERK_KEY ? ClerkUserButton : null;
 
 export function UserButtonStub({ afterSignOutUrl }: { afterSignOutUrl?: string }) {
-  if (!_UserButton) return null;
-  const UB = _UserButton;
+  if (!UserButtonImpl) return null;
+  const UB = UserButtonImpl;
   return <UB afterSignOutUrl={afterSignOutUrl} />;
 }
