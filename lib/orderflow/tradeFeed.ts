@@ -25,6 +25,7 @@ import {
   dedupeTrades,
   trimIdSet,
 } from "./tradeClassifier";
+import { createVpinState, ingestTradesIntoVpin, type VpinState } from "./vpin";
 
 export type FeedConnectionState =
   | "idle"
@@ -43,6 +44,8 @@ export interface PairFeedState {
   lastMessageAt: number | null;
   /** Son hata (varsa) */
   lastError: string | null;
+  /** Kalıcı VPIN state — fresh trade'lerle artar, render'lar arası korunur */
+  vpinState: VpinState;
 }
 
 /** Per-pair buffer kapasitesi. */
@@ -65,6 +68,7 @@ export function createPairFeedState(
     connectionState: "idle",
     lastMessageAt: null,
     lastError: null,
+    vpinState: createVpinState(pair),
   };
 }
 
@@ -102,10 +106,15 @@ export function ingestTrades(
   // 3. Dedup
   const { fresh, newIds } = dedupeTrades(state.seenIds, parsed);
 
-  // 4. Buffer push
+  // 4. VPIN — fresh (dedup sonrası) trade'lerle incremental güncelle; seenIds koruması çift ingest'i engeller
+  const newVpinState = fresh.length > 0
+    ? ingestTradesIntoVpin(state.vpinState, fresh)
+    : state.vpinState;
+
+  // 5. Buffer push
   const newBuffer = pushBatch(state.buffer, fresh);
 
-  // 5. seenIds trim
+  // 6. seenIds trim
   const trimmedIds = trimIdSet(newIds, DEFAULT_SEEN_IDS_MAX);
 
   return {
@@ -115,6 +124,7 @@ export function ingestTrades(
     connectionState: "live",
     lastMessageAt: now,
     lastError: null,
+    vpinState: newVpinState,
   };
 }
 
