@@ -107,7 +107,7 @@ export interface VpinConfig {
  * Window 50 bucket → ortalama 2-3 saat'lik flow
  */
 export const DEFAULT_VPIN_CONFIG: VpinConfig = {
-  bucketSizeUsd: 50_000_000, // $50M
+  bucketSizeUsd: 500_000, // TEST ONLY — revert to 50_000_000 before merge
   windowSize: 50,
 };
 
