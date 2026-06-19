@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkClientWrapper } from "@/lib/auth/ClerkClientWrapper";
 import { AppShell } from "@/components/layout/AppShell";
 import { I18nProvider } from "@/lib/i18n/context";
 import { LocaleHtmlSync } from "@/components/layout/LocaleHtmlSync";
@@ -55,12 +55,10 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-const CLERK_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
-
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  const inner = (
+  return (
     <html lang="tr" dir="ltr" suppressHydrationWarning translate="no">
         <head>
           {/* Prevent theme FOUC — reads localStorage before React hydrates */}
@@ -91,12 +89,13 @@ export default function RootLayout({
           />
         </head>
         <body className="bg-bg text-text-t1 font-sans antialiased">
-          <I18nProvider>
-            <LocaleHtmlSync />
-            <AppShell>{children}</AppShell>
-          </I18nProvider>
+          <ClerkClientWrapper>
+            <I18nProvider>
+              <LocaleHtmlSync />
+              <AppShell>{children}</AppShell>
+            </I18nProvider>
+          </ClerkClientWrapper>
         </body>
       </html>
   );
-  return CLERK_KEY ? <ClerkProvider>{inner}</ClerkProvider> : inner;
 }
