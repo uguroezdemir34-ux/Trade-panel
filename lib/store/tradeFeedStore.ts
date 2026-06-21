@@ -8,7 +8,10 @@
  *   Hook seviyesinde 100ms throttle (her tick'te store'a yazmıyoruz).
  *   Bu, render fırtınasını engeller. 100ms latency yeterli (insan algısı 200ms+).
  *
- * Persist edilmez — feed canlı veriden beslenir, restart sonrası tekrar dolar.
+ * Persist:
+ *   vpinState oturum boyunca sessionStorage'da ("qx_vpin_states") korunur.
+ *   Bucket kapandığında yazılır (~5 dk'da bir üretimde). F5 sonrası sıfırdan
+ *   bekleme süresi ortadan kalkar. seenIds/buffer persist edilmez.
  */
 
 import { create } from "zustand";
@@ -26,9 +29,45 @@ import {
   type PairFeedState,
   type FeedConnectionState,
 } from "@/lib/orderflow/tradeFeed";
+import { getDefaultConfig, type VpinState } from "@/lib/orderflow/vpin";
 
 /** Desteklenen pair'ler. */
 const PAIRS: readonly Pair[] = ["BTC", "ETH"];
+
+const VPIN_STORAGE_KEY = "qx_vpin_states";
+
+function loadVpinFromStorage(): Partial<Record<Pair, VpinState>> {
+  try {
+    const raw = sessionStorage.getItem(VPIN_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Partial<Record<Pair, VpinState>>;
+    const result: Partial<Record<Pair, VpinState>> = {};
+    for (const p of PAIRS) {
+      const saved = parsed[p];
+      if (!saved || !Array.isArray(saved.closedBuckets)) continue;
+      // Config doğrulaması: bucketSizeUsd eşleşmeli — deploy'lar arası config
+      // değişimi varsa eski bucket'lar geçersizleşir, temiz başla.
+      if (saved.config?.bucketSizeUsd !== getDefaultConfig(p).bucketSizeUsd) continue;
+      result[p] = saved;
+    }
+    return result;
+  } catch (err) {
+    console.warn("[vpin-persist] sessionStorage okuma hatası:", err);
+    return {};
+  }
+}
+
+function saveVpinToStorage(feeds: Record<Pair, PairFeedState>): void {
+  try {
+    const toSave: Partial<Record<Pair, VpinState>> = {};
+    for (const p of PAIRS) {
+      if (feeds[p]) toSave[p] = feeds[p].vpinState;
+    }
+    sessionStorage.setItem(VPIN_STORAGE_KEY, JSON.stringify(toSave));
+  } catch (err) {
+    console.warn("[vpin-persist] sessionStorage yazma hatası:", err);
+  }
+}
 
 interface TradeFeedStoreState {
   /** Pair başına state */
@@ -55,9 +94,11 @@ interface TradeFeedStoreState {
 }
 
 function initialFeeds(): Record<Pair, PairFeedState> {
+  const saved = typeof window !== "undefined" ? loadVpinFromStorage() : {};
   const feeds: Partial<Record<Pair, PairFeedState>> = {};
   for (const p of PAIRS) {
-    feeds[p] = createPairFeedState(p);
+    const feed = createPairFeedState(p);
+    feeds[p] = saved[p] ? { ...feed, vpinState: saved[p]! } : feed;
   }
   return feeds as Record<Pair, PairFeedState>;
 }
@@ -76,6 +117,10 @@ export const useTradeFeedStore = create<TradeFeedStoreState>((set, get) => ({
     set((s) => ({
       feeds: { ...s.feeds, [pair]: next },
     }));
+    // Yeni bucket kapandıysa sessionStorage'a yaz
+    if (next.vpinState.closedBuckets.length > current.vpinState.closedBuckets.length) {
+      saveVpinToStorage(get().feeds);
+    }
   },
 
   setConnection: (pair, state, error) => {
@@ -120,3 +165,4 @@ export const selectLastTrade = (pair: Pair) =>
     const items = s.feeds[pair]?.buffer?.items;
     return items && items.length > 0 ? items[items.length - 1] : null;
   };
+
