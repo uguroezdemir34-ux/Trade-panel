@@ -10,7 +10,7 @@ Bu dosya her Claude session'ında proje bağlamını sağlar.
 **QUANTIX OS** — Next.js 15 tabanlı kripto vadeli işlem trading paneli.
 Orijinal `panel_v55.51.html` dosyasından Next.js'e migrasyon.
 
-- **15 parite:** BTC ETH XRP SOL BNB ADA AVAX DOT LINK POL DOGE SHIB SUI NEAR FET
+- **20 parite:** BTC ETH XRP SOL BNB ADA AVAX DOT LINK POL DOGE SHIB SUI NEAR TRX APT TAO PENDLE OP WIF
 - **Dil:** TypeScript strict, React 19, Zustand 5, TanStack Query 5, Tailwind CSS 3
 - **Exchange:** OKX (perpetual futures), API proxy via Next.js route handlers
 - **Bildirim:** Telegram VIP kanal (Layer 1: Vercel env vars, Layer 2: browser encrypted)

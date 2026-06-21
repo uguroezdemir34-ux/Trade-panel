@@ -17,9 +17,9 @@ import { useT } from "@/lib/i18n/context";
 
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
-  majors: ["BTC", "ETH", "BNB", "XRP", "SOL"],
-  alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "TRX", "SUI"],
-  meme:   ["DOGE", "SHIB"],
+  majors: ["BTC", "ETH", "BNB", "XRP", "SOL", "APT"],
+  alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "TRX", "SUI", "TAO", "PENDLE", "OP"],
+  meme:   ["DOGE", "SHIB", "WIF"],
 };
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";

@@ -35,6 +35,11 @@ const OKX_CONTRACT_SIZE: Partial<Record<Pair, number>> = {
   SUI: 1,
   NEAR: 1,
   TRX: 1_000,
+  APT: 1,
+  TAO: 0.01,
+  PENDLE: 1,
+  OP: 1,
+  WIF: 1,
 };
 
 // ── Symbol → Pair maps ───────────────────────────────────────────────────────
@@ -43,6 +48,7 @@ const BINANCE_PAIR: Record<string, Pair> = {
   BNBUSDT: "BNB", ADAUSDT: "ADA", AVAXUSDT: "AVAX", DOTUSDT: "DOT",
   LINKUSDT: "LINK", POLUSDT: "POL", MATICUSDT: "POL", DOGEUSDT: "DOGE",
   "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR", TRXUSDT: "TRX",
+  APTUSDT: "APT", TAOUSDT: "TAO", PENDLEUSDT: "PENDLE", OPUSDT: "OP", WIFUSDT: "WIF",
 };
 
 const BYBIT_PAIR: Record<string, Pair> = {
@@ -50,6 +56,7 @@ const BYBIT_PAIR: Record<string, Pair> = {
   BNBUSDT: "BNB", ADAUSDT: "ADA", AVAXUSDT: "AVAX", DOTUSDT: "DOT",
   LINKUSDT: "LINK", POLUSDT: "POL", MATICUSDT: "POL", DOGEUSDT: "DOGE",
   "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR", TRXUSDT: "TRX",
+  APTUSDT: "APT", TAOUSDT: "TAO", PENDLEUSDT: "PENDLE", OPUSDT: "OP", WIFUSDT: "WIF",
 };
 
 // Binance / Bybit "1000X" symbols: reported size is in 1000 units
@@ -197,6 +204,7 @@ const BYBIT_SYMBOLS = [
   "BTCUSDT","ETHUSDT","XRPUSDT","SOLUSDT","BNBUSDT",
   "ADAUSDT","AVAXUSDT","DOTUSDT","LINKUSDT","POLUSDT",
   "DOGEUSDT","1000SHIBUSDT","SUIUSDT","NEARUSDT","TRXUSDT",
+  "APTUSDT","TAOUSDT","PENDLEUSDT","OPUSDT","WIFUSDT",
 ];
 
 const BYBIT_CONFIG: ExchangeConfig = {

@@ -14,6 +14,11 @@ export const PAIRS = [
   "SUI",  // Sui — emerging breakouts
   "NEAR", // Near Protocol — AI-aligned
   "TRX",  // TRON — top-5 OKX perp volume, strong trend structure
+  "APT",  // Aptos — high-liquidity L1
+  "TAO",  // Bittensor — AI narrative
+  "PENDLE", // Pendle — DeFi yield
+  "OP",   // Optimism — L2
+  "WIF",  // Dogwifhat — meme/Solana
 ] as const;
 
 export type Pair = (typeof PAIRS)[number];
