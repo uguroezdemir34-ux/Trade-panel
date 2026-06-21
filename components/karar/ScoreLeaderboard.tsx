@@ -71,9 +71,10 @@ export function ScoreLeaderboard({ results, activePair, onSelect }: Props): Reac
               ].join(" ")}
               style={{
                 gridTemplateColumns: "16px 44px 1fr auto auto",
-                ...(result.verdict === "go" && {
+                // TEMP TEST: first row always glows for visual verification
+                ...(result.verdict === "go" || idx === 0) && {
                   boxShadow: "inset 2px 0 0 rgb(var(--signal-green) / 0.55), 0 0 10px rgb(var(--signal-green) / 0.08)",
-                }),
+                },
               }}
             >
               {/* Rank */}
