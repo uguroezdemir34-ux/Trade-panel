@@ -60,6 +60,7 @@ import {
   type SignalType,
   PULLBACK_CONSTANTS,
 } from "./pullback";
+import type { MtfTrendResult } from "@/lib/market/mtfTrend";
 
 // ═══════════════════════════════════════════════════════════════════
 // INPUT/OUTPUT TYPES
@@ -145,6 +146,9 @@ export interface ScoreInput {
 
   /** Scorer ağırlık çarpanları — ayarlar sayfasından gelir. Default: tümü 1.0 */
   scorerWeights?: ScorerWeights | null;
+
+  /** MTF trend gate (1h/4h/1d EMA20 — computeMtfTrend çıktısı). no_data → gate atlanır. */
+  mtfResult?: MtfTrendResult | null;
 }
 
 export interface ScorerWeights {
@@ -266,7 +270,6 @@ export function computeScore(input: ScoreInput): ScoreResult {
     ema200_1h,
     ema50_4h,
     ema200_4h,
-    // ema50_1d: destructure edilmiyor — checkDailyTrendOpposite devre dışı
     rsi,
     adx,
     bbPct,
@@ -435,8 +438,6 @@ export function computeScore(input: ScoreInput): ScoreResult {
 
   // ───── 9. Soft blocks ─────
   const softBlocks: string[] = [];
-  // checkDailyTrendOpposite devre dışı — ema50_1d alanı gerçek 1D mum değil,
-  // 4H EMA200 alias'ı. Gerçek 1D veri eklenince yeniden aktif edilecek.
   const fundingCrowded = checkFundingCrowded(fundingRate, direction);
   if (fundingCrowded) softBlocks.push(fundingCrowded);
   const lockRamp = checkLockReleaseRamp({ lockReleasedAt, now });
@@ -450,6 +451,19 @@ export function computeScore(input: ScoreInput): ScoreResult {
   const atrReg = checkAtrRegime({ percentile: atrPercentile });
   if (atrReg.softBlock) softBlocks.push(atrReg.softBlock);
   if (atrReg.reason) reasons.atrRegime = atrReg.reason;
+
+  // ───── MTF trend gate ─────
+  // 1h/4h/1d EMA20 trendi sinyalle net şekilde çelişiyorsa GO → WAIT.
+  // mixed / no_data → geçir (blok yok).
+  if (input.mtfResult) {
+    const { cls } = input.mtfResult;
+    const mtfOpposite =
+      (direction === "LONG" && (cls === "down" || cls === "strong_down")) ||
+      (direction === "SHORT" && (cls === "up" || cls === "strong_up"));
+    if (mtfOpposite) {
+      softBlocks.push("📅 MTF ters trend — günlük trend sinyale karşı");
+    }
+  }
 
   // ───── 10. Bucket + goThreshold ─────
   // Panel davranışı (satır 7903): bucket baseScore üzerinden hesaplanır

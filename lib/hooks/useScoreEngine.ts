@@ -23,6 +23,7 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
 import { oiVelocityScoreOrZero } from "@/lib/market/oi-velocity";
+import { computeMtfTrend } from "@/lib/market/mtfTrend";
 import type { Pair } from "@/lib/constants/pairs";
 
 export function useScoreEngine(): void {
@@ -65,6 +66,7 @@ export function useScoreEngine(): void {
       const candles4h = candles[`${pair}_4h`] ?? EMPTY_CANDLES;
       const candles1h = candles[`${pair}_1h`] ?? EMPTY_CANDLES;
       const candles15m = candles[`${pair}_15m`] ?? EMPTY_CANDLES;
+      const candles1d = candles[`${pair}_1d`] ?? EMPTY_CANDLES;
 
       const livePrice = marketStore.prices[pair]?.last ?? null;
       const fg = macroStore.fgValue ?? 50;
@@ -128,9 +130,12 @@ export function useScoreEngine(): void {
         now,
       });
 
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const mtfResult = computeMtfTrend(pair as Pair, candles1h as any, candles4h as any, candles1d as any);
+
       if (input) {
         try {
-          const result = computeScore({ ...input, scorerWeights: scorerWeights ?? null });
+          const result = computeScore({ ...input, scorerWeights: scorerWeights ?? null, mtfResult });
           setResult(pair as Pair, result, now);
         } catch {
           // Ignore scoring errors — stale result remains until next candle update
