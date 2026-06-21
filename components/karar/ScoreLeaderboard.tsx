@@ -69,7 +69,12 @@ export function ScoreLeaderboard({ results, activePair, onSelect }: Props): Reac
                 "hover:bg-surface-s1",
                 isActive ? "bg-surface-s1" : vBg,
               ].join(" ")}
-              style={{ gridTemplateColumns: "16px 44px 1fr auto auto" }}
+              style={{
+                gridTemplateColumns: "16px 44px 1fr auto auto",
+                ...(result.verdict === "go" && {
+                  boxShadow: "inset 2px 0 0 rgb(var(--signal-green) / 0.55), 0 0 10px rgb(var(--signal-green) / 0.08)",
+                }),
+              }}
             >
               {/* Rank */}
               <span className="text-text-t4 text-2xs tabular-nums">
@@ -88,12 +93,7 @@ export function ScoreLeaderboard({ results, activePair, onSelect }: Props): Reac
                     result.verdict === "go" ? "bg-signal-green" :
                     result.verdict === "wait" ? "bg-signal-amber" : "bg-signal-red/50"
                   }`}
-                  style={{
-                    width: `${result.score}%`,
-                    boxShadow: result.verdict === "go"
-                      ? "0 0 6px rgb(var(--signal-green) / 0.5)"
-                      : undefined,
-                  }}
+                  style={{ width: `${result.score}%` }}
                 />
               </div>
 
