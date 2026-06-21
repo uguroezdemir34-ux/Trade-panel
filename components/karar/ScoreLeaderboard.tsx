@@ -12,13 +12,13 @@ interface Props {
 }
 
 const VERDICT_COLOR: Record<string, string> = {
-  go:   "text-green-400",
-  wait: "text-yellow-400",
-  no:   "text-red-400/70",
+  go:   "text-signal-green",
+  wait: "text-signal-amber",
+  no:   "text-signal-red/70",
 };
 const VERDICT_BG: Record<string, string> = {
-  go:   "bg-green-400/10",
-  wait: "bg-yellow-400/10",
+  go:   "bg-soft-green",
+  wait: "bg-soft-amber",
   no:   "",
 };
 
@@ -44,7 +44,7 @@ export function ScoreLeaderboard({ results, activePair, onSelect }: Props): Reac
           {t("karar.leaderboardTitle")}
         </span>
         {goCount > 0 && (
-          <span className="text-green-400 font-mono text-2xs font-semibold">
+          <span className="text-signal-green font-mono text-2xs font-semibold">
             {goCount} GO
           </span>
         )}
@@ -58,7 +58,7 @@ export function ScoreLeaderboard({ results, activePair, onSelect }: Props): Reac
           const vColor = VERDICT_COLOR[result.verdict] ?? "text-text-t4";
           const vBg = VERDICT_BG[result.verdict] ?? "";
           const dirArrow = result.direction === "LONG" ? "▲" : result.direction === "SHORT" ? "▼" : "";
-          const dirColor = result.direction === "LONG" ? "text-green-400" : result.direction === "SHORT" ? "text-red-400" : "text-text-t4";
+          const dirColor = result.direction === "LONG" ? "text-signal-green" : result.direction === "SHORT" ? "text-signal-red" : "text-text-t4";
 
           return (
             <button
@@ -82,13 +82,18 @@ export function ScoreLeaderboard({ results, activePair, onSelect }: Props): Reac
               </span>
 
               {/* Score bar */}
-              <div className="h-1 rounded-full bg-border/40 overflow-hidden">
+              <div className="h-1.5 rounded-full bg-border/40 overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${
-                    result.verdict === "go" ? "bg-green-400" :
-                    result.verdict === "wait" ? "bg-yellow-400" : "bg-red-400/60"
+                  className={`h-full rounded-full transition-all duration-300 ${
+                    result.verdict === "go" ? "bg-signal-green" :
+                    result.verdict === "wait" ? "bg-signal-amber" : "bg-signal-red/50"
                   }`}
-                  style={{ width: `${result.score}%` }}
+                  style={{
+                    width: `${result.score}%`,
+                    boxShadow: result.verdict === "go"
+                      ? "0 0 6px rgb(var(--signal-green) / 0.5)"
+                      : undefined,
+                  }}
                 />
               </div>
 
