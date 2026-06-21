@@ -717,6 +717,16 @@ export default function KararPage() {
 
           {result && (
             <>
+              {/* ── Premium hero card ── */}
+              <div
+                className="rounded-xl flex flex-col gap-3 p-4"
+                style={{
+                  border: "1px solid transparent",
+                  background: "linear-gradient(rgb(var(--bg-card)), rgb(var(--bg-card))) padding-box, linear-gradient(135deg, rgba(184, 140, 60, 0.32) 0%, rgba(90, 70, 25, 0.08) 50%, rgba(184, 140, 60, 0.32) 100%) border-box",
+                  boxShadow: "inset 0 1px 0 rgba(200, 165, 70, 0.07), inset 0 0 20px rgba(0, 0, 0, 0.12)",
+                }}
+              >
+
               {/* 2-col from md (768px): left = info/badges, right = score gauge */}
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
 
@@ -818,6 +828,8 @@ export default function KararPage() {
                 <span className="shrink-0 font-mono text-[8px] tracking-widest text-brand/60 border border-brand/25 rounded px-1 py-0.5 leading-none mt-0.5 select-none">{t("karar.aiBadge")}</span>
                 <p className="font-mono text-[11px] text-text-t1 leading-relaxed">{aiMarketNote(result, t)}</p>
               </div>
+
+              </div>{/* end premium hero card */}
 
               {/* Smart Money + Volume Delta 5m mini cards */}
               <FlowMiniCards flow={flowResult} />
