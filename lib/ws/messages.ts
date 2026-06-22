@@ -24,6 +24,8 @@ const okxTickerSchema = z.object({
         instId: z.string(),
         last: z.string(),
         open24h: z.string().optional(),
+        // USDT-margined SWAP için quote currency (USDT) 24h hacim = USD nominal
+        volCcy24h: z.string().optional(),
       }),
     )
     .min(1),
@@ -50,6 +52,7 @@ const binanceTickerSchema = z.object({
     s: z.string(), // symbol (BTCUSDT)
     c: z.string(), // close
     o: z.string().optional(), // open24h
+    q: z.string().optional(), // 24h quote asset volume (USDT) = USD nominal
   }),
 });
 
@@ -90,11 +93,13 @@ export function parseOkxTicker(msg: unknown, now: number): Tick | null {
   const last = parseFloat(t.last);
   if (!isFinite(last) || last <= 0) return null;
   const open24h = t.open24h ? parseFloat(t.open24h) : last;
+  const volCcy24h = t.volCcy24h ? parseFloat(t.volCcy24h) : undefined;
   return {
     pair,
     last,
     open24h: isFinite(open24h) && open24h > 0 ? open24h : last,
     chg: calcChg(last, open24h),
+    vol24h: volCcy24h !== undefined && isFinite(volCcy24h) && volCcy24h > 0 ? volCcy24h : undefined,
     ts: now,
     source: "ticker",
   };
@@ -145,11 +150,13 @@ export function parseBinanceTicker(msg: unknown, now: number): Tick | null {
   const last = parseFloat(r.data.data.c);
   if (!isFinite(last) || last <= 0) return null;
   const open24h = r.data.data.o ? parseFloat(r.data.data.o) : last;
+  const q = r.data.data.q ? parseFloat(r.data.data.q) : undefined;
   return {
     pair,
     last,
     open24h: isFinite(open24h) && open24h > 0 ? open24h : last,
     chg: calcChg(last, open24h),
+    vol24h: q !== undefined && isFinite(q) && q > 0 ? q : undefined,
     ts: now,
     source: "ticker",
   };
