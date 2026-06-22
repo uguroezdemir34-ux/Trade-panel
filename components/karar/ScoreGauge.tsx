@@ -82,7 +82,7 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
 
   return (
     <svg
-      viewBox="0 0 220 196"
+      viewBox="0 0 220 232"
       className="w-full select-none"
       aria-label={`Skor: ${v}/100`}
     >
@@ -185,13 +185,13 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       {/* ── Vignette */}
       <circle cx={CX} cy={CY} r={85} fill="url(#sg-vignette)" />
 
-      {/* ── Glass dome highlight: faint white ellipse arc, top */}
+      {/* ── Glass dome highlight — white ellipse stroke, upper third of face */}
       <ellipse
-        cx={CX} cy={CY - 34}
-        rx={44} ry={14}
+        cx={CX} cy={CY - 32}
+        rx={50} ry={18}
         fill="none"
-        stroke="#ffffff" strokeWidth="7"
-        opacity="0.048"
+        stroke="#ffffff" strokeWidth="11"
+        opacity="0.10"
         strokeLinecap="round"
       />
 
@@ -327,14 +327,19 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       <circle cx={CX} cy={CY} r="5.5"  fill="none" stroke="#72747a" strokeWidth="0.9" />
       <circle cx={CX - 2.5} cy={CY - 2.5} r="1.4" fill="#fff" opacity="0.42" />
 
-      {/* ── SCORE NUMBER — bottom-left, depth shadow only, NO glow */}
+      {/*
+        ── SCORE NUMBER — sits BELOW the gauge disc, bottom-left corner.
+        At y=222 the outer disk (r=107, cy=108) does not cover x<56, so this
+        area is transparent SVG — the card background shows through.
+        Proof: (28-110)²+(222-108)²=6724+12996=19720 > 107²=11449.
+      */}
       <text
-        x={CX - 22} y={CY + 37}
-        textAnchor="middle"
+        x={28} y={222}
+        textAnchor="start"
         fill={color}
-        stroke="#08090c" strokeWidth="6"
+        stroke="#08090c" strokeWidth="5"
         paintOrder="stroke fill"
-        fontSize="46" fontWeight="700"
+        fontSize="44" fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
         filter="url(#sg-text-depth)"
       >
