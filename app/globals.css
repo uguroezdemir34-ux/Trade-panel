@@ -253,62 +253,33 @@ textarea {
 
 /* === Hero card dış kabuk — çok katmanlı 3D metalik çerçeve ===
    Bronz border: üst kenar parlak altın → alt kenar koyu bronze (2px dolu kenar)
-   Kart gövdesi: hafif top-light / bottom-dark overlay
-   Dark mode: dramatik, derin shadow + inset vurgu
-   Light mode: border dramatizmi korunur, iç gölge ve dış shadow yumuşatılır */
+/* === Hero card dış kabuk — brand hairline + glow ===
+   1px border: mevcut --brand turuncu token (dark=255 107 26, light=184 68 0).
+   border-box/padding-box tekniği YOK — bleed riski sıfır.
+   Kart gövdesi bg-card tokenından geliyor, çerçeve sadece kenarda. */
 .qx-hero-card {
-  border: 2px solid transparent;
   border-radius: 14px;
-  /*
-   * 3 katman background:
-   * 1) Hafif üst-ışık tint (şeffaf overlay, gövde üstünde)
-   * 2) OPAK bg-card base — bu katman border-box gradyanının gövdeye
-   *    sızmasını engeller (padding-box = border dışında gizlenir)
-   * 3) Bronz border gradyanı — sadece 2px şeffaf border alanında görünür
-   */
-  background:
-    linear-gradient(175deg, rgba(255,255,255,0.04) 0%, transparent 45%) padding-box,
-    rgb(var(--bg-card)) padding-box,
-    linear-gradient(175deg,
-      rgba(228,182,70,0.90) 0%,
-      rgba(162,112,30,0.60) 16%,
-      rgba(56,38,8,0.36) 44%,
-      rgba(112,78,18,0.54) 72%,
-      rgba(26,12,2,0.90) 100%
-    ) border-box;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--brand) / 0.28);
   box-shadow:
-    /* İç üst highlight — parlak kenar yansıması */
-    inset 0 1px 0 rgba(255,255,255,0.12),
-    /* İç alt gölge — ağırlık/derinlik */
-    inset 0 -1px 0 rgba(0,0,0,0.55),
-    /* Hafif iç ambient */
-    inset 0 0 24px rgba(0,0,0,0.20),
-    /* Dış koyu bezel halkası */
-    0 0 0 1px rgba(20,10,1,0.90),
-    /* Dış düşen gölge — iki katman */
-    0 6px 28px rgba(0,0,0,0.52),
-    0 2px 8px rgba(0,0,0,0.36),
-    /* Alt bronz ambient ışık */
-    0 1px 0 rgba(184,140,60,0.22);
+    /* İç üst highlight */
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    /* Brand rengi 1px spread — hafif dış halka */
+    0 0 0 1px rgb(var(--brand) / 0.07),
+    /* Çok hafif brand glow */
+    0 0 18px rgb(var(--brand) / 0.05),
+    /* Dış düşen gölge */
+    0 4px 20px rgba(0,0,0,0.44),
+    0 1px 3px rgba(0,0,0,0.28);
 }
 [data-theme="light"] .qx-hero-card {
-  background:
-    linear-gradient(175deg, rgba(255,255,255,0.55) 0%, transparent 50%) padding-box,
-    rgb(var(--bg-card)) padding-box,
-    linear-gradient(175deg,
-      rgba(228,182,70,0.72) 0%,
-      rgba(162,112,30,0.46) 16%,
-      rgba(56,38,8,0.20) 44%,
-      rgba(112,78,18,0.34) 72%,
-      rgba(26,12,2,0.62) 100%
-    ) border-box;
+  border: 1px solid rgb(var(--brand) / 0.22);
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.80),
-    inset 0 -1px 0 rgba(0,0,0,0.12),
-    inset 0 0 16px rgba(0,0,0,0.04),
-    0 0 0 1px rgba(20,10,1,0.20),
-    0 4px 20px rgba(0,0,0,0.16),
-    0 1px 0 rgba(184,140,60,0.34);
+    0 0 0 1px rgb(var(--brand) / 0.08),
+    0 0 12px rgb(var(--brand) / 0.04),
+    0 4px 16px rgba(0,0,0,0.13),
+    0 1px 2px rgba(0,0,0,0.08);
 }
 
 /* === Karar sayfası Faz 1 metalik inset paneller ===

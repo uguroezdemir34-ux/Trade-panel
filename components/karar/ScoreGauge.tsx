@@ -206,21 +206,21 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       {/* Split = goThreshold prop (the baseline 80; separate from pullback-adjusted threshold) */}
       <path
         d={arcPath(0, goThreshold, R)}
-        fill="none" stroke="#7a1f1f" strokeWidth={SW} strokeLinecap="butt"
+        fill="none" stroke="#7a1f1f" strokeWidth={4} strokeLinecap="butt"
       />
       <path
         d={arcPath(0, goThreshold, R)}
-        fill="none" stroke="#b02a2a" strokeWidth={SW - 3} strokeLinecap="butt"
+        fill="none" stroke="#b02a2a" strokeWidth={2} strokeLinecap="butt"
       />
 
       {/* ── Zone goThreshold → 100: GREEN — at/above classic GO level, signal confirmed */}
       <path
         d={arcPath(goThreshold, 100, R)}
-        fill="none" stroke="#1f5a2a" strokeWidth={SW} strokeLinecap="butt"
+        fill="none" stroke="#1f5a2a" strokeWidth={4} strokeLinecap="butt"
       />
       <path
         d={arcPath(goThreshold, 100, R)}
-        fill="none" stroke="#2a8040" strokeWidth={SW - 3} strokeLinecap="butt"
+        fill="none" stroke="#2a8040" strokeWidth={2} strokeLinecap="butt"
       />
 
       {/* ── Active progress arc — uses progressColor (goThreshold-based) not color */}
@@ -229,7 +229,7 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
           d={arcPath(0, v, R)}
           fill="none"
           stroke={progressColor}
-          strokeWidth={SW - 2}
+          strokeWidth={3}
           strokeLinecap="butt"
           filter="url(#sg-arc-shadow)"
         />
