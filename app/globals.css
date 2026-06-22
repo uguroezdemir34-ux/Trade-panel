@@ -251,6 +251,47 @@ textarea {
 }
 .flow-led { animation: flow-led-ring 2s ease-in-out infinite; }
 
+/* === Hero card dış kabuk — nötr karanlık metal çerçeve ===
+   --border-strong tokeni: dark=58 58 58, light=136 136 152.
+   Kart gövdesi bg-card tokenından, çerçeve sadece kenarda. */
+.qx-hero-card {
+  border-radius: 14px;
+  background: rgb(var(--bg-card));
+  border: 1px solid rgb(var(--border-strong));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 4px 24px rgba(0,0,0,0.50),
+    0 1px 4px rgba(0,0,0,0.32);
+}
+[data-theme="light"] .qx-hero-card {
+  border: 1px solid rgb(var(--border));
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.90),
+    0 4px 16px rgba(0,0,0,0.12),
+    0 1px 2px rgba(0,0,0,0.08);
+}
+
+/* === Karar sayfası Faz 1 metalik inset paneller ===
+   Dark mode: rgba siyah katman (mevcut görünüm korunur).
+   Light mode: çok hafif overlay → panel arka planı beyaz/açık gri kalır,
+   metin token renkleri yeterli kontrasta kavuşur. */
+.qx-inset {
+  background: linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%);
+}
+.qx-inset-deep {
+  background: linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.46) 100%);
+}
+.qx-inset-note {
+  background: linear-gradient(180deg, rgba(0,0,0,0.24) 0%, rgba(0,0,0,0.40) 100%);
+}
+[data-theme="light"] .qx-inset,
+[data-theme="light"] .qx-inset-note {
+  background: linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.08) 100%);
+}
+[data-theme="light"] .qx-inset-deep {
+  background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.10) 100%);
+}
+
 /* P&L nefes / breath — pozisyon kartı */
 @keyframes pnl-breathe-green {
   0%, 100% { text-shadow: 0 0 6px rgba(16,185,129,0.30); }

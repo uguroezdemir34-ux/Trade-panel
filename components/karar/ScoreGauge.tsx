@@ -36,7 +36,10 @@ function arcPath(from: number, to: number, r: number): string {
 
 export function ScoreGauge({ score, threshold, goThreshold }: Props): React.ReactElement {
   const v = Math.max(0, Math.min(100, score));
+  /* color: used for needle, hub shine, score text — threshold-based (per original logic) */
   const color = v >= threshold ? "#22c55e" : v >= 65 ? "#f59e0b" : "#ef4444";
+  /* progressColor: used only for progress arc — must match 2-zone layout (goThreshold boundary) */
+  const progressColor = v >= goThreshold ? "#22c55e" : "#ef4444";
 
   /* Needle tip — DO NOT CHANGE */
   const [nx, ny]     = pt(v, R - 8);
@@ -199,41 +202,26 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       <path d={arcPath(0, 100, R)} fill="none" stroke="#07080e" strokeWidth={SW + 5} />
       <path d={arcPath(0, 100, R)} fill="none" stroke="#05060a" strokeWidth={SW + 2} />
 
-      {/* ── Zone 0 → threshold (muted green — #2f5d42) */}
+      {/* ── Zone 0 → goThreshold: RED — kılcal ince arka plan çizgisi */}
       <path
-        d={arcPath(0, Math.min(threshold, 80), R)}
-        fill="none" stroke="#2f5d42" strokeWidth={SW - 2} strokeLinecap="butt"
+        d={arcPath(0, goThreshold, R)}
+        fill="none" stroke="#7a1f1f" strokeWidth={1} strokeLinecap="butt"
       />
 
-      {/* ── Zone threshold → 80 (muted amber — #6e5a32) */}
-      {threshold < 80 && (
-        <path
-          d={arcPath(threshold, 80, R)}
-          fill="none" stroke="#6e5a32" strokeWidth={SW - 2} strokeLinecap="butt"
-        />
-      )}
-
-      {/* ── Danger zone 80→100: clean red band, NO glow */}
-      {/* Outer darker band */}
+      {/* ── Zone goThreshold → 100: GREEN — kılcal ince arka plan çizgisi */}
       <path
-        d={arcPath(80, 100, R)}
-        fill="none" stroke="#7a1f1f" strokeWidth={SW} strokeLinecap="butt"
-      />
-      {/* Inner brighter core */}
-      <path
-        d={arcPath(80, 100, R)}
-        fill="none" stroke="#b02a2a" strokeWidth={SW - 3} strokeLinecap="butt"
+        d={arcPath(goThreshold, 100, R)}
+        fill="none" stroke="#1f5a2a" strokeWidth={1} strokeLinecap="butt"
       />
 
-      {/* ── Active progress arc — no glow filter, just solid color */}
+      {/* ── Active progress arc — ibrenin ucuna uzanan kılcal çizgi */}
       {v >= 1 && (
         <path
           d={arcPath(0, v, R)}
           fill="none"
-          stroke={color}
-          strokeWidth={SW - 2}
+          stroke={progressColor}
+          strokeWidth={0.8}
           strokeLinecap="butt"
-          filter="url(#sg-arc-shadow)"
         />
       )}
 
