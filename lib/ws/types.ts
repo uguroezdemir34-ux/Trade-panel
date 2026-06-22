@@ -14,6 +14,9 @@ export interface Tick {
   open24h: number;
   /** % değişim (chg) */
   chg: number;
+  /** 24 saatlik USDT hacim (USD nominal). OKX: volCcy24h, Binance: q.
+   *  Trade tick'lerinde bulunmaz (undefined). */
+  vol24h?: number;
   /** Tick alındı zamanı (epoch ms) */
   ts: number;
   /** Hangi kanaldan geldi: 'ticker' (snapshot) veya 'trade' (gerçek alım) */

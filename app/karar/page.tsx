@@ -15,6 +15,20 @@ import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
 import { useT } from "@/lib/i18n/context";
 
+function fmtPriceMini(p: number): string {
+  if (p >= 10_000) return p.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  if (p >= 100)    return p.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  if (p >= 1)      return p.toLocaleString("en-US", { maximumFractionDigits: 3 });
+  return p.toLocaleString("en-US", { maximumFractionDigits: 5 });
+}
+
+function fmtVolMini(v: number): string {
+  if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
+  if (v >= 1e6) return `${(v / 1e6).toFixed(0)}M`;
+  if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K`;
+  return v.toFixed(0);
+}
+
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
   majors: ["BTC", "ETH", "BNB", "XRP", "SOL", "APT"],
@@ -24,6 +38,7 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
+import { MiniGauge } from "@/components/karar/MiniGauge";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
 import { BlocksList } from "@/components/karar/BlocksList";
 import { ReasonsList } from "@/components/karar/ReasonsList";
@@ -192,6 +207,12 @@ export default function KararPage() {
     if (pairGroup === "act") return actionablePairs.length > 0 ? actionablePairs : PAIRS;
     return PAIR_GROUPS[pairGroup] ?? PAIRS;
   }, [pairGroup, goPairs, watchlistPairs, actionablePairs]);
+
+  // Hacim bar normalizasyonu: displayPairs içindeki max vol24h = %100
+  const maxVol = useMemo(
+    () => Math.max(0, ...displayPairs.map((p) => allTicks[p]?.vol24h ?? 0)),
+    [displayPairs, allTicks],
+  );
 
   // Ref so the keydown handler always sees the latest displayPairs without re-binding
   const displayPairsRef = useRef<readonly Pair[]>(displayPairs);
@@ -672,9 +693,56 @@ export default function KararPage() {
                         {`${pairChg >= 0 ? "+" : ""}${pairChg.toFixed(1)}%`}
                       </div>
                     )}
-                    <div className="mt-0.5 h-[10px]">
-                      <ScoreSparkline snapshots={Array.isArray(scoreHistory[p]) ? scoreHistory[p] : []} />
-                    </div>
+
+                    {p === "BTC" ? (
+                      /* ── BTC PROTOTYPE: mini gauge + fiyat + hacim barı ── */
+                      <>
+                        {/* Mini speedometer */}
+                        <div className="w-full px-1 mt-1">
+                          <MiniGauge
+                            score={score ?? 0}
+                            goThreshold={allResults[p]?.goThreshold ?? 80}
+                          />
+                        </div>
+                        {/* Anlık fiyat */}
+                        {allTicks[p]?.last !== undefined && (
+                          <div translate="no" className="text-[8px] tabular-nums leading-none text-text-t2 mt-0.5">
+                            ${fmtPriceMini(allTicks[p]!.last)}
+                          </div>
+                        )}
+                        {/* Hacim barı */}
+                        <div className="w-full px-1 mt-1 mb-0.5">
+                          <div className="h-[3px] rounded-full overflow-hidden bg-[#07080e]">
+                            {maxVol > 0 && allTicks[p]?.vol24h !== undefined ? (
+                              <div
+                                className="h-full rounded-full"
+                                style={{
+                                  width: `${Math.min(100, (allTicks[p]!.vol24h! / maxVol) * 100).toFixed(1)}%`,
+                                  background: (() => {
+                                    const pct = (allTicks[p]!.vol24h! / maxVol) * 100;
+                                    return pct >= 60 ? "#22c55e70" : pct >= 30 ? "#f59e0b70" : "#ef444460";
+                                  })(),
+                                }}
+                              />
+                            ) : (
+                              /* vol24h henüz gelmedi — boş track */
+                              null
+                            )}
+                          </div>
+                          {allTicks[p]?.vol24h !== undefined && (
+                            <div translate="no" className="text-[7px] tabular-nums leading-none text-text-t4 mt-0.5 text-center">
+                              ${fmtVolMini(allTicks[p]!.vol24h!)}
+                            </div>
+                          )}
+                        </div>
+                      </>
+                    ) : (
+                      /* Diğer kartlar: sparkline korunuyor */
+                      <div className="mt-0.5 h-[10px]">
+                        <ScoreSparkline snapshots={Array.isArray(scoreHistory[p]) ? scoreHistory[p] : []} />
+                      </div>
+                    )}
+
                     {pairStats[p] && (
                       <div translate="no" className={`text-[8px] tabular-nums leading-none mt-0.5 ${
                         pairStats[p]!.wr >= 55 ? "text-green-400/60"
