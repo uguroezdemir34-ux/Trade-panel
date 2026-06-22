@@ -1,6 +1,7 @@
 "use client";
 
 import { useMarketStore } from "@/lib/store/marketStore";
+import { useMacroStore } from "@/lib/store/macroStore";
 import { PAIRS } from "@/lib/constants/pairs";
 
 function fmtPrice(p: number): string {
@@ -17,23 +18,32 @@ function fmtVol(v: number): string {
   return v.toFixed(0);
 }
 
+function fmtMcap(v: number): string {
+  if (v >= 1e12) return `${(v / 1e12).toFixed(2)}T`;
+  if (v >= 1e9)  return `${(v / 1e9).toFixed(1)}B`;
+  if (v >= 1e6)  return `${(v / 1e6).toFixed(0)}M`;
+  return v.toFixed(0);
+}
+
 export function LivePriceStrip(): React.ReactElement {
-  const prices = useMarketStore((s) => s.prices);
+  const prices    = useMarketStore((s) => s.prices);
+  const marketCap = useMacroStore((s) => s.marketCap);
 
   return (
     <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
       <div className="flex gap-1.5 pb-0.5" style={{ minWidth: "max-content" }}>
         {PAIRS.map((pair) => {
           const tick = prices[pair];
-          const chg = tick?.chg ?? null;
-          const pos = chg !== null && chg > 0;
-          const neg = chg !== null && chg < 0;
-          const chgColor   = pos ? "text-green-400" : neg ? "text-red-400" : "text-text-t4";
+          const chg  = tick?.chg ?? null;
+          const pos  = chg !== null && chg > 0;
+          const neg  = chg !== null && chg < 0;
+          const chgColor     = pos ? "text-green-400" : neg ? "text-red-400" : "text-text-t4";
           const accentBorder = pos
             ? "border-l-green-500/60"
             : neg
               ? "border-l-red-500/60"
               : "border-l-border/30";
+          const mc = marketCap[pair];
 
           return (
             <div
@@ -61,13 +71,23 @@ export function LivePriceStrip(): React.ReactElement {
                 {chg !== null ? `${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%` : "—"}
               </span>
 
-              {/* 24h volume — only when available */}
+              {/* 24h volume */}
               {tick?.vol24h !== undefined && (
                 <span
                   translate="no"
                   className="font-mono text-[9px] tabular-nums text-text-t4 leading-none mt-0.5"
                 >
-                  ${fmtVol(tick.vol24h)}
+                  V ${fmtVol(tick.vol24h)}
+                </span>
+              )}
+
+              {/* Market cap */}
+              {mc !== undefined && (
+                <span
+                  translate="no"
+                  className="font-mono text-[9px] tabular-nums text-text-t4 leading-none"
+                >
+                  MC ${fmtMcap(mc)}
                 </span>
               )}
             </div>

@@ -130,11 +130,17 @@ interface MacroStoreState {
   // Computed: market summary
   marketSummary: MarketSummary | null;
 
+  // Market Cap — all pairs (CoinGecko, 5dk TTL)
+  marketCap: Partial<Record<Pair, number>>;
+  mcapFetchedAt: number;
+  mcapLoading: boolean;
+
   // Actions
   refreshFg: (fetchFn?: typeof fetch) => Promise<void>;
   refreshDominance: (fetchFn?: typeof fetch) => Promise<void>;
   refreshFunding: (fetchFn?: typeof fetch) => Promise<void>;
   refreshOpenInterest: (fetchFn?: typeof fetch) => Promise<void>;
+  refreshMarketCap: () => Promise<void>;
   refreshAll: (fetchFn?: typeof fetch) => Promise<void>;
 
   // Test helper
@@ -172,6 +178,9 @@ const initialState = {
   oiSnapshots: {} as Partial<Record<Pair, OiSnapshot[]>>,
   oiVelocity: {} as Partial<Record<Pair, OiVelocityResult>>,
   marketSummary: null,
+  marketCap: {} as Partial<Record<Pair, number>>,
+  mcapFetchedAt: 0,
+  mcapLoading: false,
 };
 
 export const useMacroStore = create<MacroStoreState>((set, get) => {
@@ -311,12 +320,31 @@ export const useMacroStore = create<MacroStoreState>((set, get) => {
     }
   },
 
+  refreshMarketCap: async () => {
+    if (get().mcapLoading) return;
+    const now = Date.now();
+    if (now - get().mcapFetchedAt < 5 * 60_000) return;
+    set({ mcapLoading: true });
+    try {
+      const res = await fetch("/api/macro/marketcap");
+      if (!res.ok) throw new Error("mcap fetch failed");
+      const json = (await res.json()) as {
+        marketCap: Partial<Record<Pair, number>>;
+        fetchedAt: number;
+      };
+      set({ marketCap: json.marketCap, mcapFetchedAt: now, mcapLoading: false });
+    } catch {
+      set({ mcapLoading: false });
+    }
+  },
+
   refreshAll: async (fetchFn) => {
     await Promise.all([
       get().refreshFg(fetchFn),
       get().refreshDominance(fetchFn),
       get().refreshFunding(fetchFn),
       get().refreshOpenInterest(fetchFn),
+      get().refreshMarketCap(),
     ]);
   },
 
