@@ -10,7 +10,7 @@ import { MtfTrendGrid } from "@/components/piyasa/MtfTrendGrid";
 import { FundingRateRow } from "@/components/piyasa/FundingRateRow";
 import { FundingAlertBanner } from "@/components/piyasa/FundingAlertBanner";
 import { OiVelocityCard } from "@/components/piyasa/OiVelocityCard";
-import { PriceTable } from "@/components/piyasa/PriceTable";
+import { MarketOverviewTable } from "@/components/piyasa/MarketOverviewTable";
 import { TopMoversCard } from "@/components/piyasa/TopMoversCard";
 import { VolatilityRankCard } from "@/components/piyasa/VolatilityRankCard";
 import { MarketSessionsCard } from "@/components/piyasa/MarketSessionsCard";
@@ -78,8 +78,8 @@ export default function PiyasaPage() {
 
       {/* Main layout: PriceTable sol | Göstergeler sağ */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_1fr]">
-        {/* Sol: Fiyat tablosu */}
-        <PriceTable />
+        {/* Sol: Market Overview tablosu */}
+        <MarketOverviewTable />
 
         {/* Sağ: Göstergeler 2×2 grid */}
         <div className="flex flex-col gap-3">
