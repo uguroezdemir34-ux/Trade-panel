@@ -36,7 +36,10 @@ function arcPath(from: number, to: number, r: number): string {
 
 export function ScoreGauge({ score, threshold, goThreshold }: Props): React.ReactElement {
   const v = Math.max(0, Math.min(100, score));
+  /* color: used for needle, hub shine, score text — threshold-based (per original logic) */
   const color = v >= threshold ? "#22c55e" : v >= 65 ? "#f59e0b" : "#ef4444";
+  /* progressColor: used only for progress arc — must match 2-zone layout (goThreshold boundary) */
+  const progressColor = v >= goThreshold ? "#22c55e" : "#ef4444";
 
   /* Needle tip — DO NOT CHANGE */
   const [nx, ny]     = pt(v, R - 8);
@@ -220,12 +223,12 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
         fill="none" stroke="#2a8040" strokeWidth={SW - 3} strokeLinecap="butt"
       />
 
-      {/* ── Active progress arc — no glow filter, just solid color */}
+      {/* ── Active progress arc — uses progressColor (goThreshold-based) not color */}
       {v >= 1 && (
         <path
           d={arcPath(0, v, R)}
           fill="none"
-          stroke={color}
+          stroke={progressColor}
           strokeWidth={SW - 2}
           strokeLinecap="butt"
           filter="url(#sg-arc-shadow)"
