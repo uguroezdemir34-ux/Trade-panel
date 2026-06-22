@@ -718,14 +718,7 @@ export default function KararPage() {
           {result && (
             <>
               {/* ── Premium hero card ── */}
-              <div
-                className="rounded-xl flex flex-col gap-3 p-4"
-                style={{
-                  border: "1px solid transparent",
-                  background: "linear-gradient(rgb(var(--bg-card)), rgb(var(--bg-card))) padding-box, linear-gradient(135deg, rgba(184, 140, 60, 0.38) 0%, rgba(90, 70, 25, 0.08) 50%, rgba(184, 140, 60, 0.38) 100%) border-box",
-                  boxShadow: "inset 0 1px 0 rgba(200, 165, 70, 0.09), inset 0 0 28px rgba(0, 0, 0, 0.18), 0 4px 24px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(184, 140, 60, 0.10)",
-                }}
-              >
+              <div className="qx-hero-card flex flex-col gap-3 p-4">
 
               {/* QUANTIX OS header band */}
               <div
