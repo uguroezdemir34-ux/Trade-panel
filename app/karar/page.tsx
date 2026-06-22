@@ -722,10 +722,26 @@ export default function KararPage() {
                 className="rounded-xl flex flex-col gap-3 p-4"
                 style={{
                   border: "1px solid transparent",
-                  background: "linear-gradient(rgb(var(--bg-card)), rgb(var(--bg-card))) padding-box, linear-gradient(135deg, rgba(184, 140, 60, 0.32) 0%, rgba(90, 70, 25, 0.08) 50%, rgba(184, 140, 60, 0.32) 100%) border-box",
-                  boxShadow: "inset 0 1px 0 rgba(200, 165, 70, 0.07), inset 0 0 20px rgba(0, 0, 0, 0.12)",
+                  background: "linear-gradient(rgb(var(--bg-card)), rgb(var(--bg-card))) padding-box, linear-gradient(135deg, rgba(184, 140, 60, 0.38) 0%, rgba(90, 70, 25, 0.08) 50%, rgba(184, 140, 60, 0.38) 100%) border-box",
+                  boxShadow: "inset 0 1px 0 rgba(200, 165, 70, 0.09), inset 0 0 28px rgba(0, 0, 0, 0.18), 0 4px 24px rgba(0, 0, 0, 0.45), 0 1px 0 rgba(184, 140, 60, 0.10)",
                 }}
               >
+
+              {/* QUANTIX OS header band */}
+              <div
+                className="-mt-4 -mx-4 mb-1 px-4 py-1.5 rounded-t-[10px] flex items-center gap-2 select-none"
+                style={{
+                  background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.20) 100%)",
+                  borderBottom: "1px solid rgba(184,140,60,0.22)",
+                }}
+              >
+                <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-text-t4">
+                  QUANTIX OS
+                </span>
+                <span className="ml-auto font-mono text-[8px] text-text-t4/45 tracking-wider tabular-nums">
+                  {activePair}
+                </span>
+              </div>
 
               {/* 2-col from md (768px): left = info/badges, right = score gauge */}
               <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
@@ -762,8 +778,15 @@ export default function KararPage() {
                     </Link>
                   )}
 
-                  {/* HERO: Verdict + Direction + Regime */}
-                  <div className="flex flex-wrap items-center gap-2">
+                  {/* HERO: Verdict + Direction + Regime — inset metallic panel */}
+                  <div
+                    className="flex flex-wrap items-center gap-2 rounded-lg px-3 py-2"
+                    style={{
+                      background: "linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.46) 100%)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.42)",
+                      border: "1px solid rgba(184,140,60,0.16)",
+                    }}
+                  >
                     <VerdictBadge
                       verdict={result.verdict}
                       signalType={result.pullbackActive ? "pullback" : "classic"}
@@ -775,8 +798,15 @@ export default function KararPage() {
                     <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
                   </div>
 
-                  {/* Protection badges */}
-                  <div className="flex flex-wrap gap-1.5">
+                  {/* Protection badges — inset info panel */}
+                  <div
+                    className="flex flex-wrap gap-1.5 rounded-lg px-3 py-2"
+                    style={{
+                      background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)",
+                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 4px rgba(0,0,0,0.32)",
+                      border: "1px solid rgba(255,255,255,0.05)",
+                    }}
+                  >
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/25 bg-brand/8 font-mono text-[9px] text-brand/70 tracking-wide select-none">
                       <span className="w-1.5 h-1.5 rounded-full bg-brand/60 shrink-0" />
                       {result.pullbackActive ? t("karar.profilePullback") : t("karar.profileTrend")}
@@ -799,13 +829,16 @@ export default function KararPage() {
                     />
                   </div>
                   {flowResult && (
-                    <div className={`shrink-0 md:w-full flex flex-col items-center justify-center rounded-lg border px-3 py-2 min-w-[64px] md:min-w-0 ${
-                      flowResult.vetoed || flowResult.totalAdjustment < -5
-                        ? "border-red-500/30 bg-red-500/5"
-                        : flowResult.totalAdjustment > 5
-                        ? "border-green-500/30 bg-green-500/5"
-                        : "border-border bg-surface-s1"
-                    } ${flowPulseClass}`}>
+                    <div
+                      className={`shrink-0 md:w-full flex flex-col items-center justify-center rounded-lg border px-3 py-2 min-w-[64px] md:min-w-0 ${
+                        flowResult.vetoed || flowResult.totalAdjustment < -5
+                          ? "border-red-500/30 bg-red-500/5"
+                          : flowResult.totalAdjustment > 5
+                          ? "border-green-500/30 bg-green-500/5"
+                          : "border-border bg-surface-s1"
+                      } ${flowPulseClass}`}
+                      style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.06), inset 0 -2px 5px rgba(0,0,0,0.40)" }}
+                    >
                       <span className="text-[9px] font-mono text-text-t4 tracking-widest uppercase leading-tight">FLOW</span>
                       <span className={`text-base font-mono font-bold tabular-nums leading-tight ${
                         flowResult.vetoed || flowResult.totalAdjustment < 0
@@ -823,8 +856,15 @@ export default function KararPage() {
 
               </div>
 
-              {/* AI Market Note */}
-              <div className="flex items-start gap-2 rounded-lg border border-brand/20 bg-brand/5 px-3 py-2">
+              {/* AI Market Note — metallic inset panel */}
+              <div
+                className="flex items-start gap-2 rounded-lg px-3 py-2"
+                style={{
+                  background: "linear-gradient(180deg, rgba(0,0,0,0.24) 0%, rgba(0,0,0,0.40) 100%)",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.35)",
+                  border: "1px solid rgba(184,140,60,0.14)",
+                }}
+              >
                 <span className="shrink-0 font-mono text-[8px] tracking-widest text-brand/60 border border-brand/25 rounded px-1 py-0.5 leading-none mt-0.5 select-none">{t("karar.aiBadge")}</span>
                 <p className="font-mono text-[11px] text-text-t1 leading-relaxed">{aiMarketNote(result, t)}</p>
               </div>
@@ -848,7 +888,7 @@ export default function KararPage() {
                   open={showTrend}
                   onToggle={() => setShowTrend((v) => !v)}
                 >
-                  <div className="bg-surface-s1 rounded-lg border border-border px-3 py-2 space-y-2">
+                  <div className="rounded-lg px-3 py-2 space-y-2" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.32) 100%)", border: "1px solid rgba(255,255,255,0.055)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}>
                     <div className="flex items-center justify-between text-2xs font-mono">
                       <span className="text-text-t4 uppercase tracking-widest">Skor</span>
                       <span className="font-bold tabular-nums text-text-t1">{result.sub.trend} / 25</span>
@@ -873,7 +913,7 @@ export default function KararPage() {
                   open={showHacim}
                   onToggle={() => setShowHacim((v) => !v)}
                 >
-                  <div className="bg-surface-s1 rounded-lg border border-border px-3 py-2 space-y-2">
+                  <div className="rounded-lg px-3 py-2 space-y-2" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.32) 100%)", border: "1px solid rgba(255,255,255,0.055)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}>
                     <SubScoreRow label="Vol" value={result.sub.vol} max={8} reason={result.reasons.vol} />
                     <SubScoreRow label="BB" value={result.sub.bb} max={8} reason={result.reasons.bb} />
                     <SubScoreRow label="VWAP" value={result.sub.vwap} max={10} reason={result.reasons.vwap} />
@@ -888,7 +928,7 @@ export default function KararPage() {
                   open={showMomentum}
                   onToggle={() => setShowMomentum((v) => !v)}
                 >
-                  <div className="bg-surface-s1 rounded-lg border border-border px-3 py-2 space-y-2">
+                  <div className="rounded-lg px-3 py-2 space-y-2" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.32) 100%)", border: "1px solid rgba(255,255,255,0.055)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}>
                     <SubScoreRow
                       label="ADX"
                       value={result.sub.adx}
@@ -1092,7 +1132,12 @@ function AccordionSection({
     <div>
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border bg-surface-s1 font-mono text-2xs text-text-t3 hover:text-text-t2 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg font-mono text-2xs text-text-t3 hover:text-text-t2 transition-colors"
+        style={{
+          background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.24) 100%)",
+          border: "1px solid rgba(184,140,60,0.14)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 4px rgba(0,0,0,0.28)",
+        }}
       >
         {dotColor && (
           <span
