@@ -57,7 +57,6 @@ import type { PositionSizerResult } from "@/lib/sizer/types";
 import { useFlowIntelligence } from "@/lib/hooks/useFlowIntelligence";
 import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
-import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
 import { ScoreLeaderboard } from "@/components/karar/ScoreLeaderboard";
 import { SessionStatsBar } from "@/components/karar/SessionStatsBar";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
@@ -694,54 +693,41 @@ export default function KararPage() {
                       </div>
                     )}
 
-                    {p === "BTC" ? (
-                      /* ── BTC PROTOTYPE: mini gauge + fiyat + hacim barı ── */
-                      <>
-                        {/* Mini speedometer */}
-                        <div className="w-full px-1 mt-1">
-                          <MiniGauge
-                            score={score ?? 0}
-                            goThreshold={allResults[p]?.goThreshold ?? 80}
-                          />
-                        </div>
-                        {/* Anlık fiyat */}
-                        {allTicks[p]?.last !== undefined && (
-                          <div translate="no" className="text-[8px] tabular-nums leading-none text-text-t2 mt-0.5">
-                            ${fmtPriceMini(allTicks[p]!.last)}
-                          </div>
-                        )}
-                        {/* Hacim barı */}
-                        <div className="w-full px-1 mt-1 mb-0.5">
-                          <div className="h-[3px] rounded-full overflow-hidden bg-[#07080e]">
-                            {maxVol > 0 && allTicks[p]?.vol24h !== undefined ? (
-                              <div
-                                className="h-full rounded-full"
-                                style={{
-                                  width: `${Math.min(100, (allTicks[p]!.vol24h! / maxVol) * 100).toFixed(1)}%`,
-                                  background: (() => {
-                                    const pct = (allTicks[p]!.vol24h! / maxVol) * 100;
-                                    return pct >= 60 ? "#22c55e70" : pct >= 30 ? "#f59e0b70" : "#ef444460";
-                                  })(),
-                                }}
-                              />
-                            ) : (
-                              /* vol24h henüz gelmedi — boş track */
-                              null
-                            )}
-                          </div>
-                          {allTicks[p]?.vol24h !== undefined && (
-                            <div translate="no" className="text-[7px] tabular-nums leading-none text-text-t4 mt-0.5 text-center">
-                              ${fmtVolMini(allTicks[p]!.vol24h!)}
-                            </div>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      /* Diğer kartlar: sparkline korunuyor */
-                      <div className="mt-0.5 h-[10px]">
-                        <ScoreSparkline snapshots={Array.isArray(scoreHistory[p]) ? scoreHistory[p] : []} />
+                    {/* Mini speedometer — tüm PAIRS.length kart için */}
+                    <div className="w-full px-1 mt-1">
+                      <MiniGauge
+                        score={score ?? 0}
+                        goThreshold={allResults[p]?.goThreshold ?? 80}
+                      />
+                    </div>
+                    {/* Anlık fiyat */}
+                    {allTicks[p]?.last !== undefined && (
+                      <div translate="no" className="text-[8px] tabular-nums leading-none text-text-t2 mt-0.5">
+                        ${fmtPriceMini(allTicks[p]!.last)}
                       </div>
                     )}
+                    {/* Hacim barı */}
+                    <div className="w-full px-1 mt-1 mb-0.5">
+                      <div className="h-[3px] rounded-full overflow-hidden bg-[#07080e]">
+                        {maxVol > 0 && allTicks[p]?.vol24h !== undefined && (
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${Math.min(100, (allTicks[p]!.vol24h! / maxVol) * 100).toFixed(1)}%`,
+                              background: (() => {
+                                const pct = (allTicks[p]!.vol24h! / maxVol) * 100;
+                                return pct >= 60 ? "#22c55e70" : pct >= 30 ? "#f59e0b70" : "#ef444460";
+                              })(),
+                            }}
+                          />
+                        )}
+                      </div>
+                      {allTicks[p]?.vol24h !== undefined && (
+                        <div translate="no" className="text-[7px] tabular-nums leading-none text-text-t4 mt-0.5 text-center">
+                          ${fmtVolMini(allTicks[p]!.vol24h!)}
+                        </div>
+                      )}
+                    </div>
 
                     {pairStats[p] && (
                       <div translate="no" className={`text-[8px] tabular-nums leading-none mt-0.5 ${

@@ -5,7 +5,7 @@
  *
  * Büyük ScoreGauge'ın sade versiyonu: sadece arc track + zone renkler +
  * progress arc. Bezel / cam / ibre / hub / text YOK. Animasyon YOK.
- * Filter YOK. 15 kart aynı anda render edilir — performans kritik.
+ * Filter YOK. PAIRS.length kadar kart aynı anda render edilir — performans kritik.
  *
  * Geometri (büyük gauge ile aynı açı sistemi):
  *   viewBox "0 0 56 34", CX=28, CY=32, R=22
