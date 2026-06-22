@@ -48,8 +48,12 @@ export function FlowMiniCards({ flow }: Props): React.ReactElement | null {
               VPIN {vpin!.vpin.toFixed(2)}
             </div>
           </>
-        ) : (
+        ) : vpin !== null ? (
+          /* vpinState var ama henüz warm-up (BTC/ETH, bucket < 10) */
           <div className="text-[10px] font-mono text-text-t4 leading-tight">{t("karar.flowComputing")}</div>
+        ) : (
+          /* vpinState hiç yok — bu pair desteklenmiyor, sonsuz bekleme yerine boş */
+          <div className="text-[10px] font-mono text-text-t4 leading-tight">—</div>
         )}
       </div>
 
