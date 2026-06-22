@@ -199,24 +199,24 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       <path d={arcPath(0, 100, R)} fill="none" stroke="#07080e" strokeWidth={SW + 5} />
       <path d={arcPath(0, 100, R)} fill="none" stroke="#05060a" strokeWidth={SW + 2} />
 
-      {/* ── Zone 0 → threshold: RED — below GO threshold, no signal */}
-      {/* Split boundary = `threshold` prop (typically 80; not hard-coded) */}
+      {/* ── Zone 0 → goThreshold: RED — below classic GO level, no signal */}
+      {/* Split = goThreshold prop (the baseline 80; separate from pullback-adjusted threshold) */}
       <path
-        d={arcPath(0, threshold, R)}
+        d={arcPath(0, goThreshold, R)}
         fill="none" stroke="#7a1f1f" strokeWidth={SW} strokeLinecap="butt"
       />
       <path
-        d={arcPath(0, threshold, R)}
+        d={arcPath(0, goThreshold, R)}
         fill="none" stroke="#b02a2a" strokeWidth={SW - 3} strokeLinecap="butt"
       />
 
-      {/* ── Zone threshold → 100: GREEN — at/above GO threshold, signal confirmed */}
+      {/* ── Zone goThreshold → 100: GREEN — at/above classic GO level, signal confirmed */}
       <path
-        d={arcPath(threshold, 100, R)}
+        d={arcPath(goThreshold, 100, R)}
         fill="none" stroke="#1f5a2a" strokeWidth={SW} strokeLinecap="butt"
       />
       <path
-        d={arcPath(threshold, 100, R)}
+        d={arcPath(goThreshold, 100, R)}
         fill="none" stroke="#2a8040" strokeWidth={SW - 3} strokeLinecap="butt"
       />
 

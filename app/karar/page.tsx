@@ -780,9 +780,8 @@ export default function KararPage() {
 
                   {/* HERO: Verdict + Direction + Regime — inset metallic panel */}
                   <div
-                    className="flex flex-wrap items-center gap-2 rounded-lg px-3 py-2"
+                    className="qx-inset-deep flex flex-wrap items-center gap-2 rounded-lg px-3 py-2"
                     style={{
-                      background: "linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.46) 100%)",
                       boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.42)",
                       border: "1px solid rgba(184,140,60,0.16)",
                     }}
@@ -800,19 +799,18 @@ export default function KararPage() {
 
                   {/* Protection badges — inset info panel */}
                   <div
-                    className="flex flex-wrap gap-1.5 rounded-lg px-3 py-2"
+                    className="qx-inset flex flex-wrap gap-1.5 rounded-lg px-3 py-2"
                     style={{
-                      background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)",
                       boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 4px rgba(0,0,0,0.32)",
                       border: "1px solid rgba(255,255,255,0.05)",
                     }}
                   >
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/25 bg-brand/8 font-mono text-[9px] text-brand/70 tracking-wide select-none">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/30 bg-brand/10 font-mono text-[9px] text-brand tracking-wide select-none">
                       <span className="w-1.5 h-1.5 rounded-full bg-brand/60 shrink-0" />
                       {result.pullbackActive ? t("karar.profilePullback") : t("karar.profileTrend")}
                     </span>
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-500/25 bg-emerald-500/8 font-mono text-[9px] text-emerald-400/70 tracking-wide select-none">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shrink-0" />
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-signal-green/30 bg-signal-green/10 font-mono text-[9px] text-signal-green tracking-wide select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-signal-green/60 shrink-0" />
                       {t("karar.signalBarClose")}
                     </span>
                   </div>
@@ -858,9 +856,8 @@ export default function KararPage() {
 
               {/* AI Market Note — metallic inset panel */}
               <div
-                className="flex items-start gap-2 rounded-lg px-3 py-2"
+                className="qx-inset-note flex items-start gap-2 rounded-lg px-3 py-2"
                 style={{
-                  background: "linear-gradient(180deg, rgba(0,0,0,0.24) 0%, rgba(0,0,0,0.40) 100%)",
                   boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.35)",
                   border: "1px solid rgba(184,140,60,0.14)",
                 }}
