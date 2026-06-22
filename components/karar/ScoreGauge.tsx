@@ -199,30 +199,25 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       <path d={arcPath(0, 100, R)} fill="none" stroke="#07080e" strokeWidth={SW + 5} />
       <path d={arcPath(0, 100, R)} fill="none" stroke="#05060a" strokeWidth={SW + 2} />
 
-      {/* ── Zone 0 → threshold (muted green — #2f5d42) */}
+      {/* ── Zone 0 → threshold: RED — below GO threshold, no signal */}
+      {/* Split boundary = `threshold` prop (typically 80; not hard-coded) */}
       <path
-        d={arcPath(0, Math.min(threshold, 80), R)}
-        fill="none" stroke="#2f5d42" strokeWidth={SW - 2} strokeLinecap="butt"
-      />
-
-      {/* ── Zone threshold → 80 (muted amber — #6e5a32) */}
-      {threshold < 80 && (
-        <path
-          d={arcPath(threshold, 80, R)}
-          fill="none" stroke="#6e5a32" strokeWidth={SW - 2} strokeLinecap="butt"
-        />
-      )}
-
-      {/* ── Danger zone 80→100: clean red band, NO glow */}
-      {/* Outer darker band */}
-      <path
-        d={arcPath(80, 100, R)}
+        d={arcPath(0, threshold, R)}
         fill="none" stroke="#7a1f1f" strokeWidth={SW} strokeLinecap="butt"
       />
-      {/* Inner brighter core */}
       <path
-        d={arcPath(80, 100, R)}
+        d={arcPath(0, threshold, R)}
         fill="none" stroke="#b02a2a" strokeWidth={SW - 3} strokeLinecap="butt"
+      />
+
+      {/* ── Zone threshold → 100: GREEN — at/above GO threshold, signal confirmed */}
+      <path
+        d={arcPath(threshold, 100, R)}
+        fill="none" stroke="#1f5a2a" strokeWidth={SW} strokeLinecap="butt"
+      />
+      <path
+        d={arcPath(threshold, 100, R)}
+        fill="none" stroke="#2a8040" strokeWidth={SW - 3} strokeLinecap="butt"
       />
 
       {/* ── Active progress arc — no glow filter, just solid color */}
