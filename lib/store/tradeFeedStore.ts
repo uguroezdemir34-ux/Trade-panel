@@ -15,7 +15,7 @@
  */
 
 import { create } from "zustand";
-import type { Pair } from "@/lib/constants/pairs";
+import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type {
   OkxTradeRaw,
   Trade,
@@ -30,9 +30,6 @@ import {
   type FeedConnectionState,
 } from "@/lib/orderflow/tradeFeed";
 import { getDefaultConfig, type VpinState } from "@/lib/orderflow/vpin";
-
-/** Desteklenen pair'ler. */
-const PAIRS: readonly Pair[] = ["BTC", "ETH"];
 
 const VPIN_STORAGE_KEY = "qx_vpin_states";
 
