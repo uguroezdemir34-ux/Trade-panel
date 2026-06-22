@@ -888,7 +888,7 @@ export default function KararPage() {
                   open={showTrend}
                   onToggle={() => setShowTrend((v) => !v)}
                 >
-                  <div className="bg-surface-s1 rounded-lg border border-border px-3 py-2 space-y-2">
+                  <div className="rounded-lg px-3 py-2 space-y-2" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.32) 100%)", border: "1px solid rgba(255,255,255,0.055)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}>
                     <div className="flex items-center justify-between text-2xs font-mono">
                       <span className="text-text-t4 uppercase tracking-widest">Skor</span>
                       <span className="font-bold tabular-nums text-text-t1">{result.sub.trend} / 25</span>
@@ -913,7 +913,7 @@ export default function KararPage() {
                   open={showHacim}
                   onToggle={() => setShowHacim((v) => !v)}
                 >
-                  <div className="bg-surface-s1 rounded-lg border border-border px-3 py-2 space-y-2">
+                  <div className="rounded-lg px-3 py-2 space-y-2" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.32) 100%)", border: "1px solid rgba(255,255,255,0.055)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}>
                     <SubScoreRow label="Vol" value={result.sub.vol} max={8} reason={result.reasons.vol} />
                     <SubScoreRow label="BB" value={result.sub.bb} max={8} reason={result.reasons.bb} />
                     <SubScoreRow label="VWAP" value={result.sub.vwap} max={10} reason={result.reasons.vwap} />
@@ -928,7 +928,7 @@ export default function KararPage() {
                   open={showMomentum}
                   onToggle={() => setShowMomentum((v) => !v)}
                 >
-                  <div className="bg-surface-s1 rounded-lg border border-border px-3 py-2 space-y-2">
+                  <div className="rounded-lg px-3 py-2 space-y-2" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.32) 100%)", border: "1px solid rgba(255,255,255,0.055)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}>
                     <SubScoreRow
                       label="ADX"
                       value={result.sub.adx}
@@ -1132,7 +1132,12 @@ function AccordionSection({
     <div>
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg border border-border bg-surface-s1 font-mono text-2xs text-text-t3 hover:text-text-t2 transition-colors"
+        className="w-full flex items-center gap-2 px-3 py-2.5 rounded-lg font-mono text-2xs text-text-t3 hover:text-text-t2 transition-colors"
+        style={{
+          background: "linear-gradient(180deg, rgba(255,255,255,0.04) 0%, rgba(0,0,0,0.24) 100%)",
+          border: "1px solid rgba(184,140,60,0.14)",
+          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 4px rgba(0,0,0,0.28)",
+        }}
       >
         {dotColor && (
           <span

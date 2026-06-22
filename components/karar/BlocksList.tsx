@@ -24,7 +24,14 @@ export function BlocksList({
   const empty = hardBlocks.length === 0 && softBlocks.length === 0;
 
   return (
-    <div className="border-border bg-bg-card rounded-lg border p-4">
+    <div
+      className="rounded-lg p-4"
+      style={{
+        background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.38) 100%)",
+        border: "1px solid rgba(184,140,60,0.12)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 4px rgba(0,0,0,0.32)",
+      }}
+    >
       <h3 className="text-text-t3 mb-3 font-mono text-2xs tracking-widest">
         {t("blocks.title")}
       </h3>

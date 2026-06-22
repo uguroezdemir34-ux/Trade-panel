@@ -33,7 +33,14 @@ export function ScoreBreakdown({
 }): React.ReactElement {
   const t = useT();
   return (
-    <div className="border-border bg-bg-card rounded-lg border p-4">
+    <div
+      className="rounded-lg p-4"
+      style={{
+        background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.38) 100%)",
+        border: "1px solid rgba(184,140,60,0.12)",
+        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 4px rgba(0,0,0,0.32)",
+      }}
+    >
       <h3 className="text-text-t3 mb-3 font-mono text-2xs tracking-widest">
         {t("score.categories.title")}
       </h3>
@@ -47,10 +54,13 @@ export function ScoreBreakdown({
               <div className="text-text-t2 w-14 font-mono text-2xs tracking-wider">
                 {label.toUpperCase()}
               </div>
-              <div className="bg-border relative h-2 flex-1 overflow-hidden rounded">
+              <div className="relative h-2 flex-1 overflow-hidden rounded" style={{ background: "#070810" }}>
                 <div
-                  className="bg-brand h-full transition-all"
-                  style={{ width: `${Math.min(100, pct)}%` }}
+                  className="h-full transition-all"
+                  style={{
+                    width: `${Math.min(100, pct)}%`,
+                    background: pct >= 70 ? "#1e6e38" : pct >= 35 ? "#6e5018" : "#6e1e1e",
+                  }}
                 />
               </div>
               <div className="text-text-t1 w-10 text-right font-mono text-xs tabular-nums">
