@@ -6,6 +6,8 @@ import { PositionCard } from "@/components/pozisyon/PositionCard";
 import { PositionEmptyState } from "@/components/pozisyon/PositionEmptyState";
 import { TradeTimelineCard } from "@/components/pozisyon/TradeTimelineCard";
 import { PortfolioSummaryBanner } from "@/components/pozisyon/PortfolioSummaryBanner";
+import { AccountSummaryBar } from "@/components/pozisyon/AccountSummaryBar";
+import { PaperPositionsCard } from "@/components/pozisyon/PaperPositionsCard";
 import { useT } from "@/lib/i18n/context";
 
 export default function PozisyonPage() {
@@ -19,16 +21,22 @@ export default function PozisyonPage() {
   return (
     <div className="flex flex-col gap-4">
 
+      {/* Hesap özeti */}
+      <AccountSummaryBar />
+
       <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-4 py-3 font-mono text-xs text-amber-400">
         <span className="font-bold tracking-widest mr-2">{t("settings.signalModeLabel")}</span>
         {t("settings.signalModeManageExchange")}
       </div>
 
+      {/* Paper (forward test) açık pozisyonlar */}
+      <PaperPositionsCard />
+
       {positions.length === 0 ? (
         <PositionEmptyState />
       ) : (
         <>
-          {positions.length > 1 && (
+          {positions.length >= 1 && (
             <PortfolioSummaryBanner positions={positions} />
           )}
           {positions.map((pos) => {
