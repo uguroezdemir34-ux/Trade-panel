@@ -10,7 +10,7 @@
 
 import { useEffect } from "react";
 import { useTradeFeedStore } from "@/lib/store/tradeFeedStore";
-import type { Pair } from "@/lib/constants/pairs";
+import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { OkxTradeRaw } from "@/lib/orderflow/types";
 import { getActiveMarketClient } from "@/lib/ws/marketClientRef";
 
@@ -55,8 +55,7 @@ export function useTradeFeed(): void {
           : state.status === "disconnected"
           ? "reconnecting"
           : "idle";
-      setConnection("BTC", cs);
-      setConnection("ETH", cs);
+      for (const p of PAIRS) setConnection(p, cs);
     });
 
     return () => {
