@@ -202,36 +202,26 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       <path d={arcPath(0, 100, R)} fill="none" stroke="#07080e" strokeWidth={SW + 5} />
       <path d={arcPath(0, 100, R)} fill="none" stroke="#05060a" strokeWidth={SW + 2} />
 
-      {/* ── Zone 0 → goThreshold: RED — below classic GO level, no signal */}
-      {/* Split = goThreshold prop (the baseline 80; separate from pullback-adjusted threshold) */}
+      {/* ── Zone 0 → goThreshold: RED — kılcal ince arka plan çizgisi */}
       <path
         d={arcPath(0, goThreshold, R)}
-        fill="none" stroke="#7a1f1f" strokeWidth={4} strokeLinecap="butt"
-      />
-      <path
-        d={arcPath(0, goThreshold, R)}
-        fill="none" stroke="#b02a2a" strokeWidth={2} strokeLinecap="butt"
+        fill="none" stroke="#7a1f1f" strokeWidth={1} strokeLinecap="butt"
       />
 
-      {/* ── Zone goThreshold → 100: GREEN — at/above classic GO level, signal confirmed */}
+      {/* ── Zone goThreshold → 100: GREEN — kılcal ince arka plan çizgisi */}
       <path
         d={arcPath(goThreshold, 100, R)}
-        fill="none" stroke="#1f5a2a" strokeWidth={4} strokeLinecap="butt"
-      />
-      <path
-        d={arcPath(goThreshold, 100, R)}
-        fill="none" stroke="#2a8040" strokeWidth={2} strokeLinecap="butt"
+        fill="none" stroke="#1f5a2a" strokeWidth={1} strokeLinecap="butt"
       />
 
-      {/* ── Active progress arc — uses progressColor (goThreshold-based) not color */}
+      {/* ── Active progress arc — ibrenin ucuna uzanan kılcal çizgi */}
       {v >= 1 && (
         <path
           d={arcPath(0, v, R)}
           fill="none"
           stroke={progressColor}
-          strokeWidth={3}
+          strokeWidth={0.8}
           strokeLinecap="butt"
-          filter="url(#sg-arc-shadow)"
         />
       )}
 

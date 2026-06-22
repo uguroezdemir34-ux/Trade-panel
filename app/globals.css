@@ -251,34 +251,23 @@ textarea {
 }
 .flow-led { animation: flow-led-ring 2s ease-in-out infinite; }
 
-/* === Hero card dış kabuk — çok katmanlı 3D metalik çerçeve ===
-   Bronz border: üst kenar parlak altın → alt kenar koyu bronze (2px dolu kenar)
-/* === Hero card dış kabuk — brand hairline + glow ===
-   1px border: mevcut --brand turuncu token (dark=255 107 26, light=184 68 0).
-   border-box/padding-box tekniği YOK — bleed riski sıfır.
-   Kart gövdesi bg-card tokenından geliyor, çerçeve sadece kenarda. */
+/* === Hero card dış kabuk — nötr karanlık metal çerçeve ===
+   --border-strong tokeni: dark=58 58 58, light=136 136 152.
+   Kart gövdesi bg-card tokenından, çerçeve sadece kenarda. */
 .qx-hero-card {
   border-radius: 14px;
   background: rgb(var(--bg-card));
-  border: 1px solid rgb(var(--brand) / 0.28);
+  border: 1px solid rgb(var(--border-strong));
   box-shadow:
-    /* İç üst highlight */
     inset 0 1px 0 rgba(255,255,255,0.06),
-    /* Brand rengi 1px spread — hafif dış halka */
-    0 0 0 1px rgb(var(--brand) / 0.07),
-    /* Çok hafif brand glow */
-    0 0 18px rgb(var(--brand) / 0.05),
-    /* Dış düşen gölge */
-    0 4px 20px rgba(0,0,0,0.44),
-    0 1px 3px rgba(0,0,0,0.28);
+    0 4px 24px rgba(0,0,0,0.50),
+    0 1px 4px rgba(0,0,0,0.32);
 }
 [data-theme="light"] .qx-hero-card {
-  border: 1px solid rgb(var(--brand) / 0.22);
+  border: 1px solid rgb(var(--border));
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.80),
-    0 0 0 1px rgb(var(--brand) / 0.08),
-    0 0 12px rgb(var(--brand) / 0.04),
-    0 4px 16px rgba(0,0,0,0.13),
+    inset 0 1px 0 rgba(255,255,255,0.90),
+    0 4px 16px rgba(0,0,0,0.12),
     0 1px 2px rgba(0,0,0,0.08);
 }
 
