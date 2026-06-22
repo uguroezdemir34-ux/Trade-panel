@@ -16,6 +16,7 @@ import { VolatilityRankCard } from "@/components/piyasa/VolatilityRankCard";
 import { MarketSessionsCard } from "@/components/piyasa/MarketSessionsCard";
 import { MarketBreadthCard } from "@/components/piyasa/MarketBreadthCard";
 import { CorrelationCard } from "@/components/piyasa/CorrelationCard";
+import { PerformanceHeatmap } from "@/components/piyasa/PerformanceHeatmap";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { MtfTrendResult } from "@/lib/market/mtfTrend";
@@ -97,6 +98,9 @@ export default function PiyasaPage() {
           </div>
         </div>
       </div>
+
+      {/* Çok-periyot performans karşılaştırması */}
+      <PerformanceHeatmap />
 
       {/* Alt: MTF trend + OI yan yana (masaüstü) / Funding */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
