@@ -1,0 +1,79 @@
+"use client";
+
+import { useMarketStore } from "@/lib/store/marketStore";
+import { PAIRS } from "@/lib/constants/pairs";
+
+function fmtPrice(p: number): string {
+  if (p >= 10_000) return p.toLocaleString("en-US", { maximumFractionDigits: 0 });
+  if (p >= 100)    return p.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  if (p >= 1)      return p.toLocaleString("en-US", { maximumFractionDigits: 3 });
+  return p.toLocaleString("en-US", { maximumFractionDigits: 5 });
+}
+
+function fmtVol(v: number): string {
+  if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
+  if (v >= 1e6) return `${(v / 1e6).toFixed(0)}M`;
+  if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K`;
+  return v.toFixed(0);
+}
+
+export function LivePriceStrip(): React.ReactElement {
+  const prices = useMarketStore((s) => s.prices);
+
+  return (
+    <div className="w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+      <div className="flex gap-1.5 pb-0.5" style={{ minWidth: "max-content" }}>
+        {PAIRS.map((pair) => {
+          const tick = prices[pair];
+          const chg = tick?.chg ?? null;
+          const pos = chg !== null && chg > 0;
+          const neg = chg !== null && chg < 0;
+          const chgColor   = pos ? "text-green-400" : neg ? "text-red-400" : "text-text-t4";
+          const accentBorder = pos
+            ? "border-l-green-500/60"
+            : neg
+              ? "border-l-red-500/60"
+              : "border-l-border/30";
+
+          return (
+            <div
+              key={pair}
+              className={`flex flex-col gap-0.5 rounded border border-border/40 border-l-2 ${accentBorder} bg-bg-card px-2.5 py-2 min-w-[82px] shrink-0`}
+            >
+              {/* Pair name */}
+              <span className="font-mono text-[10px] font-semibold tracking-widest text-text-t3 uppercase leading-none">
+                {pair}
+              </span>
+
+              {/* Live price */}
+              <span
+                translate="no"
+                className="font-mono text-xs font-bold tabular-nums text-text-t1 leading-none mt-1"
+              >
+                {tick ? `$${fmtPrice(tick.last)}` : "—"}
+              </span>
+
+              {/* 24h change */}
+              <span
+                translate="no"
+                className={`font-mono text-[10px] tabular-nums leading-none ${chgColor}`}
+              >
+                {chg !== null ? `${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%` : "—"}
+              </span>
+
+              {/* 24h volume — only when available */}
+              {tick?.vol24h !== undefined && (
+                <span
+                  translate="no"
+                  className="font-mono text-[9px] tabular-nums text-text-t4 leading-none mt-0.5"
+                >
+                  ${fmtVol(tick.vol24h)}
+                </span>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

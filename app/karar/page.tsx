@@ -74,6 +74,7 @@ import { usePairNotesStore } from "@/lib/store/pairNotesStore";
 import { PairSignalHistory } from "@/components/karar/PairSignalHistory";
 import { PairTradeStats } from "@/components/karar/PairTradeStats";
 import { WalletSummaryBar } from "@/components/karar/WalletSummaryBar";
+import { LivePriceStrip } from "@/components/karar/LivePriceStrip";
 
 export default function KararPage() {
   const t = useT();
@@ -447,6 +448,9 @@ export default function KararPage() {
 
   return (
     <div className="flex flex-col gap-3">
+      {/* Canlı fiyat şeridi — 20 parite, yatay scroll */}
+      <LivePriceStrip />
+
       {/* Forward Test Mode banner */}
       {forwardTestMode && (
         <div className="flex items-center gap-2 rounded-lg border border-[#22C55E]/30 bg-[#22C55E]/8 px-3 py-2">
