@@ -482,7 +482,7 @@ export default function KararPage() {
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
 
         {/* LEFT SIDEBAR — pair selection */}
-        <div className="flex flex-col gap-3 lg:w-72 lg:shrink-0">
+        <div className="flex flex-col gap-3 lg:w-72 lg:shrink-0 order-2 lg:order-1">
           {/* Score freshness */}
           <div className="flex items-center justify-between">
             <span translate="no" className="text-text-t4 font-mono text-2xs tracking-wider">
@@ -776,7 +776,7 @@ export default function KararPage() {
         </div>
 
         {/* RIGHT MAIN — active pair details */}
-        <div className="flex flex-col gap-3 lg:flex-1 lg:min-w-0">
+        <div className="flex flex-col gap-3 lg:flex-1 lg:min-w-0 order-1 lg:order-2">
           {!result && (
             <div className="bg-surface-s1 rounded-lg p-6 text-center font-mono text-sm text-text-t3">
               {computing ? t("karar.computing") : t("karar.waitingData")}
