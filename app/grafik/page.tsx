@@ -333,8 +333,10 @@ export default function GrafikPage() {
 
   return (
     <div className="flex gap-3 items-start">
-      {/* Dikey canlı fiyat şeridi — 20 parite */}
-      <LivePriceStrip variant="vertical" />
+      {/* Dikey canlı fiyat şeridi — 20 parite, mobilde gizli */}
+      <div className="hidden md:block">
+        <LivePriceStrip variant="vertical" />
+      </div>
 
       {/* WatchlistPanel — TradingView-style right column */}
       <WatchlistPanel activePair={pair} onPairChange={setPair} />
