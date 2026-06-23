@@ -6,7 +6,7 @@
  *   2. String numerikleri parse eder, NaN guard
  *   3. notionalUsd hesaplar (price × size)
  *   4. side'ı bizim tipimize map eder
- *   5. Bilinmeyen instrument'leri reject eder (BTC/ETH only)
+ *   5. Bilinmeyen instrument'leri reject eder (PAIRS'ten türetilen tüm pair'ler)
  *
  * Tick rule (zaten OKX side veriyor ama gelecekte exchange'ler eklenirse):
  *   Geleneksel finansta side belirsizse:
@@ -16,20 +16,14 @@
  */
 
 import type { OkxTradeRaw, Trade, TradeSide } from "./types";
-import type { Pair } from "@/lib/constants/pairs";
+import { PAIRS, type Pair } from "@/lib/constants/pairs";
 
-/**
- * Instrument ID → Pair mapping.
- * Şu an sadece BTC ve ETH perpetual swap'ları destekliyoruz.
- */
-const INST_ID_TO_PAIR: Record<string, Pair> = {
-  "BTC-USDT-SWAP": "BTC",
-  "ETH-USDT-SWAP": "ETH",
-};
+/** Instrument ID → Pair mapping — PAIRS'ten otomatik, tüm 20 pair. */
+const INST_ID_TO_PAIR: Record<string, Pair> = Object.fromEntries(
+  PAIRS.map((p) => [`${p}-USDT-SWAP`, p]),
+) as Record<string, Pair>;
 
-/**
- * Desteklenen instrument'lerin listesi (WS subscribe için).
- */
+/** Desteklenen instrument'lerin listesi (WS subscribe için). */
 export const SUPPORTED_INST_IDS: readonly string[] =
   Object.keys(INST_ID_TO_PAIR);
 
