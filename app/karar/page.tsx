@@ -60,7 +60,6 @@ import { StreakBanner } from "@/components/karar/StreakBanner";
 import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
 import { KeyboardShortcutsModal } from "@/components/karar/KeyboardShortcutsModal";
 import { HistoricalEdge } from "@/components/karar/HistoricalEdge";
-import { FlowMiniCards } from "@/components/karar/FlowMiniCards";
 import { CorrelationWarning } from "@/components/karar/CorrelationWarning";
 import { CandlePatternBadge } from "@/components/karar/CandlePatternBadge";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
@@ -877,12 +876,12 @@ export default function KararPage() {
                 </div>
 
                 {/* Right sub-col: Smart Money + Score gauge + FLOW + VOL DELTA */}
-                <div className="flex gap-3 items-center md:flex-col md:gap-2 md:w-44 md:shrink-0">
+                <div className="flex flex-col gap-2 md:w-44 md:shrink-0">
 
-                  {/* Smart Money — masaüstünde gauge üstünde */}
+                  {/* Smart Money — gauge üstünde */}
                   {flowResult && (
                     <div
-                      className="hidden md:block w-full rounded-lg px-2.5 py-2"
+                      className="w-full rounded-lg px-2.5 py-2"
                       style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}
                     >
                       <div className="text-[9px] font-mono text-text-t4 tracking-widest uppercase mb-0.5">Smart Money</div>
@@ -905,7 +904,7 @@ export default function KararPage() {
                     </div>
                   )}
 
-                  <div className="flex-1 min-w-0 max-w-[200px] md:max-w-none md:flex-none md:w-full">
+                  <div className="w-full max-w-[200px] mx-auto md:max-w-none">
                     <ScoreGauge
                       score={result.score}
                       threshold={result.effectiveThreshold}
@@ -915,7 +914,7 @@ export default function KararPage() {
 
                   {flowResult && (
                     <div
-                      className={`shrink-0 md:w-full flex flex-col items-center justify-center rounded-lg border px-3 py-2 min-w-[64px] md:min-w-0 ${
+                      className={`w-full flex flex-col items-center justify-center rounded-lg border px-3 py-2 ${
                         flowResult.vetoed || flowResult.totalAdjustment < -5
                           ? "border-red-500/30 bg-red-500/5"
                           : flowResult.totalAdjustment > 5
@@ -938,10 +937,10 @@ export default function KararPage() {
                     </div>
                   )}
 
-                  {/* VOL DELTA — masaüstünde gauge altında */}
+                  {/* VOL DELTA — gauge altında */}
                   {flowResult && (
                     <div
-                      className="hidden md:block w-full rounded-lg px-2.5 py-2"
+                      className="w-full rounded-lg px-2.5 py-2"
                       style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}
                     >
                       <div className="text-[9px] font-mono text-text-t4 tracking-widest uppercase mb-0.5">Vol Delta 5m</div>
@@ -972,11 +971,6 @@ export default function KararPage() {
               </div>
 
               </div>{/* end premium hero card */}
-
-              {/* Smart Money + Volume Delta 5m — mobilde burada, masaüstünde hero card içinde */}
-              <div className="md:hidden">
-                <FlowMiniCards flow={flowResult} />
-              </div>
 
               {/* Flow drilldown */}
               <FlowAlignmentRow flow={flowResult} />
