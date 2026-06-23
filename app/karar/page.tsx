@@ -54,7 +54,6 @@ import { useFlowIntelligence } from "@/lib/hooks/useFlowIntelligence";
 import { formatCvd } from "@/lib/orderflow/cvd";
 import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
-import { ScoreLeaderboard } from "@/components/karar/ScoreLeaderboard";
 import { SessionStatsBar } from "@/components/karar/SessionStatsBar";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
@@ -495,17 +494,8 @@ export default function KararPage() {
             )}
           </div>
 
-          {/* Scores + pair grid: side by side on wider screens */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            {/* Left col: top scores */}
-            <ScoreLeaderboard
-              results={allResults}
-              activePair={activePair}
-              onSelect={setActivePair}
-            />
-
-            {/* Right col: filter + pair grid */}
-            <div className="flex flex-col gap-2">
+          {/* Pair grid */}
+          <div className="flex flex-col gap-2">
 
           {/* Pair group filter */}
           <div className="flex flex-wrap gap-1">
@@ -771,8 +761,7 @@ export default function KararPage() {
               );
             })}
           </div>
-            </div>{/* end right col */}
-          </div>{/* end md:grid-cols-2 */}
+          </div>{/* end pair grid wrapper */}
         </div>
 
         {/* RIGHT MAIN — active pair details */}
