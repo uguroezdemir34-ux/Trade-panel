@@ -75,6 +75,7 @@ export default function KararPage() {
   const locale = useLocale();
   const [activePair, setActivePair] = useState<Pair>("BTC");
   const [pairGroup, setPairGroup] = useState<PairGroup>("all");
+  const [sortByScore, setSortByScore] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const watchlistPairs = useWatchlistStore((s) => s.pairs);
   const watchlistToggle = useWatchlistStore((s) => s.toggle);
@@ -198,11 +199,14 @@ export default function KararPage() {
   const clearPairNote = usePairNotesStore((s) => s.clearNote);
 
   const displayPairs = useMemo<readonly Pair[]>(() => {
-    if (pairGroup === "go") return goPairs.length > 0 ? goPairs : PAIRS;
-    if (pairGroup === "watch") return watchlistPairs.length > 0 ? watchlistPairs : PAIRS;
-    if (pairGroup === "act") return actionablePairs.length > 0 ? actionablePairs : PAIRS;
-    return PAIR_GROUPS[pairGroup] ?? PAIRS;
-  }, [pairGroup, goPairs, watchlistPairs, actionablePairs]);
+    let base: readonly Pair[];
+    if (pairGroup === "go") base = goPairs.length > 0 ? goPairs : PAIRS;
+    else if (pairGroup === "watch") base = watchlistPairs.length > 0 ? watchlistPairs : PAIRS;
+    else if (pairGroup === "act") base = actionablePairs.length > 0 ? actionablePairs : PAIRS;
+    else base = PAIR_GROUPS[pairGroup] ?? PAIRS;
+    if (!sortByScore) return base;
+    return [...base].sort((a, b) => (allResults[b]?.score ?? 0) - (allResults[a]?.score ?? 0));
+  }, [pairGroup, goPairs, watchlistPairs, actionablePairs, sortByScore, allResults]);
 
   // Ref so the keydown handler always sees the latest displayPairs without re-binding
   const displayPairsRef = useRef<readonly Pair[]>(displayPairs);
@@ -552,6 +556,21 @@ export default function KararPage() {
                 </button>
               );
             })}
+          </div>
+
+          {/* Pair grid header — skor sıralaması toggle */}
+          <div className="flex items-center justify-end">
+            <button
+              onClick={() => setSortByScore((s) => !s)}
+              className={[
+                "px-2 py-0.5 rounded font-mono text-2xs border transition-colors",
+                sortByScore
+                  ? "bg-brand/20 border-brand text-brand"
+                  : "border-border text-text-t4 hover:text-text-t2",
+              ].join(" ")}
+            >
+              {sortByScore ? "↓ SKOR" : "SIRALA"}
+            </button>
           </div>
 
           {/* Pair grid — v2: 3 kolon, kapsül slider kartları */}
