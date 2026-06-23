@@ -720,16 +720,16 @@ export default function KararPage() {
                       )}
                     </div>
 
-                    {/* Alt: durum noktası + fiyat | market cap */}
-                    <div className="flex items-center justify-between mt-1">
-                      <div className="flex items-center gap-0.5 min-w-0">
+                    {/* Alt: fiyat + market cap */}
+                    <div className="flex items-center justify-between mt-1 gap-1">
+                      <div className="flex items-center gap-1 min-w-0">
                         <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
                           v === "go"    ? "bg-green-400"
                           : v === "wait"  ? "bg-amber-400"
                           : "bg-red-400/50"
                         }`} />
                         {allTicks[p]?.last !== undefined && (
-                          <span translate="no" className="text-[9px] tabular-nums text-text-t2 leading-none">
+                          <span translate="no" className="text-[11px] font-semibold tabular-nums text-text-t1 leading-none tracking-tight">
                             {formatTickPrice(allTicks[p]!.last, locale)}
                           </span>
                         )}
@@ -1429,16 +1429,16 @@ function PairPriceHeader({
     : "text-text-t3";
 
   return (
-    <div className="flex items-center justify-between bg-surface-s1 rounded-lg px-3 py-2">
-      <span className="font-mono text-sm font-bold text-text-t1 tracking-wide">{pair}</span>
+    <div className="flex items-center justify-between bg-surface-s1 rounded-lg px-3 py-2.5">
+      <span className="font-mono text-base font-bold text-text-t1 tracking-wide">{pair}</span>
       <div className="flex items-center gap-3">
         {price !== null && (
-          <span translate="no" className="font-mono text-sm font-semibold text-text-t1 tabular-nums">
+          <span translate="no" className="font-mono text-xl font-bold text-text-t1 tabular-nums tracking-tight">
             {fmtPrice(price)}
           </span>
         )}
         {chg !== null && (
-          <span translate="no" className={`font-mono text-xs font-medium tabular-nums ${chgColor}`}>
+          <span translate="no" className={`font-mono text-sm font-semibold tabular-nums ${chgColor}`}>
             {`${chg >= 0 ? "+" : ""}${chg.toFixed(2)}%`}
           </span>
         )}
