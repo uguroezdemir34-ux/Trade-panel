@@ -16,17 +16,13 @@ import { useWatchlistStore } from "@/lib/store/watchlistStore";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { formatTickPrice } from "@/lib/i18n/format";
 
-function fmtVolMini(v: number): string {
-  if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
-  if (v >= 1e6) return `${(v / 1e6).toFixed(0)}M`;
-  if (v >= 1e3) return `${(v / 1e3).toFixed(0)}K`;
-  return v.toFixed(0);
-}
-
-function fmtMcap(v: number): string {
-  if (v >= 1e12) return `${(v / 1e12).toFixed(2)}T`;
-  if (v >= 1e9)  return `${(v / 1e9).toFixed(1)}B`;
-  if (v >= 1e6)  return `${(v / 1e6).toFixed(0)}M`;
+function fmtCompact(v: number): string {
+  if (v >= 1e12)  return `${(v / 1e12).toFixed(2)}T`;
+  if (v >= 100e9) return `${Math.round(v / 1e9)}B`;
+  if (v >= 1e9)   return `${(v / 1e9).toFixed(1)}B`;
+  if (v >= 100e6) return `${Math.round(v / 1e6)}M`;
+  if (v >= 1e6)   return `${(v / 1e6).toFixed(1)}M`;
+  if (v >= 1e3)   return `${Math.round(v / 1e3)}K`;
   return v.toFixed(0);
 }
 
@@ -564,8 +560,8 @@ export default function KararPage() {
             })}
           </div>
 
-          {/* Pair grid — Layout B: tek kolon, yatay bar kartları */}
-          <div className="grid grid-cols-1 gap-1">
+          {/* Pair grid — v2: 3 kolon, kapsül slider kartları */}
+          <div className="grid grid-cols-3 gap-1">
             {displayPairs.map((p) => {
               const pr = allResults[p];
               const v = pr?.verdict;
@@ -596,19 +592,6 @@ export default function KararPage() {
                 : goStrength === "medium" ? "bg-green-500/5"
                 : "bg-yellow-500/5";
 
-              const verdictBorder =
-                v === "go"
-                  ? goStrength === "strong"
-                    ? "border-l-2 border-green-300"
-                    : goStrength === "weak"
-                    ? "border-l-2 border-yellow-400"
-                    : "border-l-2 border-green-400"
-                  : v === "wait"
-                  ? "border-l-2 border-yellow-400"
-                  : v === "no"
-                  ? "border-l-2 border-red-400/50"
-                  : "border-l-2 border-transparent";
-
               const scoreColor =
                 v === "go"
                   ? goStrength === "strong" ? "text-green-300"
@@ -618,10 +601,10 @@ export default function KararPage() {
                   ? "text-yellow-400"
                   : "text-text-t4";
 
-              const barColorClass =
-                v === "go"    ? "bg-green-500"
-                : v === "wait"  ? "bg-amber-400"
-                : v === "no"    ? "bg-red-500/40"
+              const gradientClass =
+                v === "go"    ? "bg-gradient-to-r from-green-600 to-green-400"
+                : v === "wait"  ? "bg-gradient-to-r from-amber-600 to-amber-400"
+                : v === "no"    ? "bg-gradient-to-r from-red-700/50 to-red-500/30"
                 : "bg-surface-s2";
 
               const dirArrow = dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
@@ -643,8 +626,8 @@ export default function KararPage() {
                 <div key={p} className="relative group">
                   {goStrength && !isActive && (
                     <>
-                      <div className={`absolute inset-0 rounded ring-1 ${goRingClass} animate-pulse pointer-events-none`} />
-                      <span className="absolute top-0.5 left-0.5 flex h-2 w-2 pointer-events-none">
+                      <div className={`absolute inset-0 rounded-lg ring-1 ${goRingClass} animate-pulse pointer-events-none`} />
+                      <span className="absolute top-0.5 left-0.5 flex h-2 w-2 pointer-events-none z-10">
                         <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${goPingClass} opacity-60`} />
                         <span className={`relative inline-flex rounded-full h-2 w-2 ${goPingClass}`} />
                       </span>
@@ -654,80 +637,103 @@ export default function KararPage() {
                   <button
                     onClick={() => setActivePair(p as Pair)}
                     className={[
-                      "w-full text-left rounded px-2.5 py-2 font-mono transition-colors",
-                      verdictBorder,
+                      "w-full text-left rounded-lg border p-1.5 font-mono transition-colors",
                       isActive
-                        ? "bg-surface-s2 text-text-t1"
+                        ? "border-white/20 bg-surface-s2 text-text-t1"
+                        : goStrength === "strong"
+                        ? `border-green-400/50 ${goBgClass} text-text-t3 hover:text-text-t2`
                         : goStrength
-                        ? `${goBgClass} text-text-t3 hover:text-text-t2`
-                        : "text-text-t3 hover:text-text-t2",
+                        ? `border-green-500/25 ${goBgClass} text-text-t3 hover:text-text-t2`
+                        : v === "wait"
+                        ? "border-amber-400/20 bg-bg-card text-text-t3 hover:text-text-t2"
+                        : "border-border/30 bg-bg-card text-text-t3 hover:text-text-t2",
                     ].join(" ")}
                   >
-                    {/* Üst satır: pair adı + 24h% + hacim */}
-                    <div className="flex items-center justify-between gap-1">
-                      <div className="flex items-center gap-1.5 min-w-0">
-                        <span className="text-xs font-bold tracking-wide text-text-t1">{p}</span>
+                    {/* Satır 1: pair adı + 24h% rozeti */}
+                    <div className="flex items-center justify-between gap-0.5 mb-0.5">
+                      <div className="flex items-center gap-0.5 min-w-0">
+                        <span className="text-[11px] font-bold text-text-t1 leading-none">{p}</span>
                         {alarmedPairs.has(p) && (
-                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
-                        )}
-                        {pairChg !== null && (
-                          <span translate="no" className={`text-2xs tabular-nums ${chgColor}`}>
-                            {`${pairChg >= 0 ? "+" : ""}${pairChg.toFixed(2)}%`}
-                          </span>
+                          <span className="h-1 w-1 rounded-full bg-amber-400 shrink-0" />
                         )}
                       </div>
-                      {allTicks[p]?.vol24h !== undefined && (
-                        <span translate="no" className="text-[9px] tabular-nums text-text-t4 shrink-0">
-                          ${fmtVolMini(allTicks[p]!.vol24h!)}
+                      {pairChg !== null && (
+                        <span translate="no" className={`text-[8px] tabular-nums px-0.5 py-px rounded-sm bg-surface-s2 leading-tight shrink-0 ${chgColor}`}>
+                          {`${pairChg >= 0 ? "+" : ""}${pairChg.toFixed(1)}%`}
                         </span>
                       )}
                     </div>
 
-                    {/* Orta: büyük skor rakamı + yön oku */}
-                    <div className="flex items-baseline gap-1 mt-1">
-                      <span translate="no" className={`text-2xl font-bold tabular-nums leading-none ${isActive ? "text-text-t1" : scoreColor}`}>
-                        {score !== undefined ? score : "·"}
+                    {/* Satır 2: 24S score + hacim */}
+                    <div className="flex items-center justify-between gap-0.5 mb-0.5">
+                      <span translate="no" className={`text-[8px] tabular-nums leading-none ${isActive ? "text-text-t3" : scoreColor}`}>
+                        {score !== undefined ? `24S ${score}${dirArrow}` : "24S ·"}
                       </span>
-                      {dir && (
-                        <span className={`text-base leading-none ${isActive ? "text-text-t2" : scoreColor}`}>
-                          {dirArrow}
-                        </span>
-                      )}
-                      {showMom && (
-                        <span className={`text-[9px] tabular-nums leading-none ml-0.5 ${momColor}`}>
-                          {(momentum ?? 0) > 0 ? "▲" : "▼"}
+                      {allTicks[p]?.vol24h !== undefined && (
+                        <span translate="no" className="text-[8px] tabular-nums leading-none text-text-t4 shrink-0">
+                          ${fmtCompact(allTicks[p]!.vol24h!)}
                         </span>
                       )}
                     </div>
 
-                    {/* Skor barı */}
-                    <div className="relative mt-1.5">
-                      <div className="h-1.5 w-full rounded-full bg-surface-s2 overflow-hidden">
+                    {/* Kapsül slider */}
+                    <div className="relative py-1.5">
+                      <div className="h-1.5 w-full rounded-full bg-surface-s2 overflow-hidden relative">
                         {score !== undefined && (
                           <div
-                            className={`h-full rounded-full ${barColorClass}`}
+                            className={`absolute inset-y-0 left-0 rounded-full ${gradientClass}`}
                             style={{ width: `${Math.min(100, score)}%` }}
                           />
                         )}
                       </div>
+                      {score !== undefined && (
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-1.5 rounded-full bg-white/90 shadow-sm pointer-events-none"
+                          style={{ left: `${Math.min(98, score)}%` }}
+                        />
+                      )}
                       {pr?.goThreshold !== undefined && (
                         <div
-                          className="absolute top-1/2 -translate-y-1/2 h-3 w-px bg-white/25"
+                          className="absolute top-1/2 -translate-y-1/2 h-3.5 w-px bg-white/25 pointer-events-none"
                           style={{ left: `${Math.min(99, pr.goThreshold)}%` }}
                         />
                       )}
                     </div>
 
-                    {/* Alt satır: fiyat + market cap */}
-                    <div className="flex items-center justify-between mt-1.5">
-                      {allTicks[p]?.last !== undefined ? (
-                        <span translate="no" className="text-2xs tabular-nums text-text-t2">
-                          {formatTickPrice(allTicks[p]!.last, locale)}
+                    {/* Büyük skor */}
+                    <div className="flex items-center justify-center gap-0.5 mt-0.5">
+                      <span translate="no" className={`text-sm font-bold tabular-nums leading-none ${isActive ? "text-text-t1" : scoreColor}`}>
+                        {score !== undefined ? score : "·"}
+                      </span>
+                      {dir && (
+                        <span className={`text-[10px] leading-none ${isActive ? "text-text-t2" : scoreColor}`}>
+                          {dirArrow}
                         </span>
-                      ) : <span />}
+                      )}
+                      {showMom && (
+                        <span className={`text-[8px] leading-none ml-px ${momColor}`}>
+                          {(momentum ?? 0) > 0 ? "▲" : "▼"}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Alt: durum noktası + fiyat | market cap */}
+                    <div className="flex items-center justify-between mt-1">
+                      <div className="flex items-center gap-0.5 min-w-0">
+                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                          v === "go"    ? "bg-green-400"
+                          : v === "wait"  ? "bg-amber-400"
+                          : "bg-red-400/50"
+                        }`} />
+                        {allTicks[p]?.last !== undefined && (
+                          <span translate="no" className="text-[9px] tabular-nums text-text-t2 leading-none">
+                            {formatTickPrice(allTicks[p]!.last, locale)}
+                          </span>
+                        )}
+                      </div>
                       {marketCap[p] !== undefined && (
-                        <span translate="no" className="text-[9px] tabular-nums text-text-t4">
-                          MC ${fmtMcap(marketCap[p]!)}
+                        <span translate="no" className="text-[8px] tabular-nums text-text-t4 leading-none shrink-0">
+                          ${fmtCompact(marketCap[p]!)}
                         </span>
                       )}
                     </div>
