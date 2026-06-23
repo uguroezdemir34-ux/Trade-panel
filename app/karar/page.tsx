@@ -13,14 +13,8 @@ import { usePositionStore } from "@/lib/store/positionStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
-import { useT } from "@/lib/i18n/context";
-
-function fmtPriceMini(p: number): string {
-  if (p >= 10_000) return p.toLocaleString("en-US", { maximumFractionDigits: 0 });
-  if (p >= 100)    return p.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  if (p >= 1)      return p.toLocaleString("en-US", { maximumFractionDigits: 3 });
-  return p.toLocaleString("en-US", { maximumFractionDigits: 5 });
-}
+import { useT, useLocale } from "@/lib/i18n/context";
+import { formatTickPrice } from "@/lib/i18n/format";
 
 function fmtVolMini(v: number): string {
   if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
@@ -78,6 +72,7 @@ import { LivePriceStrip } from "@/components/karar/LivePriceStrip";
 
 export default function KararPage() {
   const t = useT();
+  const locale = useLocale();
   const [activePair, setActivePair] = useState<Pair>("BTC");
   const [pairGroup, setPairGroup] = useState<PairGroup>("all");
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -707,7 +702,7 @@ export default function KararPage() {
                     {/* Anlık fiyat */}
                     {allTicks[p]?.last !== undefined && (
                       <div translate="no" className="text-[8px] tabular-nums leading-none text-text-t2 mt-0.5">
-                        ${fmtPriceMini(allTicks[p]!.last)}
+                        {formatTickPrice(allTicks[p]!.last, locale)}
                       </div>
                     )}
                     {/* Hacim barı */}

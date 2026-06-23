@@ -53,3 +53,20 @@ export function formatTime(epochMs: number, locale: Locale): string {
     minute: "2-digit",
   }).format(new Date(epochMs));
 }
+
+export function formatTickPrice(value: number, locale: Locale = "en"): string {
+  if (value <= 0) return "—";
+  const lc = locale === "tr" ? "tr-TR" : "en-US";
+  const fmt = (max: number): string =>
+    "$" + new Intl.NumberFormat(lc, {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: max,
+    }).format(value);
+  if (value < 0.000001) return "$" + value.toExponential(2);
+  if (value < 0.001)    return fmt(8);
+  if (value < 0.01)     return fmt(6);
+  if (value < 1)        return fmt(4);
+  if (value < 100)      return fmt(3);
+  if (value < 10_000)   return fmt(2);
+  return fmt(0);
+}
