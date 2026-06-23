@@ -875,7 +875,7 @@ export default function KararPage() {
 
                 </div>
 
-                {/* Right sub-col: Smart Money + Score gauge + FLOW + VOL DELTA */}
+                {/* Right sub-col: Score gauge + FLOW badge */}
                 <div className="flex flex-col gap-2 md:w-44 md:shrink-0">
 
                   <div className="w-full max-w-[200px] mx-auto md:max-w-none">
@@ -885,32 +885,6 @@ export default function KararPage() {
                       goThreshold={result.goThreshold}
                     />
                   </div>
-
-                  {/* Smart Money — FLOW üstünde */}
-                  {flowResult && (
-                    <div
-                      className="w-full rounded-lg px-2.5 py-2"
-                      style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}
-                    >
-                      <div className="text-[9px] font-mono text-text-t4 tracking-widest uppercase mb-0.5">Smart Money</div>
-                      {flowResult.flowVerdict.vpin?.ready ? (
-                        <>
-                          <div className={`text-xs font-mono font-bold leading-tight ${
-                            flowResult.flowVerdict.vpin.toxicity === "toxic" || flowResult.flowVerdict.vpin.toxicity === "extreme"
-                              ? "text-signal-down"
-                              : flowResult.flowVerdict.vpin.toxicity === "normal"
-                              ? "text-signal-up"
-                              : "text-warning"
-                          }`}>{flowResult.flowVerdict.vpin.toxicity.toUpperCase()}</div>
-                          <div className="text-[9px] font-mono text-text-t4 tabular-nums">
-                            VPIN {flowResult.flowVerdict.vpin.vpin.toFixed(2)}
-                          </div>
-                        </>
-                      ) : (
-                        <div className="text-[9px] font-mono text-text-t4">—</div>
-                      )}
-                    </div>
-                  )}
 
                   {flowResult && (
                     <div
@@ -937,22 +911,6 @@ export default function KararPage() {
                     </div>
                   )}
 
-                  {/* VOL DELTA — gauge altında */}
-                  {flowResult && (
-                    <div
-                      className="w-full rounded-lg px-2.5 py-2"
-                      style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}
-                    >
-                      <div className="text-[9px] font-mono text-text-t4 tracking-widest uppercase mb-0.5">Vol Delta 5m</div>
-                      <div className={`text-xs font-mono font-bold tabular-nums leading-tight ${
-                        flowResult.flowVerdict.cvd.w5m.direction === "bullish" ? "text-signal-up"
-                          : flowResult.flowVerdict.cvd.w5m.direction === "bearish" ? "text-signal-down"
-                          : "text-text-t3"
-                      }`}>{formatCvd(flowResult.flowVerdict.cvd.w5m.cvdUsd)}</div>
-                      <div className="text-[9px] font-mono text-text-t4 uppercase">{flowResult.flowVerdict.cvd.w5m.direction}</div>
-                    </div>
-                  )}
-
                 </div>
 
               </div>
@@ -972,8 +930,50 @@ export default function KararPage() {
 
               </div>{/* end premium hero card */}
 
+              {/* Smart Money — FlowAlignmentRow üstünde */}
+              {flowResult && (
+                <div
+                  className="flex items-center gap-3 rounded-lg px-3 py-2"
+                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}
+                >
+                  <span className="font-mono text-[9px] tracking-widest uppercase text-text-t4 shrink-0 w-24">Smart Money</span>
+                  {flowResult.flowVerdict.vpin?.ready ? (
+                    <>
+                      <span className={`font-mono text-xs font-bold ${
+                        flowResult.flowVerdict.vpin.toxicity === "toxic" || flowResult.flowVerdict.vpin.toxicity === "extreme"
+                          ? "text-signal-down"
+                          : flowResult.flowVerdict.vpin.toxicity === "normal"
+                          ? "text-signal-up"
+                          : "text-warning"
+                      }`}>{flowResult.flowVerdict.vpin.toxicity.toUpperCase()}</span>
+                      <span className="font-mono text-[9px] text-text-t4 tabular-nums ml-auto">
+                        VPIN {flowResult.flowVerdict.vpin.vpin.toFixed(2)}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="font-mono text-[9px] text-text-t4">—</span>
+                  )}
+                </div>
+              )}
+
               {/* Flow drilldown */}
               <FlowAlignmentRow flow={flowResult} />
+
+              {/* VOL DELTA — FlowAlignmentRow altında */}
+              {flowResult && (
+                <div
+                  className="flex items-center gap-3 rounded-lg px-3 py-2"
+                  style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}
+                >
+                  <span className="font-mono text-[9px] tracking-widest uppercase text-text-t4 shrink-0 w-24">Vol Delta 5m</span>
+                  <span className={`font-mono text-xs font-bold tabular-nums ${
+                    flowResult.flowVerdict.cvd.w5m.direction === "bullish" ? "text-signal-up"
+                      : flowResult.flowVerdict.cvd.w5m.direction === "bearish" ? "text-signal-down"
+                      : "text-text-t3"
+                  }`}>{formatCvd(flowResult.flowVerdict.cvd.w5m.cvdUsd)}</span>
+                  <span className="font-mono text-[9px] text-text-t4 uppercase ml-auto">{flowResult.flowVerdict.cvd.w5m.direction}</span>
+                </div>
+              )}
 
               {/* 4 analysis accordions + Detaylar */}
               <div className="flex flex-col gap-2">
