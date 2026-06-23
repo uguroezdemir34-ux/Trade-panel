@@ -30,6 +30,23 @@ import {
   type FeedConnectionState,
 } from "@/lib/orderflow/tradeFeed";
 import { getDefaultConfig, type VpinState } from "@/lib/orderflow/vpin";
+import { useMarketStore } from "@/lib/store/marketStore";
+
+// Dinamik bucket clamp sınırları
+const BUCKET_MIN_USD = 100_000;      // $100K — tek trade'in gürültü yapmaması için
+const BUCKET_MAX_USD = 100_000_000;  // $100M — BTC kriz günlerinde bile makul warm-up
+
+/**
+ * Pair'in anlık vol24h'ından dinamik bucket boyutu hesapla.
+ * Formül: vol24h / 50 (günde ~50 bucket = windowSize'a eşit)
+ * Kaynak: Easley et al. VPIN paper, "1/50 of daily volume per bucket"
+ * vol24h yoksa null döner → getDefaultConfig(pair) fallback kullanılır.
+ */
+function computeDynamicBucketUsd(pair: Pair): number | null {
+  const vol24h = useMarketStore.getState().prices[pair]?.vol24h;
+  if (!vol24h || vol24h <= 0) return null;
+  return Math.max(BUCKET_MIN_USD, Math.min(BUCKET_MAX_USD, vol24h / 50));
+}
 
 const VPIN_STORAGE_KEY = "qx_vpin_states";
 
@@ -110,7 +127,30 @@ export const useTradeFeedStore = create<TradeFeedStoreState>((set, get) => ({
   ingest: (pair, raws, now) => {
     const current = get().feeds[pair];
     if (!current) return;
-    const next = ingestTrades(current, raws, now);
+
+    // Dinamik bucket: yalnızca tamamen boş VPIN state'inde seçilir.
+    // Koşul: hiç bucket kapanmamış VE mevcut bucket henüz trade almamış.
+    // → Bucket dolmaya başladıktan sonra config kilitlenir, değişmez.
+    // → SessionStorage'dan restore edilen state (closedBuckets.length > 0):
+    //   bu blok hiç çalışmaz, restore edilen config aynen kullanılır.
+    let feedToIngest = current;
+    if (
+      current.vpinState.closedBuckets.length === 0 &&
+      current.vpinState.currentBucket.totalVolumeUsd === 0
+    ) {
+      const dynamicSize = computeDynamicBucketUsd(pair);
+      if (dynamicSize !== null && dynamicSize !== current.vpinState.config.bucketSizeUsd) {
+        feedToIngest = {
+          ...current,
+          vpinState: {
+            ...current.vpinState,
+            config: { ...current.vpinState.config, bucketSizeUsd: dynamicSize },
+          },
+        };
+      }
+    }
+
+    const next = ingestTrades(feedToIngest, raws, now);
     set((s) => ({
       feeds: { ...s.feeds, [pair]: next },
     }));
