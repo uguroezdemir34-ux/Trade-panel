@@ -15,6 +15,7 @@
 import { useMemo } from "react";
 import { useTradeFeedStore } from "@/lib/store/tradeFeedStore";
 import type { Pair } from "@/lib/constants/pairs";
+import { formatTickPrice } from "@/lib/i18n/format";
 
 const FEED_PAIRS = new Set<string>(["BTC", "ETH"]);
 
@@ -34,12 +35,6 @@ interface Bucket {
   sellUsd: number;
   totalUsd: number;
   delta: number; // buy - sell
-}
-
-function fmtPrice(price: number): string {
-  return price >= 1000
-    ? price.toLocaleString("en-US", { maximumFractionDigits: 0 })
-    : price.toFixed(2);
 }
 
 function fmtK(usd: number): string {
@@ -118,7 +113,7 @@ export function ClusterChart({ pair, maxBuckets = 15 }: Props) {
         </div>
         {poc && (
           <span className="font-mono text-2xs text-yellow-400">
-            POC: {fmtPrice(poc.priceMin)}–{fmtPrice(poc.priceMax)}
+            POC: {formatTickPrice(poc.priceMin)}–{formatTickPrice(poc.priceMax)}
           </span>
         )}
       </div>
@@ -148,7 +143,7 @@ export function ClusterChart({ pair, maxBuckets = 15 }: Props) {
             >
               {/* Price range */}
               <span className={`font-mono text-2xs tabular-nums ${isPoc ? "text-yellow-400 font-bold" : "text-text-t3"}`}>
-                {fmtPrice(b.priceMin)}
+                {formatTickPrice(b.priceMin)}
                 {isPoc && " ★"}
               </span>
 

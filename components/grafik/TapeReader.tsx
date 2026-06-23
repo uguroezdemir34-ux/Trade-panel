@@ -18,6 +18,7 @@ import { useTradeFeedStore } from "@/lib/store/tradeFeedStore";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Trade } from "@/lib/orderflow/types";
 import { useT } from "@/lib/i18n/context";
+import { formatTickPrice } from "@/lib/i18n/format";
 
 const FEED_PAIRS = new Set<string>(["BTC", "ETH"]);
 
@@ -33,12 +34,6 @@ function getWhaleThreshold(pair: string): number {
 function fmtTime(ts: number): string {
   const d = new Date(ts);
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
-}
-
-function fmtPrice(price: number): string {
-  return price >= 1000
-    ? price.toLocaleString("en-US", { maximumFractionDigits: 1 })
-    : price.toFixed(4);
 }
 
 function fmtQty(qty: number, pair: string): string {
@@ -73,7 +68,7 @@ function TradeRow({ trade, isWhale }: TradeRowProps) {
       <span className={`w-8 shrink-0 font-bold ${isBuy ? "text-green-400" : "text-red-400"}`}>
         {isBuy ? "BUY" : "SEL"}
       </span>
-      <span className="w-24 shrink-0 text-text-t1">{fmtPrice(trade.price)}</span>
+      <span className="w-24 shrink-0 text-text-t1">{formatTickPrice(trade.price)}</span>
       <span className="w-16 shrink-0 text-text-t2 text-right">{fmtQty(trade.size, trade.pair)}</span>
       <span className="text-text-t3 text-right flex-1">{fmtK(trade.notionalUsd)}</span>
       {isWhale && <span className="text-yellow-400 shrink-0">🐋</span>}

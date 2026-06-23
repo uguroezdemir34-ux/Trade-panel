@@ -3,13 +3,8 @@
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { PAIRS } from "@/lib/constants/pairs";
-
-function fmtPrice(p: number): string {
-  if (p >= 10_000) return p.toLocaleString("en-US", { maximumFractionDigits: 0 });
-  if (p >= 100)    return p.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  if (p >= 1)      return p.toLocaleString("en-US", { maximumFractionDigits: 3 });
-  return p.toLocaleString("en-US", { maximumFractionDigits: 5 });
-}
+import { useLocale } from "@/lib/i18n/context";
+import { formatTickPrice } from "@/lib/i18n/format";
 
 function fmtVol(v: number): string {
   if (v >= 1e9) return `${(v / 1e9).toFixed(1)}B`;
@@ -26,6 +21,7 @@ function fmtMcap(v: number): string {
 }
 
 export function LivePriceStrip(): React.ReactElement {
+  const locale    = useLocale();
   const prices    = useMarketStore((s) => s.prices);
   const marketCap = useMacroStore((s) => s.marketCap);
 
@@ -60,7 +56,7 @@ export function LivePriceStrip(): React.ReactElement {
                 translate="no"
                 className="font-mono text-xs font-bold tabular-nums text-text-t1 leading-none mt-1"
               >
-                {tick ? `$${fmtPrice(tick.last)}` : "—"}
+                {tick ? formatTickPrice(tick.last, locale) : "—"}
               </span>
 
               {/* 24h change */}

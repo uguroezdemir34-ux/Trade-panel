@@ -4,15 +4,7 @@ import { useMemo } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import type { TradeSnapshot } from "@/lib/trades/types";
-
-// ─── Formatters ───────────────────────────────────────────────────────────────
-
-function fmtPrice(p: number): string {
-  if (p >= 10_000) return p.toLocaleString("en-US", { maximumFractionDigits: 0 });
-  if (p >= 100)    return p.toLocaleString("en-US", { maximumFractionDigits: 2 });
-  if (p >= 1)      return p.toLocaleString("en-US", { maximumFractionDigits: 3 });
-  return p.toLocaleString("en-US", { maximumFractionDigits: 5 });
-}
+import { formatTickPrice } from "@/lib/i18n/format";
 
 function fmtHolding(openedAt: number): string {
   const ms = Date.now() - openedAt;
@@ -95,12 +87,12 @@ function PaperRow({ trade }: { trade: TradeSnapshot }): React.ReactElement {
       <div className="grid grid-cols-3 gap-2 text-xs">
         <div>
           <div className="font-mono text-2xs text-text-t4 tracking-wider">Entry</div>
-          <div translate="no" className="font-mono tabular-nums text-text-t2 mt-0.5">${fmtPrice(trade.entryPrice)}</div>
+          <div translate="no" className="font-mono tabular-nums text-text-t2 mt-0.5">{formatTickPrice(trade.entryPrice)}</div>
         </div>
         <div>
           <div className="font-mono text-2xs text-text-t4 tracking-wider">Mark</div>
           <div translate="no" className="font-mono tabular-nums text-text-t1 mt-0.5">
-            {currentPx > 0 ? `$${fmtPrice(currentPx)}` : "—"}
+            {formatTickPrice(currentPx)}
           </div>
         </div>
         <div>
@@ -118,7 +110,7 @@ function PaperRow({ trade }: { trade: TradeSnapshot }): React.ReactElement {
             SL{slNear ? " ⚠" : ""}
           </div>
           <div translate="no" className={`font-mono tabular-nums mt-0.5 ${slNear ? "text-red-400 font-semibold" : "text-text-t3"}`}>
-            ${fmtPrice(trade.stopPrice)}
+            {formatTickPrice(trade.stopPrice)}
           </div>
           {slDist !== null && (
             <div className="font-mono text-2xs text-text-t4 tabular-nums">{slDist.toFixed(1)}% uzak</div>
@@ -127,13 +119,13 @@ function PaperRow({ trade }: { trade: TradeSnapshot }): React.ReactElement {
         <div>
           <div className="font-mono text-2xs text-text-t4 tracking-wider">TP1</div>
           <div translate="no" className="font-mono tabular-nums text-green-400 mt-0.5">
-            {trade.takeProfit1 ? `$${fmtPrice(trade.takeProfit1)}` : "—"}
+            {trade.takeProfit1 ? formatTickPrice(trade.takeProfit1) : "—"}
           </div>
         </div>
         <div>
           <div className="font-mono text-2xs text-text-t4 tracking-wider">TP2</div>
           <div translate="no" className="font-mono tabular-nums text-green-400/70 mt-0.5">
-            {trade.takeProfit2 ? `$${fmtPrice(trade.takeProfit2)}` : "—"}
+            {trade.takeProfit2 ? formatTickPrice(trade.takeProfit2) : "—"}
           </div>
         </div>
       </div>
