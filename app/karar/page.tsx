@@ -784,13 +784,7 @@ export default function KararPage() {
               >
 
               {/* QUANTIX OS header band */}
-              <div
-                className="-mt-4 -mx-4 mb-1 px-4 py-1.5 rounded-t-[10px] flex items-center gap-2 select-none"
-                style={{
-                  background: "linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.20) 100%)",
-                  borderBottom: "1px solid rgba(184,140,60,0.22)",
-                }}
-              >
+              <div className="-mt-4 -mx-4 mb-1 px-4 py-1.5 rounded-t-[10px] flex items-center gap-2 select-none panel-header-band">
                 <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-text-t4">
                   QUANTIX OS
                 </span>
@@ -835,14 +829,7 @@ export default function KararPage() {
                   )}
 
                   {/* HERO: Verdict + Direction + Regime — inset metallic panel */}
-                  <div
-                    className="flex flex-wrap items-center gap-2 rounded-lg px-3 py-2"
-                    style={{
-                      background: "linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.46) 100%)",
-                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.42)",
-                      border: "1px solid rgba(184,140,60,0.16)",
-                    }}
-                  >
+                  <div className="flex flex-wrap items-center gap-2 rounded-lg px-3 py-2 panel-inset-strong">
                     <VerdictBadge
                       verdict={result.verdict}
                       signalType={result.pullbackActive ? "pullback" : "classic"}
@@ -855,14 +842,7 @@ export default function KararPage() {
                   </div>
 
                   {/* Protection badges — inset info panel */}
-                  <div
-                    className="flex flex-wrap gap-1.5 rounded-lg px-3 py-2"
-                    style={{
-                      background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)",
-                      boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 4px rgba(0,0,0,0.32)",
-                      border: "1px solid rgba(255,255,255,0.05)",
-                    }}
-                  >
+                  <div className="flex flex-wrap gap-1.5 rounded-lg px-3 py-2 panel-inset">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/25 bg-brand/8 font-mono text-[9px] text-brand/70 tracking-wide select-none">
                       <span className="w-1.5 h-1.5 rounded-full bg-brand/60 shrink-0" />
                       {result.pullbackActive ? t("karar.profilePullback") : t("karar.profileTrend")}
@@ -892,10 +872,7 @@ export default function KararPage() {
                     <div className="flex flex-col gap-1.5 w-[82px] shrink-0">
 
                       {/* Smart Money */}
-                      <div
-                        className="rounded-lg px-2 py-1.5"
-                        style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}
-                      >
+                      <div className="rounded-lg px-2 py-1.5 panel-inset">
                         <div className="text-[8px] font-mono text-text-t4 tracking-widest uppercase mb-0.5 leading-none">Smart $</div>
                         {flowResult.flowVerdict.vpin?.ready ? (
                           <>
@@ -945,10 +922,7 @@ export default function KararPage() {
                       </div>
 
                       {/* VOL DELTA */}
-                      <div
-                        className="rounded-lg px-2 py-1.5"
-                        style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%)", border: "1px solid rgba(255,255,255,0.06)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}
-                      >
+                      <div className="rounded-lg px-2 py-1.5 panel-inset">
                         <div className="text-[8px] font-mono text-text-t4 tracking-widest uppercase mb-0.5 leading-none">Vol Δ 5m</div>
                         <div className={`text-[11px] font-mono font-bold tabular-nums leading-tight ${
                           flowResult.flowVerdict.cvd.w5m.direction === "bullish" ? "text-signal-up"
@@ -966,14 +940,7 @@ export default function KararPage() {
               </div>
 
               {/* AI Market Note — metallic inset panel */}
-              <div
-                className="flex items-start gap-2 rounded-lg px-3 py-2"
-                style={{
-                  background: "linear-gradient(180deg, rgba(0,0,0,0.24) 0%, rgba(0,0,0,0.40) 100%)",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.35)",
-                  border: "1px solid rgba(184,140,60,0.14)",
-                }}
-              >
+              <div className="flex items-start gap-2 rounded-lg px-3 py-2 panel-ai-note">
                 <span className="shrink-0 font-mono text-[8px] tracking-widest text-brand/60 border border-brand/25 rounded px-1 py-0.5 leading-none mt-0.5 select-none">{t("karar.aiBadge")}</span>
                 <p className="font-mono text-[11px] text-text-t1 leading-relaxed">{aiMarketNote(result, t)}</p>
               </div>
@@ -994,7 +961,7 @@ export default function KararPage() {
                   open={showTrend}
                   onToggle={() => setShowTrend((v) => !v)}
                 >
-                  <div className="rounded-lg px-3 py-2 space-y-2" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.32) 100%)", border: "1px solid rgba(255,255,255,0.055)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}>
+                  <div className="rounded-lg px-3 py-2 space-y-2 panel-inset">
                     <div className="flex items-center justify-between text-2xs font-mono">
                       <span className="text-text-t4 uppercase tracking-widest">Skor</span>
                       <span className="font-bold tabular-nums text-text-t1">{result.sub.trend} / 25</span>
@@ -1019,7 +986,7 @@ export default function KararPage() {
                   open={showHacim}
                   onToggle={() => setShowHacim((v) => !v)}
                 >
-                  <div className="rounded-lg px-3 py-2 space-y-2" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.32) 100%)", border: "1px solid rgba(255,255,255,0.055)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}>
+                  <div className="rounded-lg px-3 py-2 space-y-2 panel-inset">
                     <SubScoreRow label="Vol" value={result.sub.vol} max={8} reason={result.reasons.vol} />
                     <SubScoreRow label="BB" value={result.sub.bb} max={8} reason={result.reasons.bb} />
                     <SubScoreRow label="VWAP" value={result.sub.vwap} max={10} reason={result.reasons.vwap} />
@@ -1034,7 +1001,7 @@ export default function KararPage() {
                   open={showMomentum}
                   onToggle={() => setShowMomentum((v) => !v)}
                 >
-                  <div className="rounded-lg px-3 py-2 space-y-2" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.32) 100%)", border: "1px solid rgba(255,255,255,0.055)", boxShadow: "inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28)" }}>
+                  <div className="rounded-lg px-3 py-2 space-y-2 panel-inset">
                     <SubScoreRow
                       label="ADX"
                       value={result.sub.adx}
