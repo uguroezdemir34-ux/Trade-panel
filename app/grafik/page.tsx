@@ -22,6 +22,7 @@ import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel } from "@/components/grafik/WatchlistPanel";
+import { LivePriceStrip } from "@/components/karar/LivePriceStrip";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
 
 const PriceChart = dynamic(
@@ -332,6 +333,9 @@ export default function GrafikPage() {
 
   return (
     <div className="flex gap-3 items-start">
+      {/* Dikey canlı fiyat şeridi — 20 parite */}
+      <LivePriceStrip variant="vertical" />
+
       {/* WatchlistPanel — TradingView-style right column */}
       <WatchlistPanel activePair={pair} onPairChange={setPair} />
 
