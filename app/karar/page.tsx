@@ -58,7 +58,6 @@ import { SessionStatsBar } from "@/components/karar/SessionStatsBar";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
 import { LiveEdgeBadge } from "@/components/karar/LiveEdgeBadge";
-import { GoSignalLog } from "@/components/karar/GoSignalLog";
 import { KeyboardShortcutsModal } from "@/components/karar/KeyboardShortcutsModal";
 import { HistoricalEdge } from "@/components/karar/HistoricalEdge";
 import { FlowMiniCards } from "@/components/karar/FlowMiniCards";
@@ -504,9 +503,8 @@ export default function KararPage() {
               onSelect={setActivePair}
             />
 
-            {/* Right col: signal log + filter + pair grid */}
+            {/* Right col: filter + pair grid */}
             <div className="flex flex-col gap-2">
-              <GoSignalLog />
 
           {/* Pair group filter */}
           <div className="flex flex-wrap gap-1">
