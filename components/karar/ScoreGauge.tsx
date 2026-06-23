@@ -151,16 +151,17 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
 
         {/* ── NEEDLE chrome cross-section gradient
              Goes PERPENDICULAR to needle direction (left-edge → right-edge)
-             Creates 3D raised-center cylinder illusion ── */}
+             Edges: dark metallic (visible against black face)
+             Center: bright chrome peak  ── */}
         <linearGradient id="sg-needle-cross" gradientUnits="userSpaceOnUse"
           x1={blx} y1={bly} x2={brx} y2={bry}>
-          <stop offset="0%"   stopColor="#050505" />
-          <stop offset="18%"  stopColor="#181818" />
-          <stop offset="40%"  stopColor="#4a4a4a" />
-          <stop offset="50%"  stopColor="#d4d4d4" />
-          <stop offset="60%"  stopColor="#4a4a4a" />
-          <stop offset="82%"  stopColor="#181818" />
-          <stop offset="100%" stopColor="#050505" />
+          <stop offset="0%"   stopColor="#242424" />
+          <stop offset="15%"  stopColor="#484848" />
+          <stop offset="38%"  stopColor="#909090" />
+          <stop offset="50%"  stopColor="#f0f0f0" />
+          <stop offset="62%"  stopColor="#909090" />
+          <stop offset="85%"  stopColor="#484848" />
+          <stop offset="100%" stopColor="#242424" />
         </linearGradient>
 
         {/* ── FILTERS ── */}
@@ -272,19 +273,22 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       <path d={needlePoly} fill="#000" opacity="0.85" filter="url(#sg-drop)" />
 
       {/* Solid dark body base */}
-      <path d={needlePoly} fill="#060606" />
+      <path d={needlePoly} fill="#141414" />
 
       {/* ── Chrome cross-section 3D cylinder illusion ──
            Gradient runs LEFT-EDGE → RIGHT-EDGE perpendicular to blade direction.
-           Dark edges → bright chrome center → dark edges = raised cylinder look. */}
+           Visible dark edges → bright chrome center — blade width clearly readable. */}
       <path d={needlePoly} fill="url(#sg-needle-cross)" />
 
-      {/* Thin outer edge definition */}
-      <path d={needlePoly} fill="none" stroke="#030303" strokeWidth="0.8" />
+      {/* Visible outline — defines blade boundaries against dark face */}
+      <path d={needlePoly} fill="none" stroke="#505050" strokeWidth="1.2" />
+
+      {/* Score-color tint outline — gives blade identity (orange or green) */}
+      <path d={needlePoly} fill="none" stroke={scoreColor} strokeWidth="1.8" opacity="0.28" />
 
       {/* Left-edge chrome gleam (bevel highlight) */}
       <path d={`M ${blx} ${bly} L ${smlx} ${smly} L ${ntlx} ${ntly}`}
-        fill="none" stroke="#c0c0c0" strokeWidth="1.0" opacity="0.45" strokeLinecap="round" />
+        fill="none" stroke="#e0e0e0" strokeWidth="1.2" opacity="0.55" strokeLinecap="round" />
 
       {/* Colored spine glow (score color pulse through blade) */}
       <path d={needleSpine} fill={scoreColor} opacity="0.90" filter="url(#sg-spine-glow)" />
