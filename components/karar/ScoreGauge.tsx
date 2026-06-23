@@ -175,20 +175,11 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       <circle cx={CX} cy={CY} r={106} fill="none" stroke="#080602" strokeWidth="6" />
       {/* Wide outer bezel ring */}
       <circle cx={CX} cy={CY} r={100} fill="none" stroke="url(#sg-bezel-outer)" strokeWidth="12" />
-      {/* Primary gold catch-light — upper left */}
-      <path d="M 14 52 A 100 100 0 0 1 190 34"
-        fill="none" stroke="#f0dca0" strokeWidth="4" strokeLinecap="round" opacity="0.50" />
-      {/* Secondary catch-light */}
-      <path d="M 28 66 A 88 88 0 0 1 178 50"
-        fill="none" stroke="#ffe8b0" strokeWidth="1.8" strokeLinecap="round" opacity="0.22" />
-      {/* Shadow arc — lower right */}
+      {/* Shadow arc — lower right depth */}
       <path d="M 198 164 A 100 100 0 0 1 146 202"
         fill="none" stroke="#050300" strokeWidth="7" strokeLinecap="round" opacity="0.92" />
       {/* Mid ring */}
       <circle cx={CX} cy={CY} r={92.5} fill="none" stroke="url(#sg-bezel-mid)" strokeWidth="5" />
-      {/* Mid ring catch-light */}
-      <path d="M 30 72 A 92 92 0 0 1 182 54"
-        fill="none" stroke="#d4b870" strokeWidth="1.2" strokeLinecap="round" opacity="0.28" />
       {/* Inner bezel ring */}
       <circle cx={CX} cy={CY} r={88} fill="none" stroke="url(#sg-bezel-inner)" strokeWidth="3" />
       {/* Groove */}
