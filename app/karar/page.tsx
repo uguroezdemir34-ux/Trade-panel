@@ -910,6 +910,11 @@ export default function KararPage() {
                               VPIN {flowResult.flowVerdict.vpin.vpin.toFixed(2)}
                             </div>
                           </>
+                        ) : flowResult.flowVerdict.vpin !== null ? (
+                          <div className="text-[8px] font-mono text-text-t4 leading-tight">
+                            {flowResult.flowVerdict.vpin.bucketCount}/10
+                            <span className="opacity-60"> buf</span>
+                          </div>
                         ) : (
                           <div className="text-[8px] font-mono text-text-t4">—</div>
                         )}
