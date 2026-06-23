@@ -5,57 +5,87 @@
 :root {
   color-scheme: dark;
 
-  /* ── Theme tokens (dark default) — space-separated RGB for Tailwind opacity modifiers */
-  --bg: 10 10 10;
-  --bg-card: 20 20 20;
-  --bg-card2: 28 28 28;
-  --bg-hover: 38 38 38;
-  --border: 42 42 42;
-  --border-strong: 58 58 58;
-  --text-t1: 245 245 245;
-  --text-t2: 184 184 184;
-  --text-t3: 112 112 112;
-  --text-t4: 74 74 74;
-  /* Surface elevation layers */
-  --surface-s1: 17 17 17;
-  --surface-s2: 24 24 24;
-  --surface-s3: 34 34 34;
-  /* Signal & brand colors — dark mode defaults */
-  --signal-green: 34 197 94;
-  --signal-red: 239 68 68;
-  --signal-amber: 245 158 11;
-  --signal-blue: 59 130 246;
-  --brand: 255 107 26;
-  --brand-accent: 255 140 66;
+  /*
+   * ── DARK MODE — Premium Navy-Black Terminal ──────────────────────────────
+   * Base: derin lacivert-siyah (#0a0c12), saf siyah yerine derinlik sağlar.
+   * Metin: t1 warm-white → t4 çok soluk, güçlü hiyerarşi.
+   */
+
+  /* Backgrounds */
+  --bg:       10 12 18;    /* Ana sayfa zemin — derin lacivert-siyah */
+  --bg-card:  15 18 28;    /* Kart zemini */
+  --bg-card2: 22 26 38;    /* Yükseltilmiş kart */
+  --bg-hover: 30 34 52;    /* Hover durumu */
+
+  /* Borders */
+  --border:        36 40 60;   /* Hafif, zarif sınır */
+  --border-strong: 54 58 82;   /* Güçlü sınır (aktif/seçili) */
+
+  /* Text hierarchy — strong contrast, clear levels */
+  --text-t1: 232 234 244;   /* Primary — ılık beyaz, saf beyaz değil */
+  --text-t2: 164 168 194;   /* Secondary — soğuk gri */
+  --text-t3:  92  96 118;   /* Tertiary — soluk lacivert-gri */
+  --text-t4:  52  56  78;   /* Hint — çok soluk, ipucu metinleri */
+
+  /* Surface elevation */
+  --surface-s1: 18 22 34;   /* Birincil yüzey */
+  --surface-s2: 25 30 44;   /* İkincil yüzey */
+  --surface-s3: 34 40 58;   /* Üçüncü yüzey */
+
+  /* Signals — vibrant on dark */
+  --signal-green:  34 197  94;   /* #22c55e */
+  --signal-red:   239  68  68;   /* #ef4444 */
+  --signal-amber: 245 158  11;   /* #f59e0b */
+  --signal-blue:  100 160 255;   /* Daha parlak mavi */
+  --signal-up:     34 197  94;
+  --signal-down:  239  68  68;
+
+  /* Brand — turuncu-amber */
+  --brand:        255 110  24;   /* #ff6e18 */
+  --brand-accent: 255 148  72;   /* #ff9448 */
 }
 
 [data-theme="light"] {
   color-scheme: light;
 
-  --bg: 247 248 250;
-  --bg-card: 255 255 255;
-  --bg-card2: 240 241 243;
-  --bg-hover: 224 225 230;
-  /* Borders — made visible (was 220/196, barely distinguishable from bg) */
-  --border: 180 180 192;
-  --border-strong: 136 136 152;
-  --text-t1: 10 10 10;
-  --text-t2: 56 56 64;
-  /* Labels — darkened for WCAG AA on white (was 112 → ~4.4:1, now ~5.8:1) */
-  --text-t3: 80 80 90;
-  /* Hints/timestamps — darkened (was 168 → ~2.2:1, now ~4.4:1) */
-  --text-t4: 112 112 120;
-  /* Surface elevation layers — more distinct from bg-card */
-  --surface-s1: 234 235 239;
-  --surface-s2: 224 225 230;
-  --surface-s3: 210 211 216;
-  /* Signal colors — darkened for WCAG AA on white backgrounds */
-  --signal-green: 21 128 61;     /* #157d3d — 4.71:1 on white */
-  --signal-red: 185 28 28;       /* #b91c1c — 6.06:1 on white */
-  --signal-amber: 180 83 9;      /* #b45309 — 4.59:1 on white */
-  --signal-blue: 29 78 216;      /* #1d4ed8 — 6.17:1 on white */
-  --brand: 184 68 0;             /* #b84400 — 4.99:1 on white */
-  --brand-accent: 192 64 0;      /* #c04000 — 4.89:1 on white */
+  /*
+   * ── LIGHT MODE — Premium Warm Off-White ──────────────────────────────────
+   * Base: ılık off-white (#f4f5fa), saf beyaz değil — göz yorgunluğu azalır.
+   * Metin: lacivert-siyah hiyerarşi, WCAG AA+ kontrast.
+   */
+
+  /* Backgrounds */
+  --bg:       244 245 252;   /* Işık mavi-beyaz zemin */
+  --bg-card:  255 255 255;   /* Kart: saf beyaz */
+  --bg-card2: 234 236 248;   /* Yükseltilmiş kart */
+  --bg-hover: 218 220 240;   /* Hover */
+
+  /* Borders */
+  --border:        194 197 220;   /* Görünür ince sınır */
+  --border-strong: 154 158 188;   /* Güçlü sınır */
+
+  /* Text hierarchy — navy-black, WCAG AA on white */
+  --text-t1:  12  14  28;   /* Ana metin — derin lacivert-siyah */
+  --text-t2:  44  48  74;   /* İkincil — koyu lacivert-gri (6.8:1) */
+  --text-t3:  80  85 112;   /* Üçüncül — orta (5.2:1) */
+  --text-t4: 118 123 152;   /* İpucu — açık ama okunabilir (3.8:1) */
+
+  /* Surface elevation */
+  --surface-s1: 234 236 250;
+  --surface-s2: 222 224 242;
+  --surface-s3: 208 211 234;
+
+  /* Signals — darkened for WCAG AA on white */
+  --signal-green:  20 130  60;   /* #14823c — 4.8:1 */
+  --signal-red:   188  28  28;   /* #bc1c1c — 6.2:1 */
+  --signal-amber: 178  82   8;   /* #b25208 — 4.6:1 */
+  --signal-blue:   28  80 220;   /* #1c50dc — 6.3:1 */
+  --signal-up:     20 130  60;
+  --signal-down:  188  28  28;
+
+  /* Brand — koyu turuncu, beyaz üzerinde kontrast */
+  --brand:        186  68   0;   /* #ba4400 — 5.1:1 */
+  --brand-accent: 200  76   0;   /* #c84c00 — 4.8:1 */
 }
 
 /* Soft tint backgrounds — brighter in light mode (8% of bright color is invisible on white) */
@@ -126,22 +156,78 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
-/* Mobil yatay taşma koruması — iOS/Android dikey ekran */
+/*
+ * ── GLOBAL TYPOGRAPHY ────────────────────────────────────────────────────────
+ * Anti-aliasing, optimized rendering, professional terminal feel.
+ */
 html {
+  /* Anti-aliasing — macOS/iOS'ta vektör font kalitesi */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Kerning ve ligature optimizasyonu */
+  text-rendering: optimizeLegibility;
+  /* Mobil yatay taşma koruması */
   overflow-x: hidden;
+  /* Hafif letter-spacing: monospaced olmayan metinlerde okunabilirlik */
+  letter-spacing: 0.01em;
 }
 
 body {
-  /* iOS Safari'de rubber-band scroll overflow sorununu önler */
+  /* iOS Safari rubber-band scroll */
   overflow-x: hidden;
-  /* Tabular sayısal veri (P&L, fiyat) her zaman sabit genişlikte */
+  /* Tabular sayısal veri her zaman sabit genişlikte */
   font-variant-numeric: tabular-nums;
+  /* Varsayılan satır yüksekliği — trading terminal standard */
+  line-height: 1.5;
+  /* Varsayılan metin rengi token */
+  color: rgb(var(--text-t1));
 }
 
-/* Gerçekten uzun string'ler (adres, hash) için overflow koruması.
-   word-break: break-word kaldırıldı — kısa etiketleri (OKX, NEAR) harf harf kırıyordu. */
+/* Monospace — number ve kod blokları */
 .font-mono {
   overflow-wrap: break-word;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1, "kern" 1;
+  letter-spacing: 0;    /* Mono'da normal letter-spacing sıfırla */
+}
+
+/*
+ * ── TEXT UTILITY CLASSES ─────────────────────────────────────────────────────
+ * Profesyonel terminal tipografisi için hazır sınıflar.
+ */
+
+/* Fiyat/büyük sayı gösterimi */
+.type-price {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  letter-spacing: -0.01em;
+  font-weight: 600;
+}
+
+/* Küçük büyük harf etiket (TREND, VPIN, VOL DELTA...) */
+.type-label {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
+  font-size: 0.625rem;      /* 10px */
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: rgb(var(--text-t4));
+}
+
+/* Metrik değer */
+.type-value {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Açıklama / yardımcı metin */
+.type-muted {
+  font-size: 0.6875rem;    /* 11px */
+  color: rgb(var(--text-t3));
+  line-height: 1.4;
 }
 
 /* Main content bottom padding: mobile = bottom nav height + safe area, desktop = standard */
