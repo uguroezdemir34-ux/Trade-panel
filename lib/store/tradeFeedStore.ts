@@ -45,9 +45,7 @@ const BUCKET_MAX_USD = 100_000_000;  // $100M — BTC kriz günlerinde bile maku
 function computeDynamicBucketUsd(pair: Pair): number | null {
   const vol24h = useMarketStore.getState().prices[pair]?.vol24h;
   if (!vol24h || vol24h <= 0) return null;
-  const result = Math.max(BUCKET_MIN_USD, Math.min(BUCKET_MAX_USD, vol24h / 50));
-  console.log(`[VPIN bucket] ${pair}: vol24h=${vol24h}, bucket=${result}`);
-  return result;
+  return Math.max(BUCKET_MIN_USD, Math.min(BUCKET_MAX_USD, vol24h / 50));
 }
 
 const VPIN_STORAGE_KEY = "qx_vpin_states";
