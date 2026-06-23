@@ -878,7 +878,15 @@ export default function KararPage() {
                 {/* Right sub-col: Smart Money + Score gauge + FLOW + VOL DELTA */}
                 <div className="flex flex-col gap-2 md:w-44 md:shrink-0">
 
-                  {/* Smart Money — gauge üstünde */}
+                  <div className="w-full max-w-[200px] mx-auto md:max-w-none">
+                    <ScoreGauge
+                      score={result.score}
+                      threshold={result.effectiveThreshold}
+                      goThreshold={result.goThreshold}
+                    />
+                  </div>
+
+                  {/* Smart Money — FLOW üstünde */}
                   {flowResult && (
                     <div
                       className="w-full rounded-lg px-2.5 py-2"
@@ -903,14 +911,6 @@ export default function KararPage() {
                       )}
                     </div>
                   )}
-
-                  <div className="w-full max-w-[200px] mx-auto md:max-w-none">
-                    <ScoreGauge
-                      score={result.score}
-                      threshold={result.effectiveThreshold}
-                      goThreshold={result.goThreshold}
-                    />
-                  </div>
 
                   {flowResult && (
                     <div
