@@ -23,6 +23,13 @@ function fmtVolMini(v: number): string {
   return v.toFixed(0);
 }
 
+function fmtMcap(v: number): string {
+  if (v >= 1e12) return `${(v / 1e12).toFixed(2)}T`;
+  if (v >= 1e9)  return `${(v / 1e9).toFixed(1)}B`;
+  if (v >= 1e6)  return `${(v / 1e6).toFixed(0)}M`;
+  return v.toFixed(0);
+}
+
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
   majors: ["BTC", "ETH", "BNB", "XRP", "SOL", "APT"],
@@ -32,7 +39,6 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
-import { MiniGauge } from "@/components/karar/MiniGauge";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
 import { BlocksList } from "@/components/karar/BlocksList";
 import { ReasonsList } from "@/components/karar/ReasonsList";
@@ -114,6 +120,7 @@ export default function KararPage() {
   const openUpl = openPositions.reduce((sum, p) => sum + p.upl, 0);
   const funding = useMacroStore((s) => s.funding);
   const fgValue = useMacroStore((s) => s.fgValue);
+  const marketCap = useMacroStore((s) => s.marketCap);
 
   // Keyboard shortcuts: 1-9 / [ ] / G / ?
   useEffect(() => {
@@ -203,12 +210,6 @@ export default function KararPage() {
     return PAIR_GROUPS[pairGroup] ?? PAIRS;
   }, [pairGroup, goPairs, watchlistPairs, actionablePairs]);
 
-  // Hacim bar normalizasyonu: displayPairs içindeki max vol24h = %100
-  const maxVol = useMemo(
-    () => Math.max(0, ...displayPairs.map((p) => allTicks[p]?.vol24h ?? 0)),
-    [displayPairs, allTicks],
-  );
-
   // Ref so the keydown handler always sees the latest displayPairs without re-binding
   const displayPairsRef = useRef<readonly Pair[]>(displayPairs);
   displayPairsRef.current = displayPairs;
@@ -226,16 +227,6 @@ export default function KararPage() {
     } catch { return {}; }
   }, [scoreHistory]);
 
-  const pairStats = useMemo(() => {
-    const map: Partial<Record<Pair, { wr: number; n: number }>> = {};
-    for (const p of PAIRS) {
-      const closed = trades.filter((t) => t.pair === p && t.status === "closed");
-      if (closed.length < 3) continue;
-      const wins = closed.filter((t) => (t.exit?.pnlUsd ?? 0) > 0).length;
-      map[p] = { wr: (wins / closed.length) * 100, n: closed.length };
-    }
-    return map;
-  }, [trades]);
 
   const latestScoreTime = useMemo(() => {
     const times = Object.values(computedAt).filter((v): v is number => v !== undefined);
@@ -573,8 +564,8 @@ export default function KararPage() {
             })}
           </div>
 
-          {/* Pair grid */}
-          <div className="grid gap-1.5" style={{ gridTemplateColumns: `repeat(${Math.min(displayPairs.length, 3)}, 1fr)` }}>
+          {/* Pair grid — Layout B: tek kolon, yatay bar kartları */}
+          <div className="grid grid-cols-1 gap-1">
             {displayPairs.map((p) => {
               const pr = allResults[p];
               const v = pr?.verdict;
@@ -582,7 +573,6 @@ export default function KararPage() {
               const dir = pr?.direction;
               const isActive = activePair === p;
 
-              // GO signal strength: score gap above threshold
               const goGap = v === "go" && score !== undefined && pr?.effectiveThreshold !== undefined
                 ? score - pr.effectiveThreshold
                 : -1;
@@ -592,7 +582,6 @@ export default function KararPage() {
                 : goGap >= 0  ? "weak"
                 : null;
 
-              // Ring + ping + bg color per strength
               const goRingClass =
                 goStrength === "strong" ? "ring-green-400/90"
                 : goStrength === "medium" ? "ring-green-400/60"
@@ -610,27 +599,32 @@ export default function KararPage() {
               const verdictBorder =
                 v === "go"
                   ? goStrength === "strong"
-                    ? "border-b-2 border-green-300"
+                    ? "border-l-2 border-green-300"
                     : goStrength === "weak"
-                    ? "border-b-2 border-yellow-400"
-                    : "border-b-2 border-green-400"
+                    ? "border-l-2 border-yellow-400"
+                    : "border-l-2 border-green-400"
                   : v === "wait"
-                  ? "border-b-2 border-yellow-400"
+                  ? "border-l-2 border-yellow-400"
                   : v === "no"
-                  ? "border-b-2 border-red-400/50"
-                  : "border-b-2 border-transparent";
+                  ? "border-l-2 border-red-400/50"
+                  : "border-l-2 border-transparent";
 
               const scoreColor =
                 v === "go"
-                  ? goStrength === "strong" ? "text-green-300 font-bold"
+                  ? goStrength === "strong" ? "text-green-300"
                     : goStrength === "weak"  ? "text-yellow-400"
                     : "text-green-400"
                   : v === "wait"
                   ? "text-yellow-400"
                   : "text-text-t4";
 
-              const dirArrow =
-                dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
+              const barColorClass =
+                v === "go"    ? "bg-green-500"
+                : v === "wait"  ? "bg-amber-400"
+                : v === "no"    ? "bg-red-500/40"
+                : "bg-surface-s2";
+
+              const dirArrow = dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
 
               const pairChg = allTicks[p]?.chg ?? null;
               const chgColor =
@@ -644,10 +638,9 @@ export default function KararPage() {
               const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
 
               const isWatched = watchlistPairs.includes(p);
+
               return (
                 <div key={p} className="relative group">
-
-                  {/* GO pulse ring — separate overlay, color varies with signal strength */}
                   {goStrength && !isActive && (
                     <>
                       <div className={`absolute inset-0 rounded ring-1 ${goRingClass} animate-pulse pointer-events-none`} />
@@ -661,7 +654,7 @@ export default function KararPage() {
                   <button
                     onClick={() => setActivePair(p as Pair)}
                     className={[
-                      "w-full flex flex-col items-center rounded pt-1.5 pb-0.5 font-mono transition-colors",
+                      "w-full text-left rounded px-2.5 py-2 font-mono transition-colors",
                       verdictBorder,
                       isActive
                         ? "bg-surface-s2 text-text-t1"
@@ -670,77 +663,79 @@ export default function KararPage() {
                         : "text-text-t3 hover:text-text-t2",
                     ].join(" ")}
                   >
-                    <div className="relative flex items-center justify-center">
-                      <span className="text-xs font-semibold tracking-wide">{p}</span>
-                      {alarmedPairs.has(p) && (
-                        <span className="absolute -top-0.5 -right-2 h-1.5 w-1.5 rounded-full bg-amber-400" />
+                    {/* Üst satır: pair adı + 24h% + hacim */}
+                    <div className="flex items-center justify-between gap-1">
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <span className="text-xs font-bold tracking-wide text-text-t1">{p}</span>
+                        {alarmedPairs.has(p) && (
+                          <span className="h-1.5 w-1.5 rounded-full bg-amber-400 shrink-0" />
+                        )}
+                        {pairChg !== null && (
+                          <span translate="no" className={`text-2xs tabular-nums ${chgColor}`}>
+                            {`${pairChg >= 0 ? "+" : ""}${pairChg.toFixed(2)}%`}
+                          </span>
+                        )}
+                      </div>
+                      {allTicks[p]?.vol24h !== undefined && (
+                        <span translate="no" className="text-[9px] tabular-nums text-text-t4 shrink-0">
+                          ${fmtVolMini(allTicks[p]!.vol24h!)}
+                        </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-0.5">
-                      <span translate="no" className={`text-2xs tabular-nums ${isActive ? "text-text-t2" : scoreColor}`}>
-                        {score !== undefined ? `${score}${dirArrow}` : "·"}
+
+                    {/* Orta: büyük skor rakamı + yön oku */}
+                    <div className="flex items-baseline gap-1 mt-1">
+                      <span translate="no" className={`text-2xl font-bold tabular-nums leading-none ${isActive ? "text-text-t1" : scoreColor}`}>
+                        {score !== undefined ? score : "·"}
                       </span>
+                      {dir && (
+                        <span className={`text-base leading-none ${isActive ? "text-text-t2" : scoreColor}`}>
+                          {dirArrow}
+                        </span>
+                      )}
                       {showMom && (
-                        <span className={`text-[8px] tabular-nums leading-none ${momColor}`}>
+                        <span className={`text-[9px] tabular-nums leading-none ml-0.5 ${momColor}`}>
                           {(momentum ?? 0) > 0 ? "▲" : "▼"}
                         </span>
                       )}
                     </div>
-                    {pairChg !== null && (
-                      <div translate="no" className={`text-[8px] tabular-nums leading-none ${chgColor}`}>
-                        {`${pairChg >= 0 ? "+" : ""}${pairChg.toFixed(1)}%`}
-                      </div>
-                    )}
 
-                    {/* Mini speedometer — tüm PAIRS.length kart için */}
-                    <div className="w-full px-1 mt-1">
-                      <MiniGauge
-                        score={score ?? 0}
-                        goThreshold={allResults[p]?.goThreshold ?? 80}
-                      />
-                    </div>
-                    {/* Anlık fiyat */}
-                    {allTicks[p]?.last !== undefined && (
-                      <div translate="no" className="text-[8px] tabular-nums leading-none text-text-t2 mt-0.5">
-                        {formatTickPrice(allTicks[p]!.last, locale)}
-                      </div>
-                    )}
-                    {/* Hacim barı */}
-                    <div className="w-full px-1 mt-1 mb-0.5">
-                      <div className="h-[3px] rounded-full overflow-hidden bg-[#07080e]">
-                        {maxVol > 0 && allTicks[p]?.vol24h !== undefined && (
+                    {/* Skor barı */}
+                    <div className="relative mt-1.5">
+                      <div className="h-1.5 w-full rounded-full bg-surface-s2 overflow-hidden">
+                        {score !== undefined && (
                           <div
-                            className="h-full rounded-full"
-                            style={{
-                              width: `${Math.min(100, (allTicks[p]!.vol24h! / maxVol) * 100).toFixed(1)}%`,
-                              background: (() => {
-                                const pct = (allTicks[p]!.vol24h! / maxVol) * 100;
-                                return pct >= 60 ? "#22c55e70" : pct >= 30 ? "#f59e0b70" : "#ef444460";
-                              })(),
-                            }}
+                            className={`h-full rounded-full ${barColorClass}`}
+                            style={{ width: `${Math.min(100, score)}%` }}
                           />
                         )}
                       </div>
-                      {allTicks[p]?.vol24h !== undefined && (
-                        <div translate="no" className="text-[7px] tabular-nums leading-none text-text-t4 mt-0.5 text-center">
-                          ${fmtVolMini(allTicks[p]!.vol24h!)}
-                        </div>
+                      {pr?.goThreshold !== undefined && (
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 h-3 w-px bg-white/25"
+                          style={{ left: `${Math.min(99, pr.goThreshold)}%` }}
+                        />
                       )}
                     </div>
 
-                    {pairStats[p] && (
-                      <div translate="no" className={`text-[8px] tabular-nums leading-none mt-0.5 ${
-                        pairStats[p]!.wr >= 55 ? "text-green-400/60"
-                        : pairStats[p]!.wr < 45 ? "text-red-400/60"
-                        : "text-text-t4/50"
-                      }`}>
-                        {`${Math.round(pairStats[p]!.wr)}%W`}
-                      </div>
-                    )}
+                    {/* Alt satır: fiyat + market cap */}
+                    <div className="flex items-center justify-between mt-1.5">
+                      {allTicks[p]?.last !== undefined ? (
+                        <span translate="no" className="text-2xs tabular-nums text-text-t2">
+                          {formatTickPrice(allTicks[p]!.last, locale)}
+                        </span>
+                      ) : <span />}
+                      {marketCap[p] !== undefined && (
+                        <span translate="no" className="text-[9px] tabular-nums text-text-t4">
+                          MC ${fmtMcap(marketCap[p]!)}
+                        </span>
+                      )}
+                    </div>
                   </button>
+
                   <button
                     onClick={(e) => { e.stopPropagation(); watchlistToggle(p as Pair); }}
-                    className={`absolute top-0 right-0 px-0.5 py-0.5 font-mono text-[9px] transition-opacity ${
+                    className={`absolute top-1 right-1 px-0.5 py-0.5 font-mono text-[9px] transition-opacity ${
                       isWatched
                         ? "opacity-100 text-amber-400"
                         : "opacity-0 group-hover:opacity-60 text-text-t4"
@@ -750,7 +745,7 @@ export default function KararPage() {
                     ★
                   </button>
                   {pairNotes[p as Pair] && (
-                    <span className="absolute bottom-4 right-0.5 h-1 w-1 rounded-full bg-blue-400/80 pointer-events-none" />
+                    <span className="absolute bottom-2 right-1 h-1 w-1 rounded-full bg-blue-400/80 pointer-events-none" />
                   )}
                 </div>
               );
