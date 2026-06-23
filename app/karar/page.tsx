@@ -759,6 +759,51 @@ export default function KararPage() {
                 </div>
               );
             })}
+
+            {/* Market pulse card — 3-col grid'in boş son hücresini doldurur */}
+            <div className="relative rounded-lg border border-border/25 bg-bg-card overflow-hidden select-none flex flex-col" style={{ minHeight: 120 }}>
+              {/* Brand band */}
+              <div className="px-2 py-1 flex items-center gap-1.5" style={{ background: "linear-gradient(90deg, rgba(255,110,24,0.12) 0%, transparent 100%)", borderBottom: "1px solid rgba(255,110,24,0.10)" }}>
+                <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" style={{ boxShadow: "0 0 5px rgb(var(--brand))" }} />
+                <span className="font-mono text-[7px] tracking-[0.18em] uppercase text-brand/75 leading-none">QUANTIX OS</span>
+              </div>
+
+              {/* GO sinyal sayacı */}
+              <div className="flex-1 flex flex-col items-center justify-center px-2 py-2 gap-0.5">
+                <span className="font-mono text-[7px] tracking-widest uppercase text-text-t4 leading-none">GO Sinyali</span>
+                <span className={`font-mono text-[22px] font-bold tabular-nums leading-none mt-0.5 ${goPairs.length > 0 ? "text-green-400" : "text-text-t4"}`}
+                  style={goPairs.length > 0 ? { textShadow: "0 0 12px rgba(74,222,128,0.55)" } : undefined}>
+                  {goPairs.length}
+                </span>
+                <span className="font-mono text-[7px] text-text-t4 leading-none">/ {PAIRS.length}</span>
+              </div>
+
+              {/* Alt metrik: F&G veya BTC fiyatı */}
+              <div className="px-2 py-1 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
+                {fgValue !== null ? (
+                  <>
+                    <span className="font-mono text-[7px] text-text-t4 tracking-wider leading-none">F&G</span>
+                    <span className={`font-mono text-[9px] font-semibold tabular-nums leading-none ${
+                      fgValue >= 75 ? "text-red-400"
+                      : fgValue >= 55 ? "text-amber-400"
+                      : fgValue >= 45 ? "text-text-t2"
+                      : fgValue >= 25 ? "text-blue-400"
+                      : "text-blue-500"
+                    }`}>{fgValue}</span>
+                  </>
+                ) : allTicks["BTC"]?.last !== undefined ? (
+                  <>
+                    <span className="font-mono text-[7px] text-text-t4 tracking-wider leading-none">BTC</span>
+                    <span translate="no" className="font-mono text-[9px] font-semibold tabular-nums text-text-t2 leading-none">
+                      {formatTickPrice(allTicks["BTC"]!.last, locale)}
+                    </span>
+                  </>
+                ) : (
+                  <span className="font-mono text-[7px] text-text-t4">—</span>
+                )}
+              </div>
+            </div>
+
           </div>
           </div>{/* end pair grid wrapper */}
         </div>
