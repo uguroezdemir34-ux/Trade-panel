@@ -38,10 +38,10 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
   /* Needle — DO NOT CHANGE math */
   const needleRad = ((-135 + 2.7 * v) - 90) * Math.PI / 180;
   const perpRad   = needleRad + Math.PI / 2;
-  const [nx, ny]  = pt(v, R - 4);
+  const [nx, ny]  = pt(v, R + 2);   /* tip — longer, reaches arc */
 
-  /* Tapered needle polygon */
-  const bw = 3.2, tw = 0.5;
+  /* Tapered needle polygon — wider base, razor tip */
+  const bw = 5.0, tw = 0.18;
   const blx  = (CX + bw * Math.cos(perpRad)).toFixed(1);
   const bly  = (CY + bw * Math.sin(perpRad)).toFixed(1);
   const brx  = (CX - bw * Math.cos(perpRad)).toFixed(1);
@@ -53,17 +53,17 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
   const needlePoly  = `M ${blx} ${bly} L ${ntlx} ${ntly} L ${ntrx} ${ntry} L ${brx} ${bry} Z`;
 
   /* Spine highlight strip */
-  const hw = 0.65;
+  const hw = 0.9;
   const hlx = (CX + hw * Math.cos(perpRad)).toFixed(1);
   const hly = (CY + hw * Math.sin(perpRad)).toFixed(1);
   const hrx = (CX - hw * Math.cos(perpRad)).toFixed(1);
   const hry = (CY - hw * Math.sin(perpRad)).toFixed(1);
   const needleSpine = `M ${hlx} ${hly} L ${ntlx} ${ntly} L ${ntrx} ${ntry} L ${hrx} ${hry} Z`;
 
-  /* Counterweight */
-  const cwTipX = (CX + 22 * Math.cos(needleRad + Math.PI)).toFixed(1);
-  const cwTipY = (CY + 22 * Math.sin(needleRad + Math.PI)).toFixed(1);
-  const cbw = 4.5;
+  /* Counterweight — shorter so hub covers it */
+  const cwTipX = (CX + 16 * Math.cos(needleRad + Math.PI)).toFixed(1);
+  const cwTipY = (CY + 16 * Math.sin(needleRad + Math.PI)).toFixed(1);
+  const cbw = 3.2;
   const cblx = (CX + cbw * Math.cos(perpRad)).toFixed(1);
   const cbly = (CY + cbw * Math.sin(perpRad)).toFixed(1);
   const cbrx = (CX - cbw * Math.cos(perpRad)).toFixed(1);
@@ -82,7 +82,7 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
   const [zx2, zy2] = pt(goThreshold, R + SW / 2 + 1);
 
   return (
-    <svg viewBox="0 0 220 232" className="w-full select-none" aria-label={`Skor: ${v}/100`}>
+    <svg viewBox="0 0 220 218" className="w-full select-none" aria-label={`Skor: ${v}/100`}>
       <defs>
         {/* ── WARM GOLD / CHAMPAGNE BEZEL ── */}
         <linearGradient id="sg-bezel-outer" x1="15%" y1="0%" x2="85%" y2="100%">
@@ -132,36 +132,40 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
           <stop offset="100%" stopColor="#14100a" />
         </radialGradient>
 
-        <radialGradient id="sg-hub-jewel" cx="30%" cy="24%" r="76%">
-          <stop offset="0%"   stopColor="#2a2218" />
-          <stop offset="100%" stopColor="#06040a" />
+        <radialGradient id="sg-hub-face" cx="40%" cy="35%" r="72%">
+          <stop offset="0%"   stopColor="#1a1612" />
+          <stop offset="60%"  stopColor="#0a0806" />
+          <stop offset="100%" stopColor="#040302" />
         </radialGradient>
 
+        {/* ── NEEDLE chrome gradient ── */}
+        <linearGradient id="sg-needle-chrome" gradientUnits="userSpaceOnUse"
+          x1={CX} y1={CY} x2={nx.toFixed(1)} y2={ny.toFixed(1)}>
+          <stop offset="0%"   stopColor="#606060" stopOpacity="0.3" />
+          <stop offset="60%"  stopColor="#909090" stopOpacity="0.2" />
+          <stop offset="100%" stopColor="#c0c0c0" stopOpacity="0.5" />
+        </linearGradient>
+
         {/* ── FILTERS ── */}
-        {/* Strong arc halo */}
         <filter id="sg-halo" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="7" />
         </filter>
-
-        {/* Arc bloom */}
         <filter id="sg-bloom" x="-25%" y="-25%" width="150%" height="150%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
-
-        {/* Needle glow */}
         <filter id="sg-spine-glow" x="-150%" y="-150%" width="400%" height="400%">
           <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
-
-        {/* Score number glow */}
-        <filter id="sg-score-glow" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="6" result="blur" />
+        <filter id="sg-tip-glow" x="-200%" y="-200%" width="500%" height="500%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
           <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
         </filter>
-
-        {/* Needle drop shadow */}
+        <filter id="sg-score-glow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+        </filter>
         <filter id="sg-drop" x="-80%" y="-80%" width="260%" height="260%">
           <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#000" floodOpacity="0.95" />
         </filter>
@@ -171,33 +175,20 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       <circle cx={CX} cy={CY} r={109} fill="#010102" />
 
       {/* ── WARM GOLD BEZEL — 3 concentric rings ── */}
-      {/* Outer dark collar */}
       <circle cx={CX} cy={CY} r={106} fill="none" stroke="#080602" strokeWidth="6" />
-      {/* Wide outer bezel ring */}
       <circle cx={CX} cy={CY} r={100} fill="none" stroke="url(#sg-bezel-outer)" strokeWidth="12" />
-      {/* Shadow arc — lower right depth */}
       <path d="M 198 164 A 100 100 0 0 1 146 202"
         fill="none" stroke="#050300" strokeWidth="7" strokeLinecap="round" opacity="0.92" />
-      {/* Mid ring */}
       <circle cx={CX} cy={CY} r={92.5} fill="none" stroke="url(#sg-bezel-mid)" strokeWidth="5" />
-      {/* Inner bezel ring */}
       <circle cx={CX} cy={CY} r={88} fill="none" stroke="url(#sg-bezel-inner)" strokeWidth="3" />
-      {/* Groove */}
       <circle cx={CX} cy={CY} r={85.5} fill="none" stroke="#040302" strokeWidth="3.5" />
-      {/* Groove inner lip */}
       <circle cx={CX} cy={CY} r={84} fill="none" stroke="#1e1808" strokeWidth="0.8" />
 
       {/* ── FACE — pure black ── */}
       <circle cx={CX} cy={CY} r={83} fill="url(#sg-face)" />
-
-      {/* Face glow ring (arc backlight) */}
       <circle cx={CX} cy={CY} r={81} fill="none"
         stroke={progressColor} strokeWidth="1.8" opacity="0.12" />
-
-      {/* Vignette */}
       <circle cx={CX} cy={CY} r={83} fill="url(#sg-vignette)" />
-
-      {/* Glass dome gloss */}
       <ellipse cx={CX} cy={CY - 32} rx={44} ry={15}
         fill="none" stroke="#fff" strokeWidth="20" opacity="0.028" strokeLinecap="round" />
 
@@ -220,25 +211,20 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       {/* ── ACTIVE ARC — layered luxury glow ── */}
       {v >= 1 && (
         <>
-          {/* Outer halo (diffuse) */}
           <path d={arcPath(0, v, R)} fill="none"
             stroke={progressColor} strokeWidth={SW + 10}
             strokeLinecap="butt" opacity="0.12"
             filter="url(#sg-halo)" />
-          {/* Mid bloom */}
           <path d={arcPath(0, v, R)} fill="none"
             stroke={progressColor} strokeWidth={SW + 4}
             strokeLinecap="butt" opacity="0.30"
             filter="url(#sg-bloom)" />
-          {/* Core arc */}
           <path d={arcPath(0, v, R)} fill="none"
             stroke={progressColor} strokeWidth={SW}
             strokeLinecap="butt" opacity="0.95" />
-          {/* Bright center line */}
           <path d={arcPath(0, v, R)} fill="none"
             stroke="#ffffff" strokeWidth="2"
             strokeLinecap="butt" opacity="0.38" />
-          {/* Edge inner shadow */}
           <path d={arcPath(0, v, R - 3)} fill="none"
             stroke="#000" strokeWidth="1.5"
             strokeLinecap="butt" opacity="0.20" />
@@ -246,7 +232,6 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       )}
 
       {/* ── TICK MARKS ── */}
-      {/* Sub-minor every 2 */}
       {Array.from({ length: 49 }, (_, i) => {
         const n = (i + 1) * 2;
         if (n % 5 === 0) return null;
@@ -257,8 +242,6 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
           x2={xb.toFixed(1)} y2={yb.toFixed(1)}
           stroke="#2a2010" strokeWidth="0.7" />;
       })}
-
-      {/* Minor every 5 */}
       {Array.from({ length: 19 }, (_, i) => {
         const n = (i + 1) * 5;
         if (n % 10 === 0) return null;
@@ -269,8 +252,6 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
           x2={xb.toFixed(1)} y2={yb.toFixed(1)}
           stroke="#5a4820" strokeWidth="1.1" />;
       })}
-
-      {/* Major every 10 + labels */}
       {Array.from({ length: 11 }, (_, i) => {
         const n = i * 10;
         const [xa, ya] = pt(n, R + 12);
@@ -299,47 +280,58 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
           stroke="#e8d49a" strokeWidth="1" opacity="0.25" strokeDasharray="2 2" />
       )}
 
-      {/* ── NEEDLE ── */}
+      {/* ── NEEDLE — premium chrome blade ── */}
       {/* Counterweight */}
-      <path d={counterPoly} fill="#1e1608" />
-      <path d={counterPoly} fill="#806030" opacity="0.55" />
-      <path d={counterPoly} fill="none" stroke="#0a0804" strokeWidth="0.7" />
+      <path d={counterPoly} fill="#1a1410" />
+      <path d={counterPoly} fill="#604820" opacity="0.45" />
+      <path d={counterPoly} fill="none" stroke="#0a0804" strokeWidth="0.6" />
 
       {/* Drop shadow */}
-      <path d={needlePoly} fill="#000" opacity="0.70" filter="url(#sg-drop)" />
-      {/* Dark body */}
-      <path d={needlePoly} fill="#181008" />
-      {/* Surface sheen — warm bronze */}
-      <path d={needlePoly} fill="#907050" opacity="0.60" />
+      <path d={needlePoly} fill="#000" opacity="0.75" filter="url(#sg-drop)" />
+      {/* Matte dark body */}
+      <path d={needlePoly} fill="#0e0e0e" />
+      {/* Chrome sheen overlay */}
+      <path d={needlePoly} fill="url(#sg-needle-chrome)" />
+      {/* Chrome edge bevel — right side highlight */}
+      <path d={needlePoly} fill="none" stroke="#707070" strokeWidth="0.8" opacity="0.35" />
+
       {/* Colored spine glow */}
-      <path d={needleSpine} fill={scoreColor} opacity="0.65" filter="url(#sg-spine-glow)" />
-      {/* Bright spine highlight */}
-      <path d={needleSpine} fill="#f0e0b0" opacity="0.50" />
-      {/* Edge bevel */}
-      <path d={needlePoly} fill="none" stroke="#060402" strokeWidth="0.6" />
+      <path d={needleSpine} fill={scoreColor} opacity="0.80" filter="url(#sg-spine-glow)" />
+      {/* Bright chrome spine */}
+      <path d={needleSpine} fill="#e8e8e8" opacity="0.55" />
+      {/* Colored spine tint on top */}
+      <path d={needleSpine} fill={scoreColor} opacity="0.20" />
 
-      {/* ── HUB — warm gold dome ── */}
-      <circle cx={CX} cy={CY} r="13"   fill="url(#sg-hub)" />
-      <circle cx={CX} cy={CY} r="13"   fill="none" stroke="#a08040" strokeWidth="0.9" />
-      <circle cx={CX} cy={CY} r="7.5"  fill="url(#sg-hub-jewel)" />
-      <circle cx={CX} cy={CY} r="7.5"  fill="none" stroke="#5a4018" strokeWidth="0.9" />
-      {/* Primary specular — gold glint */}
-      <circle cx={CX - 4} cy={CY - 4}   r="2.4" fill="#ffe8a0" opacity="0.65" />
-      {/* Secondary specular */}
-      <circle cx={CX - 2.5} cy={CY - 2.5} r="1.0" fill="#ffffff" opacity="0.80" />
+      {/* Tip glow — plasma point */}
+      <circle cx={nx.toFixed(1)} cy={ny.toFixed(1)} r="3.5"
+        fill={progressColor} opacity="0.75" filter="url(#sg-tip-glow)" />
+      <circle cx={nx.toFixed(1)} cy={ny.toFixed(1)} r="1.5"
+        fill="#ffffff" opacity="0.95" />
+      <circle cx={nx.toFixed(1)} cy={ny.toFixed(1)} r="0.6"
+        fill={progressColor} opacity="1" />
 
-      {/* ── SCORE NUMBER ── */}
-      {/* Glow layer */}
-      <text x={28} y={222} textAnchor="start"
-        fill={scoreColor} fontSize="44" fontWeight="700"
+      {/* ── HUB — warm gold dome with embedded score ── */}
+      <circle cx={CX} cy={CY} r={22}   fill="url(#sg-hub)" />
+      <circle cx={CX} cy={CY} r={22}   fill="none" stroke="#a08040" strokeWidth="1.0" />
+      {/* Inner dark face — score window */}
+      <circle cx={CX} cy={CY} r={15.5} fill="url(#sg-hub-face)" />
+      <circle cx={CX} cy={CY} r={15.5} fill="none" stroke="#4a3010" strokeWidth="0.8" />
+
+      {/* Score glow */}
+      <text x={CX} y={CY + 2} textAnchor="middle" dominantBaseline="middle"
+        fill={scoreColor} fontSize="15" fontWeight="800"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
         opacity="0.55" filter="url(#sg-score-glow)">{v}</text>
-      {/* Solid number */}
-      <text x={28} y={222} textAnchor="start"
+      {/* Score solid */}
+      <text x={CX} y={CY + 2} textAnchor="middle" dominantBaseline="middle"
         fill={scoreColor}
-        stroke="#010101" strokeWidth="4" paintOrder="stroke fill"
-        fontSize="44" fontWeight="700"
+        stroke="#010101" strokeWidth="1.5" paintOrder="stroke fill"
+        fontSize="15" fontWeight="800"
         fontFamily="ui-monospace, SFMono-Regular, monospace">{v}</text>
+
+      {/* Specular — warm gold glint */}
+      <circle cx={CX - 8} cy={CY - 8} r="3.2" fill="#ffe8a0" opacity="0.50" />
+      <circle cx={CX - 5} cy={CY - 5} r="1.4" fill="#ffffff" opacity="0.75" />
     </svg>
   );
 }
