@@ -82,12 +82,29 @@ export interface OiVelocityConfig {
   scoreFactor?: number;
 }
 
+// ─── Merkezi kalibrasyon sabitleri ───────────────────────────
+
+const OI_VELOCITY_CONFIG = {
+  /** OI noise filtresi: bu altındaki değişim "neutral" sayılır */
+  minOiChangePct: 0.5,
+  /** Fiyat noise filtresi: bu altındaki hareket anlamsız */
+  minPriceChangePct: 0.3,
+  /** Ham OI velocity'yi [-scoreClamp, +scoreClamp] aralığına taşıyan çarpan */
+  scoreFactor: 50,
+  /** classifyMagnitude band sınırları (yüzde) */
+  magnitudeThresholds: { moderate: 0.5, strong: 2.0, extreme: 5.0 },
+  /** computeOiVelocityWindow varsayılan pencere boyutu (snapshot sayısı) */
+  windowSize: 5,
+  /** oiVelocityScore clamp sınırı — skor [-scoreClamp, +scoreClamp] aralığında kalır */
+  scoreClamp: 10,
+} as const;
+
 // ─── İvme büyüklük sınıflandırması ──────────────────────────
 
 function classifyMagnitude(absPct: number): OiVelocityResult["magnitude"] {
-  if (absPct < 0.5) return "weak";
-  if (absPct < 2.0) return "moderate";
-  if (absPct < 5.0) return "strong";
+  if (absPct < OI_VELOCITY_CONFIG.magnitudeThresholds.moderate) return "weak";
+  if (absPct < OI_VELOCITY_CONFIG.magnitudeThresholds.strong)   return "moderate";
+  if (absPct < OI_VELOCITY_CONFIG.magnitudeThresholds.extreme)  return "strong";
   return "extreme";
 }
 
@@ -149,9 +166,9 @@ export function computeOiVelocity(
 ): OiVelocityResult | null {
   if (!snapshots || snapshots.length < 2) return null;
 
-  const minOiPct = config.minOiChangePct ?? 0.5;
-  const minPricePct = config.minPriceChangePct ?? 0.3;
-  const scoreFactor = config.scoreFactor ?? 50;
+  const minOiPct = config.minOiChangePct ?? OI_VELOCITY_CONFIG.minOiChangePct;
+  const minPricePct = config.minPriceChangePct ?? OI_VELOCITY_CONFIG.minPriceChangePct;
+  const scoreFactor = config.scoreFactor ?? OI_VELOCITY_CONFIG.scoreFactor;
 
   const first = snapshots[0];
   const last = snapshots[snapshots.length - 1];
@@ -168,7 +185,7 @@ export function computeOiVelocity(
   // Skor = rejim yönü × OI değişim büyüklüğü × scoreFactor, clamp [-10, +10]
   const sign = regimeSign(regime);
   const rawScore = sign * Math.abs(oiChangePct / 100) * scoreFactor;
-  const oiVelocityScore = Math.max(-10, Math.min(10, parseFloat(rawScore.toFixed(4))));
+  const oiVelocityScore = Math.max(-OI_VELOCITY_CONFIG.scoreClamp, Math.min(OI_VELOCITY_CONFIG.scoreClamp, parseFloat(rawScore.toFixed(4))));
 
   return {
     oiChangePct: parseFloat(oiChangePct.toFixed(4)),
@@ -190,7 +207,7 @@ export function computeOiVelocity(
 export function computeOiVelocityWindow(
   snapshots: readonly OiSnapshot[],
   pair: Pair,
-  windowSize = 5,
+  windowSize: number = OI_VELOCITY_CONFIG.windowSize,
   config: OiVelocityConfig = {},
 ): OiVelocityResult | null {
   if (snapshots.length < 2) return null;
