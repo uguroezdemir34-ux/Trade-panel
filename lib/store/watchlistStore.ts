@@ -1,20 +1,16 @@
 import { create } from "zustand";
 import type { Pair } from "@/lib/constants/pairs";
-
-const STORAGE_KEY = "quantix_watchlist_v1";
+import { loadFromStorage, saveToStorage } from "@/lib/store/persist";
 
 function load(): Pair[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw) as Pair[];
-  } catch {
-    return [];
+  if (typeof window !== "undefined") {
+    try { localStorage.removeItem("quantix_watchlist_v1"); } catch {}
   }
+  return loadFromStorage<Pair[]>("watchlist", []);
 }
 
 function save(pairs: Pair[]): void {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(pairs)); } catch { /* ignore */ }
+  saveToStorage("watchlist", pairs);
 }
 
 interface WatchlistState {
