@@ -565,7 +565,13 @@ export default function KararPage() {
 
           {/* Pair grid — v2: 3 kolon, kapsül slider kartları */}
           <div className="grid grid-cols-3 gap-1">
-            {displayPairs.map((p) => {
+            {pairGroup === "watch" && watchlistPairs.length === 0 ? (
+              <div className="col-span-3 flex flex-col items-center justify-center py-10 gap-1.5">
+                <span className="font-mono text-[28px] text-text-t4/30 leading-none">☆</span>
+                <p className="font-mono text-[11px] text-text-t3 text-center">Takip listen boş</p>
+                <p className="font-mono text-[10px] text-text-t4 text-center px-6">kartlardaki ☆ ile pair ekle</p>
+              </div>
+            ) : displayPairs.map((p) => {
               const pr = allResults[p];
               const v = pr?.verdict;
               const score = pr?.score;
@@ -657,9 +663,17 @@ export default function KararPage() {
                         : "border-border/30 bg-bg-card text-text-t3 hover:text-text-t2",
                     ].join(" ")}
                   >
-                    {/* Satır 1: pair adı + 24h% rozeti */}
+                    {/* Satır 1: watchlist chip + pair adı + 24h% rozeti */}
                     <div className="flex items-center justify-between gap-0.5 mb-0.5">
                       <div className="flex items-center gap-0.5 min-w-0">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); watchlistToggle(p as Pair); }}
+                          className={`shrink-0 px-0.5 py-2 leading-none font-mono text-[9px] transition-colors ${
+                            isWatched ? "text-amber-400" : "text-text-t4/50"
+                          }`}
+                        >
+                          {isWatched ? "★" : "☆"}
+                        </button>
                         <span className="text-[11px] font-bold text-text-t1 leading-none">{p}</span>
                         {alarmedPairs.has(p) && (
                           <span className="h-1 w-1 rounded-full bg-amber-400 shrink-0" />
@@ -802,17 +816,6 @@ export default function KararPage() {
                     </div>
                   </button>
 
-                  <button
-                    onClick={(e) => { e.stopPropagation(); watchlistToggle(p as Pair); }}
-                    className={`absolute top-1 right-1 px-0.5 py-0.5 font-mono text-[9px] transition-opacity ${
-                      isWatched
-                        ? "opacity-100 text-amber-400"
-                        : "opacity-0 group-hover:opacity-60 text-text-t4"
-                    }`}
-                    title={isWatched ? t("karar.watchRemove") : t("karar.watchAdd")}
-                  >
-                    ★
-                  </button>
                   {pairNotes[p as Pair] && (
                     <span className="absolute bottom-2 right-1 h-1 w-1 rounded-full bg-blue-400/80 pointer-events-none" />
                   )}
