@@ -12,11 +12,28 @@ import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Candle } from "@/lib/okx/candles";
+import { fetchFearGreed } from "@/lib/macro/fetch";
+import {
+  computeOiVelocityWindow,
+  oiVelocityScoreOrZero,
+  type OiSnapshot,
+} from "@/lib/market/oi-velocity";
 
 const OKX_BASE = "https://www.okx.com";
 const CANDLE_MIN_1H = 200;
 const CANDLE_MIN_4H = 200;
 const CANDLE_MIN_15M = 20;
+
+// OI snapshot cache — Vercel warm invocation'larda yaşıyor, velocity hesabı için gerekli.
+// Cold start'ta boş başlar (velocity=0), 2. cron çalışmasından itibaren gerçek değer.
+const _oiSnapshots = new Map<Pair, OiSnapshot[]>();
+const OI_SNAP_MAX_AGE_MS = 2 * 60 * 60_000; // 2 saat
+const OI_SNAP_MAX = 10;
+
+// Son başarılı fetch değerleri — geçici API kesintisinde frozen default'a düşmesin.
+// Cache boşken (ilk soğuk başlangıç) eski davranışa düşülür — kabul edilebilir.
+const _lastFundingRate = new Map<string, number>(); // instId → last successful rate
+let _lastFg: number | null = null;
 
 /** Frozen risk/macro state — mirrors backtest engine FROZEN_STATE */
 const FROZEN_STATE = {
@@ -73,6 +90,63 @@ async function fetchOkxCandles(instId: string, bar: string, limit: number): Prom
   }
 }
 
+/** OKX funding rate — public API, proxy gerektirmez */
+async function fetchOkxFundingRate(instId: string): Promise<number | null> {
+  const url = `${OKX_BASE}/api/v5/public/funding-rate?instId=${encodeURIComponent(instId)}`;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return null;
+    const json = (await res.json()) as { code: string; data?: Array<{ fundingRate: string }> };
+    if (json.code !== "0" || !json.data?.[0]) return null;
+    const rate = parseFloat(json.data[0].fundingRate);
+    return isFinite(rate) ? rate : null;
+  } catch {
+    return null;
+  }
+}
+
+/** OKX open interest — public API, proxy gerektirmez */
+async function fetchOkxOpenInterest(
+  instId: string,
+): Promise<{ oi: number; oiCcy: number } | null> {
+  const url = `${OKX_BASE}/api/v5/public/open-interest?instType=SWAP&instId=${encodeURIComponent(instId)}`;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) return null;
+    const json = (await res.json()) as {
+      code: string;
+      data?: Array<{ oi: string; oiCcy: string }>;
+    };
+    if (json.code !== "0" || !json.data?.[0]) return null;
+    const oi = parseFloat(json.data[0].oi);
+    const oiCcy = parseFloat(json.data[0].oiCcy);
+    if (!isFinite(oi) && !isFinite(oiCcy)) return null;
+    return { oi: isFinite(oi) ? oi : 0, oiCcy: isFinite(oiCcy) ? oiCcy : 0 };
+  } catch {
+    return null;
+  }
+}
+
+/** OI snapshot'ı modül cache'e ekle, velocity skoru döndür. */
+function appendOiAndGetVelocity(
+  pair: Pair,
+  oiResult: { oi: number; oiCcy: number } | null,
+  price: number,
+  now: number,
+): number {
+  if (!oiResult || price <= 0) return 0;
+  const oiVal = oiResult.oiCcy > 0 ? oiResult.oiCcy : oiResult.oi;
+  if (oiVal <= 0) return 0;
+  const prev = _oiSnapshots.get(pair) ?? [];
+  const trimmed = prev.filter((s) => now - s.timestamp < OI_SNAP_MAX_AGE_MS);
+  const updated = [
+    ...trimmed.slice(-(OI_SNAP_MAX - 1)),
+    { timestamp: now, openInterest: oiVal, price },
+  ];
+  _oiSnapshots.set(pair, updated);
+  return oiVelocityScoreOrZero(computeOiVelocityWindow(updated, pair, 5));
+}
+
 /** Score a single pair using server-fetched candles */
 async function fetchAndScore(pair: Pair): Promise<{
   candles1h: Candle[];
@@ -81,11 +155,17 @@ async function fetchAndScore(pair: Pair): Promise<{
   verdict: "go" | "wait" | "no";
   direction: "LONG" | "SHORT" | "NEUTRAL";
   price: number;
+  fg: number;
+  fundingRate: number | null;
 } | null> {
   const instId = `${pair}-USDT-SWAP`;
-  const [raw1h, raw4h] = await Promise.all([
+  const now = Date.now();
+  const [raw1h, raw4h, rawFundingRate, oiResult, fgResult] = await Promise.all([
     fetchOkxCandles(instId, "1H", 300),
     fetchOkxCandles(instId, "4H", 300),
+    fetchOkxFundingRate(instId),
+    fetchOkxOpenInterest(instId),
+    fetchFearGreed(now),
   ]);
 
   // Only use confirmed (closed) bars
@@ -99,15 +179,36 @@ async function fetchAndScore(pair: Pair): Promise<{
 
   if (candles15m.length < CANDLE_MIN_15M) return null;
 
+  const oiVelocityScore = appendOiAndGetVelocity(pair, oiResult, latest.close, now);
+
+  // F&G: source "fallback" → fetchFearGreed'in kendi TTL cache'i boşalmış + API down.
+  // _lastFg varsa kullan; cold start'ta kabul edilebilir fallback (50).
+  const fg: number = (() => {
+    if (fgResult.source !== "fallback") {
+      _lastFg = fgResult.value;
+      return fgResult.value;
+    }
+    return _lastFg ?? fgResult.value;
+  })();
+
+  // Funding: null → fetch hatası → instId için son başarılı değeri kullan.
+  const fundingRate: number | null = (() => {
+    if (rawFundingRate !== null) {
+      _lastFundingRate.set(instId, rawFundingRate);
+      return rawFundingRate;
+    }
+    return _lastFundingRate.get(instId) ?? null;
+  })();
+
   const composed = composeScoreInput({
     pair,
     livePrice: latest.close,
     candles1h,
     candles4h,
     candles15m,
-    fg: 50, // neutral frozen F&G
-    fundingRate: null,
-    oiVelocityScore: null,
+    fg,
+    fundingRate,
+    oiVelocityScore,
     now: latest.ts,
     ...FROZEN_STATE,
   });
@@ -123,6 +224,8 @@ async function fetchAndScore(pair: Pair): Promise<{
     verdict: result.verdict,
     direction: result.direction,
     price: latest.close,
+    fg,
+    fundingRate,
   };
 }
 
@@ -131,6 +234,8 @@ function scorePrevBar(
   candles1h: Candle[],
   candles4h: Candle[],
   pair: Pair,
+  fg: number,
+  fundingRate: number | null,
 ): "go" | "wait" | "no" | null {
   const prev1h = candles1h.slice(0, -1);
   const prevLatest = prev1h[prev1h.length - 1];
@@ -150,9 +255,9 @@ function scorePrevBar(
       candles1h: prev1h,
       candles4h: prev4h,
       candles15m: prev15m,
-      fg: 50,
-      fundingRate: null,
-      oiVelocityScore: null,
+      fg,
+      fundingRate,
+      oiVelocityScore: null, // prev-bar OI velocity mevcut değil
       now: prevLatest.ts,
       ...FROZEN_STATE,
     });
@@ -172,7 +277,13 @@ export async function computeServerSignal(pair: Pair): Promise<ServerSignalResul
     const current = await fetchAndScore(pair);
     if (!current) return null;
 
-    const prevVerdict = scorePrevBar(current.candles1h, current.candles4h, pair);
+    const prevVerdict = scorePrevBar(
+      current.candles1h,
+      current.candles4h,
+      pair,
+      current.fg,
+      current.fundingRate,
+    );
     const isNewSignal = current.verdict === "go" && prevVerdict !== "go";
 
     return {
