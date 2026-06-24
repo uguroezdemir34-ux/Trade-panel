@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import Link from "next/link";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
@@ -667,7 +668,16 @@ export default function KararPage() {
                     <div className="flex items-center justify-between gap-0.5 mb-0.5">
                       <div className="flex items-center gap-0.5 min-w-0">
                         <button
-                          onClick={(e) => { e.stopPropagation(); watchlistToggle(p as Pair); }}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isWatched) {
+                              watchlistToggle(p as Pair);
+                              toast(`${p} takipten çıkarıldı`);
+                            } else {
+                              watchlistToggle(p as Pair);
+                              toast(`⭐ ${p} takibe alındı`);
+                            }
+                          }}
                           className={`shrink-0 px-0.5 py-2 leading-none font-mono text-[9px] transition-colors ${
                             isWatched ? "text-amber-400" : "text-text-t4/50"
                           }`}

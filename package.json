@@ -50,6 +50,7 @@
     "react-dom": "19.0.3",
     "tailwind-merge": "2.5.5",
     "zod": "3.24.1",
+    "sonner": "^2.0.0",
     "zustand": "5.0.2"
   },
   "devDependencies": {

@@ -5,6 +5,7 @@ import { AppShell } from "@/components/layout/AppShell";
 import { I18nProvider } from "@/lib/i18n/context";
 import { LocaleHtmlSync } from "@/components/layout/LocaleHtmlSync";
 import { BRAND_META } from "@/lib/brand";
+import { SonnerToaster } from "@/components/layout/SonnerToaster";
 
 export const metadata: Metadata = {
   title: BRAND_META.title,
@@ -89,6 +90,7 @@ export default function RootLayout({
           />
         </head>
         <body className="bg-bg text-text-t1 font-sans antialiased">
+          <SonnerToaster />
           <ClerkClientWrapper>
             <I18nProvider>
               <LocaleHtmlSync />
