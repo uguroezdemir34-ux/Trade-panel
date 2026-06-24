@@ -50,6 +50,7 @@ import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
 import { usePwaSetup } from "@/lib/hooks/usePwaSetup";
 import { useEmergencyStopGuard } from "@/lib/hooks/useEmergencyStopGuard";
 import { useSlProximityAlert } from "@/lib/hooks/useSlProximityAlert";
+import { usePriorityAlerts } from "@/lib/hooks/usePriorityAlerts";
 import { useCapacitorApp } from "@/lib/hooks/useCapacitorApp";
 import { QuickTradeSheet } from "@/components/mobile/QuickTradeSheet";
 import { DisclaimerModal } from "./DisclaimerModal";
@@ -132,6 +133,8 @@ export function AppShell({
   useEmergencyStopGuard();
   // SL yaklaştığında Telegram bildirimi — %3 eşiği, 15 dak cooldown
   useSlProximityAlert();
+  // Watchlist pair'leri için öncelikli browser bildirimi (⭐ GO)
+  usePriorityAlerts();
   // PWA kurulumu — SW kayıt + install prompt yakalama
   usePwaSetup();
   // Capacitor native lifecycle — back button, StatusBar, SplashScreen
