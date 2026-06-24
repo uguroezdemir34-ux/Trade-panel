@@ -230,6 +230,12 @@ export const en: Dictionary = {
     signalModeActive: "Signal mode active — trade from exchange",
     signalModeBalanceOnly: "⚙ Signal mode — balance display only, order placement disabled",
     signalModeApiNote: "⚙ Signal mode: API key is used for balance and position display only. No trade permission required — read-only key is sufficient.",
+  watchlist: {
+    toast: {
+      added: "⭐ {pair} added to watchlist",
+      removed: "{pair} removed from watchlist",
+    },
+  },
   settings: {
     title: "SETTINGS",
     signalModeLabel: "⚙ SIGNAL MODE",

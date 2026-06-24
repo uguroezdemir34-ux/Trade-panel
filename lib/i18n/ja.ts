@@ -263,6 +263,12 @@ volumeSection: "VOLUME",
     signalModeBalanceOnly: "⚙ Signal mode — balance display only, order placement disabled",
     // TODO: translate
     signalModeApiNote: "⚙ Signal mode: API key is used for balance and position display only. No trade permission required — read-only key is sufficient.",
+  watchlist: {
+    toast: {
+      added: "⭐ {pair} added to watchlist",
+      removed: "{pair} removed from watchlist",
+    },
+  },
   settings: {
     title: "設定",
     // TODO: translate

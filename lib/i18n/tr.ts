@@ -230,6 +230,12 @@ export const tr: Dictionary = {
     signalModeActive: "Sinyal modu aktif — borsadan işlem yapın",
     signalModeBalanceOnly: "⚙ Sinyal modu — yalnızca bakiye görüntüleme, emir gönderme devre dışı",
     signalModeApiNote: "⚙ Sinyal modu: API key yalnızca bakiye ve pozisyon görüntüleme için kullanılır. Emir gönderme izni gerekmez — read-only key yeterlidir.",
+  watchlist: {
+    toast: {
+      added: "⭐ {pair} takibe alındı",
+      removed: "{pair} takipten çıkarıldı",
+    },
+  },
   settings: {
     title: "AYARLAR",
     signalModeLabel: "⚙ SİNYAL MODU",

@@ -672,10 +672,10 @@ export default function KararPage() {
                             e.stopPropagation();
                             if (isWatched) {
                               watchlistToggle(p as Pair);
-                              toast(`${p} takipten çıkarıldı`);
+                              toast(t("watchlist.toast.removed", { pair: p }));
                             } else {
                               watchlistToggle(p as Pair);
-                              toast(`⭐ ${p} takibe alındı`);
+                              toast(t("watchlist.toast.added", { pair: p }));
                             }
                           }}
                           className={`shrink-0 px-0.5 py-2 leading-none font-mono text-[9px] transition-colors ${
