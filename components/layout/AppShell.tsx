@@ -57,6 +57,12 @@ import { useAuthStub } from "@/lib/auth/stubs";
 import { setCurrentUserId } from "@/lib/auth/scope";
 import { migrateStorageForUser } from "@/lib/auth/migrate";
 import { fetchTradesFromServer, bulkSyncTradesToServer } from "@/lib/db/tradeSync";
+import { useMacroStore } from "@/lib/store/macroStore";
+
+// DEV calibration helper — never runs in production builds
+if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+  (window as unknown as Record<string, unknown>).useMacroStore = useMacroStore;
+}
 
 const SPLASH_DATE_KEY = "qx_splash_date";
 
