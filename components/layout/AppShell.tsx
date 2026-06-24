@@ -58,6 +58,7 @@ import { setCurrentUserId } from "@/lib/auth/scope";
 import { migrateStorageForUser } from "@/lib/auth/migrate";
 import { fetchTradesFromServer, bulkSyncTradesToServer } from "@/lib/db/tradeSync";
 import { useMacroStore } from "@/lib/store/macroStore";
+import { useWatchlistStore } from "@/lib/store/watchlistStore";
 
 // Calibration helper — only active when ?calib=1 is in the URL
 if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("calib") === "1") {
@@ -90,6 +91,7 @@ export function AppShell({
   const rehydrateRisk = useRiskStore((s) => s.rehydrate);
   const rehydrateTrades = useTradesStore((s) => s.rehydrate);
   const mergeTradesFromDb = useTradesStore((s) => s.mergeFromDb);
+  const loadWatchlist = useWatchlistStore((s) => s.load);
   const loadCredentials = useCredentialStore((s) => s.load);
   const { userId, isLoaded: authLoaded } = useAuthStub();
 
@@ -149,6 +151,7 @@ export function AppShell({
     rehydrateAccount();
     rehydrateRisk();
     rehydrateTrades();
+    loadWatchlist();
     void loadCredentials();
 
     if (!splashShownToday()) {
