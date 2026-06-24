@@ -59,8 +59,8 @@ import { migrateStorageForUser } from "@/lib/auth/migrate";
 import { fetchTradesFromServer, bulkSyncTradesToServer } from "@/lib/db/tradeSync";
 import { useMacroStore } from "@/lib/store/macroStore";
 
-// DEV calibration helper — never runs in production builds
-if (process.env.NODE_ENV === "development" && typeof window !== "undefined") {
+// Calibration helper — only active when ?calib=1 is in the URL
+if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("calib") === "1") {
   (window as unknown as Record<string, unknown>).useMacroStore = useMacroStore;
 }
 
