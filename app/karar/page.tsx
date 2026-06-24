@@ -572,6 +572,11 @@ export default function KararPage() {
               const dir = pr?.direction;
               const isActive = activePair === p;
 
+              /* Score history snapshots — valid numbers only */
+              const snaps = (scoreHistory[p] ?? []).filter(
+                (s) => typeof s.score === "number" && isFinite(s.score),
+              );
+
               const goGap = v === "go" && score !== undefined && pr?.effectiveThreshold !== undefined
                 ? score - pr.effectiveThreshold
                 : -1;
@@ -703,6 +708,39 @@ export default function KararPage() {
                       )}
                     </div>
 
+                    {/* Score sparkline — inline SVG polyline, snaps.length < 2 → null */}
+                    {snaps.length >= 2 && (() => {
+                      const minS = Math.min(...snaps.map((s) => s.score));
+                      const maxS = Math.max(...snaps.map((s) => s.score));
+                      const range = maxS - minS || 1;
+                      const pts = snaps
+                        .map((s, i) =>
+                          `${(1 + (i / (snaps.length - 1)) * 58).toFixed(1)},${(9 - ((s.score - minS) / range) * 8).toFixed(1)}`,
+                        )
+                        .join(" ");
+                      const col =
+                        snaps.at(-1)!.score > snaps[0].score
+                          ? "#22c55e"
+                          : snaps.at(-1)!.score < snaps[0].score
+                          ? "#ef4444"
+                          : "#52566a";
+                      return (
+                        <div className="-mt-0.5 mb-0.5">
+                          <svg width="100%" height="10" viewBox="0 0 60 10" preserveAspectRatio="none">
+                            <polyline
+                              points={pts}
+                              fill="none"
+                              stroke={col}
+                              strokeWidth="1.3"
+                              strokeLinejoin="round"
+                              strokeLinecap="round"
+                              opacity="0.65"
+                            />
+                          </svg>
+                        </div>
+                      );
+                    })()}
+
                     {/* Büyük skor */}
                     <div className="flex items-center justify-center gap-0.5 mt-0.5">
                       <span translate="no" className={`text-sm font-bold tabular-nums leading-none ${isActive ? "text-text-t1" : scoreColor}`}>
@@ -718,6 +756,28 @@ export default function KararPage() {
                           {(momentum ?? 0) > 0 ? "▲" : "▼"}
                         </span>
                       )}
+                      {/* Delta badge — son 12 snapshot ile fark, 0dk ise gizle */}
+                      {snaps.length >= 2 && (() => {
+                        const fi = Math.max(0, snaps.length - 12);
+                        const first = snaps[fi];
+                        const last  = snaps[snaps.length - 1];
+                        const dVal  = last.score - first.score;
+                        const dMin  = Math.round((last.ts - first.ts) / 60_000);
+                        if (dMin === 0) return null;
+                        const sign = dVal > 0 ? "+" : "";
+                        const dc =
+                          dVal > 0 ? "text-green-400"
+                          : dVal < 0 ? "text-red-400"
+                          : "text-text-t4";
+                        return (
+                          <span
+                            translate="no"
+                            className={`ml-1 font-mono text-[7px] tabular-nums leading-none opacity-70 ${dc}`}
+                          >
+                            ~{dMin}dk {sign}{Math.round(dVal)}
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     {/* Alt: fiyat + market cap */}
