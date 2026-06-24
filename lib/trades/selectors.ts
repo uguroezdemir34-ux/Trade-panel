@@ -226,11 +226,13 @@ export function computeDiscipline(
 
 /**
  * Tarih aralığı filtresi — openedAt >= sinceMs olan trade'ler.
+ * sinceMs undefined veya null ise tüm diziyi döndürür ("tüm zamanlar").
  * Tüm status'lara uygulanabilir; caller filterClosed ile zincirler.
  */
 export function filterByDateRange(
   trades: readonly TradeSnapshot[],
-  sinceMs: number,
+  sinceMs?: number,
 ): TradeSnapshot[] {
+  if (sinceMs == null) return [...trades];
   return trades.filter((t) => t.openedAt >= sinceMs);
 }
