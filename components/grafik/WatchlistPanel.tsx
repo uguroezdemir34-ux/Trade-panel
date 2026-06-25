@@ -142,6 +142,7 @@ function CoinPickerModal({
   onToggle: (pair: Pair) => void;
   onClose: () => void;
 }) {
+  const t = useT();
   const prices = useMarketStore((s) => s.prices);
 
   return (
@@ -156,7 +157,7 @@ function CoinPickerModal({
         {/* Header */}
         <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
           <span className="font-mono text-sm font-bold text-text-t1 tracking-wide">
-            Coin Seç
+            {t("grafik.watchlistPickerTitle")}
           </span>
           <button
             onClick={onClose}
@@ -169,7 +170,7 @@ function CoinPickerModal({
         {/* Hint */}
         <div className="shrink-0 px-4 py-2 bg-surface-s1 border-b border-border/40">
           <p className="font-mono text-[10px] text-text-t4">
-            <span className="text-brand font-bold">+</span> ekle &nbsp;·&nbsp; <span className="text-red-400 font-bold">–</span> listeden çıkar
+            <span className="text-brand font-bold">+</span> {t("grafik.watchlistPickerHintAdd")} &nbsp;·&nbsp; <span className="text-red-400 font-bold">–</span> {t("grafik.watchlistPickerHintRemove")}
           </p>
         </div>
 
@@ -235,14 +236,14 @@ function CoinPickerModal({
         <div className="shrink-0 px-4 py-3 border-t border-border bg-bg-card flex items-center justify-between">
           <span className="font-mono text-[11px] text-text-t4">
             {watchedPairs.length === 0
-              ? "Tüm coinler gösteriliyor"
-              : `${watchedPairs.length} / ${PAIRS.length} coin seçili`}
+              ? t("grafik.watchlistPickerAllShown")
+              : t("grafik.watchlistPickerSelected", { count: String(watchedPairs.length), total: String(PAIRS.length) })}
           </span>
           <button
             onClick={onClose}
             className="rounded-lg bg-brand px-4 py-1.5 font-mono text-xs font-bold text-white hover:bg-brand/80 transition-colors"
           >
-            Tamam
+            {t("grafik.watchlistPickerDone")}
           </button>
         </div>
       </div>
@@ -325,7 +326,7 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
           {last > 0 ? fmtPrice(last) : "—"}
         </div>
         <div className={`font-mono text-[11px] tabular-nums font-semibold mt-0.5 ${chgColor(chg)}`}>
-          {fmtPct(chg)} (24s)
+          {fmtPct(chg)} ({t("grafik.watchlistChange24h")})
         </div>
       </div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-2 mb-2.5">
@@ -340,7 +341,7 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
           </p>
         </div>
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">Karar</p>
+          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlistVerdict")}</p>
           <p className={`font-mono text-[11px] font-bold uppercase ${
             verdict === "go"   ? "text-emerald-400" :
             verdict === "wait" ? "text-amber-400"   :
@@ -390,6 +391,8 @@ function ContextMenuItem({
 }
 
 function RowContextMenu({ pair, index, total, isFiltered, onAction, onClose }: RowContextMenuProps) {
+  const t = useT();
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-end justify-center"
@@ -418,27 +421,27 @@ function RowContextMenu({ pair, index, total, isFiltered, onAction, onClose }: R
         {isFiltered && (
           <>
             {index > 0 && (
-              <ContextMenuItem label="Üste taşı" icon="⬆" onPress={() => onAction("moveTop")} />
+              <ContextMenuItem label={t("grafik.watchlistMoveTop")} icon="⬆" onPress={() => onAction("moveTop")} />
             )}
             {index > 0 && (
-              <ContextMenuItem label="Bir yukarı" icon="↑" onPress={() => onAction("moveUp")} />
+              <ContextMenuItem label={t("grafik.watchlistMoveUp")} icon="↑" onPress={() => onAction("moveUp")} />
             )}
             {index < total - 1 && (
-              <ContextMenuItem label="Bir aşağı" icon="↓" onPress={() => onAction("moveDown")} />
+              <ContextMenuItem label={t("grafik.watchlistMoveDown")} icon="↓" onPress={() => onAction("moveDown")} />
             )}
             {index < total - 1 && (
-              <ContextMenuItem label="Alta taşı" icon="⬇" onPress={() => onAction("moveBottom")} />
+              <ContextMenuItem label={t("grafik.watchlistMoveBottom")} icon="⬇" onPress={() => onAction("moveBottom")} />
             )}
             <div className="mx-5 h-px bg-border/50" />
           </>
         )}
 
-        <ContextMenuItem label="Grafiği aç" icon="◈" onPress={() => onAction("openChart")} />
+        <ContextMenuItem label={t("grafik.watchlistOpenChart")} icon="◈" onPress={() => onAction("openChart")} />
 
         {isFiltered && (
           <>
             <div className="mx-5 h-px bg-border/50" />
-            <ContextMenuItem label="Listeden kaldır" icon="🗑" onPress={() => onAction("remove")} danger />
+            <ContextMenuItem label={t("grafik.watchlistRemove")} icon="🗑" onPress={() => onAction("remove")} danger />
           </>
         )}
 
@@ -499,25 +502,25 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
       {/* Header */}
       <div className={`shrink-0 grid ${GRID_COLS} gap-x-1 px-2 py-1 border-b border-border/50 items-center`}>
         <div className="flex items-center gap-1">
-          <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider">Sembol</span>
+          <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider">{t("grafik.watchlistHeaderSymbol")}</span>
           {isFiltered && (
             <button
               onClick={reset}
               className="font-mono text-[8px] text-text-t4 hover:text-red-400 transition-colors underline underline-offset-1"
-              title="Tüm coinlere dön"
+              title={t("grafik.watchlistResetTitle")}
             >
-              Sıfırla
+              {t("grafik.watchlistReset")}
             </button>
           )}
         </div>
-        <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">Son</span>
+        <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">{t("grafik.watchlistChange")}</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">{t("grafik.watchlistChange")}</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">%</span>
         <button
           onClick={() => setPickerOpen(true)}
           className="flex items-center justify-center w-6 h-5 rounded border border-brand/50 bg-brand/10 text-brand hover:bg-brand/20 transition-colors font-bold leading-none"
           style={{ fontSize: 13 }}
-          title="Listeye ekle / çıkar"
+          title={t("grafik.watchlistAddTitle")}
         >
           +
         </button>
@@ -533,12 +536,12 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
       ].join(" ")}>
         {displayPairs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 px-4 gap-2">
-            <p className="font-mono text-[10px] text-text-t4 text-center">Henüz coin eklenmedi</p>
+            <p className="font-mono text-[10px] text-text-t4 text-center">{t("grafik.watchlistEmpty")}</p>
             <button
               onClick={() => setPickerOpen(true)}
               className="rounded border border-brand/50 bg-brand/10 text-brand px-2 py-1 font-mono text-[10px] hover:bg-brand/20 transition-colors"
             >
-              + Listeye ekle
+              {t("grafik.watchlistAddFull")}
             </button>
           </div>
         ) : (
@@ -590,7 +593,7 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
                   <button
                     onClick={() => remove(pair)}
                     className="shrink-0 flex items-center justify-center w-6 text-text-t4 hover:text-red-400 transition-colors"
-                    title="Listeden çıkar"
+                    title={t("grafik.watchlistRemoveTitle")}
                   >
                     <span style={{ fontSize: 13 }}>×</span>
                   </button>
@@ -622,6 +625,7 @@ interface MobileWatchlistProps {
 }
 
 export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlistProps): React.ReactElement {
+  const t             = useT();
   const btcD          = useMacroStore((s) => s.btcD);
   const ethD          = useMacroStore((s) => s.ethD);
   const usdtD         = useMacroStore((s) => s.usdtD);
@@ -694,9 +698,9 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
               QUANTIX OS
             </p>
             <p className="font-mono text-[15px] font-black tracking-tight text-text-t1 leading-tight mt-0.5">
-              İzleme Listesi
+              {t("grafik.watchlistTitle")}
               <span className="ml-2 font-mono text-[11px] font-normal text-text-t4">
-                {isFiltered ? watchedPairs.length : PAIRS.length} çift
+                {t("grafik.watchlistPairs", { count: String(isFiltered ? watchedPairs.length : PAIRS.length) })}
               </span>
             </p>
           </div>
@@ -706,7 +710,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                 onClick={reset}
                 className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 font-mono text-[10px] text-text-t3 hover:text-red-400 hover:border-red-500/50 active:scale-95 transition-all"
               >
-                ↺ Sıfırla
+                {t("grafik.watchlistReset")}
               </button>
             )}
             <button
@@ -714,7 +718,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-[11px] font-bold text-white active:scale-95 transition-all"
               style={{ background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)", boxShadow: "0 2px 12px #6366f144" }}
             >
-              + Ekle
+              {t("grafik.watchlistAddShort")}
             </button>
           </div>
         </div>
@@ -751,16 +755,16 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
             <div className="w-16 h-16 rounded-full bg-surface-2/60 flex items-center justify-center border border-border/40">
               <span className="text-3xl text-text-t4">☆</span>
             </div>
-            <p className="font-mono text-sm font-bold text-text-t2 text-center">İzleme listeniz boş</p>
+            <p className="font-mono text-sm font-bold text-text-t2 text-center">{t("grafik.watchlistEmptyTitle")}</p>
             <p className="font-mono text-xs text-text-t4 text-center leading-relaxed">
-              Takip etmek istediğiniz coinleri ekleyin
+              {t("grafik.watchlistEmptyDesc")}
             </p>
             <button
               onClick={() => setPickerOpen(true)}
               className="rounded-xl px-6 py-2.5 font-mono text-sm font-bold text-white active:scale-95 transition-all"
               style={{ background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)" }}
             >
-              + Listeye ekle
+              {t("grafik.watchlistAddFull")}
             </button>
           </div>
         ) : (
@@ -874,7 +878,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                       className="w-full flex items-center justify-center gap-1 py-1.5 font-mono text-[10px] text-text-t4 hover:text-red-400 active:text-red-400 transition-colors"
                     >
                       <span className="text-sm leading-none">×</span>
-                      <span>Listeden çıkar</span>
+                      <span>{t("grafik.watchlistRemoveTitle")}</span>
                     </button>
                   </div>
                 )}

@@ -578,7 +578,7 @@ export default function GrafikPage() {
                 onClick={() => { setMobileView("list"); window.history.back(); }}
                 className="flex items-center gap-1.5 rounded border border-border px-2.5 py-1.5 font-mono text-xs text-text-t3 hover:text-text-t1 hover:border-text-t2 transition-colors"
               >
-                ← Geri
+                {t("grafik.mobileBack")}
               </button>
               <span className="font-mono text-sm font-bold text-text-t1">{pair} · USDT</span>
             </div>
