@@ -20,7 +20,6 @@ interface Props {
   showSr: boolean;
   showSplit: boolean;
   showFlow: boolean;
-  showQuick: boolean;
   clickMode: ChartClickMode;
   hasDrawnLines: boolean;
   onTimeframeChange: (tf: Timeframe) => void;
@@ -36,7 +35,6 @@ interface Props {
   onToggleSr: () => void;
   onToggleSplit: () => void;
   onToggleFlow: () => void;
-  onToggleQuick: () => void;
   onSetClickMode: (mode: ChartClickMode) => void;
   onClearDrawnLines: () => void;
 }
@@ -57,7 +55,6 @@ export function ChartControls({
   showSr,
   showSplit,
   showFlow,
-  showQuick,
   clickMode,
   hasDrawnLines,
   onTimeframeChange,
@@ -73,7 +70,6 @@ export function ChartControls({
   onToggleSr,
   onToggleSplit,
   onToggleFlow,
-  onToggleQuick,
   onSetClickMode,
   onClearDrawnLines,
 }: Props): React.ReactElement {
@@ -161,9 +157,6 @@ export function ChartControls({
           accent="#22c55e"
         >
           {t("grafik.priceMode")}
-        </Toggle>
-        <Toggle active={showQuick} onClick={onToggleQuick} accent="#ec4899">
-          {t("grafik.quickTrade")}
         </Toggle>
       </div>
     </div>
