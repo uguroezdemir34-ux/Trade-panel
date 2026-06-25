@@ -10,6 +10,10 @@ import { useWatchlistStore } from "@/lib/store/watchlistStore";
 import { computeCvdMultiFrame } from "@/lib/orderflow/cvd";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useT } from "@/lib/i18n/context";
+import { Sparkline } from "@/components/grafik/Sparkline";
+
+/* CDN slug overrides (e.g. POL was MATIC in icon libraries) */
+const CDN_OVERRIDES: Record<string, string> = { POL: "matic" };
 
 interface Props {
   activePair: Pair;
@@ -80,6 +84,52 @@ function domChgColor(v: number | null): string {
 }
 
 const GRID_COLS = "grid-cols-[1fr_56px_46px_40px_36px]";
+
+/* ── Coin Logo (CDN ile gerçek ikon, hata olursa renkli badge) ── */
+function CoinLogo({ pair, size = 44 }: { pair: string; size?: number }) {
+  const color = pairColor(pair);
+  const slug  = CDN_OVERRIDES[pair] ?? pair.toLowerCase();
+  const src   = `https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@master/svg/color/${slug}.svg`;
+  const [failed, setFailed] = useState(false);
+
+  if (failed) {
+    return (
+      <div
+        className="rounded-full flex items-center justify-center font-mono font-bold shrink-0"
+        style={{
+          width: size, height: size,
+          backgroundColor: color + "28",
+          border: `1.5px solid ${color}55`,
+          fontSize: Math.round(size * 0.27),
+          color,
+        }}
+      >
+        {pair.slice(0, 3)}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="rounded-full flex items-center justify-center shrink-0 overflow-hidden"
+      style={{
+        width: size, height: size,
+        backgroundColor: color + "18",
+        border: `1.5px solid ${color}40`,
+        padding: Math.round(size * 0.1),
+      }}
+    >
+      <img
+        src={src}
+        alt={pair}
+        width={size - Math.round(size * 0.22)}
+        height={size - Math.round(size * 0.22)}
+        onError={() => setFailed(true)}
+        className="object-contain"
+      />
+    </div>
+  );
+}
 
 /* ── Coin Picker Modal ── */
 function CoinPickerModal({
@@ -490,6 +540,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   const ethDChange24h = useMacroStore((s) => s.ethDChange24h);
   const prices        = useMarketStore((s) => s.prices);
   const allScores     = useScoreStore((s) => s.results);
+  const allCandles    = useCandleStore((s) => s.candles);
 
   const { pairs: watchedPairs, toggle, remove, reset, load } = useWatchlistStore();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -500,166 +551,196 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   const displayPairs = isFiltered ? PAIRS.filter((p) => watchedPairs.includes(p)) : PAIRS;
 
   return (
-    <div className="flex flex-col min-h-0 flex-1 bg-bg-page">
-      {/* Başlık */}
-      <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border bg-bg-card">
-        <div className="flex items-center gap-2">
-          <span className="font-mono text-sm font-bold text-text-t1 tracking-wide uppercase">
-            İzleme Listesi
-          </span>
-          <span className="font-mono text-xs text-text-t4">
-            {isFiltered ? `${watchedPairs.length}` : `${PAIRS.length}`} çift
-          </span>
-          {/* Sıfırla — sadece filtreli modda */}
-          {isFiltered && (
-            <button
-              onClick={reset}
-              className="flex items-center gap-0.5 rounded border border-border px-1.5 py-0.5 font-mono text-[10px] text-text-t4 hover:text-red-400 hover:border-red-400 active:text-red-400 transition-colors"
-              title="Tüm coinlere dön"
-            >
-              ↺ Sıfırla
-            </button>
-          )}
-        </div>
-        <button
-          onClick={() => setPickerOpen(true)}
-          className="flex items-center gap-1.5 rounded-lg border border-brand/50 bg-brand/10 px-3 py-1.5 font-mono text-xs font-bold text-brand hover:bg-brand/20 active:bg-brand/30 transition-colors"
-        >
-          + Listeye ekle
-        </button>
-      </div>
+    <div className="flex flex-col min-h-0 flex-1" style={{ background: "#07080d" }}>
 
-      {/* Dominance */}
-      <div className="shrink-0 flex items-center gap-4 px-4 py-2 border-b border-border/50 bg-bg-card/50">
-        {([
-          { label: "BTC.D", val: btcD,  chg: btcDChange24h },
-          { label: "ETH.D", val: ethD,  chg: ethDChange24h },
-          { label: "USDT.D", val: usdtD, chg: null },
-        ] as const).map(({ label, val, chg }) => (
-          <div key={label} className="flex items-center gap-1">
-            <span className="font-mono text-[10px] text-text-t4">{label}</span>
-            <span className="font-mono text-[10px] font-medium text-text-t2 tabular-nums">{fmtDom(val)}</span>
-            {chg !== null && chg !== undefined && (
-              <span className={`font-mono text-[9px] ${domChgColor(chg)}`}>
-                {chg >= 0 ? "+" : ""}{chg.toFixed(1)}
+      {/* ── Header ── */}
+      <div
+        className="shrink-0 px-4 pt-4 pb-3 border-b border-zinc-800/80"
+        style={{ background: "linear-gradient(180deg, #0d0e17 0%, #09090f 100%)" }}
+      >
+        {/* Üst satır: başlık + butonlar */}
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <p className="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-zinc-500">
+              QUANTIX OS
+            </p>
+            <p className="font-mono text-[15px] font-black tracking-tight text-white leading-tight mt-0.5">
+              İzleme Listesi
+              <span className="ml-2 font-mono text-[11px] font-normal text-zinc-500">
+                {isFiltered ? watchedPairs.length : PAIRS.length} çift
               </span>
-            )}
+            </p>
           </div>
-        ))}
+          <div className="flex items-center gap-2">
+            {isFiltered && (
+              <button
+                onClick={reset}
+                className="flex items-center gap-1 rounded-lg border border-zinc-700 px-2.5 py-1.5 font-mono text-[10px] text-zinc-400 hover:text-red-400 hover:border-red-500/50 active:scale-95 transition-all"
+              >
+                ↺ Sıfırla
+              </button>
+            )}
+            <button
+              onClick={() => setPickerOpen(true)}
+              className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-[11px] font-bold text-white active:scale-95 transition-all"
+              style={{ background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)", boxShadow: "0 2px 12px #6366f155" }}
+            >
+              + Ekle
+            </button>
+          </div>
+        </div>
+
+        {/* Dominance satırı */}
+        <div className="flex items-center gap-4">
+          {([
+            { label: "BTC.D",  val: btcD,  chg: btcDChange24h },
+            { label: "ETH.D",  val: ethD,  chg: ethDChange24h },
+            { label: "USDT.D", val: usdtD, chg: null },
+          ] as const).map(({ label, val, chg }) => (
+            <div key={label} className="flex items-center gap-1">
+              <span className="font-mono text-[9px] text-zinc-600 uppercase tracking-wider">{label}</span>
+              <span className="font-mono text-[10px] font-semibold text-zinc-300 tabular-nums">{fmtDom(val)}</span>
+              {chg !== null && chg !== undefined && (
+                <span className={`font-mono text-[9px] ${domChgColor(chg)}`}>
+                  {chg >= 0 ? "+" : ""}{chg.toFixed(1)}
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Kolon başlıkları */}
-      <div className="shrink-0 grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 px-4 py-1.5 border-b border-border/40 bg-bg-card/30">
-        <span className="font-mono text-[9px] text-text-t4 uppercase tracking-wider">Sembol</span>
-        <span />
-        <span className="font-mono text-[9px] text-text-t4 uppercase tracking-wider text-right">Fiyat / Değişim</span>
-        <span className="font-mono text-[9px] text-text-t4 uppercase tracking-wider text-right w-8">QX</span>
-      </div>
-
-      {/* Coin satırları */}
+      {/* ── Coin satırları (glassmorphism kartlar) ── */}
       <div className={[
-        "flex-1 overflow-y-auto",
+        "flex-1 overflow-y-auto px-3 py-2",
         "[&::-webkit-scrollbar]:w-[3px]",
-        "[&::-webkit-scrollbar-thumb]:bg-border/60",
+        "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-700",
         "[&::-webkit-scrollbar-track]:bg-transparent",
       ].join(" ")}>
         {displayPairs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-8 gap-4">
-            <div className="w-14 h-14 rounded-full bg-surface-s2 flex items-center justify-center">
-              <span className="text-2xl text-text-t4">☆</span>
+            <div className="w-16 h-16 rounded-full bg-zinc-800/60 flex items-center justify-center border border-zinc-700/40">
+              <span className="text-3xl text-zinc-600">☆</span>
             </div>
-            <p className="font-mono text-sm font-bold text-text-t2 text-center">İzleme listeniz boş</p>
-            <p className="font-mono text-xs text-text-t4 text-center leading-relaxed">
+            <p className="font-mono text-sm font-bold text-zinc-300 text-center">İzleme listeniz boş</p>
+            <p className="font-mono text-xs text-zinc-600 text-center leading-relaxed">
               Takip etmek istediğiniz coinleri ekleyin
             </p>
             <button
               onClick={() => setPickerOpen(true)}
-              className="rounded-xl bg-brand px-6 py-2.5 font-mono text-sm font-bold text-white hover:bg-brand/80 active:scale-95 transition-all"
+              className="rounded-xl px-6 py-2.5 font-mono text-sm font-bold text-white active:scale-95 transition-all"
+              style={{ background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)" }}
             >
               + Listeye ekle
             </button>
           </div>
         ) : (
           displayPairs.map((pair) => {
-            const tick     = prices[pair];
-            const last     = tick?.last    ?? 0;
-            const open24h  = tick?.open24h ?? 0;
-            const abs      = open24h > 0 ? last - open24h : 0;
-            const chg      = tick?.chg;
-            const isActive = pair === activePair;
-            const sc       = allScores[pair]?.score;
-            const color    = pairColor(pair);
+            const tick      = prices[pair];
+            const last      = tick?.last ?? 0;
+            const chg       = tick?.chg;
+            const isActive  = pair === activePair;
+            const sc        = allScores[pair]?.score;
+            const color     = pairColor(pair);
+
+            /* Sparkline: 1h son 24 kapanış */
+            const rawCandles = allCandles[`${pair}_1h`];
+            const sparkPoints: number[] = rawCandles
+              ? rawCandles.slice(-24).map((c) => c.close)
+              : [];
+            const sparkColor = (chg ?? 0) >= 0 ? "#22c55e" : "#ef4444";
 
             const scoreBg =
               sc == null ? "bg-zinc-700" :
               sc >= 70   ? "bg-emerald-600" :
               sc >= 40   ? "bg-amber-600"   : "bg-red-600";
 
+            /* Kart stili — aktif kart coinin rengiyle parlıyor */
+            const cardStyle = isActive
+              ? {
+                  background:  `linear-gradient(135deg, ${color}16 0%, #13131a 100%)`,
+                  borderColor: `${color}60`,
+                  boxShadow:   `0 2px 16px ${color}22`,
+                }
+              : {
+                  background:  "rgba(18, 18, 25, 0.85)",
+                  borderColor: "rgba(50, 50, 65, 0.60)",
+                  boxShadow:   "0 1px 6px rgba(0,0,0,0.35)",
+                };
+
             return (
               <div
                 key={pair}
-                className={`flex items-stretch border-b border-border/30 border-l-2 ${
-                  isActive ? "bg-brand/10 border-l-brand" : "border-l-transparent"
-                }`}
+                className="mb-2 rounded-2xl border overflow-hidden"
+                style={cardStyle}
               >
-                {/* Ana navigasyon alanı */}
+                {/* Ana tıklanabilir alan */}
                 <button
                   onClick={() => onPairSelect(pair)}
-                  className="flex-1 grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 px-4 py-3 text-left active:bg-bg-hover min-w-0"
+                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left active:brightness-110 transition-all"
                 >
-                  {/* Coin badge */}
-                  <div
-                    className="w-9 h-9 rounded-full flex items-center justify-center font-mono text-[11px] font-bold text-white shrink-0"
-                    style={{ backgroundColor: color + "30", border: `1.5px solid ${color}60` }}
-                  >
-                    <span style={{ color }}>{pair.slice(0, 3)}</span>
-                  </div>
+                  {/* Coin logosu */}
+                  <CoinLogo pair={pair} size={44} />
 
-                  {/* İsim + sub */}
-                  <div className="min-w-0">
-                    <p className={`font-mono text-[13px] font-bold leading-none truncate ${isActive ? "text-brand" : "text-text-t1"}`}>
+                  {/* İsim bloğu */}
+                  <div className="flex-1 min-w-0">
+                    <p
+                      className="font-mono text-[15px] font-black tracking-tight leading-tight"
+                      style={{ color: isActive ? color : "#f4f4f5" }}
+                    >
                       {pair}
                     </p>
-                    <p className="font-mono text-[10px] text-text-t4 mt-0.5 truncate">{coinName(pair)} / USDT</p>
+                    <p className="font-mono text-[10px] text-zinc-500 mt-0.5 truncate">
+                      {coinName(pair)}&nbsp;/&nbsp;USDT
+                    </p>
                   </div>
 
-                  {/* Fiyat + abs değişim + % */}
-                  <div className="text-right min-w-0">
-                    <p className="font-mono text-[13px] font-bold text-text-t1 tabular-nums leading-none">
+                  {/* Sparkline */}
+                  <div className="shrink-0">
+                    {sparkPoints.length >= 2 ? (
+                      <Sparkline points={sparkPoints} color={sparkColor} width={54} height={26} />
+                    ) : (
+                      <div style={{ width: 54, height: 26 }} />
+                    )}
+                  </div>
+
+                  {/* Fiyat + değişim + QX skoru */}
+                  <div className="shrink-0 flex flex-col items-end gap-1 min-w-[80px]">
+                    <p className="font-mono text-[14px] font-bold text-zinc-100 tabular-nums leading-none">
                       {last > 0 ? fmtPrice(last) : "—"}
                     </p>
-                    <p className={`font-mono text-[10px] tabular-nums mt-0.5 ${chgColor(chg)}`}>
-                      {open24h > 0 && <span>{fmtAbs(abs, last)}&nbsp;</span>}
-                      {fmtPct(chg)}
-                    </p>
-                  </div>
-
-                  {/* QX skor */}
-                  <div className="shrink-0">
-                    {sc == null ? (
-                      <span className="font-mono text-[10px] text-text-t4">—</span>
-                    ) : (
-                      <span className={`flex items-center justify-center w-9 h-7 rounded font-mono text-xs font-bold text-white ${scoreBg}`}>
-                        {sc}
+                    <div className="flex items-center gap-1.5">
+                      <span className={`font-mono text-[10px] tabular-nums ${chgColor(chg)}`}>
+                        {fmtPct(chg)}
                       </span>
-                    )}
+                      {sc != null && (
+                        <span className={`flex items-center justify-center w-8 h-5 rounded font-mono text-[10px] font-bold text-white ${scoreBg}`}>
+                          {sc}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </button>
 
-                {/* × Kaldır butonu — sadece özel listede */}
+                {/* × Kaldır butonu — sadece özel listede, kartın alt kısmında ince çizgi */}
                 {isFiltered && (
-                  <button
-                    onClick={() => remove(pair)}
-                    className="shrink-0 flex items-center justify-center w-11 text-text-t4 hover:text-red-400 active:text-red-400 hover:bg-red-500/8 transition-colors"
-                    title="Listeden çıkar"
-                  >
-                    <span className="text-lg leading-none font-light">×</span>
-                  </button>
+                  <div className="border-t border-zinc-800/60">
+                    <button
+                      onClick={() => remove(pair)}
+                      className="w-full flex items-center justify-center gap-1 py-1.5 font-mono text-[10px] text-zinc-600 hover:text-red-400 active:text-red-400 transition-colors"
+                    >
+                      <span className="text-sm leading-none">×</span>
+                      <span>Listeden çıkar</span>
+                    </button>
+                  </div>
                 )}
               </div>
             );
           })
         )}
+
+        {/* Alt boşluk (bottom nav için) */}
+        <div className="h-4" />
       </div>
 
       {pickerOpen && (
