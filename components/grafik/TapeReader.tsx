@@ -3,14 +3,10 @@
 /**
  * TAPE READER — Time & Sales (gerçekleşen işlemler akışı).
  *
- * Veri kaynağı: tradeFeedStore (canlı OKX WS trade feed).
- * ÖNEMLİ KISIT: Sadece BTC ve ETH desteklenir — trade feed bu iki çiftle sınırlı.
- * Diğer çiftler için bilgi mesajı gösterilir.
+ * Veri kaynağı: tradeFeedStore → OKX WS trades kanalı (tüm 20 parite).
  *
- * Büyük işlem eşiği:
- *   BTC: notional > $100K
- *   ETH: notional > $30K
- *   Diğer: notional > $50K
+ * Büyük işlem eşiği (pair başına):
+ *   BTC: $100K  ETH: $30K  BNB/SOL: $20K  Diğer: $10K
  */
 
 import { useMemo } from "react";
@@ -20,15 +16,15 @@ import type { Trade } from "@/lib/orderflow/types";
 import { useT } from "@/lib/i18n/context";
 import { formatTickPrice } from "@/lib/i18n/format";
 
-const FEED_PAIRS = new Set<string>(["BTC", "ETH"]);
-
 const WHALE_THRESHOLD: Record<string, number> = {
   BTC: 100_000,
-  ETH: 30_000,
+  ETH:  30_000,
+  BNB:  20_000,
+  SOL:  20_000,
 };
 
 function getWhaleThreshold(pair: string): number {
-  return WHALE_THRESHOLD[pair] ?? 50_000;
+  return WHALE_THRESHOLD[pair] ?? 10_000;
 }
 
 function fmtTime(ts: number): string {
@@ -38,13 +34,19 @@ function fmtTime(ts: number): string {
 
 function fmtQty(qty: number, pair: string): string {
   if (pair === "BTC") return qty < 0.01 ? qty.toFixed(4) : qty.toFixed(3);
-  return qty < 0.1 ? qty.toFixed(3) : qty.toFixed(2);
+  if (qty < 0.01) return qty.toFixed(4);
+  if (qty < 1)    return qty.toFixed(3);
+  return qty.toFixed(2);
 }
 
 function fmtK(usd: number): string {
   if (usd >= 1_000_000) return `$${(usd / 1_000_000).toFixed(2)}M`;
-  if (usd >= 1_000) return `$${(usd / 1_000).toFixed(1)}K`;
+  if (usd >= 1_000)     return `$${(usd / 1_000).toFixed(1)}K`;
   return `$${usd.toFixed(0)}`;
+}
+
+function fmtThreshold(v: number): string {
+  return v >= 1_000_000 ? `$${v / 1_000_000}M` : `$${v / 1_000}K`;
 }
 
 interface TradeRowProps {
@@ -83,28 +85,12 @@ interface Props {
 
 export function TapeReader({ pair, maxRows = 60 }: Props) {
   const t = useT();
-  // tradeFeedStore.getTrades is not reactive — use feeds selector
-  const feed = useTradeFeedStore((s) => s.feeds[pair as "BTC" | "ETH"]);
+  const feed = useTradeFeedStore((s) => s.feeds[pair]);
 
   const recentTrades: readonly Trade[] = useMemo(() => {
     if (!feed) return [];
     return feed.buffer.items.slice(-maxRows).reverse();
   }, [feed, maxRows]);
-
-  if (!FEED_PAIRS.has(pair)) {
-    return (
-      <div className="flex flex-col items-center justify-center h-48 gap-2 text-center px-4">
-        <span className="font-mono text-xs text-text-t3">
-          Trade feed sadece BTC ve ETH için aktif
-        </span>
-        <span className="font-mono text-2xs text-text-t4">
-          {pair} için tape verisi mevcut değil
-        </span>
-      </div>
-    );
-  }
-
-  const whaleThreshold = getWhaleThreshold(pair);
 
   if (!recentTrades.length) {
     return (
@@ -114,9 +100,10 @@ export function TapeReader({ pair, maxRows = 60 }: Props) {
     );
   }
 
-  const buyCount = recentTrades.filter((t) => t.side === "buy").length;
+  const whaleThreshold = getWhaleThreshold(pair);
+  const buyCount  = recentTrades.filter((t) => t.side === "buy").length;
   const sellCount = recentTrades.length - buyCount;
-  const buyPct = Math.round((buyCount / recentTrades.length) * 100);
+  const buyPct    = Math.round((buyCount / recentTrades.length) * 100);
 
   return (
     <div className="flex flex-col">
@@ -127,9 +114,11 @@ export function TapeReader({ pair, maxRows = 60 }: Props) {
           <div className="h-full bg-green-500" style={{ width: `${buyPct}%` }} />
         </div>
         <span className="font-mono text-2xs text-red-400">SEL {100 - buyPct}%</span>
-        <span className="font-mono text-2xs text-text-t4 ml-2">{t("common.tradeCount", { n: recentTrades.length })}</span>
+        <span className="font-mono text-2xs text-text-t4 ml-2">
+          {t("common.tradeCount", { n: recentTrades.length })}
+        </span>
         <span className="font-mono text-2xs text-text-t4">
-          🐋 &gt;{whaleThreshold >= 1000 ? `$${whaleThreshold / 1000}K` : `$${whaleThreshold}`}
+          🐋 &gt;{fmtThreshold(whaleThreshold)}
         </span>
       </div>
 

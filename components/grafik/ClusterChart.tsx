@@ -6,26 +6,31 @@
  * Footprint chart'ın basitleştirilmiş versiyonu: trade feed'deki son N işlemi
  * fiyat bucket'larına gruplar, her bucket'ta buy/sell notional gösterir.
  *
- * KISIT: Trade feed sadece BTC ve ETH için aktif.
- * Bucket boyutu: BTC → $100 aralık, ETH → $5 aralık.
+ * Veri kaynağı: tradeFeedStore → OKX WS trades kanalı (tüm 20 parite).
+ *
+ * Bucket boyutu: fiyatın ~%0.2'si kadar dinamik hesaplanır, "yuvarlak sayı"ya snap edilir.
+ * Örn: BTC $60K → $100, ETH $3K → $5, SOL $150 → $0.20, XRP $0.5 → $0.001
  *
  * "Point of Control (POC)" = en yüksek toplam hacimli fiyat bölgesi.
  */
 
 import { useMemo } from "react";
 import { useTradeFeedStore } from "@/lib/store/tradeFeedStore";
+import { useMarketStore } from "@/lib/store/marketStore";
 import type { Pair } from "@/lib/constants/pairs";
 import { formatTickPrice } from "@/lib/i18n/format";
 
-const FEED_PAIRS = new Set<string>(["BTC", "ETH"]);
-
-const BUCKET_SIZE: Record<string, number> = {
-  BTC: 100,
-  ETH: 5,
-};
-
-function getBucketSize(pair: string): number {
-  return BUCKET_SIZE[pair] ?? 10;
+/**
+ * Fiyata göre dinamik bucket boyutu: fiyatın ~%0.2'si, "nice number"'a yuvarlanır.
+ * 0.002 × price'ı büyüklük mertebesine göre snap eder (1 / 2 / 5 × 10^n).
+ */
+function computeBucketSize(price: number): number {
+  if (!price || price <= 0) return 1;
+  const raw = price * 0.002;
+  const magnitude = Math.pow(10, Math.floor(Math.log10(raw)));
+  const normalized = raw / magnitude;
+  const nice = normalized < 1.5 ? 1 : normalized < 3.5 ? 2 : normalized < 7.5 ? 5 : 10;
+  return nice * magnitude;
 }
 
 interface Bucket {
@@ -34,12 +39,12 @@ interface Bucket {
   buyUsd: number;
   sellUsd: number;
   totalUsd: number;
-  delta: number; // buy - sell
+  delta: number;
 }
 
 function fmtK(usd: number): string {
   if (usd >= 1_000_000) return `${(usd / 1_000_000).toFixed(1)}M`;
-  if (usd >= 1_000) return `${(usd / 1_000).toFixed(0)}K`;
+  if (usd >= 1_000)     return `${(usd / 1_000).toFixed(0)}K`;
   return `${usd.toFixed(0)}`;
 }
 
@@ -49,13 +54,17 @@ interface Props {
 }
 
 export function ClusterChart({ pair, maxBuckets = 15 }: Props) {
-  const feed = useTradeFeedStore((s) => s.feeds[pair as "BTC" | "ETH"]);
+  const feed      = useTradeFeedStore((s) => s.feeds[pair]);
+  const livePrice = useMarketStore((s) => s.prices[pair]?.last ?? 0);
 
   const { buckets, poc, maxTotal } = useMemo(() => {
     const trades = feed?.buffer.items ?? [];
     if (!trades.length) return { buckets: [], poc: null, maxTotal: 1 };
 
-    const bucketSize = getBucketSize(pair);
+    // Son bilinen fiyat yoksa son işlemin fiyatını kullan
+    const refPrice = livePrice > 0 ? livePrice : (trades[trades.length - 1]?.price ?? 0);
+    const bucketSize = computeBucketSize(refPrice);
+
     const map = new Map<number, Bucket>();
 
     for (const trade of trades) {
@@ -66,30 +75,20 @@ export function ClusterChart({ pair, maxBuckets = 15 }: Props) {
         map.set(key, b);
       }
       if (trade.side === "buy") b.buyUsd += trade.notionalUsd;
-      else b.sellUsd += trade.notionalUsd;
+      else                      b.sellUsd += trade.notionalUsd;
       b.totalUsd += trade.notionalUsd;
       b.delta = b.buyUsd - b.sellUsd;
     }
 
     const sorted = [...map.values()]
-      .sort((a, b) => b.priceMin - a.priceMin) // desc price
+      .sort((a, b) => b.priceMin - a.priceMin)
       .slice(0, maxBuckets);
 
-    const poc = sorted.reduce((best, b) => (b.totalUsd > (best?.totalUsd ?? 0) ? b : best), null as Bucket | null);
+    const poc  = sorted.reduce<Bucket | null>((best, b) => (b.totalUsd > (best?.totalUsd ?? 0) ? b : best), null);
     const maxT = sorted.reduce((m, b) => Math.max(m, b.totalUsd), 1);
 
     return { buckets: sorted, poc, maxTotal: maxT };
-  }, [feed, pair, maxBuckets]);
-
-  if (!FEED_PAIRS.has(pair)) {
-    return (
-      <div className="flex flex-col items-center justify-center h-48 gap-2 text-center px-4">
-        <span className="font-mono text-xs text-text-t3">
-          Cluster verisi sadece BTC ve ETH için mevcut
-        </span>
-      </div>
-    );
-  }
+  }, [feed, pair, maxBuckets, livePrice]);
 
   if (!buckets.length) {
     return (
@@ -129,9 +128,9 @@ export function ClusterChart({ pair, maxBuckets = 15 }: Props) {
       {/* Bucket rows */}
       <div className="overflow-y-auto max-h-64 flex flex-col">
         {buckets.map((b) => {
-          const buyPct = (b.buyUsd / maxTotal) * 100;
-          const sellPct = (b.sellUsd / maxTotal) * 100;
-          const isPoc = poc !== null && b.priceMin === poc.priceMin;
+          const buyPct   = (b.buyUsd / maxTotal) * 100;
+          const sellPct  = (b.sellUsd / maxTotal) * 100;
+          const isPoc    = poc !== null && b.priceMin === poc.priceMin;
           const deltaPct = b.totalUsd > 0 ? (b.delta / b.totalUsd) * 100 : 0;
 
           return (
@@ -141,40 +140,28 @@ export function ClusterChart({ pair, maxBuckets = 15 }: Props) {
                 isPoc ? "bg-yellow-500/5 border-l-2 border-yellow-500" : ""
               }`}
             >
-              {/* Price range */}
               <span className={`font-mono text-2xs tabular-nums ${isPoc ? "text-yellow-400 font-bold" : "text-text-t3"}`}>
                 {formatTickPrice(b.priceMin)}
                 {isPoc && " ★"}
               </span>
 
-              {/* Buy bar */}
               <div className="flex items-center gap-1">
                 <div className="flex-1 h-3 bg-surface-s2 rounded-sm overflow-hidden">
-                  <div
-                    className="h-full bg-green-500/70 transition-all duration-300"
-                    style={{ width: `${buyPct}%` }}
-                  />
+                  <div className="h-full bg-green-500/70 transition-all duration-300" style={{ width: `${buyPct}%` }} />
                 </div>
                 <span className="font-mono text-2xs text-text-t4 w-10 text-right">{fmtK(b.buyUsd)}</span>
               </div>
 
-              {/* Sell bar */}
               <div className="flex items-center gap-1">
                 <div className="flex-1 h-3 bg-surface-s2 rounded-sm overflow-hidden">
-                  <div
-                    className="h-full bg-red-500/70 transition-all duration-300"
-                    style={{ width: `${sellPct}%` }}
-                  />
+                  <div className="h-full bg-red-500/70 transition-all duration-300" style={{ width: `${sellPct}%` }} />
                 </div>
                 <span className="font-mono text-2xs text-text-t4 w-10 text-right">{fmtK(b.sellUsd)}</span>
               </div>
 
-              {/* Delta */}
-              <span
-                className={`font-mono text-2xs tabular-nums text-right ${
-                  deltaPct > 10 ? "text-green-400" : deltaPct < -10 ? "text-red-400" : "text-text-t4"
-                }`}
-              >
+              <span className={`font-mono text-2xs tabular-nums text-right ${
+                deltaPct > 10 ? "text-green-400" : deltaPct < -10 ? "text-red-400" : "text-text-t4"
+              }`}>
                 {deltaPct >= 0 ? "+" : ""}{deltaPct.toFixed(0)}%
               </span>
             </div>
