@@ -11,6 +11,7 @@ import { computeCvdMultiFrame } from "@/lib/orderflow/cvd";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useT } from "@/lib/i18n/context";
 import { Sparkline } from "@/components/grafik/Sparkline";
+import { useSettingsStore } from "@/lib/store/settingsStore";
 
 /* CDN slug overrides (e.g. POL was MATIC in icon libraries) */
 const CDN_OVERRIDES: Record<string, string> = { POL: "matic" };
@@ -541,6 +542,8 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   const prices        = useMarketStore((s) => s.prices);
   const allScores     = useScoreStore((s) => s.results);
   const allCandles    = useCandleStore((s) => s.candles);
+  const theme         = useSettingsStore((s) => s.theme);
+  const isDark        = theme === "dark";
 
   const { pairs: watchedPairs, toggle, remove, reset, load } = useWatchlistStore();
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -551,22 +554,19 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   const displayPairs = isFiltered ? PAIRS.filter((p) => watchedPairs.includes(p)) : PAIRS;
 
   return (
-    <div className="flex flex-col min-h-0 flex-1" style={{ background: "#07080d" }}>
+    <div className="flex flex-col min-h-0 flex-1 bg-bg-page">
 
       {/* ── Header ── */}
-      <div
-        className="shrink-0 px-4 pt-4 pb-3 border-b border-zinc-800/80"
-        style={{ background: "linear-gradient(180deg, #0d0e17 0%, #09090f 100%)" }}
-      >
+      <div className="shrink-0 px-4 pt-4 pb-3 border-b border-border bg-bg-card">
         {/* Üst satır: başlık + butonlar */}
         <div className="flex items-center justify-between mb-3">
           <div>
-            <p className="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-zinc-500">
+            <p className="font-mono text-[10px] font-bold tracking-[0.2em] uppercase text-text-t4">
               QUANTIX OS
             </p>
-            <p className="font-mono text-[15px] font-black tracking-tight text-white leading-tight mt-0.5">
+            <p className="font-mono text-[15px] font-black tracking-tight text-text-t1 leading-tight mt-0.5">
               İzleme Listesi
-              <span className="ml-2 font-mono text-[11px] font-normal text-zinc-500">
+              <span className="ml-2 font-mono text-[11px] font-normal text-text-t4">
                 {isFiltered ? watchedPairs.length : PAIRS.length} çift
               </span>
             </p>
@@ -575,7 +575,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
             {isFiltered && (
               <button
                 onClick={reset}
-                className="flex items-center gap-1 rounded-lg border border-zinc-700 px-2.5 py-1.5 font-mono text-[10px] text-zinc-400 hover:text-red-400 hover:border-red-500/50 active:scale-95 transition-all"
+                className="flex items-center gap-1 rounded-lg border border-border px-2.5 py-1.5 font-mono text-[10px] text-text-t3 hover:text-red-400 hover:border-red-500/50 active:scale-95 transition-all"
               >
                 ↺ Sıfırla
               </button>
@@ -583,7 +583,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
             <button
               onClick={() => setPickerOpen(true)}
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-mono text-[11px] font-bold text-white active:scale-95 transition-all"
-              style={{ background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)", boxShadow: "0 2px 12px #6366f155" }}
+              style={{ background: "linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)", boxShadow: "0 2px 12px #6366f144" }}
             >
               + Ekle
             </button>
@@ -598,8 +598,8 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
             { label: "USDT.D", val: usdtD, chg: null },
           ] as const).map(({ label, val, chg }) => (
             <div key={label} className="flex items-center gap-1">
-              <span className="font-mono text-[9px] text-zinc-600 uppercase tracking-wider">{label}</span>
-              <span className="font-mono text-[10px] font-semibold text-zinc-300 tabular-nums">{fmtDom(val)}</span>
+              <span className="font-mono text-[9px] text-text-t4 uppercase tracking-wider">{label}</span>
+              <span className="font-mono text-[10px] font-semibold text-text-t2 tabular-nums">{fmtDom(val)}</span>
               {chg !== null && chg !== undefined && (
                 <span className={`font-mono text-[9px] ${domChgColor(chg)}`}>
                   {chg >= 0 ? "+" : ""}{chg.toFixed(1)}
@@ -614,16 +614,16 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
       <div className={[
         "flex-1 overflow-y-auto px-3 py-2",
         "[&::-webkit-scrollbar]:w-[3px]",
-        "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-zinc-700",
+        "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-border/80",
         "[&::-webkit-scrollbar-track]:bg-transparent",
       ].join(" ")}>
         {displayPairs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 px-8 gap-4">
-            <div className="w-16 h-16 rounded-full bg-zinc-800/60 flex items-center justify-center border border-zinc-700/40">
-              <span className="text-3xl text-zinc-600">☆</span>
+            <div className="w-16 h-16 rounded-full bg-surface-2/60 flex items-center justify-center border border-border/40">
+              <span className="text-3xl text-text-t4">☆</span>
             </div>
-            <p className="font-mono text-sm font-bold text-zinc-300 text-center">İzleme listeniz boş</p>
-            <p className="font-mono text-xs text-zinc-600 text-center leading-relaxed">
+            <p className="font-mono text-sm font-bold text-text-t2 text-center">İzleme listeniz boş</p>
+            <p className="font-mono text-xs text-text-t4 text-center leading-relaxed">
               Takip etmek istediğiniz coinleri ekleyin
             </p>
             <button
@@ -651,21 +651,29 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
             const sparkColor = (chg ?? 0) >= 0 ? "#22c55e" : "#ef4444";
 
             const scoreBg =
-              sc == null ? "bg-zinc-700" :
+              sc == null ? "bg-surface-2" :
               sc >= 70   ? "bg-emerald-600" :
               sc >= 40   ? "bg-amber-600"   : "bg-red-600";
 
-            /* Kart stili — aktif kart coinin rengiyle parlıyor */
+            /* Kart stili — temaya duyarlı, aktif kart coinin rengiyle parlıyor */
+            const inactiveBg  = isDark ? "rgba(22, 22, 30, 0.90)" : "rgba(255, 255, 255, 0.90)";
+            const inactiveBdr = isDark ? "rgba(55, 55, 75, 0.60)"  : "rgba(200, 200, 215, 0.70)";
+            const activeBg    = isDark
+              ? `linear-gradient(135deg, ${color}18 0%, #141420 100%)`
+              : `linear-gradient(135deg, ${color}12 0%, #ffffff 100%)`;
+
             const cardStyle = isActive
               ? {
-                  background:  `linear-gradient(135deg, ${color}16 0%, #13131a 100%)`,
-                  borderColor: `${color}60`,
-                  boxShadow:   `0 2px 16px ${color}22`,
+                  background:  activeBg,
+                  borderColor: `${color}55`,
+                  boxShadow:   `0 2px 16px ${color}20`,
                 }
               : {
-                  background:  "rgba(18, 18, 25, 0.85)",
-                  borderColor: "rgba(50, 50, 65, 0.60)",
-                  boxShadow:   "0 1px 6px rgba(0,0,0,0.35)",
+                  background:  inactiveBg,
+                  borderColor: inactiveBdr,
+                  boxShadow:   isDark
+                    ? "0 1px 6px rgba(0,0,0,0.35)"
+                    : "0 1px 6px rgba(0,0,0,0.06)",
                 };
 
             return (
@@ -685,12 +693,12 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                   {/* İsim bloğu */}
                   <div className="flex-1 min-w-0">
                     <p
-                      className="font-mono text-[15px] font-black tracking-tight leading-tight"
-                      style={{ color: isActive ? color : "#f4f4f5" }}
+                      className={`font-mono text-[15px] font-black tracking-tight leading-tight ${isActive ? "" : "text-text-t1"}`}
+                      style={isActive ? { color } : undefined}
                     >
                       {pair}
                     </p>
-                    <p className="font-mono text-[10px] text-zinc-500 mt-0.5 truncate">
+                    <p className="font-mono text-[10px] text-text-t4 mt-0.5 truncate">
                       {coinName(pair)}&nbsp;/&nbsp;USDT
                     </p>
                   </div>
@@ -706,7 +714,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
 
                   {/* Fiyat + değişim + QX skoru */}
                   <div className="shrink-0 flex flex-col items-end gap-1 min-w-[80px]">
-                    <p className="font-mono text-[14px] font-bold text-zinc-100 tabular-nums leading-none">
+                    <p className="font-mono text-[14px] font-bold text-text-t1 tabular-nums leading-none">
                       {last > 0 ? fmtPrice(last) : "—"}
                     </p>
                     <div className="flex items-center gap-1.5">
@@ -722,12 +730,12 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                   </div>
                 </button>
 
-                {/* × Kaldır butonu — sadece özel listede, kartın alt kısmında ince çizgi */}
+                {/* × Kaldır butonu — sadece özel listede */}
                 {isFiltered && (
-                  <div className="border-t border-zinc-800/60">
+                  <div className="border-t border-border/40">
                     <button
                       onClick={() => remove(pair)}
-                      className="w-full flex items-center justify-center gap-1 py-1.5 font-mono text-[10px] text-zinc-600 hover:text-red-400 active:text-red-400 transition-colors"
+                      className="w-full flex items-center justify-center gap-1 py-1.5 font-mono text-[10px] text-text-t4 hover:text-red-400 active:text-red-400 transition-colors"
                     >
                       <span className="text-sm leading-none">×</span>
                       <span>Listeden çıkar</span>
