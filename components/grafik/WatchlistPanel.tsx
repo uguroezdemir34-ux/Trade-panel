@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useCandleStore } from "@/lib/store/candleStore";
 import { useTradeFeedStore, selectTrades } from "@/lib/store/tradeFeedStore";
+import { useWatchlistStore } from "@/lib/store/watchlistStore";
 import { computeCvdMultiFrame } from "@/lib/orderflow/cvd";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useT } from "@/lib/i18n/context";
@@ -69,6 +70,120 @@ function domChgColor(v: number | null): string {
 }
 
 const GRID_COLS = "grid-cols-[1fr_56px_46px_40px_36px]";
+
+/* ── Coin Picker Modal ── */
+function CoinPickerModal({
+  watchedPairs,
+  onToggle,
+  onClose,
+}: {
+  watchedPairs: Pair[];
+  onToggle: (pair: Pair) => void;
+  onClose: () => void;
+}) {
+  const prices = useMarketStore((s) => s.prices);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60"
+      onClick={onClose}
+    >
+      <div
+        className="w-full md:w-[380px] max-h-[82vh] bg-bg-card rounded-t-2xl md:rounded-xl border border-border flex flex-col overflow-hidden shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Header */}
+        <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border">
+          <span className="font-mono text-sm font-bold text-text-t1 tracking-wide">
+            Coin Seç
+          </span>
+          <button
+            onClick={onClose}
+            className="font-mono text-base text-text-t4 hover:text-text-t1 transition-colors leading-none"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Hint */}
+        <div className="shrink-0 px-4 py-2 bg-surface-s1 border-b border-border/40">
+          <p className="font-mono text-[10px] text-text-t4">
+            {watchedPairs.length} / {PAIRS.length} coin seçili — listeye eklemek/çıkarmak için tıkla
+          </p>
+        </div>
+
+        {/* Coin listesi */}
+        <div className="flex-1 overflow-y-auto">
+          {PAIRS.map((pair) => {
+            const isWatched = watchedPairs.includes(pair);
+            const tick = prices[pair];
+            const last = tick?.last ?? 0;
+            const chg = tick?.chg;
+            const color = pairColor(pair);
+
+            return (
+              <button
+                key={pair}
+                onClick={() => onToggle(pair)}
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-bg-hover active:bg-bg-hover border-b border-border/30 transition-colors text-left"
+              >
+                {/* Coin badge */}
+                <div
+                  className="w-8 h-8 rounded-full flex items-center justify-center font-mono text-[10px] font-bold shrink-0"
+                  style={{ backgroundColor: color + "28", border: `1.5px solid ${color}55` }}
+                >
+                  <span style={{ color }}>{pair.slice(0, 3)}</span>
+                </div>
+
+                {/* İsim */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-mono text-[13px] font-bold text-text-t1 leading-none">{pair}</p>
+                  <p className="font-mono text-[10px] text-text-t4 mt-0.5">Perp / USDT</p>
+                </div>
+
+                {/* Fiyat */}
+                <div className="text-right mr-2 shrink-0">
+                  <p className="font-mono text-[12px] font-semibold text-text-t1 tabular-nums leading-none">
+                    {last > 0 ? fmtPrice(last) : "—"}
+                  </p>
+                  <p className={`font-mono text-[10px] tabular-nums mt-0.5 ${chgColor(chg)}`}>
+                    {fmtPct(chg)}
+                  </p>
+                </div>
+
+                {/* Checkmark */}
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 border-2 transition-colors ${
+                  isWatched
+                    ? "bg-brand border-brand"
+                    : "border-border bg-transparent"
+                }`}>
+                  {isWatched && (
+                    <span className="text-white font-bold leading-none" style={{ fontSize: 9 }}>✓</span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Footer */}
+        <div className="shrink-0 px-4 py-3 border-t border-border bg-bg-card flex items-center justify-between">
+          <span className="font-mono text-[11px] text-text-t4">
+            {watchedPairs.length === 0
+              ? "Henüz coin seçilmedi"
+              : `${watchedPairs.length} coin izleniyor`}
+          </span>
+          <button
+            onClick={onClose}
+            className="rounded-lg bg-brand px-4 py-1.5 font-mono text-xs font-bold text-white hover:bg-brand/80 transition-colors"
+          >
+            Tamam
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /* ── Detail Card ── */
 function PairDetailCard({ activePair }: { activePair: Pair }) {
@@ -192,6 +307,16 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
   const prices        = useMarketStore((s) => s.prices);
   const allScores     = useScoreStore((s) => s.results);
 
+  const { pairs: watchedPairs, toggle, load } = useWatchlistStore();
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Hiç seçili coin yoksa tümünü göster
+  const displayPairs = watchedPairs.length > 0
+    ? PAIRS.filter((p) => watchedPairs.includes(p))
+    : PAIRS;
+
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Dominance */}
@@ -220,13 +345,20 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
         </div>
       </div>
 
-      {/* Header */}
-      <div className={`shrink-0 grid ${GRID_COLS} gap-x-1 px-2 py-1 border-b border-border/50`}>
+      {/* Header + Listeye Ekle butonu */}
+      <div className={`shrink-0 grid ${GRID_COLS} gap-x-1 px-2 py-1 border-b border-border/50 items-center`}>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider">Sembol</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">Son</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">{t("grafik.watchlistChange")}</span>
         <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">%</span>
-        <span className="text-text-t4 font-mono text-[9px] uppercase tracking-wider text-right">QX</span>
+        <button
+          onClick={() => setPickerOpen(true)}
+          className="flex items-center justify-center w-6 h-5 rounded border border-brand/50 bg-brand/10 text-brand hover:bg-brand/20 transition-colors font-mono font-bold leading-none"
+          style={{ fontSize: 12 }}
+          title="Listeye ekle / çıkar"
+        >
+          +
+        </button>
       </div>
 
       {/* Coin listesi */}
@@ -237,53 +369,74 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
         "[&::-webkit-scrollbar-thumb]:bg-border/60",
         "[&::-webkit-scrollbar-track]:bg-transparent",
       ].join(" ")}>
-        {PAIRS.map((pair) => {
-          const tick    = prices[pair];
-          const last    = tick?.last    ?? 0;
-          const open24h = tick?.open24h ?? 0;
-          const abs     = open24h > 0 ? last - open24h : 0;
-          const chg     = tick?.chg;
-          const isActive = pair === activePair;
-          const sc = allScores[pair]?.score;
-          const scoreBg =
-            sc == null ? "" :
-            sc >= 70   ? "bg-emerald-600" :
-            sc >= 40   ? "bg-amber-600"   : "bg-red-600";
-
-          return (
+        {displayPairs.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-8 px-4 gap-2">
+            <p className="font-mono text-[10px] text-text-t4 text-center">Henüz coin eklenmedi</p>
             <button
-              key={pair}
-              onClick={() => onPairChange(pair)}
-              className={`grid ${GRID_COLS} gap-x-1 items-center px-2 py-1.5 text-left transition-colors border-l-2 ${
-                isActive ? "bg-brand/10 border-l-brand" : "hover:bg-bg-hover border-l-transparent"
-              }`}
+              onClick={() => setPickerOpen(true)}
+              className="rounded border border-brand/50 bg-brand/10 text-brand px-2 py-1 font-mono text-[10px] hover:bg-brand/20 transition-colors"
             >
-              <span className={`font-mono text-[10px] font-semibold truncate ${isActive ? "text-brand" : "text-text-t2"}`}>
-                {pair}
-              </span>
-              <span className="font-mono text-[9px] tabular-nums whitespace-nowrap text-right text-text-t2">
-                {last > 0 ? fmtPrice(last) : "—"}
-              </span>
-              <span className={`font-mono text-[9px] tabular-nums whitespace-nowrap text-right ${chgColor(open24h > 0 ? abs : null)}`}>
-                {open24h > 0 ? fmtAbs(abs, last) : "—"}
-              </span>
-              <span className={`font-mono text-[9px] tabular-nums whitespace-nowrap text-right ${chgColor(chg)}`}>
-                {fmtPct(chg)}
-              </span>
-              {sc == null ? (
-                <span className="font-mono text-[9px] text-text-t4 text-right">—</span>
-              ) : (
-                <span className={`flex items-center justify-center w-8 h-6 rounded font-mono text-xs font-bold text-white tabular-nums ${scoreBg}`}>
-                  {sc}
-                </span>
-              )}
+              + Listeye ekle
             </button>
-          );
-        })}
+          </div>
+        ) : (
+          displayPairs.map((pair) => {
+            const tick    = prices[pair];
+            const last    = tick?.last    ?? 0;
+            const open24h = tick?.open24h ?? 0;
+            const abs     = open24h > 0 ? last - open24h : 0;
+            const chg     = tick?.chg;
+            const isActive = pair === activePair;
+            const sc = allScores[pair]?.score;
+            const scoreBg =
+              sc == null ? "" :
+              sc >= 70   ? "bg-emerald-600" :
+              sc >= 40   ? "bg-amber-600"   : "bg-red-600";
+
+            return (
+              <button
+                key={pair}
+                onClick={() => onPairChange(pair)}
+                className={`grid ${GRID_COLS} gap-x-1 items-center px-2 py-1.5 text-left transition-colors border-l-2 ${
+                  isActive ? "bg-brand/10 border-l-brand" : "hover:bg-bg-hover border-l-transparent"
+                }`}
+              >
+                <span className={`font-mono text-[10px] font-semibold truncate ${isActive ? "text-brand" : "text-text-t2"}`}>
+                  {pair}
+                </span>
+                <span className="font-mono text-[9px] tabular-nums whitespace-nowrap text-right text-text-t2">
+                  {last > 0 ? fmtPrice(last) : "—"}
+                </span>
+                <span className={`font-mono text-[9px] tabular-nums whitespace-nowrap text-right ${chgColor(open24h > 0 ? abs : null)}`}>
+                  {open24h > 0 ? fmtAbs(abs, last) : "—"}
+                </span>
+                <span className={`font-mono text-[9px] tabular-nums whitespace-nowrap text-right ${chgColor(chg)}`}>
+                  {fmtPct(chg)}
+                </span>
+                {sc == null ? (
+                  <span className="font-mono text-[9px] text-text-t4 text-right">—</span>
+                ) : (
+                  <span className={`flex items-center justify-center w-8 h-6 rounded font-mono text-xs font-bold text-white tabular-nums ${scoreBg}`}>
+                    {sc}
+                  </span>
+                )}
+              </button>
+            );
+          })
+        )}
       </div>
 
       {/* Seçili pair detay kartı */}
       <PairDetailCard activePair={activePair} />
+
+      {/* Coin picker modal */}
+      {pickerOpen && (
+        <CoinPickerModal
+          watchedPairs={watchedPairs}
+          onToggle={toggle}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
     </div>
   );
 }
@@ -291,7 +444,6 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
 /* ── MobileWatchlistView — tam ekran mobil liste (page.tsx'ten kullanılır) ── */
 interface MobileWatchlistProps {
   activePair: Pair;
-  /** Pair seçilince hem pair değişir hem de grafik view'a geçilir */
   onPairSelect: (pair: Pair) => void;
 }
 
@@ -304,14 +456,34 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   const prices        = useMarketStore((s) => s.prices);
   const allScores     = useScoreStore((s) => s.results);
 
+  const { pairs: watchedPairs, toggle, load } = useWatchlistStore();
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  useEffect(() => { load(); }, [load]);
+
+  // Hiç seçili coin yoksa tümünü göster
+  const displayPairs = watchedPairs.length > 0
+    ? PAIRS.filter((p) => watchedPairs.includes(p))
+    : PAIRS;
+
   return (
     <div className="flex flex-col min-h-0 flex-1 bg-bg-page">
       {/* Başlık */}
       <div className="shrink-0 flex items-center justify-between px-4 py-3 border-b border-border bg-bg-card">
-        <span className="font-mono text-sm font-bold text-text-t1 tracking-wide uppercase">
-          İzleme Listesi
-        </span>
-        <span className="font-mono text-xs text-text-t4">{PAIRS.length} çift</span>
+        <div className="flex items-center gap-2">
+          <span className="font-mono text-sm font-bold text-text-t1 tracking-wide uppercase">
+            İzleme Listesi
+          </span>
+          <span className="font-mono text-xs text-text-t4">
+            {watchedPairs.length > 0 ? `${watchedPairs.length}` : `${PAIRS.length}`} çift
+          </span>
+        </div>
+        <button
+          onClick={() => setPickerOpen(true)}
+          className="flex items-center gap-1.5 rounded-lg border border-brand/50 bg-brand/10 px-3 py-1.5 font-mono text-xs font-bold text-brand hover:bg-brand/20 active:bg-brand/30 transition-colors"
+        >
+          + Listeye ekle
+        </button>
       </div>
 
       {/* Dominance */}
@@ -348,68 +520,98 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
         "[&::-webkit-scrollbar-thumb]:bg-border/60",
         "[&::-webkit-scrollbar-track]:bg-transparent",
       ].join(" ")}>
-        {PAIRS.map((pair) => {
-          const tick    = prices[pair];
-          const last    = tick?.last    ?? 0;
-          const chg     = tick?.chg;
-          const isActive = pair === activePair;
-          const sc = allScores[pair]?.score;
-          const color = pairColor(pair);
-
-          const scoreBg =
-            sc == null ? "bg-zinc-700" :
-            sc >= 70   ? "bg-emerald-600" :
-            sc >= 40   ? "bg-amber-600"   : "bg-red-600";
-
-          return (
+        {displayPairs.length === 0 ? (
+          /* Boş durum */
+          <div className="flex flex-col items-center justify-center py-16 px-8 gap-4">
+            <div className="w-14 h-14 rounded-full bg-surface-s2 flex items-center justify-center">
+              <span className="text-2xl text-text-t4">☆</span>
+            </div>
+            <p className="font-mono text-sm font-bold text-text-t2 text-center">
+              İzleme listeniz boş
+            </p>
+            <p className="font-mono text-xs text-text-t4 text-center leading-relaxed">
+              Takip etmek istediğiniz coinleri ekleyin
+            </p>
             <button
-              key={pair}
-              onClick={() => onPairSelect(pair)}
-              className={[
-                "w-full grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 px-4 py-3 text-left transition-colors border-b border-border/30",
-                isActive ? "bg-brand/8 border-l-2 border-l-brand" : "active:bg-bg-hover",
-              ].join(" ")}
+              onClick={() => setPickerOpen(true)}
+              className="rounded-xl bg-brand px-6 py-2.5 font-mono text-sm font-bold text-white hover:bg-brand/80 active:scale-95 transition-all"
             >
-              {/* Coin badge */}
-              <div
-                className="w-9 h-9 rounded-full flex items-center justify-center font-mono text-[11px] font-bold text-white shrink-0"
-                style={{ backgroundColor: color + "30", border: `1.5px solid ${color}60` }}
-              >
-                <span style={{ color }}>{pair.slice(0, 3)}</span>
-              </div>
-
-              {/* İsim + sub */}
-              <div className="min-w-0">
-                <p className={`font-mono text-[13px] font-bold leading-none truncate ${isActive ? "text-brand" : "text-text-t1"}`}>
-                  {pair}
-                </p>
-                <p className="font-mono text-[10px] text-text-t4 mt-0.5">Perp / USDT</p>
-              </div>
-
-              {/* Fiyat + değişim */}
-              <div className="text-right min-w-0">
-                <p className="font-mono text-[13px] font-bold text-text-t1 tabular-nums leading-none">
-                  {last > 0 ? fmtPrice(last) : "—"}
-                </p>
-                <p className={`font-mono text-[11px] tabular-nums mt-0.5 ${chgColor(chg)}`}>
-                  {fmtPct(chg)}
-                </p>
-              </div>
-
-              {/* QX skor rozeti */}
-              <div className="shrink-0">
-                {sc == null ? (
-                  <span className="font-mono text-[10px] text-text-t4">—</span>
-                ) : (
-                  <span className={`flex items-center justify-center w-9 h-7 rounded font-mono text-xs font-bold text-white ${scoreBg}`}>
-                    {sc}
-                  </span>
-                )}
-              </div>
+              + Listeye ekle
             </button>
-          );
-        })}
+          </div>
+        ) : (
+          displayPairs.map((pair) => {
+            const tick    = prices[pair];
+            const last    = tick?.last    ?? 0;
+            const chg     = tick?.chg;
+            const isActive = pair === activePair;
+            const sc = allScores[pair]?.score;
+            const color = pairColor(pair);
+
+            const scoreBg =
+              sc == null ? "bg-zinc-700" :
+              sc >= 70   ? "bg-emerald-600" :
+              sc >= 40   ? "bg-amber-600"   : "bg-red-600";
+
+            return (
+              <button
+                key={pair}
+                onClick={() => onPairSelect(pair)}
+                className={[
+                  "w-full grid grid-cols-[auto_1fr_auto_auto] items-center gap-3 px-4 py-3 text-left transition-colors border-b border-border/30",
+                  isActive ? "bg-brand/8 border-l-2 border-l-brand" : "active:bg-bg-hover",
+                ].join(" ")}
+              >
+                {/* Coin badge */}
+                <div
+                  className="w-9 h-9 rounded-full flex items-center justify-center font-mono text-[11px] font-bold text-white shrink-0"
+                  style={{ backgroundColor: color + "30", border: `1.5px solid ${color}60` }}
+                >
+                  <span style={{ color }}>{pair.slice(0, 3)}</span>
+                </div>
+
+                {/* İsim + sub */}
+                <div className="min-w-0">
+                  <p className={`font-mono text-[13px] font-bold leading-none truncate ${isActive ? "text-brand" : "text-text-t1"}`}>
+                    {pair}
+                  </p>
+                  <p className="font-mono text-[10px] text-text-t4 mt-0.5">Perp / USDT</p>
+                </div>
+
+                {/* Fiyat + değişim */}
+                <div className="text-right min-w-0">
+                  <p className="font-mono text-[13px] font-bold text-text-t1 tabular-nums leading-none">
+                    {last > 0 ? fmtPrice(last) : "—"}
+                  </p>
+                  <p className={`font-mono text-[11px] tabular-nums mt-0.5 ${chgColor(chg)}`}>
+                    {fmtPct(chg)}
+                  </p>
+                </div>
+
+                {/* QX skor rozeti */}
+                <div className="shrink-0">
+                  {sc == null ? (
+                    <span className="font-mono text-[10px] text-text-t4">—</span>
+                  ) : (
+                    <span className={`flex items-center justify-center w-9 h-7 rounded font-mono text-xs font-bold text-white ${scoreBg}`}>
+                      {sc}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })
+        )}
       </div>
+
+      {/* Coin picker modal */}
+      {pickerOpen && (
+        <CoinPickerModal
+          watchedPairs={watchedPairs}
+          onToggle={toggle}
+          onClose={() => setPickerOpen(false)}
+        />
+      )}
     </div>
   );
 }
