@@ -932,6 +932,8 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     if (resetKeyRef.current !== resetKey) {
       resetKeyRef.current = resetKey;
       didFitRef.current = false;
+      // Re-enable autoScale so Y axis adjusts to new pair's price range
+      chart.priceScale("right").applyOptions({ autoScale: true });
     }
     if (!didFitRef.current && series.candles.length > 0) {
       chart.timeScale().fitContent();
