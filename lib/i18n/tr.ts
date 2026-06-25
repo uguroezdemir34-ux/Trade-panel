@@ -1144,6 +1144,11 @@ export const tr: Dictionary = {
     watchlistEmptyTitle: "İzleme listeniz boş",
     watchlistEmptyDesc: "Takip etmek istediğiniz coinleri ekleyin",
     mobileBack: "← Geri",
+    rsiOverbought: "Aşırı Alım",
+    rsiMidline: "Denge",
+    rsiOversold: "Aşırı Satım",
+    livePriceLabel: "CANLI",
+    tradeLevelEntry: "Giriş",
     fibonacci: "Fibonacci",
     fibext: "Fib Extension",
     legend: {

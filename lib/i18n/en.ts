@@ -1144,6 +1144,11 @@ export const en: Dictionary = {
     watchlistEmptyTitle: "Your watchlist is empty",
     watchlistEmptyDesc: "Add coins you want to track",
     mobileBack: "← Back",
+    rsiOverbought: "Overbought",
+    rsiMidline: "Midline",
+    rsiOversold: "Oversold",
+    livePriceLabel: "LIVE",
+    tradeLevelEntry: "Entry",
     fibonacci: "Fibonacci",
     fibext: "Fib Extension",
     legend: {

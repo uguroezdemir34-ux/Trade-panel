@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { useT } from "@/lib/i18n/context";
 import {
   createChart,
   type IChartApi,
@@ -117,6 +118,7 @@ function fmtVol(n: number): string {
 }
 
 export function PriceChart({ series, height = 400, theme = "dark", onChartClick, resetKey, liqBands, currentPrice, isDrawingMode = false }: Props): React.ReactElement {
+  const t             = useT();
   const containerRef  = useRef<HTMLDivElement>(null);
   const chartRef      = useRef<IChartApi | null>(null);
   const candleRef     = useRef<ISeriesApi<"Candlestick"> | null>(null);
@@ -651,7 +653,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           currentPriceLineRef.current = candle.createPriceLine({
             price: currentPrice,
             color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
-            axisLabelVisible: true, title: "CANLI",
+            axisLabelVisible: true, title: t("grafik.livePriceLabel"),
           });
         } catch { /* ignore */ }
       }
@@ -809,15 +811,15 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         });
         rsiLine.createPriceLine({
           price: 70, color: "#ef4444cc", lineWidth: 1, lineStyle: 2,
-          axisLabelVisible: true, title: "Aşırı Alım",
+          axisLabelVisible: true, title: t("grafik.rsiOverbought"),
         });
         rsiLine.createPriceLine({
           price: 50, color: "#94a3b8aa", lineWidth: 1, lineStyle: 3,
-          axisLabelVisible: true, title: "Denge",
+          axisLabelVisible: true, title: t("grafik.rsiMidline"),
         });
         rsiLine.createPriceLine({
           price: 30, color: "#22c55ecc", lineWidth: 1, lineStyle: 2,
-          axisLabelVisible: true, title: "Aşırı Satım",
+          axisLabelVisible: true, title: t("grafik.rsiOversold"),
         });
         chart.priceScale("rsi").applyOptions({ drawTicks: false, borderVisible: false });
         rsiRef.current = rsiLine;
@@ -909,7 +911,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     tradeLinesRef.current = [];
     if (series.tradeLevels?.length) {
       const COLORS: Record<string, string> = { entry: "#3b82f6", sl: "#ef4444", tp1: "#22c55e", tp2: "#86efac" };
-      const TITLES: Record<string, string> = { entry: "Entry", sl: "SL", tp1: "TP1", tp2: "TP2" };
+      const TITLES: Record<string, string> = { entry: t("grafik.tradeLevelEntry"), sl: "SL", tp1: "TP1", tp2: "TP2" };
       for (const tl of series.tradeLevels) {
         const line = candle.createPriceLine({
           price: tl.price,

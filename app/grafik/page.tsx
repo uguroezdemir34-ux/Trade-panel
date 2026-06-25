@@ -490,7 +490,7 @@ export default function GrafikPage() {
             series={series}
             height={showSplit ? 360 : 480}
             theme={theme}
-            onPriceClick={handlePriceClick}
+            onChartClick={handlePriceClick}
             resetKey={`${pair}_${timeframe}`}
           />
         </div>
@@ -507,7 +507,7 @@ export default function GrafikPage() {
                 series={secSeries}
                 height={360}
                 theme={theme}
-                onPriceClick={handlePriceClick}
+                onChartClick={handlePriceClick}
                 resetKey={`${pair}_${secTf}`}
               />
             ) : (
