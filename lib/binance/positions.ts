@@ -15,11 +15,83 @@ interface BinancePositionRow {
   updateTime: number;
 }
 
+interface BinanceOrderRow {
+  symbol: string;
+  type: string;
+  side: string;
+  positionSide: string;
+  stopPrice: string;
+  origType: string;
+}
+
 interface BinanceProxyResponse {
   ok: boolean;
   data: unknown;
   code?: number;
   msg?: string;
+}
+
+// symbol_positionSide (hedge: "BTCUSDT_LONG") veya symbol_direction (one-way: "BTCUSDT_LONG")
+type AlgoKey = string;
+type AlgoMap = Record<AlgoKey, { sl: number | null; tp: number | null }>;
+
+/**
+ * Açık algo emirlerinden SL/TP haritası çıkarır.
+ * Binance positionRisk SL/TP döndürmez — openOrders'tan derive edilir.
+ *
+ * Hedge mode: positionSide=LONG/SHORT → direkt eşleşme
+ * One-way mode: positionSide=BOTH, side=SELL → long SL/TP; side=BUY → short SL/TP
+ */
+async function fetchBinanceAlgoMap(
+  clientCreds: { key: string; secret: string } | null,
+): Promise<AlgoMap> {
+  const map: AlgoMap = {};
+  try {
+    const res = await fetch("/api/binance", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        path: "/fapi/v1/openOrders",
+        method: "GET",
+        params: {},
+        clientCreds,
+      }),
+    });
+    if (!res.ok) return map;
+
+    const proxy = (await res.json()) as BinanceProxyResponse;
+    if (!proxy.ok || !Array.isArray(proxy.data)) return map;
+
+    for (const row of proxy.data as BinanceOrderRow[]) {
+      const px = parseFloat(row.stopPrice);
+      if (!isFinite(px) || px <= 0) continue;
+
+      const type = row.origType ?? row.type;
+      const isStop = type === "STOP_MARKET" || type === "STOP";
+      const isTp = type === "TAKE_PROFIT_MARKET" || type === "TAKE_PROFIT";
+      if (!isStop && !isTp) continue;
+
+      // Resolve which direction this order covers
+      let direction: "LONG" | "SHORT";
+      if (row.positionSide === "LONG") {
+        direction = "LONG";
+      } else if (row.positionSide === "SHORT") {
+        direction = "SHORT";
+      } else {
+        // One-way (BOTH): SELL order → protecting long, BUY order → protecting short
+        direction = row.side === "SELL" ? "LONG" : "SHORT";
+      }
+
+      const key: AlgoKey = `${row.symbol}_${direction}`;
+      const entry = map[key] ?? { sl: null, tp: null };
+      if (isStop && !entry.sl) entry.sl = px;
+      if (isTp && !entry.tp) entry.tp = px;
+      map[key] = entry;
+    }
+  } catch {
+    // Non-fatal — positions will show without SL/TP lines
+  }
+  return map;
 }
 
 function stripUsdtSuffix(symbol: string): string {
@@ -103,27 +175,37 @@ export async function fetchBinancePositions(
   clientCreds: { key: string; secret: string } | null,
 ): Promise<Position[] | null> {
   try {
-    const res = await fetch("/api/binance", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        path: "/fapi/v2/positionRisk",
-        method: "GET",
-        params: {},
-        clientCreds,
+    const [posRes, algoMap] = await Promise.all([
+      fetch("/api/binance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          path: "/fapi/v2/positionRisk",
+          method: "GET",
+          params: {},
+          clientCreds,
+        }),
       }),
-    });
-    if (!res.ok) return null;
+      fetchBinanceAlgoMap(clientCreds),
+    ]);
 
-    const proxy = (await res.json()) as BinanceProxyResponse;
+    if (!posRes.ok) return null;
+    const proxy = (await posRes.json()) as BinanceProxyResponse;
     if (!proxy.ok) return null;
-
     if (!Array.isArray(proxy.data)) return null;
 
     const positions: Position[] = [];
     for (const raw of proxy.data as BinancePositionRow[]) {
       const p = parseRow(raw);
-      if (p) positions.push(p);
+      if (!p) continue;
+      // Merge SL/TP from algo orders
+      const key: AlgoKey = `${raw.symbol}_${p.direction}`;
+      const algo = algoMap[key];
+      if (algo) {
+        p.slTriggerPx = algo.sl;
+        p.tpTriggerPx = algo.tp;
+      }
+      positions.push(p);
     }
     return positions;
   } catch {
