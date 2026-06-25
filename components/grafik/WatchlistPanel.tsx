@@ -26,6 +26,16 @@ const PAIR_COLORS: Record<string, string> = {
 };
 function pairColor(p: string): string { return PAIR_COLORS[p] ?? "#6366f1"; }
 
+/* ── Coin tam adları ── */
+const COIN_NAMES: Record<string, string> = {
+  BTC: "Bitcoin",      ETH: "Ethereum",       XRP: "XRP",          SOL: "Solana",
+  BNB: "BNB Chain",    ADA: "Cardano",         AVAX: "Avalanche",   DOT: "Polkadot",
+  LINK: "Chainlink",   POL: "Polygon",         DOGE: "Dogecoin",    SHIB: "Shiba Inu",
+  SUI: "Sui",          NEAR: "NEAR Protocol",  TRX: "TRON",         APT: "Aptos",
+  TAO: "Bittensor",    PENDLE: "Pendle",        OP: "Optimism",      WIF: "dogwifhat",
+};
+function coinName(p: string): string { return COIN_NAMES[p] ?? p; }
+
 /* ── Helpers ── */
 function chgColor(v: number | undefined | null): string {
   if (v == null) return "text-text-t4";
@@ -144,7 +154,7 @@ function CoinPickerModal({
                   <p className={`font-mono text-[13px] font-bold leading-none ${isWatched ? "text-text-t1" : "text-text-t2"}`}>
                     {pair}
                   </p>
-                  <p className="font-mono text-[10px] text-text-t4 mt-0.5">Perp / USDT</p>
+                  <p className="font-mono text-[10px] text-text-t4 mt-0.5 truncate">{coinName(pair)} / USDT</p>
                 </div>
 
                 {/* Fiyat */}
@@ -572,7 +582,9 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
         ) : (
           displayPairs.map((pair) => {
             const tick     = prices[pair];
-            const last     = tick?.last ?? 0;
+            const last     = tick?.last    ?? 0;
+            const open24h  = tick?.open24h ?? 0;
+            const abs      = open24h > 0 ? last - open24h : 0;
             const chg      = tick?.chg;
             const isActive = pair === activePair;
             const sc       = allScores[pair]?.score;
@@ -608,15 +620,16 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                     <p className={`font-mono text-[13px] font-bold leading-none truncate ${isActive ? "text-brand" : "text-text-t1"}`}>
                       {pair}
                     </p>
-                    <p className="font-mono text-[10px] text-text-t4 mt-0.5">Perp / USDT</p>
+                    <p className="font-mono text-[10px] text-text-t4 mt-0.5 truncate">{coinName(pair)} / USDT</p>
                   </div>
 
-                  {/* Fiyat + değişim */}
+                  {/* Fiyat + abs değişim + % */}
                   <div className="text-right min-w-0">
                     <p className="font-mono text-[13px] font-bold text-text-t1 tabular-nums leading-none">
                       {last > 0 ? fmtPrice(last) : "—"}
                     </p>
-                    <p className={`font-mono text-[11px] tabular-nums mt-0.5 ${chgColor(chg)}`}>
+                    <p className={`font-mono text-[10px] tabular-nums mt-0.5 ${chgColor(chg)}`}>
+                      {open24h > 0 && <span>{fmtAbs(abs, last)}&nbsp;</span>}
                       {fmtPct(chg)}
                     </p>
                   </div>
