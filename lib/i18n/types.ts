@@ -1,6 +1,6 @@
 export type Locale = "en" | "tr" | "de" | "fr" | "es" | "pt" | "zh" | "ja" | "ko" | "ru" | "ar" | "hi";
 export const SUPPORTED_LOCALES: readonly Locale[] = ["en", "tr", "de", "fr", "es", "pt", "zh", "ja", "ko", "ru", "ar", "hi"];
-export const DEFAULT_LOCALE: Locale = "en";
+export const DEFAULT_LOCALE: Locale = "tr";
 export type Dictionary = {
   [key: string]: string | Dictionary;
 };

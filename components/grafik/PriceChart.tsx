@@ -651,7 +651,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           currentPriceLineRef.current = candle.createPriceLine({
             price: currentPrice,
             color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
-            axisLabelVisible: true, title: "LIVE",
+            axisLabelVisible: true, title: "CANLI",
           });
         } catch { /* ignore */ }
       }

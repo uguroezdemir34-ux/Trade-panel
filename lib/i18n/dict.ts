@@ -111,7 +111,7 @@ export function detectLocale(): Locale {
     }
   }
 
-  return "en";
+  return "tr";
 }
 
 /** Locale persist */
