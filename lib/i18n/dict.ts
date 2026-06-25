@@ -85,10 +85,9 @@ export function translate(
 }
 
 /**
- * Dual-layer locale detection:
+ * Locale detection:
  * Layer 1: User's explicit saved preference (localStorage)
- * Layer 2: Browser language → mapped to supported locale
- * Fallback: "en"
+ * Fallback: "en" — no browser auto-detect, user picks manually
  */
 export function detectLocale(): Locale {
   if (typeof window === "undefined") return "en";
@@ -99,19 +98,7 @@ export function detectLocale(): Locale {
     if (stored && SUPPORTED_LOCALES.includes(stored as Locale)) return stored as Locale;
   } catch { /* ignore */ }
 
-  // Layer 2: browser language detection
-  if (typeof navigator !== "undefined") {
-    const lang = navigator.language.toLowerCase();
-    const browserMap: Record<string, Locale> = {
-      tr: "tr", de: "de", fr: "fr", es: "es", pt: "pt",
-      zh: "zh", ja: "ja", ko: "ko", ru: "ru", ar: "ar", hi: "hi",
-    };
-    for (const [prefix, locale] of Object.entries(browserMap)) {
-      if (lang.startsWith(prefix)) return locale;
-    }
-  }
-
-  return "tr";
+  return "en";
 }
 
 /** Locale persist */
