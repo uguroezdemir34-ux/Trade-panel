@@ -16,6 +16,8 @@ function save(pairs: Pair[]): void {
 interface WatchlistState {
   pairs: Pair[];
   toggle: (pair: Pair) => void;
+  remove: (pair: Pair) => void;
+  reset: () => void;
   has: (pair: Pair) => boolean;
   load: () => void;
 }
@@ -34,6 +36,17 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
       : [...current, pair];
     save(next);
     set({ pairs: next });
+  },
+
+  remove: (pair) => {
+    const next = get().pairs.filter((p) => p !== pair);
+    save(next);
+    set({ pairs: next });
+  },
+
+  reset: () => {
+    save([]);
+    set({ pairs: [] });
   },
 
   has: (pair) => get().pairs.includes(pair),
