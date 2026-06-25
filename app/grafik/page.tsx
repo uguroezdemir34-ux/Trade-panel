@@ -232,6 +232,17 @@ export default function GrafikPage() {
     } catch { /* ignore */ }
   }, [pair, timeframe, showEma20, showEma50, showEma200, showVolume, showRsi, showMacd, showBb, showVwap, showSr, showTrades]);
 
+  // Intercept OS/browser back button — chart modunda geri = listeye dön
+  useEffect(() => {
+    const onPop = (e: PopStateEvent) => {
+      if (!e.state || e.state.mobileView !== "chart") {
+        setMobileView("list");
+      }
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
   // Fetch secondary TF candles when split view is active
   const secTf = SEC_TF[timeframe];
   useEffect(() => {
@@ -552,14 +563,19 @@ export default function GrafikPage() {
         {mobileView === "list" ? (
           <MobileWatchlistView
             activePair={pair}
-            onPairSelect={(p) => { setPair(p); setMobileView("chart"); }}
+            onPairSelect={(p) => {
+              setPair(p);
+              setMobileView("chart");
+              // history entry → OS geri tuşu listeye döner, karar sayfasına değil
+              window.history.pushState({ mobileView: "chart" }, "");
+            }}
           />
         ) : (
           <div className="flex flex-col gap-3 px-3 py-3">
             {/* Geri butonu + pair adı */}
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setMobileView("list")}
+                onClick={() => { setMobileView("list"); window.history.back(); }}
                 className="flex items-center gap-1.5 rounded border border-border px-2.5 py-1.5 font-mono text-xs text-text-t3 hover:text-text-t1 hover:border-text-t2 transition-colors"
               >
                 ← Geri
