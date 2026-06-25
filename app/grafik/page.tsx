@@ -21,7 +21,7 @@ import { toIndicatorCandle, fetchCandles, type Timeframe, type Candle } from "@/
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
-import { WatchlistPanel } from "@/components/grafik/WatchlistPanel";
+import { WatchlistPanel, MobileWatchlistView } from "@/components/grafik/WatchlistPanel";
 import { LivePriceStrip } from "@/components/karar/LivePriceStrip";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
 
@@ -175,6 +175,7 @@ export default function GrafikPage() {
 
   const [pair, setPair]           = useState<Pair>("BTC");
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
+  const [mobileView, setMobileView] = useState<"list" | "chart">("list");
   const [showEma20, setShowEma20]   = useState(true);
   const [showEma50, setShowEma50]   = useState(true);
   const [showEma200, setShowEma200] = useState(true);
@@ -358,19 +359,9 @@ export default function GrafikPage() {
     try { await navigator.clipboard.writeText(text); } catch { /* ignore */ }
   }
 
-  return (
-    <div className="flex gap-3 items-start">
-      {/* Dikey canlı fiyat şeridi — 20 parite, mobilde gizli */}
-      <div className="hidden md:block">
-        <LivePriceStrip variant="vertical" />
-      </div>
-
-      {/* WatchlistPanel — TradingView-style right column */}
-      <WatchlistPanel activePair={pair} onPairChange={setPair} />
-
-      {/* Main chart column */}
-      <div className="flex-1 min-w-0 flex flex-col gap-3">
-
+  /* ── Shared chart column content ── */
+  const chartSection = (
+    <>
       <ChartControls
         timeframe={timeframe}
         showEma20={showEma20}
@@ -521,7 +512,6 @@ export default function GrafikPage() {
       {/* Order Flow Panel */}
       {showFlow && <OrderFlowPanel pair={pair} />}
 
-
       {/* Drawn lines list */}
       {drawnLines.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
@@ -546,8 +536,45 @@ export default function GrafikPage() {
           ))}
         </div>
       )}
+    </>
+  );
 
-      </div>{/* end main chart column */}
-    </div>
+  return (
+    <>
+      {/* ── Mobil: iki durumlu navigasyon ── */}
+      <div className="md:hidden flex flex-col">
+        {mobileView === "list" ? (
+          <MobileWatchlistView
+            activePair={pair}
+            onPairSelect={(p) => { setPair(p); setMobileView("chart"); }}
+          />
+        ) : (
+          <div className="flex flex-col gap-3 px-3 py-3">
+            {/* Geri butonu + pair adı */}
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setMobileView("list")}
+                className="flex items-center gap-1.5 rounded border border-border px-2.5 py-1.5 font-mono text-xs text-text-t3 hover:text-text-t1 hover:border-text-t2 transition-colors"
+              >
+                ← Geri
+              </button>
+              <span className="font-mono text-sm font-bold text-text-t1">{pair} · USDT</span>
+            </div>
+            {chartSection}
+          </div>
+        )}
+      </div>
+
+      {/* ── Masaüstü: yan yana layout ── */}
+      <div className="hidden md:flex gap-3 items-start">
+        <div className="hidden md:block">
+          <LivePriceStrip variant="vertical" />
+        </div>
+        <WatchlistPanel activePair={pair} onPairChange={setPair} />
+        <div className="flex-1 min-w-0 flex flex-col gap-3">
+          {chartSection}
+        </div>
+      </div>
+    </>
   );
 }
