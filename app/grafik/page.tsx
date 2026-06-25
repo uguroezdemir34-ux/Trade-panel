@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
+import { usePositionStore } from "@/lib/store/positionStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useT } from "@/lib/i18n/context";
@@ -249,21 +250,47 @@ export default function GrafikPage() {
   const candlesRaw = useCandleStore((s) => s.candles[`${pair}_${timeframe}`]);
   const candles    = candlesRaw ?? EMPTY_CANDLES;
   const trades     = useTradesStore((s) => s.trades);
+  const positions  = usePositionStore((s) => s.positions);
   const alarms     = usePriceAlarmStore((s) => s.alarms);
   const livePrice  = useMarketStore((s) => s.prices[pair]?.last ?? null);
 
   const tradeLevels = useMemo<TradeLevelLine[]>(() => {
-    const open = trades.filter((t) => t.status === "open" && t.pair === pair);
+    const allPos = positions ?? [];
+
+    // Gate: positionStore boşsa erken çıkış — tradesStore "open" dese bile çizgi çizilmez
+    const livePos = allPos.filter(
+      (p) => p.pair === pair && p.direction !== "NEUTRAL"
+    );
+    if (livePos.length === 0) return [];
+
     const lines: TradeLevelLine[] = [];
-    for (const t of open) {
-      if (t.direction !== "LONG" && t.direction !== "SHORT") continue;
-      lines.push({ price: t.entryPrice,  kind: "entry", direction: t.direction });
-      lines.push({ price: t.stopPrice,   kind: "sl",    direction: t.direction });
-      if (t.takeProfit1) lines.push({ price: t.takeProfit1, kind: "tp1", direction: t.direction });
-      if (t.takeProfit2) lines.push({ price: t.takeProfit2, kind: "tp2", direction: t.direction });
+
+    for (const pos of livePos) {
+      const dir = pos.direction as "LONG" | "SHORT";
+
+      // Entry — OKX truth, her zaman mevcut
+      lines.push({ price: pos.entryPx, kind: "entry", direction: dir });
+
+      // tradesStore: yalnızca eksik seviye değerleri için backup
+      // Açıklık kararına karışmıyor; livePos guard geçtikten sonra okunuyor
+      const appTrade = trades.find(
+        (t) => !t.isPaper && t.status === "open" && t.pair === pair && t.direction === dir
+      );
+
+      // SL: OKX algo order birincil; null ise app-side stopPrice değeri
+      const sl = pos.slTriggerPx ?? appTrade?.stopPrice ?? null;
+      if (sl) lines.push({ price: sl, kind: "sl", direction: dir });
+
+      // TP1: OKX tpTriggerPx birincil; null ise app-side takeProfit1 değeri
+      const tp1 = pos.tpTriggerPx ?? appTrade?.takeProfit1 ?? null;
+      if (tp1) lines.push({ price: tp1, kind: "tp1", direction: dir });
+
+      // TP2: OKX'te tekil TP — tp2 yalnız app-side'dan
+      if (appTrade?.takeProfit2) lines.push({ price: appTrade.takeProfit2, kind: "tp2", direction: dir });
     }
+
     return lines;
-  }, [trades, pair]);
+  }, [positions, trades, pair]);
 
   const alarmLevels = useMemo<AlarmLevel[]>(
     () =>
