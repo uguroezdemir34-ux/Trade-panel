@@ -76,7 +76,7 @@ export function ChartControls({
   const t = useT();
 
   return (
-    <div className="border-border bg-bg-card rounded-lg border overflow-hidden">
+    <div className="border-border bg-bg-card rounded-lg border">
       {/* Row 1 — Timeframe */}
       <div className="flex items-center gap-0.5 px-3 py-2 border-b border-border/40">
         {TIMEFRAMES.map((tf) => (
