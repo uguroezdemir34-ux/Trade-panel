@@ -20,6 +20,10 @@ interface WatchlistState {
   reset: () => void;
   has: (pair: Pair) => boolean;
   load: () => void;
+  moveToTop: (pair: Pair) => void;
+  moveToBottom: (pair: Pair) => void;
+  moveUp: (pair: Pair) => void;
+  moveDown: (pair: Pair) => void;
 }
 
 export const useWatchlistStore = create<WatchlistState>((set, get) => ({
@@ -50,4 +54,36 @@ export const useWatchlistStore = create<WatchlistState>((set, get) => ({
   },
 
   has: (pair) => get().pairs.includes(pair),
+
+  moveToTop: (pair) => {
+    const current = get().pairs;
+    if (!current.includes(pair)) return;
+    const next = [pair, ...current.filter((p) => p !== pair)];
+    save(next); set({ pairs: next });
+  },
+
+  moveToBottom: (pair) => {
+    const current = get().pairs;
+    if (!current.includes(pair)) return;
+    const next = [...current.filter((p) => p !== pair), pair];
+    save(next); set({ pairs: next });
+  },
+
+  moveUp: (pair) => {
+    const current = get().pairs;
+    const idx = current.indexOf(pair);
+    if (idx <= 0) return;
+    const next = [...current];
+    [next[idx - 1], next[idx]] = [next[idx], next[idx - 1]];
+    save(next); set({ pairs: next });
+  },
+
+  moveDown: (pair) => {
+    const current = get().pairs;
+    const idx = current.indexOf(pair);
+    if (idx < 0 || idx >= current.length - 1) return;
+    const next = [...current];
+    [next[idx + 1], next[idx]] = [next[idx], next[idx + 1]];
+    save(next); set({ pairs: next });
+  },
 }));

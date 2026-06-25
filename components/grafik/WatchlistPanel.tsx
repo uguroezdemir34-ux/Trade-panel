@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef, useCallback } from "react";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
@@ -361,6 +361,94 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
   );
 }
 
+/* ── Row Context Menu (uzun basış menüsü) ── */
+type ContextAction = "moveTop" | "moveUp" | "moveDown" | "moveBottom" | "openChart" | "remove";
+
+interface RowContextMenuProps {
+  pair: Pair;
+  index: number;
+  total: number;
+  isFiltered: boolean;
+  onAction: (a: ContextAction) => void;
+  onClose: () => void;
+}
+
+function ContextMenuItem({
+  label, icon, onPress, danger = false,
+}: { label: string; icon: string; onPress: () => void; danger?: boolean }) {
+  return (
+    <button
+      onClick={onPress}
+      className={`w-full flex items-center justify-between px-5 py-4 active:bg-surface-2 transition-colors ${
+        danger ? "text-red-400" : "text-text-t1"
+      }`}
+    >
+      <span className="font-sans text-[15px] font-medium">{label}</span>
+      <span className={`text-[20px] leading-none ${danger ? "text-red-400" : "text-text-t3"}`}>{icon}</span>
+    </button>
+  );
+}
+
+function RowContextMenu({ pair, index, total, isFiltered, onAction, onClose }: RowContextMenuProps) {
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center"
+      style={{ background: "rgba(0,0,0,0.55)" }}
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-t-2xl border-t border-border bg-bg-card shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Handle çubuğu */}
+        <div className="flex justify-center pt-3 pb-1">
+          <div className="w-10 h-1 rounded-full bg-border/80" />
+        </div>
+
+        {/* Coin başlık */}
+        <div className="flex items-center gap-3 px-5 py-3 border-b border-border/60">
+          <CoinLogo pair={pair} size={42} />
+          <div>
+            <p className="font-mono text-[16px] font-black text-text-t1 leading-tight">{pair}</p>
+            <p className="font-mono text-[11px] text-text-t3 mt-0.5">{coinName(pair)} / USDT</p>
+          </div>
+        </div>
+
+        {/* Sırala seçenekleri — yalnızca özel listede */}
+        {isFiltered && (
+          <>
+            {index > 0 && (
+              <ContextMenuItem label="Üste taşı" icon="⬆" onPress={() => onAction("moveTop")} />
+            )}
+            {index > 0 && (
+              <ContextMenuItem label="Bir yukarı" icon="↑" onPress={() => onAction("moveUp")} />
+            )}
+            {index < total - 1 && (
+              <ContextMenuItem label="Bir aşağı" icon="↓" onPress={() => onAction("moveDown")} />
+            )}
+            {index < total - 1 && (
+              <ContextMenuItem label="Alta taşı" icon="⬇" onPress={() => onAction("moveBottom")} />
+            )}
+            <div className="mx-5 h-px bg-border/50" />
+          </>
+        )}
+
+        <ContextMenuItem label="Grafiği aç" icon="◈" onPress={() => onAction("openChart")} />
+
+        {isFiltered && (
+          <>
+            <div className="mx-5 h-px bg-border/50" />
+            <ContextMenuItem label="Listeden kaldır" icon="🗑" onPress={() => onAction("remove")} danger />
+          </>
+        )}
+
+        {/* Alt güvenli alan */}
+        <div className="h-6" />
+      </div>
+    </div>
+  );
+}
+
 /* ── Watchlist İçerik (masaüstü dar panel) ── */
 function WatchlistContent({ activePair, onPairChange }: Props) {
   const t             = useT();
@@ -545,13 +633,54 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   const theme         = useSettingsStore((s) => s.theme);
   const isDark        = theme === "dark";
 
-  const { pairs: watchedPairs, toggle, remove, reset, load } = useWatchlistStore();
+  const { pairs: watchedPairs, toggle, remove, reset, load,
+          moveToTop, moveToBottom, moveUp, moveDown } = useWatchlistStore();
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [menuState, setMenuState]   = useState<{ pair: Pair; index: number } | null>(null);
 
   useEffect(() => { load(); }, [load]);
 
   const isFiltered   = watchedPairs.length > 0;
   const displayPairs = isFiltered ? PAIRS.filter((p) => watchedPairs.includes(p)) : PAIRS;
+
+  /* ── Uzun basış tespiti ── */
+  const lpTimer      = useRef<ReturnType<typeof setTimeout>>();
+  const lpStart      = useRef<{ x: number; y: number } | null>(null);
+  const suppressClick = useRef(false);
+
+  const handlePointerDown = useCallback((pair: Pair, index: number) =>
+    (e: React.PointerEvent) => {
+      lpStart.current = { x: e.clientX, y: e.clientY };
+      suppressClick.current = false;
+      lpTimer.current = setTimeout(() => {
+        suppressClick.current = true;
+        lpStart.current = null;
+        setMenuState({ pair, index });
+      }, 500);
+    }, []);
+
+  const handlePointerMove = useCallback((e: React.PointerEvent) => {
+    if (!lpStart.current) return;
+    const d = Math.abs(e.clientX - lpStart.current.x) + Math.abs(e.clientY - lpStart.current.y);
+    if (d > 8) { clearTimeout(lpTimer.current); lpStart.current = null; }
+  }, []);
+
+  const handlePointerUp = useCallback(() => {
+    clearTimeout(lpTimer.current);
+    lpStart.current = null;
+  }, []);
+
+  const handleContextAction = useCallback((action: ContextAction) => {
+    if (!menuState) return;
+    const { pair } = menuState;
+    setMenuState(null);
+    if (action === "moveTop")    moveToTop(pair);
+    else if (action === "moveBottom") moveToBottom(pair);
+    else if (action === "moveUp")     moveUp(pair);
+    else if (action === "moveDown")   moveDown(pair);
+    else if (action === "remove")     remove(pair);
+    else if (action === "openChart")  onPairSelect(pair);
+  }, [menuState, moveToTop, moveToBottom, moveUp, moveDown, remove, onPairSelect]);
 
   return (
     <div className="flex flex-col min-h-0 flex-1 bg-bg-page">
@@ -635,7 +764,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
             </button>
           </div>
         ) : (
-          displayPairs.map((pair) => {
+          displayPairs.map((pair, idx) => {
             const tick      = prices[pair];
             const last      = tick?.last ?? 0;
             const chg       = tick?.chg;
@@ -684,8 +813,15 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
               >
                 {/* Ana tıklanabilir alan */}
                 <button
-                  onClick={() => onPairSelect(pair)}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:brightness-110 transition-all"
+                  onClick={() => {
+                    if (suppressClick.current) { suppressClick.current = false; return; }
+                    onPairSelect(pair);
+                  }}
+                  onPointerDown={handlePointerDown(pair, idx)}
+                  onPointerMove={handlePointerMove}
+                  onPointerUp={handlePointerUp}
+                  onPointerCancel={handlePointerUp}
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:brightness-110 transition-all select-none"
                 >
                   {/* Coin logosu */}
                   <CoinLogo pair={pair} size={52} />
@@ -698,7 +834,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                     >
                       {pair}
                     </p>
-                    <p className="font-mono text-[12px] text-text-t4 mt-0.5 truncate">
+                    <p className="font-mono text-[12px] text-text-t2 mt-0.5 truncate">
                       {coinName(pair)}&nbsp;/&nbsp;USDT
                     </p>
                   </div>
@@ -756,6 +892,17 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
           watchedPairs={watchedPairs}
           onToggle={toggle}
           onClose={() => setPickerOpen(false)}
+        />
+      )}
+
+      {menuState && (
+        <RowContextMenu
+          pair={menuState.pair}
+          index={menuState.index}
+          total={displayPairs.length}
+          isFiltered={isFiltered}
+          onAction={handleContextAction}
+          onClose={() => setMenuState(null)}
         />
       )}
     </div>
