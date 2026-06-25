@@ -1,15 +1,16 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
+import { useGoSignalLogStore } from "@/lib/store/goSignalLogStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
-import { PAIRS, type Pair } from "@/lib/constants/pairs";
+import type { Pair } from "@/lib/constants/pairs";
 import { useT } from "@/lib/i18n/context";
 
 const PAGE_SIZE = 50;
 type DirFilter = "all" | "LONG" | "SHORT";
 type RangeFilter = "all" | "today" | "7d" | "30d";
+type TradeResult = "profit" | "loss" | "open" | null;
 
 function timeAgo(ts: number, t: (key: string, params?: Record<string, string | number>) => string): string {
   const delta = Date.now() - ts;
@@ -19,6 +20,14 @@ function timeAgo(ts: number, t: (key: string, params?: Record<string, string | n
   const h = Math.floor(m / 60);
   if (h < 24) return t("common.timeHours", { n: h });
   return t("common.timeDays", { n: Math.floor(h / 24) });
+}
+
+function formatTriggerPrice(n: number): string {
+  if (n <= 0) return "—";
+  if (n >= 10_000) return `$${n.toLocaleString("en", { maximumFractionDigits: 0 })}`;
+  if (n >= 100) return `$${n.toFixed(2)}`;
+  if (n >= 0.01) return `$${n.toFixed(4)}`;
+  return `$${n.toFixed(6)}`;
 }
 
 function fullTime(ts: number): string {
@@ -52,7 +61,7 @@ function Chip({
 
 export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode } = {}): React.ReactElement | null {
   const t = useT();
-  const history = useScoreHistoryStore((s) => s.history);
+  const entries = useGoSignalLogStore((s) => s.entries);
   const trades = useTradesStore((s) => s.trades);
   const goAlertsEnabled = useSettingsStore((s) => s.goAlertsEnabled);
 
@@ -62,18 +71,10 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
   const [minScore, setMinScore] = useState(0);
   const [page, setPage] = useState(1);
 
-  // All GO verdicts across all pairs, newest first
+  // All GO entries, newest first
   const allGoEntries = useMemo(() => {
-    const entries: { pair: Pair; score: number; direction: string; ts: number }[] = [];
-    for (const pair of PAIRS) {
-      for (const snap of (Array.isArray(history[pair]) ? history[pair] : [])) {
-        if (snap.verdict === "go") {
-          entries.push({ pair, score: snap.score, direction: snap.direction, ts: snap.ts });
-        }
-      }
-    }
-    return entries.sort((a, b) => b.ts - a.ts);
-  }, [history]);
+    return [...entries].sort((a, b) => b.ts - a.ts);
+  }, [entries]);
 
   // Pairs that have at least one GO entry (for filter chips)
   const activePairs = useMemo(() => {
@@ -82,20 +83,40 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
     return Array.from(seen);
   }, [allGoEntries]);
 
-  // Cross-reference: was a trade opened within 15 min after this signal?
-  const convertedKeys = useMemo(() => {
+  // Ambiguous: same pair has another GO within ±15 min → trade attribution uncertain
+  const ambiguousSet = useMemo(() => {
     const set = new Set<string>();
+    for (let i = 0; i < allGoEntries.length; i++) {
+      for (let j = i + 1; j < allGoEntries.length; j++) {
+        const a = allGoEntries[i];
+        const b = allGoEntries[j];
+        if (a.pair === b.pair && Math.abs(a.ts - b.ts) < 15 * 60_000) {
+          set.add(`${a.pair}_${a.ts}`);
+          set.add(`${b.pair}_${b.ts}`);
+        }
+      }
+    }
+    return set;
+  }, [allGoEntries]);
+
+  // Trade cross-reference with outcome type
+  const convertedMap = useMemo(() => {
+    const map = new Map<string, TradeResult>();
     for (const e of allGoEntries) {
-      const eDir = e.direction.toUpperCase();
       const match = trades.find(
         (tr) =>
           tr.pair === e.pair &&
-          tr.direction === eDir &&
+          tr.direction === e.direction &&
           Math.abs(tr.openedAt - e.ts) < 15 * 60_000,
       );
-      if (match) set.add(`${e.pair}_${e.ts}`);
+      if (!match) continue;
+      if (match.status === "open") {
+        map.set(`${e.pair}_${e.ts}`, "open");
+      } else if (match.exit != null) {
+        map.set(`${e.pair}_${e.ts}`, match.exit.pnlUsd > 0 ? "profit" : "loss");
+      }
     }
-    return set;
+    return map;
   }, [allGoEntries, trades]);
 
   // Reset page to 1 when new signals arrive (so fresh entries at top are visible)
@@ -211,24 +232,56 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
         <>
           <div className="divide-y divide-border/15 max-h-80 overflow-y-auto">
             {paginated.map((e) => {
-              const isLong = e.direction.toUpperCase() === "LONG";
-              const converted = convertedKeys.has(`${e.pair}_${e.ts}`);
+              const key = `${e.pair}_${e.ts}`;
+              const isLong = e.direction === "LONG";
+              const tradeResult = convertedMap.get(key) ?? null;
+              const isAmbiguous = ambiguousSet.has(key);
+              const priceStale = e.priceWasStale === true;
+              const isUncertain = isAmbiguous || priceStale;
+
+              const resultIcon =
+                tradeResult === "profit" ? "✓"
+                : tradeResult === "loss" ? "✗"
+                : tradeResult === "open" ? "⟳"
+                : "·";
+              const resultColor =
+                tradeResult === "profit" ? "text-green-400"
+                : tradeResult === "loss" ? "text-red-400"
+                : tradeResult === "open" ? "text-yellow-400"
+                : "text-text-t4/30";
+              const resultTitle =
+                tradeResult === "profit" ? t("karar.tradeProfit")
+                : tradeResult === "loss" ? t("karar.tradeLoss")
+                : tradeResult === "open" ? t("karar.tradeOpen")
+                : t("karar.noTradeAfterSignal");
+
               return (
                 <div
-                  key={`${e.pair}_${e.ts}`}
-                  className="grid items-center gap-x-2 px-3 py-1.5 font-mono text-2xs"
-                  style={{ gridTemplateColumns: "36px 56px 28px 12px 1fr" }}
+                  key={key}
+                  className={[
+                    "grid items-center gap-x-2 px-3 py-1.5 font-mono text-2xs",
+                    isUncertain ? "opacity-60" : "",
+                  ].join(" ")}
+                  style={{ gridTemplateColumns: "40px 52px 28px 52px 12px 1fr" }}
+                  title={
+                    isAmbiguous ? t("karar.ambiguousSignal")
+                    : priceStale ? t("karar.stalePriceAtSignal")
+                    : undefined
+                  }
                 >
-                  <span className="text-text-t2 font-bold tracking-wide">{e.pair}</span>
+                  <span className="text-text-t2 font-bold tracking-wide">
+                    {e.pair}
+                    {isUncertain && <span className="text-yellow-500/60 ml-0.5 font-normal">~</span>}
+                  </span>
                   <span className={isLong ? "text-green-400" : "text-red-400"}>
                     {isLong ? "▲ LONG" : "▼ SHORT"}
                   </span>
                   <span className="text-green-400 tabular-nums font-bold">{e.score}</span>
-                  <span
-                    className={converted ? "text-green-400" : "text-text-t4/30"}
-                    title={converted ? t("karar.tradeAfterSignal") : t("karar.noTradeAfterSignal")}
-                  >
-                    {converted ? "✓" : "·"}
+                  <span className="text-text-t4 tabular-nums text-right">
+                    {formatTriggerPrice(e.triggerPriceAtGo)}
+                  </span>
+                  <span className={resultColor} title={resultTitle}>
+                    {resultIcon}
                   </span>
                   <span
                     className="text-text-t4 tabular-nums text-right"

@@ -226,6 +226,11 @@ export const ko: Dictionary = {
     tradeAfterSignal: "Trade opened after this signal",
     // TODO: translate
     noTradeAfterSignal: "No trade opened",
+    tradeProfit: "Trade opened — profit",
+    tradeLoss: "Trade opened — stop-out (loss)",
+    tradeOpen: "Trade still open",
+    ambiguousSignal: "Multiple GO signals within 15min — trade match uncertain",
+    stalePriceAtSignal: "Price data was unavailable at signal time",
     // TODO: translate
     shortcutsTitle: "⌨ Keyboard Shortcuts",
     // TODO: translate

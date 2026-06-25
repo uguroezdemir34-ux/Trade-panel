@@ -30,6 +30,7 @@ import { computeStructuralStop } from "@/lib/sizer/stop";
 import { computeAdaptiveTPs } from "@/lib/sizer/take-profit";
 import type { NotifyMessage } from "@/lib/notify/types";
 import { sendDiscordMessage } from "@/lib/notify/discord/channel";
+import { useGoSignalLogStore } from "@/lib/store/goSignalLogStore";
 
 const SIGNAL_COOLDOWN_MS = 2 * 60 * 1000; // 2 dakika
 
@@ -42,6 +43,7 @@ export function useSignalFirehose(): void {
   // Ref'ler: değişim tetiklemez, sadece tracking için
   const prevVerdicts = useRef<Partial<Record<Pair, Verdict>>>({});
   const lastFiredAt = useRef<Partial<Record<Pair, number>>>({});
+  const appendGoSignal = useGoSignalLogStore((s) => s.appendGoSignal);
 
   useEffect(() => {
     const now = Date.now();
@@ -60,12 +62,32 @@ export function useSignalFirehose(): void {
 
       if (isGoTransition && cooldownOk && !demoMode) {
         lastFiredAt.current[pair] = now;
+        if (result.direction !== "NEUTRAL") {
+          const rawPrice = useMarketStore.getState().prices[pair]?.last;
+          const livePrice = rawPrice ?? 0;
+          appendGoSignal({
+            ts: now,
+            pair,
+            direction: result.direction as "LONG" | "SHORT",
+            score: result.score,
+            effectiveThreshold: result.effectiveThreshold,
+            triggerPriceAtGo: livePrice,
+            priceWasStale: !rawPrice || rawPrice <= 0,
+            pullbackActive: result.pullbackActive,
+            regime: result.regime,
+            sub: result.sub,
+            sweepBonus: result.sweepBonus,
+            regimeBonus: result.regimeBonus,
+            blocks: result.blocks,
+            softBlocks: result.softBlocks,
+          });
+        }
         void fireSignal(pair, result, tgCreds, forwardTestMode);
       }
 
       prevVerdicts.current[pair] = verdict;
     }
-  }, [results, demoMode, forwardTestMode, tgCreds]);
+  }, [results, demoMode, forwardTestMode, tgCreds, appendGoSignal]);
 }
 
 // ── Signal hesabı + gönderim ───────────────────────────────────────
