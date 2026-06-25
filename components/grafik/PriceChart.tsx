@@ -807,9 +807,18 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           priceLineVisible: false,
           lastValueVisible: true,
         });
-        rsiLine.createPriceLine({ price: 70, color: "#ef444466", lineWidth: 1, lineStyle: 2 });
-        rsiLine.createPriceLine({ price: 50, color: "#52525244", lineWidth: 1, lineStyle: 2 });
-        rsiLine.createPriceLine({ price: 30, color: "#22c55e66", lineWidth: 1, lineStyle: 2 });
+        rsiLine.createPriceLine({
+          price: 70, color: "#ef4444cc", lineWidth: 1, lineStyle: 2,
+          axisLabelVisible: true, title: "Aşırı Alım",
+        });
+        rsiLine.createPriceLine({
+          price: 50, color: "#94a3b8aa", lineWidth: 1, lineStyle: 3,
+          axisLabelVisible: true, title: "Denge",
+        });
+        rsiLine.createPriceLine({
+          price: 30, color: "#22c55ecc", lineWidth: 1, lineStyle: 2,
+          axisLabelVisible: true, title: "Aşırı Satım",
+        });
         chart.priceScale("rsi").applyOptions({ drawTicks: false, borderVisible: false });
         rsiRef.current = rsiLine;
       }
