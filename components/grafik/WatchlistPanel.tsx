@@ -685,20 +685,20 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                 {/* Ana tıklanabilir alan */}
                 <button
                   onClick={() => onPairSelect(pair)}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left active:brightness-110 transition-all"
+                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:brightness-110 transition-all"
                 >
                   {/* Coin logosu */}
-                  <CoinLogo pair={pair} size={44} />
+                  <CoinLogo pair={pair} size={52} />
 
                   {/* İsim bloğu */}
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`font-mono text-[15px] font-black tracking-tight leading-tight ${isActive ? "" : "text-text-t1"}`}
+                      className={`font-mono text-[17px] font-black tracking-tight leading-tight ${isActive ? "" : "text-text-t1"}`}
                       style={isActive ? { color } : undefined}
                     >
                       {pair}
                     </p>
-                    <p className="font-mono text-[10px] text-text-t4 mt-0.5 truncate">
+                    <p className="font-mono text-[12px] text-text-t4 mt-0.5 truncate">
                       {coinName(pair)}&nbsp;/&nbsp;USDT
                     </p>
                   </div>
@@ -706,23 +706,23 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                   {/* Sparkline */}
                   <div className="shrink-0">
                     {sparkPoints.length >= 2 ? (
-                      <Sparkline points={sparkPoints} color={sparkColor} width={54} height={26} />
+                      <Sparkline points={sparkPoints} color={sparkColor} width={62} height={32} />
                     ) : (
-                      <div style={{ width: 54, height: 26 }} />
+                      <div style={{ width: 62, height: 32 }} />
                     )}
                   </div>
 
                   {/* Fiyat + değişim + QX skoru */}
-                  <div className="shrink-0 flex flex-col items-end gap-1 min-w-[80px]">
-                    <p className="font-mono text-[14px] font-bold text-text-t1 tabular-nums leading-none">
+                  <div className="w-[112px] shrink-0 flex flex-col items-end gap-1">
+                    <p className="font-mono text-[15px] font-bold text-text-t1 tabular-nums leading-none w-full text-right truncate">
                       {last > 0 ? fmtPrice(last) : "—"}
                     </p>
                     <div className="flex items-center gap-1.5">
-                      <span className={`font-mono text-[10px] tabular-nums ${chgColor(chg)}`}>
+                      <span className={`font-mono text-[12px] tabular-nums ${chgColor(chg)}`}>
                         {fmtPct(chg)}
                       </span>
                       {sc != null && (
-                        <span className={`flex items-center justify-center w-8 h-5 rounded font-mono text-[10px] font-bold text-white ${scoreBg}`}>
+                        <span className={`flex items-center justify-center w-9 h-5 rounded font-mono text-[11px] font-bold text-white ${scoreBg}`}>
                           {sc}
                         </span>
                       )}
