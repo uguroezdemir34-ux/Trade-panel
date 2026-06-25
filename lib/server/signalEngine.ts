@@ -64,6 +64,7 @@ export interface ServerSignalResult {
   isNewSignal: boolean;
   price: number;
   error?: string;
+  debugInputs?: { fg: number; fundingRate: number | null; oiVelocityScore: number };
 }
 
 /** Fetch OKX public candles — no auth required */
@@ -157,6 +158,7 @@ async function fetchAndScore(pair: Pair): Promise<{
   price: number;
   fg: number;
   fundingRate: number | null;
+  oiVelocityScore: number;
 } | null> {
   const instId = `${pair}-USDT-SWAP`;
   const now = Date.now();
@@ -226,6 +228,7 @@ async function fetchAndScore(pair: Pair): Promise<{
     price: latest.close,
     fg,
     fundingRate,
+    oiVelocityScore,
   };
 }
 
@@ -294,6 +297,11 @@ export async function computeServerSignal(pair: Pair): Promise<ServerSignalResul
       prevVerdict,
       isNewSignal,
       price: current.price,
+      debugInputs: {
+        fg: current.fg,
+        fundingRate: current.fundingRate,
+        oiVelocityScore: current.oiVelocityScore,
+      },
     };
   } catch (err) {
     return {

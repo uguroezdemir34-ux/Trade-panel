@@ -65,6 +65,9 @@ export async function GET(req: Request): Promise<NextResponse> {
     return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 });
   }
 
+  const url = new URL(req.url);
+  const verbose = url.searchParams.get("verbose") === "true";
+
   const startMs = Date.now();
 
   const signals = await computeAllSignals(PAIRS);
@@ -107,5 +110,16 @@ export async function GET(req: Request): Promise<NextResponse> {
     telegramFailed,
     errors: errors.map((e) => ({ pair: e.pair, error: e.error })),
     elapsedMs,
+    ...(verbose && {
+      allScores: signals.map((s) => ({
+        pair: s.pair,
+        verdict: s.verdict,
+        score: s.score,
+        direction: s.direction,
+        price: s.price,
+        isNewSignal: s.isNewSignal,
+        ...s.debugInputs,
+      })),
+    }),
   });
 }
