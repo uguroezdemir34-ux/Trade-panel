@@ -268,8 +268,10 @@ export default function GrafikPage() {
     for (const pos of livePos) {
       const dir = pos.direction as "LONG" | "SHORT";
 
-      // Entry — OKX truth, her zaman mevcut
-      lines.push({ price: pos.entryPx, kind: "entry", direction: dir });
+      // Entry — kaynak borsa etiketi ile (OKX/BNB/BBT)
+      const srcLabel: Record<string, string> = { okx: "OKX", binance: "BNB", bybit: "BBT" };
+      const entryLabel = `${srcLabel[pos.source] ?? pos.source} Entry`;
+      lines.push({ price: pos.entryPx, kind: "entry", direction: dir, label: entryLabel });
 
       // tradesStore: yalnızca eksik seviye değerleri için backup
       // Açıklık kararına karışmıyor; livePos guard geçtikten sonra okunuyor

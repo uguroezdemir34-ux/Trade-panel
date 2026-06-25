@@ -30,6 +30,7 @@ export const PLAN_FEATURES = {
     scorerWeights: false,
     riskAdvanced: false,
     botMode: false,
+    multiExchange: false,
     maxPairs: 3,
   },
   pro: {
@@ -42,6 +43,7 @@ export const PLAN_FEATURES = {
     scorerWeights: true,
     riskAdvanced: true,
     botMode: true,
+    multiExchange: true,
     maxPairs: 15,
   },
   enterprise: {
@@ -54,6 +56,7 @@ export const PLAN_FEATURES = {
     scorerWeights: true,
     riskAdvanced: true,
     botMode: true,
+    multiExchange: true,
     maxPairs: -1,
   },
 } as const satisfies Record<PlanTier, Record<string, boolean | number>>;

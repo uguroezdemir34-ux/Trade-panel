@@ -66,6 +66,8 @@ export interface TradeLevelLine {
   price: number;
   kind: "entry" | "sl" | "tp1" | "tp2";
   direction: "LONG" | "SHORT";
+  /** Grafik çizgisi başlığı — kaynak borsa etiketi için (ör. "BNB Entry") */
+  label?: string;
 }
 
 export interface DrawnLine {

@@ -908,7 +908,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           lineWidth: 1,
           lineStyle: tl.kind === "entry" ? 0 : 2,
           axisLabelVisible: true,
-          title: TITLES[tl.kind] ?? tl.kind,
+          title: tl.label ?? TITLES[tl.kind] ?? tl.kind,
         });
         tradeLinesRef.current.push(line);
       }

@@ -48,6 +48,7 @@ function makePos(overrides: Partial<Position> = {}): Position {
     tpTriggerPx: null,
     slTriggerPx: null,
     cTime: Date.now() - 3_600_000,
+    source: "okx",
     ...overrides,
   };
 }

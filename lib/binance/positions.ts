@@ -168,6 +168,7 @@ function parseRow(row: BinancePositionRow): Position | null {
     slTriggerPx: null,
     tpTriggerPx: null,
     cTime: row.updateTime || Date.now(),
+    source: "binance",
   };
 }
 

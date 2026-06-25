@@ -98,6 +98,7 @@ function parseRow(row: BybitPositionRow): Position | null {
     slTriggerPx: isFinite(slRaw) && slRaw > 0 ? slRaw : null,
     tpTriggerPx: isFinite(tpRaw) && tpRaw > 0 ? tpRaw : null,
     cTime: parseInt(row.createdTime, 10) || Date.now(),
+    source: "bybit",
   };
 }
 

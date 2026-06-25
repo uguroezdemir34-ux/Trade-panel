@@ -5,8 +5,17 @@ import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useT } from "@/lib/i18n/context";
 import { EXECUTION_ENABLED } from "@/lib/config/execution";
+import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 
 export function BinanceCredsCard(): React.ReactElement {
+  return (
+    <SubscriptionGate feature="multiExchange">
+      <BinanceCredsCardInner />
+    </SubscriptionGate>
+  );
+}
+
+function BinanceCredsCardInner(): React.ReactElement {
   const t = useT();
   const bnbFutures = useCredentialStore((s) => s.bnbFutures);
   const setBnbFutures = useCredentialStore((s) => s.setBnbFutures);

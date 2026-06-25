@@ -51,6 +51,8 @@ export interface Position {
   tpTriggerPx: number | null;
   /** Pozisyon açılış zamanı */
   cTime: number;
+  /** Kaynak borsa — grafik etiketi ve UI ayırımı için */
+  source: "okx" | "binance" | "bybit";
 }
 
 const positionRowSchema = z.object({
@@ -143,6 +145,7 @@ function parsePositionRow(raw: z.infer<typeof positionRowSchema>): Position | nu
     slTriggerPx: raw.slTriggerPx && num(raw.slTriggerPx) > 0 ? num(raw.slTriggerPx) : null,
     tpTriggerPx: raw.tpTriggerPx && num(raw.tpTriggerPx) > 0 ? num(raw.tpTriggerPx) : null,
     cTime: num(raw.cTime, Date.now()),
+    source: "okx",
   };
 }
 
