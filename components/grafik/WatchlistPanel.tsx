@@ -598,8 +598,8 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
             return (
               <div
                 key={pair}
-                className={`flex items-stretch border-b border-border/30 ${
-                  isActive ? "bg-brand/8 border-l-2 border-l-brand" : ""
+                className={`flex items-stretch border-b border-border/30 border-l-2 ${
+                  isActive ? "bg-brand/10 border-l-brand" : "border-l-transparent"
                 }`}
               >
                 {/* Ana navigasyon alanı */}

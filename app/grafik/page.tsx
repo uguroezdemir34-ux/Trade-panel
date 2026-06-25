@@ -360,7 +360,8 @@ export default function GrafikPage() {
   }
 
   /* ── Shared chart column content ── */
-  const chartSection = (
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const chartSection = useMemo(() => (
     <>
       <ChartControls
         timeframe={timeframe}
@@ -537,7 +538,12 @@ export default function GrafikPage() {
         </div>
       )}
     </>
-  );
+  ), [
+    timeframe, showEma20, showEma50, showEma200, showTrades, showVolume,
+    showRsi, showMacd, showBb, showVwap, showSr, showSplit, showFlow,
+    clickMode, drawnLines, capturedPrice, secLoading, secSeries, series,
+    pair, secTf, theme, t, handleSetClickMode, handlePriceClick,
+  ]);
 
   return (
     <>
