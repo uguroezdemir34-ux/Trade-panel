@@ -787,7 +787,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           priceLineVisible: false,
           lastValueVisible: false,
         });
-        chart.priceScale("volume").applyOptions({ drawTicks: false, borderVisible: false });
+        chart.priceScale("volume").applyOptions({ drawTicks: false, borderVisible: false, autoScale: true });
       }
       chart.priceScale("volume").applyOptions({ scaleMargins: panelMargins(volSlot) });
       volumeRef.current.setData(series.volume as HistogramData<Time>[]);

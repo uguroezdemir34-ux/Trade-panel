@@ -374,7 +374,6 @@ export default function GrafikPage() {
       <div className="flex-1 min-w-0 flex flex-col gap-3">
 
       <ChartControls
-        pair={pair}
         timeframe={timeframe}
         showEma20={showEma20}
         showEma50={showEma50}
@@ -389,7 +388,6 @@ export default function GrafikPage() {
         showSplit={showSplit}
         clickMode={clickMode}
         hasDrawnLines={drawnLines.length > 0}
-        onPairChange={setPair}
         onTimeframeChange={setTimeframe}
         onToggleEma20={() => setShowEma20((v) => !v)}
         onToggleEma50={() => setShowEma50((v) => !v)}
