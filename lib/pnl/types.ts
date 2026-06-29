@@ -108,7 +108,8 @@ export interface PnlStats {
  */
 export type StatTier = "excellent" | "good" | "fair" | "poor";
 
-export function winRateTier(winRate: number): StatTier {
+export function winRateTier(winRate: number, totalTrades?: number): StatTier {
+  if (totalTrades === 0) return "good"; // no data yet → neutral
   if (winRate >= 0.6) return "excellent";
   if (winRate >= 0.5) return "good";
   if (winRate >= 0.4) return "fair";

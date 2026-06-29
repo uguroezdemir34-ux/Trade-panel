@@ -673,6 +673,7 @@ volumeSection: "VOLUME",
         poor: "불량",
         critical: "위험",
       },
+      noDataYet: "No trades tracked yet. Make a trade to see your score.",
     },
     locks: {
       title: "활성 잠금",

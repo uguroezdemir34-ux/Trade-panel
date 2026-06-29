@@ -698,6 +698,7 @@ export const en: Dictionary = {
         poor: "Poor",
         critical: "Critical",
       },
+      noDataYet: "No trades tracked yet. Make a trade to see your score.",
     },
     locks: {
       title: "ACTIVE LOCKS",

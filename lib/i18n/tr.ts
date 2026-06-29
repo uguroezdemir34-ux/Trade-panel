@@ -643,6 +643,7 @@ export const tr: Dictionary = {
         poor: "Zayıf",
         critical: "Kritik",
       },
+      noDataYet: "Henüz kayıtlı trade yok. Skor görmek için bir trade aç.",
     },
     locks: {
       title: "AKTİF KİLİTLER",

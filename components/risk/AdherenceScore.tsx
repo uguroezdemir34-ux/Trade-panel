@@ -22,6 +22,23 @@ export function AdherenceScore(): React.ReactElement {
   const t = useT();
   const entries = useRiskStore((s) => s.disciplineEntries);
   const result = computeAdherenceScore(entries);
+
+  if (result.withSystem === 0 && result.againstSystem === 0 && result.ruleViolation === 0) {
+    return (
+      <div className="rounded-lg border border-border p-4">
+        <h3 className="mb-2 font-mono text-xs tracking-widest">
+          {t("risk.adherence.title")}
+        </h3>
+        <p className="text-text-t3 mb-3 text-xs leading-relaxed">
+          {t("risk.adherence.description")}
+        </p>
+        <span className="text-text-t4 font-mono text-2xs tracking-wider">
+          {t("risk.adherence.noDataYet")}
+        </span>
+      </div>
+    );
+  }
+
   const tierLabel = t(`risk.adherence.tier.${result.tier}`);
   const cls = TIER_COLORS[result.tier];
 

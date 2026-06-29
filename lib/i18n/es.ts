@@ -637,6 +637,7 @@ volumeSection: "VOLUMEN",
         poor: "Malo",
         critical: "Crítico",
       },
+      noDataYet: "No trades tracked yet. Make a trade to see your score.",
     },
     locks: {
       title: "BLOQUEOS ACTIVOS",

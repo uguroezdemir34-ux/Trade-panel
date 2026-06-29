@@ -637,6 +637,7 @@ volumeSection: "VOLUME",
         poor: "Mauvais",
         critical: "Critique",
       },
+      noDataYet: "No trades tracked yet. Make a trade to see your score.",
     },
     locks: {
       title: "VERROUS ACTIFS",

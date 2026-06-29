@@ -673,6 +673,7 @@ volumeSection: "VOLUME",
         poor: "ضعيف",
         critical: "حرج",
       },
+      noDataYet: "No trades tracked yet. Make a trade to see your score.",
     },
     locks: {
       title: "الأقفال النشطة",

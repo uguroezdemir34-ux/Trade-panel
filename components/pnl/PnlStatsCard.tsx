@@ -25,7 +25,7 @@ const TIER_BORDERS = {
 export function PnlStatsCard({ stats }: Props): React.ReactElement {
   const t = useT();
   const locale = useLocale();
-  const tier = winRateTier(stats.winRate);
+  const tier = winRateTier(stats.winRate, stats.totalTrades);
   const tierLabel = t(`pnl.stats.tier.${tier}`);
   const containerClass = TIER_BORDERS[tier];
 
@@ -65,7 +65,7 @@ export function PnlStatsCard({ stats }: Props): React.ReactElement {
       <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
         <Stat
           label={t("pnl.stats.winRate")}
-          value={formatPercent(stats.winRate, locale)}
+          value={stats.totalTrades === 0 ? "—" : formatPercent(stats.winRate, locale)}
           sub={`${stats.winCount} / ${stats.totalTrades}`}
         />
         <Stat
@@ -83,7 +83,7 @@ export function PnlStatsCard({ stats }: Props): React.ReactElement {
                 : stats.profitFactor.toFixed(2)
           }
           sub={
-            stats.profitFactor !== null && stats.profitFactor >= 1 ? "✓" : "✗"
+            stats.profitFactor === null ? "" : stats.profitFactor >= 1 ? "✓" : "✗"
           }
         />
       </div>

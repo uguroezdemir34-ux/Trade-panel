@@ -637,6 +637,7 @@ volumeSection: "ОБЪЁМ",
         poor: "Плохо",
         critical: "Критично",
       },
+      noDataYet: "No trades tracked yet. Make a trade to see your score.",
     },
     locks: {
       title: "АКТИВНЫЕ БЛОКИРОВКИ",

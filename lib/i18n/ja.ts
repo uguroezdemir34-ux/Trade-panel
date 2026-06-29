@@ -673,6 +673,7 @@ volumeSection: "VOLUME",
         poor: "不良",
         critical: "危機的",
       },
+      noDataYet: "No trades tracked yet. Make a trade to see your score.",
     },
     locks: {
       title: "アクティブロック",
