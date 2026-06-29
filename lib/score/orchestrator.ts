@@ -53,6 +53,7 @@ import {
   checkLockReleaseRamp,
   checkCorrelationCluster,
   checkAtrRegime,
+  checkDailyTrendOpposite,
 } from "./blocks";
 import { getBucketStats, type Trade } from "@/lib/bucket/stats";
 import {
@@ -451,6 +452,9 @@ export function computeScore(input: ScoreInput): ScoreResult {
   const atrReg = checkAtrRegime({ percentile: atrPercentile });
   if (atrReg.softBlock) softBlocks.push(atrReg.softBlock);
   if (atrReg.reason) reasons.atrRegime = atrReg.reason;
+
+  const dailyOpposite = checkDailyTrendOpposite({ direction, px, ema50_1d: input.ema50_1d });
+  if (dailyOpposite) softBlocks.push(dailyOpposite);
 
   // ───── MTF trend gate ─────
   // 1h/4h/1d EMA20 trendi sinyalle net şekilde çelişiyorsa GO → WAIT.

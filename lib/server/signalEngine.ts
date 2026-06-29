@@ -14,6 +14,8 @@ import { inferDirection, type DirectionInput } from "@/lib/score/direction";
 import { detectSRLevels } from "@/lib/sr/detect";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import { SR_SCALE_FACTOR } from "@/lib/score/version";
+import { detectLiquiditySweep } from "@/lib/sr/sweep";
+import { computeMtfTrend } from "@/lib/market/mtfTrend";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Candle } from "@/lib/okx/candles";
 import { fetchFearGreed } from "@/lib/macro/fetch";
@@ -40,7 +42,7 @@ const _lastFundingRate = new Map<string, number>(); // instId → last successfu
 let _lastFg: number | null = null;
 
 /** Frozen risk/macro state — mirrors backtest engine FROZEN_STATE.
- *  srModifier is intentionally excluded: computed dynamically in fetchAndScore. */
+ *  srModifier and sweep15m intentionally excluded: computed dynamically in fetchAndScore. */
 const FROZEN_STATE = {
   eventSkipUntil: null,
   btcCooldownUntil: null,
@@ -55,7 +57,6 @@ const FROZEN_STATE = {
     reason: "",
   },
   trades: [] as [],
-  sweep15m: { type: null as null, strength: 0 as const },
   timeQuality: { quality: 1.0, reason: "server-cron" },
 };
 
@@ -166,17 +167,19 @@ async function fetchAndScore(pair: Pair): Promise<{
 } | null> {
   const instId = `${pair}-USDT-SWAP`;
   const now = Date.now();
-  const [raw1h, raw4h, rawFundingRate, oiResult, fgResult] = await Promise.all([
+  const [raw1h, raw4h, rawFundingRate, oiResult, fgResult, raw1d] = await Promise.all([
     fetchOkxCandles(instId, "1H", 300),
     fetchOkxCandles(instId, "4H", 300),
     fetchOkxFundingRate(instId),
     fetchOkxOpenInterest(instId),
     fetchFearGreed(now),
+    fetchOkxCandles(instId, "1D", 30),
   ]);
 
   // Only use confirmed (closed) bars
   const candles1h = raw1h.filter((c) => c.confirm);
   const candles4h = raw4h.filter((c) => c.confirm);
+  const candles1d = raw1d.filter((c) => c.confirm);
 
   if (candles1h.length < CANDLE_MIN_1H || candles4h.length < CANDLE_MIN_4H) return null;
 
@@ -206,6 +209,19 @@ async function fetchAndScore(pair: Pair): Promise<{
     return _lastFundingRate.get(instId) ?? null;
   })();
 
+  // Pre-compute indicator candles (reused for sweep detection + S/R)
+  const c4hInd = candles4h.map(toIndicatorCandle);
+  const c1hInd = candles1h.map(toIndicatorCandle);
+  const sweepDetection = detectLiquiditySweep(c1hInd, c4hInd);
+  const sweep15m = sweepDetection
+    ? {
+        type: (sweepDetection.direction === "LONG" ? "bullish_sweep" : "bearish_sweep") as
+          | "bullish_sweep"
+          | "bearish_sweep",
+        strength: sweepDetection.wickRatio,
+      }
+    : { type: null as null, strength: 0 };
+
   const composed = composeScoreInput({
     pair,
     livePrice: latest.close,
@@ -217,12 +233,13 @@ async function fetchAndScore(pair: Pair): Promise<{
     oiVelocityScore,
     now: latest.ts,
     srModifier: 0,
+    sweep15m,
     ...FROZEN_STATE,
   });
 
   if (!composed) return null;
 
-  // Pre-compute direction → S/R modifier (same pattern as browser)
+  // Direction → S/R modifier (c4hInd/c1hInd pre-computed above)
   const { direction } = inferDirection({
     px15: composed.px15,
     px1h: composed.px,
@@ -232,12 +249,11 @@ async function fetchAndScore(pair: Pair): Promise<{
     ema200_1h: composed.ema200_1h,
     ema50_4h: composed.ema50_4h,
   } as DirectionInput);
-  const c4hInd = candles4h.map(toIndicatorCandle);
-  const c1hInd = candles1h.map(toIndicatorCandle);
   const srResult = detectSRLevels(c4hInd, c1hInd, composed.px, direction, composed.volRatio);
   const srModifier = srResult.modifier * SR_SCALE_FACTOR;
 
-  const result = computeScore({ ...composed, srModifier, scorerWeights: null });
+  const mtfResult = computeMtfTrend(pair, candles1h, candles4h, candles1d);
+  const result = computeScore({ ...composed, srModifier, scorerWeights: null, mtfResult });
 
   return {
     candles1h,
@@ -283,6 +299,7 @@ function scorePrevBar(
       oiVelocityScore: null, // prev-bar OI velocity mevcut değil
       now: prevLatest.ts,
       srModifier: 0, // dedup approximation: S/R not recomputed for prev bar
+      sweep15m: { type: null as null, strength: 0 }, // dedup: sweep not recomputed for prev bar
       ...FROZEN_STATE,
     });
     if (!composed) return null;

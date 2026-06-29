@@ -27,6 +27,7 @@ import { detectSRLevels } from "@/lib/sr/detect";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import { oiVelocityScoreOrZero } from "@/lib/market/oi-velocity";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
+import { detectLiquiditySweep } from "@/lib/sr/sweep";
 import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import type { Pair } from "@/lib/constants/pairs";
 
@@ -108,6 +109,21 @@ export function useScoreEngine(): void {
         reason: "",
       };
 
+      // Pre-compute indicator candles (reused for sweep detection + S/R)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const c4hInd = (candles4h as any[]).map(toIndicatorCandle);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const c1hInd = (candles1h as any[]).map(toIndicatorCandle);
+      const sweepDetection = detectLiquiditySweep(c1hInd, c4hInd);
+      const sweep15m = sweepDetection
+        ? {
+            type: (sweepDetection.direction === "LONG" ? "bullish_sweep" : "bearish_sweep") as
+              | "bullish_sweep"
+              | "bearish_sweep",
+            strength: sweepDetection.wickRatio,
+          }
+        : { type: null as null, strength: 0 };
+
       const input = composeScoreInput({
         pair,
         livePrice,
@@ -129,7 +145,7 @@ export function useScoreEngine(): void {
         fundingRate,
         oiVelocityScore,
         srModifier: 0,
-        sweep15m: { type: null, strength: 0 },
+        sweep15m,
         timeQuality: { quality: 1, reason: "" },
         now,
       });
@@ -149,10 +165,6 @@ export function useScoreEngine(): void {
             ema200_1h: input.ema200_1h,
             ema50_4h: input.ema50_4h,
           } as DirectionInput);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const c4hInd = (candles4h as any[]).map(toIndicatorCandle);
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const c1hInd = (candles1h as any[]).map(toIndicatorCandle);
           const srResult = detectSRLevels(c4hInd, c1hInd, input.px, direction, input.volRatio);
           const srModifier = srResult.modifier * SR_SCALE_FACTOR;
           const result = computeScore({ ...input, srModifier, scorerWeights: scorerWeights ?? null, mtfResult });
