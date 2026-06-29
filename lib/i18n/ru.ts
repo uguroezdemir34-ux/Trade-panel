@@ -192,71 +192,41 @@ export const ru: Dictionary = {
     alarmToastBelow: "BELOW",
     alarmToastTarget: "Target",
     alarmToastNow: "Now", goSignalTitle: "Recent GO Signals", leaderboardTitle: "Top Scores",
-      // TODO: translate
-    profilePullback: "Profile: Pullback (Auto)",
-    // TODO: translate
-    profileTrend: "Profile: Trend Mode (Auto)",
-    // TODO: translate
-    signalBarClose: "Signal: Bar Close Confirmed",
-    // TODO: translate
-    trendStrong: "strong trend",
-    // TODO: translate
-    trendMedium: "medium trend",
-    // TODO: translate
-    trendWeak: "weak trend",
-    // TODO: translate
-    volumeSupported: "volume supported",
-    // TODO: translate
-    volumePartial: "volume partial",
-    // TODO: translate
-    volumeInsufficient: "volume insufficient",
-    // TODO: translate
-    pullbackMode: " · pullback mode",
-    // TODO: translate
-    thresholdCrossed: "threshold crossed ({score}/{threshold}) → GO",
-    // TODO: translate
-    thresholdGap: "{gap} pts to threshold ({score}/{threshold})",
-    // TODO: translate
-    thresholdBelow: "below threshold ({score}/{threshold})",
-    // TODO: translate
-    telegramAlertsOn: "Telegram alerts on",
-    // TODO: translate
-    noSignalsFilter: "No signals for this filter",
-    // TODO: translate
-    tradeAfterSignal: "Trade opened after this signal",
-    // TODO: translate
-    noTradeAfterSignal: "No trade opened",
+    profilePullback: "Профиль: Pullback (Авто)",
+    profileTrend: "Профиль: Трендовый режим (Авто)",
+    signalBarClose: "Сигнал: закрытие свечи подтверждено",
+    trendStrong: "сильный тренд",
+    trendMedium: "средний тренд",
+    trendWeak: "слабый тренд",
+    volumeSupported: "объём подтверждён",
+    volumePartial: "объём частичный",
+    volumeInsufficient: "объём недостаточный",
+    pullbackMode: " · режим pullback",
+    thresholdCrossed: "порог пройден ({score}/{threshold}) → GO",
+    thresholdGap: "{gap} п. до порога ({score}/{threshold})",
+    thresholdBelow: "ниже порога ({score}/{threshold})",
+    telegramAlertsOn: "Уведомления Telegram включены",
+    noSignalsFilter: "Нет сигналов для этого фильтра",
+    tradeAfterSignal: "Сделка открыта после этого сигнала",
+    noTradeAfterSignal: "Сделка не открыта",
     tradeProfit: "Trade opened — profit",
     tradeLoss: "Trade opened — stop-out (loss)",
     tradeOpen: "Trade still open",
     ambiguousSignal: "Multiple GO signals within 15min — trade match uncertain",
     stalePriceAtSignal: "Price data was unavailable at signal time",
-    // TODO: translate
-    shortcutsTitle: "⌨ Keyboard Shortcuts",
-    // TODO: translate
-    shortcutsCloseHint: "Press ESC or ? to close",
-    // TODO: translate
-    shortcutSelectPair: "Select pair (BTC=1, ETH=2, XRP=3 ...)",
-    // TODO: translate
-    shortcutPrevNext: "Previous / next pair in active list",
-    // TODO: translate
-    shortcutNextGo: "Jump to next GO pair",
-    // TODO: translate
-    shortcutToggleHelp: "Open / close this help screen",
-    // TODO: translate
-    shortcutCloseModal: "Close open modal",
-    // TODO: translate
-    goSignalEmptyNote: "No GO signals yet — fills automatically as the system runs.",
-    // TODO: translate
-    scoreFilterAll: "All",
-    // TODO: translate
-volumeSection: "VOLUME",
-    // TODO: translate
-    execForwardTestRequired: "Activate Forward Test Mode — order placement disabled.",
-    // TODO: translate
-    keyboardShortcutHint: "Keyboard shortcuts (? key)",
-    // TODO: translate
-    pairGoHistory: "{pair} GO History",
+    shortcutsTitle: "⌨ Горячие клавиши",
+    shortcutsCloseHint: "Нажмите ESC или ? для закрытия",
+    shortcutSelectPair: "Выбрать пару (BTC=1, ETH=2, XRP=3 ...)",
+    shortcutPrevNext: "Предыдущая / следующая пара в активном списке",
+    shortcutNextGo: "Перейти к следующей паре GO",
+    shortcutToggleHelp: "Открыть / закрыть это окно справки",
+    shortcutCloseModal: "Закрыть открытое окно",
+    goSignalEmptyNote: "Сигналов GO пока нет — заполняется автоматически во время работы системы.",
+    scoreFilterAll: "Все",
+volumeSection: "ОБЪЁМ",
+    execForwardTestRequired: "Включить режим Forward Test — размещение ордеров отключено.",
+    keyboardShortcutHint: "Горячие клавиши (клавиша ?)",
+    pairGoHistory: "История GO для {pair}",
     aiBadge: "AI",
     notesPlaceholder: "Notes for this pair...",
     emaAbove: "Above",
@@ -288,18 +258,12 @@ volumeSection: "VOLUME",
   },
   settings: {
     title: "НАСТРОЙКИ",
-    // TODO: translate
-    signalModeLabel: "⚙ SIGNAL MODE",
-    // TODO: translate
-    signalModeManageExchange: "Order management disabled. Manage positions from OKX, Binance or Bybit.",
-    // TODO: translate
-    signalModeNote: "⚙ Signal mode — order placement disabled",
-    // TODO: translate
-    signalModeActive: "Signal mode active — trade from exchange",
-    // TODO: translate
-    signalModeBalanceOnly: "⚙ Signal mode — balance display only, order placement disabled",
-    // TODO: translate
-    signalModeApiNote: "⚙ Signal mode: API key is used for balance and position display only. No trade permission required — read-only key is sufficient.",
+    signalModeLabel: "⚙ РЕЖИМ СИГНАЛА",
+    signalModeManageExchange: "Управление ордерами отключено. Управляйте позициями через OKX, Binance или Bybit.",
+    signalModeNote: "⚙ Режим сигнала — размещение ордеров отключено",
+    signalModeActive: "Режим сигнала активен — торгуйте через биржу",
+    signalModeBalanceOnly: "⚙ Режим сигнала — только отображение баланса, размещение ордеров отключено",
+    signalModeApiNote: "⚙ Режим сигнала: API-ключ используется только для отображения баланса и позиций. Разрешение на торговлю не требуется — достаточно ключа только для чтения.",
     demoMode: {
       label: "Демо режим",
       description: "Подключиться к демо-торговому эндпойнту OKX. Без реальных средств.",
@@ -935,86 +899,46 @@ volumeSection: "VOLUME",
     quickTrade: "Quick Trade",
     holdConfirm: "Hold to confirm",
     quickSuccess: "Order placed",
-    // TODO: translate
-    drawHline: "H-LINE — Click on chart → horizontal line",
-    // TODO: translate
-    drawRay: "RAY — Click on chart → horizontal ray",
-    // TODO: translate
-    drawTrend2: "TREND — Step 2: click endpoint (ESC = cancel)",
-    // TODO: translate
-    drawTrend1: "TREND — Step 1: click starting point",
-    // TODO: translate
-    drawExtend2: "EXTENDED LINE — Step 2: click endpoint (ESC = cancel)",
-    // TODO: translate
-    drawExtend1: "EXTENDED LINE — Step 1: click starting point",
-    // TODO: translate
-    drawChannel3: "PARALLEL CHANNEL — Step 3: set width (ESC = cancel step 2)",
-    // TODO: translate
-    drawChannel2: "PARALLEL CHANNEL — Step 2: click endpoint (ESC = cancel)",
-    // TODO: translate
-    drawChannel1: "PARALLEL CHANNEL — Step 1: click starting point",
-    // TODO: translate
-    drawFib2: "FIB — Step 2: click end price (ESC = cancel)",
-    // TODO: translate
-    drawFib1: "FIB — Step 1: click start price",
-    // TODO: translate
-    drawFibExt2: "FIB EXT — Step 2: click end price (ESC = cancel)",
-    // TODO: translate
-    drawFibExt1: "FIB EXT — Step 1: click start price",
-    // TODO: translate
-    drawVline: "V-LINE — Click on chart → vertical line",
-    // TODO: translate
-    drawCross: "CROSS — Click on chart → crosshair",
-    // TODO: translate
-    drawFibTime2: "FIB TIME — Step 2: click end point (ESC = cancel)",
-    // TODO: translate
-    drawFibTime1: "FIB TIME — Step 1: click starting point",
-    // TODO: translate
-    drawPrice: "PRICE MODE — Click on chart → snap to price",
-    // TODO: translate
-    drawCancelStep2: "↩ Cancel step 2",
-    // TODO: translate
-    drawCancelStep1: "↩ Cancel step 1",
-    // TODO: translate
-    drawCancelAll: "✕ Cancel",
-    // TODO: translate
-    priceCaptureCopied: "Copied ✓ or save",
-    // TODO: translate
-    priceCaptureLabel: "Price",
-    // TODO: translate
-    priceCopyAs: "Copy as {label}",
-    // TODO: translate
-    loadError: "Failed to load, retrying...",
-    // TODO: translate
-    heightAdjust: "Adjust chart height",
-    // TODO: translate
-toolCursor: "Cursor",
-    // TODO: translate
-    toolHline: "H-Line",
-    // TODO: translate
-    toolRay: "Ray",
-    // TODO: translate
-    toolTrendline: "Trend Line",
-    // TODO: translate
-    toolExtline: "Extended Line",
-    // TODO: translate
-    toolChannel: "Parallel Channel",
-    // TODO: translate
-    toolVline: "V-Line",
-    // TODO: translate
-    toolCrossline: "Cross Line",
-    // TODO: translate
-    toolFibTimezone: "Fib Time Zone",
-    // TODO: translate
-    watchlistVolumeDelta: "Volume Delta",
-    // TODO: translate
-    watchlist24hHigh: "24h High",
-    // TODO: translate
-    watchlist24hLow: "24h Low",
-    // TODO: translate
-    watchlistChange: "Chg",
-    // TODO: translate
-    watchlistTitle: "Watchlist",
+    drawHline: "H-ЛИНИЯ — Щёлкните по графику → горизонтальная линия",
+    drawRay: "ЛУЧ — Щёлкните по графику → горизонтальный луч",
+    drawTrend2: "ТРЕНД — Шаг 2: щёлкните конечную точку (ESC = отмена)",
+    drawTrend1: "ТРЕНД — Шаг 1: щёлкните начальную точку",
+    drawExtend2: "ПРОДЛЁННАЯ ЛИНИЯ — Шаг 2: щёлкните конечную точку (ESC = отмена)",
+    drawExtend1: "ПРОДЛЁННАЯ ЛИНИЯ — Шаг 1: щёлкните начальную точку",
+    drawChannel3: "ПАРАЛЛЕЛЬНЫЙ КАНАЛ — Шаг 3: задайте ширину (ESC = отменить шаг 2)",
+    drawChannel2: "ПАРАЛЛЕЛЬНЫЙ КАНАЛ — Шаг 2: щёлкните конечную точку (ESC = отмена)",
+    drawChannel1: "ПАРАЛЛЕЛЬНЫЙ КАНАЛ — Шаг 1: щёлкните начальную точку",
+    drawFib2: "FIB — Шаг 2: щёлкните конечную цену (ESC = отмена)",
+    drawFib1: "FIB — Шаг 1: щёлкните начальную цену",
+    drawFibExt2: "FIB EXT — Шаг 2: щёлкните конечную цену (ESC = отмена)",
+    drawFibExt1: "FIB EXT — Шаг 1: щёлкните начальную цену",
+    drawVline: "V-ЛИНИЯ — Щёлкните по графику → вертикальная линия",
+    drawCross: "ПЕРЕКРЕСТИЕ — Щёлкните по графику → перекрестие",
+    drawFibTime2: "FIB TIME — Шаг 2: щёлкните конечную точку (ESC = отмена)",
+    drawFibTime1: "FIB TIME — Шаг 1: щёлкните начальную точку",
+    drawPrice: "РЕЖИМ ЦЕНЫ — Щёлкните по графику → привязка к цене",
+    drawCancelStep2: "↩ Отменить шаг 2",
+    drawCancelStep1: "↩ Отменить шаг 1",
+    drawCancelAll: "✕ Отмена",
+    priceCaptureCopied: "Скопировано ✓ или сохранить",
+    priceCaptureLabel: "Цена",
+    priceCopyAs: "Копировать как {label}",
+    loadError: "Ошибка загрузки, повтор...",
+    heightAdjust: "Настроить высоту графика",
+toolCursor: "Курсор",
+    toolHline: "H-линия",
+    toolRay: "Луч",
+    toolTrendline: "Линия тренда",
+    toolExtline: "Продлённая линия",
+    toolChannel: "Параллельный канал",
+    toolVline: "V-линия",
+    toolCrossline: "Перекрёстная линия",
+    toolFibTimezone: "Временная зона Fib",
+    watchlistVolumeDelta: "Дельта объёма",
+    watchlist24hHigh: "Макс. 24ч",
+    watchlist24hLow: "Мин. 24ч",
+    watchlistChange: "Изм.",
+    watchlistTitle: "Список наблюдения",
     watchlistPickerTitle: "Select Coin",
     watchlistPickerHintAdd: "add",
     watchlistPickerHintRemove: "remove from list",
@@ -1078,12 +1002,9 @@ toolCursor: "Cursor",
       title: "ПОСЛЕДНИЕ СДЕЛКИ",
       score: "Оценка",
     },
-      // TODO: translate
-    noteView: "View / edit note",
-    // TODO: translate
-    noteAdd: "Add note",
-    // TODO: translate
-    noteAddPlaceholder: "Add note... (saved on blur)",
+    noteView: "Просмотр / редактирование заметки",
+    noteAdd: "Добавить заметку",
+    noteAddPlaceholder: "Добавить заметку... (сохраняется при потере фокуса)",
 },
 
   warn: {
