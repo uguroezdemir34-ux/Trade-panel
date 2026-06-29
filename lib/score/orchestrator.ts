@@ -57,6 +57,11 @@ import {
 } from "./blocks";
 import { getBucketStats, type Trade } from "@/lib/bucket/stats";
 import {
+  detectRegimeForWeights,
+  computeAdaptiveWeights,
+  composeScorerWeights,
+} from "./adaptiveWeights";
+import {
   detectPullbackSetup,
   type SignalType,
   PULLBACK_CONSTANTS,
@@ -332,10 +337,15 @@ export function computeScore(input: ScoreInput): ScoreResult {
     macro: macroResult.score,
   };
 
-  // Apply scorer weights and normalize back to 0-100 scale
-  const w = input.scorerWeights
+  // Adaptive regime-based weights composed with user-configured weights.
+  // Regime detected pre-baseScore (no baseScore gate) so weights shape the score.
+  // User weights from settings multiply on top: final = adaptive × user.
+  const adaptiveRegime = detectRegimeForWeights(adx, dirConfidence, counterTrend, bbPct, direction);
+  const adaptiveBase = computeAdaptiveWeights(adaptiveRegime, atrPercentile, fg);
+  const userWeights = input.scorerWeights
     ? { ...DEFAULT_SCORER_WEIGHTS, ...input.scorerWeights }
     : DEFAULT_SCORER_WEIGHTS;
+  const w = composeScorerWeights(adaptiveBase, userWeights);
   const maxWeighted =
     BASE_MAX.trend * w.trend + BASE_MAX.adx * w.adx + BASE_MAX.rsi * w.rsi +
     BASE_MAX.vol * w.vol + BASE_MAX.bb * w.bb + BASE_MAX.vwap * w.vwap +
