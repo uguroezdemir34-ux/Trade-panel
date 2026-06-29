@@ -264,14 +264,6 @@ volumeSection: "VOLUME",
     emaNoData: "No Data",
 },
 
-    // TODO: translate
-    signalModeNote: "⚙ Signal mode — order placement disabled",
-    // TODO: translate
-    signalModeActive: "Signal mode active — trade from exchange",
-    // TODO: translate
-    signalModeBalanceOnly: "⚙ Signal mode — balance display only, order placement disabled",
-    // TODO: translate
-    signalModeApiNote: "⚙ Signal mode: API key is used for balance and position display only. No trade permission required — read-only key is sufficient.",
   watchlist: {
     toast: {
       added: "⭐ {pair} added to watchlist",
@@ -300,6 +292,14 @@ volumeSection: "VOLUME",
     signalModeLabel: "⚙ SIGNAL MODE",
     // TODO: translate
     signalModeManageExchange: "Order management disabled. Manage positions from OKX, Binance or Bybit.",
+    // TODO: translate
+    signalModeNote: "⚙ Signal mode — order placement disabled",
+    // TODO: translate
+    signalModeActive: "Signal mode active — trade from exchange",
+    // TODO: translate
+    signalModeBalanceOnly: "⚙ Signal mode — balance display only, order placement disabled",
+    // TODO: translate
+    signalModeApiNote: "⚙ Signal mode: API key is used for balance and position display only. No trade permission required — read-only key is sufficient.",
     demoMode: {
       label: "डेमो मोड",
       description: "OKX डेमो ट्रेडिंग एंडपॉइंट से जोड़ें। कोई वास्तविक फंड नहीं।",
@@ -570,19 +570,6 @@ volumeSection: "VOLUME",
       hint: "Pearson · 4h returns · {n} data points",
       noData: "No candle data loaded yet",
       noDataHint: "Candle data loads automatically in the background.",
-      wallet: {
-      marginUsed: "Margin Usage",
-      safe: "Safe",
-      caution: "Caution",
-      danger: "Critical",
-      used: "used",
-      free: "free",
-      dailyTotal: "Daily Total",
-      posSize: "Position Size",
-      usedMargin: "Used Margin",
-      liqPriceLabel: "Liq. Price",
-      qxScore: "QX SCORE",
-    },
     },
     wallet: {
       marginUsed: "Margin Usage",
