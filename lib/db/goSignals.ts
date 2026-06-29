@@ -92,9 +92,17 @@ function toRow(input: GoSignalInput): GoSignalRow {
 /**
  * Insert (upsert) a GO signal into the DB.
  * Idempotent: same pair+direction+signalTs is a no-op on retry.
- * No-op if Supabase is not configured.
+ * If Supabase is not configured: logs a loud warning (visible in Vercel
+ * function logs) and returns without throwing — cron continues.
  */
 export async function insertGoSignal(input: GoSignalInput): Promise<void> {
-  if (!isDbConfigured()) return;
+  if (!isDbConfigured()) {
+    console.warn(
+      `[goSignals] SUPABASE not configured — GO signal NOT persisted` +
+        ` (pair=${input.pair} direction=${input.direction} signalTs=${input.signalTs}).` +
+        ` Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel env to enable persistence.`,
+    );
+    return;
+  }
   await dbUpsert(TABLE, toRow(input));
 }
