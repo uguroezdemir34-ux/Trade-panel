@@ -255,6 +255,10 @@ volumeSection: "VOLUME",
     execForwardTestRequired: "Activate Forward Test Mode — order placement disabled.",
     // TODO: translate
     keyboardShortcutHint: "Keyboard shortcuts (? key)",
+    goStatsSignals: "Signals",
+    goStatsTraded: "Traded",
+    goStatsWinRate: "Win Rate",
+    goStatsAvgScore: "Avg Score",
     // TODO: translate
     pairGoHistory: "{pair} GO History",
     aiBadge: "AI",

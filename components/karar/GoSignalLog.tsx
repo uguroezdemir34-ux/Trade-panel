@@ -39,6 +39,27 @@ function fullTime(ts: number): string {
   return d.toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit" }) + " " + time;
 }
 
+function StatCell({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: string;
+  color?: string;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center py-2 px-1 border-r border-border/20 last:border-r-0">
+      <span className={`font-mono text-xs font-bold tabular-nums ${color ?? "text-text-t1"}`}>
+        {value}
+      </span>
+      <span className="font-mono text-2xs text-text-t4 mt-0.5 text-center leading-tight">
+        {label}
+      </span>
+    </div>
+  );
+}
+
 function Chip({
   active,
   onClick,
@@ -147,6 +168,18 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
   const paginated = filtered.slice(0, page * PAGE_SIZE);
   const hasMore = paginated.length < filtered.length;
 
+  const signalStats = useMemo(() => {
+    const total = filtered.length;
+    const converted = filtered.filter((e) => convertedMap.has(`${e.pair}_${e.ts}`)).length;
+    const profits = filtered.filter((e) => convertedMap.get(`${e.pair}_${e.ts}`) === "profit").length;
+    const losses = filtered.filter((e) => convertedMap.get(`${e.pair}_${e.ts}`) === "loss").length;
+    const closed = profits + losses;
+    const avgScore = total > 0 ? Math.round(filtered.reduce((s, e) => s + e.score, 0) / total) : 0;
+    const winRate = closed > 0 ? profits / closed : null;
+    const convRate = total > 0 ? converted / total : null;
+    return { total, converted, closed, avgScore, winRate, convRate };
+  }, [filtered, convertedMap]);
+
   if (allGoEntries.length === 0) return emptyFallback ? <>{emptyFallback}</> : null;
 
   return (
@@ -222,6 +255,29 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
           </Chip>
         ))}
       </div>
+
+      {/* Aggregate stats */}
+      {filtered.length > 0 && (
+        <div className="grid grid-cols-4 border-b border-border/30 bg-surface-s1/20">
+          <StatCell label={t("karar.goStatsSignals")} value={signalStats.total.toString()} />
+          <StatCell
+            label={t("karar.goStatsTraded")}
+            value={signalStats.convRate !== null && signalStats.converted > 0
+              ? `${signalStats.converted} (${(signalStats.convRate * 100).toFixed(0)}%)`
+              : "—"}
+          />
+          <StatCell
+            label={t("karar.goStatsWinRate")}
+            value={signalStats.winRate !== null ? `${(signalStats.winRate * 100).toFixed(0)}%` : "—"}
+            color={signalStats.winRate !== null
+              ? signalStats.winRate >= 0.55 ? "text-signal-green"
+              : signalStats.winRate >= 0.4 ? "text-signal-amber"
+              : "text-signal-red"
+              : undefined}
+          />
+          <StatCell label={t("karar.goStatsAvgScore")} value={signalStats.total > 0 ? signalStats.avgScore.toString() : "—"} />
+        </div>
+      )}
 
       {/* Rows */}
       {filtered.length === 0 ? (
