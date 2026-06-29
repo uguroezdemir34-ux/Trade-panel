@@ -1384,5 +1384,9 @@ export const tr: Dictionary = {
     binanceStep4: "Yatırım miktarını ayarlayın ve pozisyonları onaylayın.",
     binanceButton: "Binance'te Takip Et →",
     notConfigured: "Henüz yapılandırılmadı",
+    profileTitle: "Trader Profili",
+    profileActiveSince: "Aktif",
+    profileTrades: "İşlem",
+    profileNoTrades: "Henüz kapalı işlem yok — işlem yaptıkça profil dolacak.",
   },
 };

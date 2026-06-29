@@ -1384,5 +1384,9 @@ export const en: Dictionary = {
     binanceStep4: "Set your investment amount and confirm positions.",
     binanceButton: "Follow on Binance →",
     notConfigured: "Not configured yet",
+    profileTitle: "Trader Profile",
+    profileActiveSince: "Active since",
+    profileTrades: "Trades",
+    profileNoTrades: "No closed trades yet — profile will populate as you trade.",
   },
 };
