@@ -54,8 +54,16 @@ export default function PortfolyoPage() {
         {active === "sinyaller" && (
           <div className="flex flex-col gap-4 p-4">
             <GoSignalLog emptyFallback={
-              <div className="border border-border bg-bg-card rounded-lg px-4 py-8 text-center font-mono text-2xs text-text-t4">
-                {t("karar.goSignalEmptyNote")}
+              <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 text-center">
+                <span className="text-5xl opacity-20">⚡</span>
+                <div className="flex flex-col gap-1">
+                  <p className="font-mono text-sm font-semibold text-text-t2">
+                    {t("karar.goSignalEmptyNote")}
+                  </p>
+                  <p className="font-mono text-2xs text-text-t4 max-w-[260px] leading-relaxed mx-auto">
+                    GO sinyalleri burada birikir — tarayıcı açık olduğunda her GO geçişi otomatik kaydedilir.
+                  </p>
+                </div>
               </div>
             } />
           </div>

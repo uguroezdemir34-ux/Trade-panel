@@ -245,67 +245,72 @@ function PnlPageInner() {
         <StreakCard trades={trades} />
       </div>
 
-      {/* Insights + FT Comparison */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <TradeInsightsCard trades={trades} />
-        <FtComparison trades={allTrades} />
-      </div>
+      {trades.length > 0 && (
+        <>
+          {/* Insights + FT Comparison */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <TradeInsightsCard trades={trades} />
+            <FtComparison trades={allTrades} />
+          </div>
 
-      {/* Equity + Weekly */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <EquityCurve points={equityPoints} />
-        <WeeklySummary weeks={weeklyAggs} />
-      </div>
+          {/* Equity + Weekly */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <EquityCurve points={equityPoints} />
+            <WeeklySummary weeks={weeklyAggs} />
+          </div>
 
-      {/* Calendar + Monthly */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <PnlCalendar aggregates={calendarAggregates} maxAbsPnl={maxAbsPnl} />
-        <MonthlyBreakdown months={monthlyAggs} />
-      </div>
+          {/* Calendar + Monthly */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <PnlCalendar aggregates={calendarAggregates} maxAbsPnl={maxAbsPnl} />
+            <MonthlyBreakdown months={monthlyAggs} />
+          </div>
 
-      {/* Distribution + R-Multiple */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <PnlDistribution trades={trades} />
-        <RMultipleChart trades={trades} />
-      </div>
+          {/* Distribution + R-Multiple */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <PnlDistribution trades={trades} />
+            <RMultipleChart trades={trades} />
+          </div>
 
-      {/* Top Trades + Pair Breakdown */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <TopTradesCard trades={trades} />
-        <PairBreakdownCard trades={trades} />
-      </div>
+          {/* Top Trades + Pair Breakdown */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <TopTradesCard trades={trades} />
+            <PairBreakdownCard trades={trades} />
+          </div>
 
-      {/* Exit + Score Heatmap */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <ExitBreakdownCard trades={trades} />
-        <ScoreHeatmap trades={trades} />
-      </div>
+          {/* Exit + Score Heatmap */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <ExitBreakdownCard trades={trades} />
+            <ScoreHeatmap trades={trades} />
+          </div>
 
-      {/* Holding + Day of Week */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <HoldingTimeCard trades={trades} />
-        <DayOfWeekCard trades={trades} />
-      </div>
+          {/* Holding + Day of Week */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <HoldingTimeCard trades={trades} />
+            <DayOfWeekCard trades={trades} />
+          </div>
 
-      {/* Time of Day + Session */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <TimeOfDayCard trades={trades} />
-        <SessionBreakdownCard trades={trades} />
-      </div>
+          {/* Time of Day + Session */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <TimeOfDayCard trades={trades} />
+            <SessionBreakdownCard trades={trades} />
+          </div>
 
-      {/* Monte Carlo + Entry Quality */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <MonteCarloCard trades={trades} />
-        <EntryQualityChart trades={trades} />
-      </div>
+          {/* Monte Carlo + Entry Quality */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <MonteCarloCard trades={trades} />
+            <EntryQualityChart trades={trades} />
+          </div>
 
-      {/* EV Leaderboard + Journal */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <PairEvLeaderboard trades={trades} />
-        <TradeJournalCard />
-      </div>
+          {/* EV Leaderboard + Journal */}
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <PairEvLeaderboard trades={trades} />
+            <TradeJournalCard />
+          </div>
 
-      <DisciplineCard trades={trades} />
+          <DisciplineCard trades={trades} />
+        </>
+      )}
+
       <ParameterAudit stats={calibrationStats} />
     </div>
   );
