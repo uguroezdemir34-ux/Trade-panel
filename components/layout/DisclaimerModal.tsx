@@ -9,11 +9,13 @@
  */
 
 import { useEffect, useState } from "react";
+import { useT } from "@/lib/i18n/context";
 
 const DISMISSED_KEY = "qx_disclaimer_v1";
 
 export function DisclaimerModal(): React.ReactElement | null {
   const [visible, setVisible] = useState(false);
+  const t = useT();
 
   useEffect(() => {
     try {
@@ -43,41 +45,34 @@ export function DisclaimerModal(): React.ReactElement | null {
           <span className="text-2xl">⚠️</span>
           <div>
             <p className="font-mono text-xs tracking-[0.2em] text-[#EF4444] uppercase font-bold">
-              Risk Uyarısı
+              {t("disclaimer.title")}
             </p>
             <p className="font-mono text-[10px] tracking-widest text-[#6B7280]">
-              Risk Disclosure
+              {t("disclaimer.subtitle")}
             </p>
           </div>
         </div>
 
-        {/* Turkish */}
+        {/* Body — single locale, bold preserved via split keys */}
         <p className="font-mono text-sm text-[#D1D5DB] leading-relaxed">
-          Kripto para vadeli işlemleri <strong className="text-white">yüksek risk</strong> içerir.
-          Yatırımınızın tamamını kaybedebilirsiniz.{" "}
-          <strong className="text-white">Bu uygulama yatırım tavsiyesi vermez.</strong>{" "}
-          Yalnızca kaybetmeyi göze aldığınız sermayeyle işlem yapınız.
-        </p>
-
-        {/* English */}
-        <p className="mt-3 font-mono text-xs text-[#6B7280] leading-relaxed">
-          Cryptocurrency futures trading involves substantial risk of loss and is not
-          suitable for all investors. You may lose all of your invested capital.
-          This application does not provide investment advice.
-          Past performance does not guarantee future results.
+          {t("disclaimer.bodyPre")}{" "}
+          <strong className="text-white">{t("disclaimer.bodyBold1")}</strong>
+          {" "}{t("disclaimer.bodyMid")}{" "}
+          <strong className="text-white">{t("disclaimer.bodyBold2")}</strong>
+          {" "}{t("disclaimer.bodyPost")}
         </p>
 
         {/* Links */}
         <p className="mt-3 font-mono text-[10px] text-[#4B5563]">
-          Devam ederek{" "}
+          {t("disclaimer.legalPrefix")}{" "}
           <a href="/terms" className="text-[#60A5FA] underline" target="_blank">
-            Kullanım Koşulları
+            {t("disclaimer.terms")}
           </a>
-          {" "}ve{" "}
+          {" "}{t("disclaimer.and")}{" "}
           <a href="/privacy" className="text-[#60A5FA] underline" target="_blank">
-            Gizlilik Politikası
+            {t("disclaimer.privacy")}
           </a>
-          {" "}kabul edilmiş sayılır.
+          {t("disclaimer.legalSuffix")}
         </p>
 
         {/* Accept Button */}
@@ -86,11 +81,11 @@ export function DisclaimerModal(): React.ReactElement | null {
           onClick={handleAccept}
           className="mt-5 w-full rounded-lg bg-[#1E40AF] py-3 font-mono text-sm font-bold tracking-widest text-white uppercase hover:bg-[#1D4ED8] transition-colors active:scale-[0.98]"
         >
-          Anladım, Devam Et
+          {t("disclaimer.acceptBtn")}
         </button>
 
         <p className="mt-2 text-center font-mono text-[10px] text-[#374151]">
-          I understand and accept the risk disclosure
+          {t("disclaimer.acceptSub")}
         </p>
       </div>
     </div>
