@@ -230,11 +230,6 @@ export const en: Dictionary = {
     pairGoHistory: "{pair} GO History",
     aiBadge: "AI",
 },
-
-    signalModeNote: "⚙ Signal mode — order placement disabled",
-    signalModeActive: "Signal mode active — trade from exchange",
-    signalModeBalanceOnly: "⚙ Signal mode — balance display only, order placement disabled",
-    signalModeApiNote: "⚙ Signal mode: API key is used for balance and position display only. No trade permission required — read-only key is sufficient.",
   watchlist: {
     toast: {
       added: "⭐ {pair} added to watchlist",
@@ -245,6 +240,10 @@ export const en: Dictionary = {
     title: "SETTINGS",
     signalModeLabel: "⚙ SIGNAL MODE",
     signalModeManageExchange: "Order management disabled. Manage positions from OKX, Binance or Bybit.",
+    signalModeNote: "⚙ Signal mode — order placement disabled",
+    signalModeActive: "Signal mode active — trade from exchange",
+    signalModeBalanceOnly: "⚙ Signal mode — balance display only, order placement disabled",
+    signalModeApiNote: "⚙ Signal mode: API key is used for balance and position display only. No trade permission required — read-only key is sufficient.",
     demoMode: {
       label: "Demo Mode",
       description: "Connect to OKX demo trading endpoint. No real funds.",

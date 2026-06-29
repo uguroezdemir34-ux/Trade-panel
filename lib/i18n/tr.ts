@@ -230,11 +230,6 @@ export const tr: Dictionary = {
     pairGoHistory: "{pair} GO Geçmişi",
     aiBadge: "AI",
 },
-
-    signalModeNote: "⚙ Sinyal modu — emir gönderme devre dışı",
-    signalModeActive: "Sinyal modu aktif — borsadan işlem yapın",
-    signalModeBalanceOnly: "⚙ Sinyal modu — yalnızca bakiye görüntüleme, emir gönderme devre dışı",
-    signalModeApiNote: "⚙ Sinyal modu: API key yalnızca bakiye ve pozisyon görüntüleme için kullanılır. Emir gönderme izni gerekmez — read-only key yeterlidir.",
   watchlist: {
     toast: {
       added: "⭐ {pair} takibe alındı",
@@ -245,6 +240,10 @@ export const tr: Dictionary = {
     title: "AYARLAR",
     signalModeLabel: "⚙ SİNYAL MODU",
     signalModeManageExchange: "Emir yönetimi devre dışı. Pozisyonları OKX, Binance veya Bybit uygulamasından yönetin.",
+    signalModeNote: "⚙ Sinyal modu — emir gönderme devre dışı",
+    signalModeActive: "Sinyal modu aktif — borsadan işlem yapın",
+    signalModeBalanceOnly: "⚙ Sinyal modu — yalnızca bakiye görüntüleme, emir gönderme devre dışı",
+    signalModeApiNote: "⚙ Sinyal modu: API key yalnızca bakiye ve pozisyon görüntüleme için kullanılır. Emir gönderme izni gerekmez — read-only key yeterlidir.",
     demoMode: {
       label: "Demo Modu",
       description: "OKX demo ticaret uç noktasına bağlan. Gerçek para yok.",

@@ -277,7 +277,7 @@ volumeSection: "VOLUME",
   settings: {
     title: "设置",
     // TODO: translate
-signalModeLabel: "⚙ SIGNAL MODE",
+    signalModeLabel: "⚙ SIGNAL MODE",
     // TODO: translate
     signalModeManageExchange: "Order management disabled. Manage positions from OKX, Binance or Bybit.",
     demoMode: {
