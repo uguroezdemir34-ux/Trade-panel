@@ -22,8 +22,12 @@ import { useScoreStore } from "@/lib/store/scoreStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
+import { inferDirection, type DirectionInput } from "@/lib/score/direction";
+import { detectSRLevels } from "@/lib/sr/detect";
+import { toIndicatorCandle } from "@/lib/okx/candles";
 import { oiVelocityScoreOrZero } from "@/lib/market/oi-velocity";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
+import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import type { Pair } from "@/lib/constants/pairs";
 
 export function useScoreEngine(): void {
@@ -135,7 +139,23 @@ export function useScoreEngine(): void {
 
       if (input) {
         try {
-          const result = computeScore({ ...input, scorerWeights: scorerWeights ?? null, mtfResult });
+          // Pre-compute direction → S/R modifier (same pattern as server)
+          const { direction } = inferDirection({
+            px15: input.px15,
+            px1h: input.px,
+            px4h: input.px4h,
+            ema21_15m: input.ema21_15m,
+            ema50_1h: input.ema50_1h,
+            ema200_1h: input.ema200_1h,
+            ema50_4h: input.ema50_4h,
+          } as DirectionInput);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const c4hInd = (candles4h as any[]).map(toIndicatorCandle);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const c1hInd = (candles1h as any[]).map(toIndicatorCandle);
+          const srResult = detectSRLevels(c4hInd, c1hInd, input.px, direction, input.volRatio);
+          const srModifier = srResult.modifier * SR_SCALE_FACTOR;
+          const result = computeScore({ ...input, srModifier, scorerWeights: scorerWeights ?? null, mtfResult });
           setResult(pair as Pair, result, now);
         } catch {
           // Ignore scoring errors — stale result remains until next candle update

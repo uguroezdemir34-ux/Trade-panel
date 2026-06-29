@@ -10,6 +10,10 @@
 
 import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
+import { inferDirection, type DirectionInput } from "@/lib/score/direction";
+import { detectSRLevels } from "@/lib/sr/detect";
+import { toIndicatorCandle } from "@/lib/okx/candles";
+import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Candle } from "@/lib/okx/candles";
 import { fetchFearGreed } from "@/lib/macro/fetch";
@@ -35,7 +39,8 @@ const OI_SNAP_MAX = 10;
 const _lastFundingRate = new Map<string, number>(); // instId → last successful rate
 let _lastFg: number | null = null;
 
-/** Frozen risk/macro state — mirrors backtest engine FROZEN_STATE */
+/** Frozen risk/macro state — mirrors backtest engine FROZEN_STATE.
+ *  srModifier is intentionally excluded: computed dynamically in fetchAndScore. */
 const FROZEN_STATE = {
   eventSkipUntil: null,
   btcCooldownUntil: null,
@@ -50,7 +55,6 @@ const FROZEN_STATE = {
     reason: "",
   },
   trades: [] as [],
-  srModifier: 0,
   sweep15m: { type: null as null, strength: 0 as const },
   timeQuality: { quality: 1.0, reason: "server-cron" },
 };
@@ -212,12 +216,28 @@ async function fetchAndScore(pair: Pair): Promise<{
     fundingRate,
     oiVelocityScore,
     now: latest.ts,
+    srModifier: 0,
     ...FROZEN_STATE,
   });
 
   if (!composed) return null;
 
-  const result = computeScore({ ...composed, scorerWeights: null });
+  // Pre-compute direction → S/R modifier (same pattern as browser)
+  const { direction } = inferDirection({
+    px15: composed.px15,
+    px1h: composed.px,
+    px4h: composed.px4h,
+    ema21_15m: composed.ema21_15m,
+    ema50_1h: composed.ema50_1h,
+    ema200_1h: composed.ema200_1h,
+    ema50_4h: composed.ema50_4h,
+  } as DirectionInput);
+  const c4hInd = candles4h.map(toIndicatorCandle);
+  const c1hInd = candles1h.map(toIndicatorCandle);
+  const srResult = detectSRLevels(c4hInd, c1hInd, composed.px, direction, composed.volRatio);
+  const srModifier = srResult.modifier * SR_SCALE_FACTOR;
+
+  const result = computeScore({ ...composed, srModifier, scorerWeights: null });
 
   return {
     candles1h,
@@ -262,6 +282,7 @@ function scorePrevBar(
       fundingRate,
       oiVelocityScore: null, // prev-bar OI velocity mevcut değil
       now: prevLatest.ts,
+      srModifier: 0, // dedup approximation: S/R not recomputed for prev bar
       ...FROZEN_STATE,
     });
     if (!composed) return null;
