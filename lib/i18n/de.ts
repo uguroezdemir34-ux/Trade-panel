@@ -192,71 +192,41 @@ export const de: Dictionary = {
     alarmToastBelow: "BELOW",
     alarmToastTarget: "Target",
     alarmToastNow: "Now", goSignalTitle: "Recent GO Signals", leaderboardTitle: "Top Scores",
-      // TODO: translate
-    profilePullback: "Profile: Pullback (Auto)",
-    // TODO: translate
-    profileTrend: "Profile: Trend Mode (Auto)",
-    // TODO: translate
-    signalBarClose: "Signal: Bar Close Confirmed",
-    // TODO: translate
-    trendStrong: "strong trend",
-    // TODO: translate
-    trendMedium: "medium trend",
-    // TODO: translate
-    trendWeak: "weak trend",
-    // TODO: translate
-    volumeSupported: "volume supported",
-    // TODO: translate
-    volumePartial: "volume partial",
-    // TODO: translate
-    volumeInsufficient: "volume insufficient",
-    // TODO: translate
-    pullbackMode: " · pullback mode",
-    // TODO: translate
-    thresholdCrossed: "threshold crossed ({score}/{threshold}) → GO",
-    // TODO: translate
-    thresholdGap: "{gap} pts to threshold ({score}/{threshold})",
-    // TODO: translate
-    thresholdBelow: "below threshold ({score}/{threshold})",
-    // TODO: translate
-    telegramAlertsOn: "Telegram alerts on",
-    // TODO: translate
-    noSignalsFilter: "No signals for this filter",
-    // TODO: translate
-    tradeAfterSignal: "Trade opened after this signal",
-    // TODO: translate
-    noTradeAfterSignal: "No trade opened",
+    profilePullback: "Profil: Pullback (Auto)",
+    profileTrend: "Profil: Trend-Modus (Auto)",
+    signalBarClose: "Signal: Bar-Schluss bestätigt",
+    trendStrong: "starker Trend",
+    trendMedium: "mittlerer Trend",
+    trendWeak: "schwacher Trend",
+    volumeSupported: "Volumen bestätigt",
+    volumePartial: "Volumen teilweise",
+    volumeInsufficient: "Volumen unzureichend",
+    pullbackMode: " · Pullback-Modus",
+    thresholdCrossed: "Schwelle überschritten ({score}/{threshold}) → GO",
+    thresholdGap: "{gap} Pkt. bis Schwelle ({score}/{threshold})",
+    thresholdBelow: "unter Schwelle ({score}/{threshold})",
+    telegramAlertsOn: "Telegram-Benachrichtigungen an",
+    noSignalsFilter: "Keine Signale für diesen Filter",
+    tradeAfterSignal: "Trade nach diesem Signal eröffnet",
+    noTradeAfterSignal: "Kein Trade eröffnet",
     tradeProfit: "Trade opened — profit",
     tradeLoss: "Trade opened — stop-out (loss)",
     tradeOpen: "Trade still open",
     ambiguousSignal: "Multiple GO signals within 15min — trade match uncertain",
     stalePriceAtSignal: "Price data was unavailable at signal time",
-    // TODO: translate
-    shortcutsTitle: "⌨ Keyboard Shortcuts",
-    // TODO: translate
-    shortcutsCloseHint: "Press ESC or ? to close",
-    // TODO: translate
-    shortcutSelectPair: "Select pair (BTC=1, ETH=2, XRP=3 ...)",
-    // TODO: translate
-    shortcutPrevNext: "Previous / next pair in active list",
-    // TODO: translate
-    shortcutNextGo: "Jump to next GO pair",
-    // TODO: translate
-    shortcutToggleHelp: "Open / close this help screen",
-    // TODO: translate
-    shortcutCloseModal: "Close open modal",
-    // TODO: translate
-    goSignalEmptyNote: "No GO signals yet — fills automatically as the system runs.",
-    // TODO: translate
-    scoreFilterAll: "All",
-    // TODO: translate
-volumeSection: "VOLUME",
-    // TODO: translate
-    execForwardTestRequired: "Activate Forward Test Mode — order placement disabled.",
-    // TODO: translate
-    keyboardShortcutHint: "Keyboard shortcuts (? key)",
-    // TODO: translate
-    pairGoHistory: "{pair} GO History",
+    shortcutsTitle: "⌨ Tastenkürzel",
+    shortcutsCloseHint: "ESC oder ? zum Schließen drücken",
+    shortcutSelectPair: "Paar auswählen (BTC=1, ETH=2, XRP=3 ...)",
+    shortcutPrevNext: "Vorheriges / nächstes Paar in aktiver Liste",
+    shortcutNextGo: "Zum nächsten GO-Paar springen",
+    shortcutToggleHelp: "Diese Hilfe öffnen / schließen",
+    shortcutCloseModal: "Offenes Fenster schließen",
+    goSignalEmptyNote: "Noch keine GO-Signale — wird automatisch befüllt, während das System läuft.",
+    scoreFilterAll: "Alle",
+volumeSection: "VOLUMEN",
+    execForwardTestRequired: "Forward-Test-Modus aktivieren — Orderplatzierung deaktiviert.",
+    keyboardShortcutHint: "Tastenkürzel (Taste ?)",
+    pairGoHistory: "{pair} GO-Verlauf",
     aiBadge: "AI",
     notesPlaceholder: "Notes for this pair...",
     emaAbove: "Above",
@@ -288,18 +258,12 @@ volumeSection: "VOLUME",
   },
   settings: {
     title: "EINSTELLUNGEN",
-    // TODO: translate
-    signalModeLabel: "⚙ SIGNAL MODE",
-    // TODO: translate
-    signalModeManageExchange: "Order management disabled. Manage positions from OKX, Binance or Bybit.",
-    // TODO: translate
-    signalModeNote: "⚙ Signal mode — order placement disabled",
-    // TODO: translate
-    signalModeActive: "Signal mode active — trade from exchange",
-    // TODO: translate
-    signalModeBalanceOnly: "⚙ Signal mode — balance display only, order placement disabled",
-    // TODO: translate
-    signalModeApiNote: "⚙ Signal mode: API key is used for balance and position display only. No trade permission required — read-only key is sufficient.",
+    signalModeLabel: "⚙ SIGNALMODUS",
+    signalModeManageExchange: "Orderverwaltung deaktiviert. Positionen über OKX, Binance oder Bybit verwalten.",
+    signalModeNote: "⚙ Signalmodus — Orderplatzierung deaktiviert",
+    signalModeActive: "Signalmodus aktiv — Trading über Börse",
+    signalModeBalanceOnly: "⚙ Signalmodus — nur Guthabenanzeige, Orderplatzierung deaktiviert",
+    signalModeApiNote: "⚙ Signalmodus: API-Schlüssel wird nur zur Anzeige von Guthaben und Positionen verwendet. Keine Trade-Berechtigung erforderlich — ein Read-only-Schlüssel genügt.",
     demoMode: {
       label: "Demo-Modus",
       description: "Mit OKX Demo-Handels-Endpunkt verbinden. Kein echtes Geld.",
@@ -935,85 +899,45 @@ volumeSection: "VOLUME",
     quickTrade: "Quick Trade",
     holdConfirm: "Hold to confirm",
     quickSuccess: "Order placed",
-    // TODO: translate
-    drawHline: "H-LINE — Click on chart → horizontal line",
-    // TODO: translate
-    drawRay: "RAY — Click on chart → horizontal ray",
-    // TODO: translate
-    drawTrend2: "TREND — Step 2: click endpoint (ESC = cancel)",
-    // TODO: translate
-    drawTrend1: "TREND — Step 1: click starting point",
-    // TODO: translate
-    drawExtend2: "EXTENDED LINE — Step 2: click endpoint (ESC = cancel)",
-    // TODO: translate
-    drawExtend1: "EXTENDED LINE — Step 1: click starting point",
-    // TODO: translate
-    drawChannel3: "PARALLEL CHANNEL — Step 3: set width (ESC = cancel step 2)",
-    // TODO: translate
-    drawChannel2: "PARALLEL CHANNEL — Step 2: click endpoint (ESC = cancel)",
-    // TODO: translate
-    drawChannel1: "PARALLEL CHANNEL — Step 1: click starting point",
-    // TODO: translate
-    drawFib2: "FIB — Step 2: click end price (ESC = cancel)",
-    // TODO: translate
-    drawFib1: "FIB — Step 1: click start price",
-    // TODO: translate
-    drawFibExt2: "FIB EXT — Step 2: click end price (ESC = cancel)",
-    // TODO: translate
-    drawFibExt1: "FIB EXT — Step 1: click start price",
-    // TODO: translate
-    drawVline: "V-LINE — Click on chart → vertical line",
-    // TODO: translate
-    drawCross: "CROSS — Click on chart → crosshair",
-    // TODO: translate
-    drawFibTime2: "FIB TIME — Step 2: click end point (ESC = cancel)",
-    // TODO: translate
-    drawFibTime1: "FIB TIME — Step 1: click starting point",
-    // TODO: translate
-    drawPrice: "PRICE MODE — Click on chart → snap to price",
-    // TODO: translate
-    drawCancelStep2: "↩ Cancel step 2",
-    // TODO: translate
-    drawCancelStep1: "↩ Cancel step 1",
-    // TODO: translate
-    drawCancelAll: "✕ Cancel",
-    // TODO: translate
-    priceCaptureCopied: "Copied ✓ or save",
-    // TODO: translate
-    priceCaptureLabel: "Price",
-    // TODO: translate
-    priceCopyAs: "Copy as {label}",
-    // TODO: translate
-    loadError: "Failed to load, retrying...",
-    // TODO: translate
-    heightAdjust: "Adjust chart height",
-    // TODO: translate
+    drawHline: "H-LINIE — Auf Chart klicken → horizontale Linie",
+    drawRay: "STRAHL — Auf Chart klicken → horizontaler Strahl",
+    drawTrend2: "TREND — Schritt 2: Endpunkt anklicken (ESC = abbrechen)",
+    drawTrend1: "TREND — Schritt 1: Startpunkt anklicken",
+    drawExtend2: "VERLÄNGERTE LINIE — Schritt 2: Endpunkt anklicken (ESC = abbrechen)",
+    drawExtend1: "VERLÄNGERTE LINIE — Schritt 1: Startpunkt anklicken",
+    drawChannel3: "PARALLELKANAL — Schritt 3: Breite festlegen (ESC = Schritt 2 abbrechen)",
+    drawChannel2: "PARALLELKANAL — Schritt 2: Endpunkt anklicken (ESC = abbrechen)",
+    drawChannel1: "PARALLELKANAL — Schritt 1: Startpunkt anklicken",
+    drawFib2: "FIB — Schritt 2: Endpreis anklicken (ESC = abbrechen)",
+    drawFib1: "FIB — Schritt 1: Startpreis anklicken",
+    drawFibExt2: "FIB EXT — Schritt 2: Endpreis anklicken (ESC = abbrechen)",
+    drawFibExt1: "FIB EXT — Schritt 1: Startpreis anklicken",
+    drawVline: "V-LINIE — Auf Chart klicken → vertikale Linie",
+    drawCross: "FADENKREUZ — Auf Chart klicken → Fadenkreuz",
+    drawFibTime2: "FIB ZEIT — Schritt 2: Endpunkt anklicken (ESC = abbrechen)",
+    drawFibTime1: "FIB ZEIT — Schritt 1: Startpunkt anklicken",
+    drawPrice: "PREISMODUS — Auf Chart klicken → an Preis einrasten",
+    drawCancelStep2: "↩ Schritt 2 abbrechen",
+    drawCancelStep1: "↩ Schritt 1 abbrechen",
+    drawCancelAll: "✕ Abbrechen",
+    priceCaptureCopied: "Kopiert ✓ oder speichern",
+    priceCaptureLabel: "Preis",
+    priceCopyAs: "Kopieren als {label}",
+    loadError: "Laden fehlgeschlagen, neuer Versuch...",
+    heightAdjust: "Chart-Höhe anpassen",
 toolCursor: "Cursor",
-    // TODO: translate
-    toolHline: "H-Line",
-    // TODO: translate
-    toolRay: "Ray",
-    // TODO: translate
-    toolTrendline: "Trend Line",
-    // TODO: translate
-    toolExtline: "Extended Line",
-    // TODO: translate
-    toolChannel: "Parallel Channel",
-    // TODO: translate
-    toolVline: "V-Line",
-    // TODO: translate
-    toolCrossline: "Cross Line",
-    // TODO: translate
-    toolFibTimezone: "Fib Time Zone",
-    // TODO: translate
-    watchlistVolumeDelta: "Volume Delta",
-    // TODO: translate
-    watchlist24hHigh: "24h High",
-    // TODO: translate
-    watchlist24hLow: "24h Low",
-    // TODO: translate
-    watchlistChange: "Chg",
-    // TODO: translate
+    toolHline: "H-Linie",
+    toolRay: "Strahl",
+    toolTrendline: "Trendlinie",
+    toolExtline: "Verlängerte Linie",
+    toolChannel: "Parallelkanal",
+    toolVline: "V-Linie",
+    toolCrossline: "Kreuzlinie",
+    toolFibTimezone: "Fib-Zeitzone",
+    watchlistVolumeDelta: "Volumen-Delta",
+    watchlist24hHigh: "24h Hoch",
+    watchlist24hLow: "24h Tief",
+    watchlistChange: "Änd.",
     watchlistTitle: "Watchlist",
     watchlistPickerTitle: "Select Coin",
     watchlistPickerHintAdd: "add",
@@ -1079,12 +1003,9 @@ toolCursor: "Cursor",
       title: "AKTUELLE TRADES",
       score: "Score",
     },
-      // TODO: translate
-    noteView: "View / edit note",
-    // TODO: translate
-    noteAdd: "Add note",
-    // TODO: translate
-    noteAddPlaceholder: "Add note... (saved on blur)",
+    noteView: "Notiz ansehen / bearbeiten",
+    noteAdd: "Notiz hinzufügen",
+    noteAddPlaceholder: "Notiz hinzufügen... (beim Verlassen gespeichert)",
 },
 
   warn: {
