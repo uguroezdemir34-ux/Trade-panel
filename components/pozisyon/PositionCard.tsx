@@ -101,6 +101,12 @@ export function PositionCard({
 
   const currentPx = tick?.last ?? position.markPx;
   const effectiveSl = tradeSl ?? position.slTriggerPx;
+  const effectiveTp1px = (position.tpTriggerPx && position.tpTriggerPx > 0)
+    ? position.tpTriggerPx
+    : (tradeTp1 ?? null);
+  const rrRatio = (effectiveSl && effectiveSl > 0 && effectiveTp1px && currentPx > 0)
+    ? Math.abs(effectiveTp1px - currentPx) / Math.abs(currentPx - effectiveSl)
+    : null;
   const liveUpl = computeLiveUpl(position, currentPx);
   const roe = computeRoe(position, currentPx);
   const tpProgress = computeTpProgress(position, currentPx);
@@ -295,6 +301,16 @@ export function PositionCard({
                 dimmed
               />
             </div>
+            {/* R:R ratio */}
+            {rrRatio !== null && (
+              <div className="font-mono text-2xs text-text-t3 tracking-wider mt-1">
+                R:R{" "}
+                <span className={`font-semibold tabular-nums ${rrRatio >= 2 ? "text-signal-green" : rrRatio >= 1 ? "text-signal-amber" : "text-signal-red"}`}>
+                  1:{rrRatio.toFixed(1)}
+                </span>
+              </div>
+            )}
+
             {/* Layer desync warning */}
             {tradeSl != null &&
               position.slTriggerPx != null &&

@@ -21,6 +21,9 @@ export function AccountSummaryBar(): React.ReactElement {
   const usedMarginPct = balanceTotal > 0 ? (usedMargin / balanceTotal) * 100 : 0;
   const dailyColor = dailyPnlPct > 0 ? "text-green-400" : dailyPnlPct < 0 ? "text-red-400" : "text-text-t3";
   const weeklyColor = weeklyPnlPct > 0 ? "text-green-400" : weeklyPnlPct < 0 ? "text-red-400" : "text-text-t3";
+  const dailyUsdStr = balanceTotal > 0 && dailyPnlPct !== 0
+    ? `${dailyPnlPct > 0 ? "+" : "-"}$${Math.abs(balanceTotal * dailyPnlPct / 100).toFixed(1)}`
+    : null;
 
   return (
     <div className="rounded-lg border border-border bg-bg-card px-4 py-3">
@@ -51,9 +54,16 @@ export function AccountSummaryBar(): React.ReactElement {
         <div>
           <div className="font-mono text-2xs text-text-t4 tracking-widest uppercase">Günlük / Haftalık</div>
           <div className="flex items-baseline gap-2 mt-0.5">
-            <span translate="no" className={`font-mono text-sm font-bold tabular-nums ${dailyColor}`}>
-              {dailyPnlPct !== 0 ? `${dailyPnlPct > 0 ? "+" : ""}${dailyPnlPct.toFixed(2)}%` : "—"}
-            </span>
+            <div className="flex flex-col">
+              <span translate="no" className={`font-mono text-sm font-bold tabular-nums ${dailyColor}`}>
+                {dailyUsdStr ?? (dailyPnlPct !== 0 ? `${dailyPnlPct > 0 ? "+" : ""}${dailyPnlPct.toFixed(2)}%` : "—")}
+              </span>
+              {dailyUsdStr && (
+                <span translate="no" className={`font-mono text-2xs tabular-nums opacity-60 ${dailyColor}`}>
+                  {dailyPnlPct > 0 ? "+" : ""}{dailyPnlPct.toFixed(2)}%
+                </span>
+              )}
+            </div>
             <span translate="no" className={`font-mono text-xs tabular-nums ${weeklyColor}`}>
               {weeklyPnlPct !== 0 ? `${weeklyPnlPct > 0 ? "+" : ""}${weeklyPnlPct.toFixed(2)}%W` : ""}
             </span>
