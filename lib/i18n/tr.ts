@@ -229,6 +229,10 @@ export const tr: Dictionary = {
     keyboardShortcutHint: "Klavye kısayolları (? tuşu)",
     pairGoHistory: "{pair} GO Geçmişi",
     aiBadge: "AI",
+    notesPlaceholder: "Bu parite için notlar...",
+    emaAbove: "Üstünde",
+    emaBelow: "Altında",
+    emaNoData: "Veri Yok",
 },
   watchlist: {
     toast: {
@@ -1065,6 +1069,7 @@ export const tr: Dictionary = {
   },
 
   grafik: {
+    trades: "İşlemler",
     title: "📈 Grafik",
     subtitle: "Fiyat grafiği · EMA katmanları · İşlem işaretleri",
     loading: "Grafik yükleniyor...",

@@ -258,6 +258,10 @@ volumeSection: "VOLUME",
     // TODO: translate
     pairGoHistory: "{pair} GO History",
     aiBadge: "AI",
+    notesPlaceholder: "Notes for this pair...",
+    emaAbove: "Above",
+    emaBelow: "Below",
+    emaNoData: "No Data",
 },
 
     // TODO: translate
@@ -918,6 +922,7 @@ volumeSection: "VOLUME",
   },
 
   grafik: {
+    trades: "Trades",
     title: "📈 Graphique",
     subtitle: "Graphique de prix · Superpositions EMA · Marqueurs de trades",
     loading: "Chargement du graphique...",

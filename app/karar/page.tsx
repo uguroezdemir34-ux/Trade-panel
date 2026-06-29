@@ -1227,7 +1227,7 @@ export default function KararPage() {
                             clearPairNote(activePair);
                           }
                         }}
-                        placeholder="Bu parite için notlar..."
+                        placeholder={t("karar.notesPlaceholder")}
                         rows={3}
                         className="w-full rounded-lg border border-border bg-surface-s1 px-3 py-2 font-mono text-2xs text-text-t2 placeholder:text-text-t4 resize-none focus:outline-none focus:border-brand/50 transition-colors"
                       />
@@ -1392,10 +1392,11 @@ function EmaAlignRow({
   close: number | null;
   ema200: number | null;
 }) {
+  const t = useT();
   const status =
     ema200 === null || close === null ? "nodata" : close > ema200 ? "above" : "below";
   const statusText =
-    status === "above" ? "Üstünde ▲" : status === "below" ? "Altında ▼" : "Veri Yok";
+    status === "above" ? `${t("karar.emaAbove")} ▲` : status === "below" ? `${t("karar.emaBelow")} ▼` : t("karar.emaNoData");
   const statusColor =
     status === "above" ? "text-signal-up" : status === "below" ? "text-signal-down" : "text-text-t4";
   return (

@@ -258,6 +258,10 @@ volumeSection: "VOLUME",
     // TODO: translate
     pairGoHistory: "{pair} GO History",
     aiBadge: "AI",
+    notesPlaceholder: "Notes for this pair...",
+    emaAbove: "Above",
+    emaBelow: "Below",
+    emaNoData: "No Data",
 },
 
     // TODO: translate
@@ -920,6 +924,7 @@ volumeSection: "VOLUME",
   },
 
   grafik: {
+    trades: "Trades",
     title: "📈 차트",
     subtitle: "가격 차트 · EMA 오버레이 · 거래 마커",
     loading: "차트 로드 중...",

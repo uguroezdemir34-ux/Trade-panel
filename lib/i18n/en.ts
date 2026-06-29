@@ -229,6 +229,10 @@ export const en: Dictionary = {
     keyboardShortcutHint: "Keyboard shortcuts (? key)",
     pairGoHistory: "{pair} GO History",
     aiBadge: "AI",
+    notesPlaceholder: "Notes for this pair...",
+    emaAbove: "Above",
+    emaBelow: "Below",
+    emaNoData: "No Data",
 },
   watchlist: {
     toast: {
@@ -1065,6 +1069,7 @@ export const en: Dictionary = {
   },
 
   grafik: {
+    trades: "Trades",
     title: "📈 Chart",
     subtitle: "Price chart · EMA overlays · Trade markers",
     loading: "Loading chart...",

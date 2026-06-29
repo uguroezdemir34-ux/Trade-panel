@@ -258,6 +258,10 @@ volumeSection: "VOLUME",
     // TODO: translate
     pairGoHistory: "{pair} GO History",
     aiBadge: "AI",
+    notesPlaceholder: "Notes for this pair...",
+    emaAbove: "Above",
+    emaBelow: "Below",
+    emaNoData: "No Data",
 },
 
     // TODO: translate
@@ -920,6 +924,7 @@ volumeSection: "VOLUME",
   },
 
   grafik: {
+    trades: "Trades",
     title: "📈 图表",
     subtitle: "价格图表 · EMA叠加 · 交易标记",
     loading: "加载图表...",

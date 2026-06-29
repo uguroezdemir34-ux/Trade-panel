@@ -174,6 +174,7 @@ function IndicatorDropdown({
   onToggleRsi: () => void; onToggleMacd: () => void; onToggleBb: () => void; onToggleTrades: () => void;
   label: string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const activeCount = [showEma20, showEma50, showEma200, showRsi, showMacd, showBb, showTrades].filter(Boolean).length;
@@ -194,7 +195,7 @@ function IndicatorDropdown({
     { label: "RSI 14",    active: showRsi,     toggle: onToggleRsi,     accent: "#ec4899" },
     { label: "MACD",      active: showMacd,    toggle: onToggleMacd,    accent: "#f59e0b" },
     { label: "BB 20",     active: showBb,      toggle: onToggleBb,      accent: "#06b6d4" },
-    { label: "İşlemler",  active: showTrades,  toggle: onToggleTrades,  accent: "#22c55e" },
+    { label: t("grafik.trades"),  active: showTrades,  toggle: onToggleTrades,  accent: "#22c55e" },
   ];
 
   return (
