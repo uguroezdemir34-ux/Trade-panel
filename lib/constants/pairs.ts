@@ -19,8 +19,6 @@ export const PAIRS = [
   "PENDLE", // Pendle — DeFi yield
   "OP",   // Optimism — L2
   "WIF",  // Dogwifhat — meme/Solana
-  "HYPE", // Hyperliquid — native token, yüksek likidite
-  "RENDER", // Render Network — AI/DePIN
 ] as const;
 
 export type Pair = (typeof PAIRS)[number];

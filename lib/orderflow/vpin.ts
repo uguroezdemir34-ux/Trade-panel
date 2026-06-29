@@ -125,8 +125,6 @@ const ALT_VPIN_CONFIGS: Partial<Record<Pair, VpinConfig>> = {
   PENDLE: { bucketSizeUsd:   100_000, windowSize: 50 },
   OP:     { bucketSizeUsd:   250_000, windowSize: 50 },
   WIF:    { bucketSizeUsd:   100_000, windowSize: 50 },
-  HYPE:   { bucketSizeUsd:   500_000, windowSize: 50 },
-  RENDER: { bucketSizeUsd:   300_000, windowSize: 50 },
 };
 
 export function getDefaultConfig(pair: Pair): VpinConfig {
