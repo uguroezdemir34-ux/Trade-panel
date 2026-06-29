@@ -70,6 +70,16 @@ export interface ServerSignalResult {
   price: number;
   error?: string;
   debugInputs?: { fg: number; fundingRate: number | null; oiVelocityScore: number };
+  // Sub-scores and signal metadata (populated on GO verdicts for DB logging)
+  signalTs?: number;
+  sub?: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number; funding: number; macro: number };
+  effectiveThreshold?: number;
+  regime?: string;
+  sweepBonus?: number;
+  regimeBonus?: number;
+  blocks?: string[];
+  softBlocks?: string[];
+  pullbackActive?: boolean;
 }
 
 /** Fetch OKX public candles — no auth required */
@@ -164,6 +174,15 @@ async function fetchAndScore(pair: Pair): Promise<{
   fg: number;
   fundingRate: number | null;
   oiVelocityScore: number;
+  signalTs: number;
+  sub: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number; funding: number; macro: number };
+  effectiveThreshold: number;
+  regime: string;
+  sweepBonus: number;
+  regimeBonus: number;
+  blocks: string[];
+  softBlocks: string[];
+  pullbackActive: boolean;
 } | null> {
   const instId = `${pair}-USDT-SWAP`;
   const now = Date.now();
@@ -265,6 +284,15 @@ async function fetchAndScore(pair: Pair): Promise<{
     fg,
     fundingRate,
     oiVelocityScore,
+    signalTs: latest.ts,
+    sub: result.sub,
+    effectiveThreshold: result.effectiveThreshold,
+    regime: result.regime,
+    sweepBonus: result.sweepBonus,
+    regimeBonus: result.regimeBonus,
+    blocks: result.blocks,
+    softBlocks: result.softBlocks,
+    pullbackActive: result.pullbackActive,
   };
 }
 
@@ -340,6 +368,15 @@ export async function computeServerSignal(pair: Pair): Promise<ServerSignalResul
         fundingRate: current.fundingRate,
         oiVelocityScore: current.oiVelocityScore,
       },
+      signalTs: current.signalTs,
+      sub: current.sub,
+      effectiveThreshold: current.effectiveThreshold,
+      regime: current.regime,
+      sweepBonus: current.sweepBonus,
+      regimeBonus: current.regimeBonus,
+      blocks: current.blocks,
+      softBlocks: current.softBlocks,
+      pullbackActive: current.pullbackActive,
     };
   } catch (err) {
     return {

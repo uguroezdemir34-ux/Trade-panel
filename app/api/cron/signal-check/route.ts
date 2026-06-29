@@ -24,6 +24,7 @@ import { computeAllSignals } from "@/lib/server/signalEngine";
 import { loadTelegramConfigFromEnv } from "@/lib/notify/telegram/config";
 import { sendTelegramMessage } from "@/lib/notify/telegram/client";
 import { escapeMarkdownV2, bold } from "@/lib/notify/telegram/escape";
+import { insertGoSignal } from "@/lib/db/goSignals";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -94,11 +95,36 @@ export async function GET(req: Request): Promise<NextResponse> {
     }
   }
 
+  // ── DB write: persist new GO signals (non-fatal — cron continues on error) ──
+  let dbWritten = 0;
+  for (const sig of newSignals) {
+    try {
+      await insertGoSignal({
+        pair: sig.pair,
+        direction: sig.direction,
+        score: sig.score,
+        effectiveThreshold: sig.effectiveThreshold,
+        triggerPrice: sig.price,
+        signalTs: sig.signalTs ?? startMs,
+        pullbackActive: sig.pullbackActive ?? false,
+        regime: sig.regime,
+        sweepBonus: sig.sweepBonus ?? 0,
+        regimeBonus: sig.regimeBonus ?? 0,
+        blocks: sig.blocks ?? [],
+        softBlocks: sig.softBlocks ?? [],
+        sub: sig.sub,
+      });
+      dbWritten++;
+    } catch (err) {
+      console.error(`[CRON signal-check] DB write failed for ${sig.pair}:`, err);
+    }
+  }
+
   const elapsedMs = Date.now() - startMs;
 
   console.log(
     `[CRON signal-check] ${signals.length} pairs checked, ${newSignals.length} new GO signals,` +
-      ` ${telegramSent} sent, ${errors.length} errors, ${elapsedMs}ms`,
+      ` ${telegramSent} sent, ${dbWritten} db written, ${errors.length} errors, ${elapsedMs}ms`,
   );
 
   return NextResponse.json({
@@ -108,6 +134,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     newSignals: newSignals.length,
     telegramSent,
     telegramFailed,
+    dbWritten,
     errors: errors.map((e) => ({ pair: e.pair, error: e.error })),
     elapsedMs,
     ...(verbose && {
