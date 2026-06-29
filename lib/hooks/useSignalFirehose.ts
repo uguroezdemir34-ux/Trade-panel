@@ -31,6 +31,7 @@ import { computeAdaptiveTPs } from "@/lib/sizer/take-profit";
 import type { NotifyMessage } from "@/lib/notify/types";
 import { sendDiscordMessage } from "@/lib/notify/discord/channel";
 import { useGoSignalLogStore } from "@/lib/store/goSignalLogStore";
+import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
 
 const SIGNAL_COOLDOWN_MS = 2 * 60 * 1000; // 2 dakika
 
@@ -80,6 +81,7 @@ export function useSignalFirehose(): void {
             regimeBonus: result.regimeBonus,
             blocks: result.blocks,
             softBlocks: result.softBlocks,
+            engineVersion: SCORE_ENGINE_VERSION,
           });
         }
         void fireSignal(pair, result, tgCreds, forwardTestMode);

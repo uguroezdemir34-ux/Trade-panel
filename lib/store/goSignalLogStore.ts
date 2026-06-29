@@ -22,6 +22,8 @@ export interface GoSignalEntry {
   regimeBonus: number;
   blocks: string[];
   softBlocks: string[];
+  /** Score engine version at signal time — undefined means pre-versioning (v0) */
+  engineVersion?: string;
 }
 
 interface GoSignalLogState {
