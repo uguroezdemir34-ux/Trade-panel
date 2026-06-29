@@ -833,49 +833,6 @@ export default function KararPage() {
               );
             })}
 
-            {/* Market pulse card — 3-col grid'in boş son hücresini doldurur */}
-            <div className="relative rounded-lg border border-border/25 bg-bg-card overflow-hidden select-none flex flex-col" style={{ minHeight: 120 }}>
-              {/* Brand band */}
-              <div className="px-2 py-1 flex items-center gap-1.5" style={{ background: "linear-gradient(90deg, rgba(255,110,24,0.12) 0%, transparent 100%)", borderBottom: "1px solid rgba(255,110,24,0.10)" }}>
-                <span className="w-1.5 h-1.5 rounded-full bg-brand shrink-0" style={{ boxShadow: "0 0 5px rgb(var(--brand))" }} />
-                <span className="font-mono text-[7px] tracking-[0.18em] uppercase text-brand/75 leading-none">QUANTIX OS</span>
-              </div>
-
-              {/* GO sinyal sayacı */}
-              <div className="flex-1 flex flex-col items-center justify-center px-2 py-2 gap-0.5">
-                <span className="font-mono text-[7px] tracking-widest uppercase text-text-t4 leading-none">GO Sinyali</span>
-                <span className={`font-mono text-[22px] font-bold tabular-nums leading-none mt-0.5 ${goPairs.length > 0 ? "text-green-400" : "text-text-t4"}`}
-                  style={goPairs.length > 0 ? { textShadow: "0 0 12px rgba(74,222,128,0.55)" } : undefined}>
-                  {goPairs.length}
-                </span>
-                <span className="font-mono text-[7px] text-text-t4 leading-none">/ {PAIRS.length}</span>
-              </div>
-
-              {/* Alt metrik: F&G veya BTC fiyatı */}
-              <div className="px-2 py-1 flex items-center justify-between" style={{ borderTop: "1px solid rgba(255,255,255,0.05)" }}>
-                {fgValue !== null ? (
-                  <>
-                    <span className="font-mono text-[7px] text-text-t4 tracking-wider leading-none">F&G</span>
-                    <span className={`font-mono text-[9px] font-semibold tabular-nums leading-none ${
-                      fgValue >= 75 ? "text-red-400"
-                      : fgValue >= 55 ? "text-amber-400"
-                      : fgValue >= 45 ? "text-text-t2"
-                      : fgValue >= 25 ? "text-blue-400"
-                      : "text-blue-500"
-                    }`}>{fgValue}</span>
-                  </>
-                ) : allTicks["BTC"]?.last !== undefined ? (
-                  <>
-                    <span className="font-mono text-[7px] text-text-t4 tracking-wider leading-none">BTC</span>
-                    <span translate="no" className="font-mono text-[9px] font-semibold tabular-nums text-text-t2 leading-none">
-                      {formatTickPrice(allTicks["BTC"]!.last, locale)}
-                    </span>
-                  </>
-                ) : (
-                  <span className="font-mono text-[7px] text-text-t4">—</span>
-                )}
-              </div>
-            </div>
 
           </div>
           </div>{/* end pair grid wrapper */}
@@ -985,11 +942,11 @@ export default function KararPage() {
                     />
                   </div>
 
-                  {/* SM + FLOW badge + VOL DELTA — kadranın sağında dikey sıra */}
-                  {flowResult && (
-                    <div className="flex flex-col gap-1.5 w-[82px] shrink-0">
+                  {/* SM + FLOW badge + VOL DELTA + GO/F&G — kadranın sağında dikey sıra */}
+                  <div className="flex flex-col gap-1.5 w-[82px] shrink-0">
 
-                      {/* Smart Money */}
+                    {/* Smart Money */}
+                    {flowResult && (
                       <div className="rounded-lg px-2 py-1.5 panel-inset">
                         <div className="text-[8px] font-mono text-text-t4 tracking-widest uppercase mb-0.5 leading-none">Smart $</div>
                         {flowResult.flowVerdict.vpin?.ready ? (
@@ -1014,8 +971,10 @@ export default function KararPage() {
                           <div className="text-[8px] font-mono text-text-t4">—</div>
                         )}
                       </div>
+                    )}
 
-                      {/* FLOW badge */}
+                    {/* FLOW badge */}
+                    {flowResult && (
                       <div
                         className={`flex flex-col items-center justify-center rounded-lg border px-2 py-1.5 ${
                           flowResult.vetoed || flowResult.totalAdjustment < -5
@@ -1038,8 +997,10 @@ export default function KararPage() {
                         </span>
                         <span className="text-[8px] font-mono text-text-t4 tabular-nums leading-none">×{flowResult.confidenceMultiplier.toFixed(2)}</span>
                       </div>
+                    )}
 
-                      {/* VOL DELTA */}
+                    {/* VOL DELTA */}
+                    {flowResult && (
                       <div className="rounded-lg px-2 py-1.5 panel-inset">
                         <div className="text-[8px] font-mono text-text-t4 tracking-widest uppercase mb-0.5 leading-none">Vol Δ 5m</div>
                         <div className={`text-[11px] font-mono font-bold tabular-nums leading-tight ${
@@ -1049,9 +1010,42 @@ export default function KararPage() {
                         }`}>{formatCvd(flowResult.flowVerdict.cvd.w5m.cvdUsd)}</div>
                         <div className="text-[8px] font-mono text-text-t4 uppercase leading-none mt-0.5">{flowResult.flowVerdict.cvd.w5m.direction}</div>
                       </div>
+                    )}
 
+                    {/* GO / F&G — koşulsuz, flowResult'a bağlı değil */}
+                    <div className="rounded-lg px-2 py-1.5 panel-inset">
+                      <div className="text-[8px] font-mono text-text-t4 tracking-widest uppercase mb-0.5 leading-none">GO</div>
+                      <div
+                        className={`text-[14px] font-mono font-bold tabular-nums leading-tight ${goPairs.length > 0 ? "text-green-400" : "text-text-t4"}`}
+                        style={goPairs.length > 0 ? { textShadow: "0 0 10px rgba(74,222,128,0.45)" } : undefined}
+                      >
+                        {goPairs.length}
+                        <span className="text-[8px] font-mono text-text-t4 font-normal tabular-nums">/{PAIRS.length}</span>
+                      </div>
+                      {fgValue !== null ? (
+                        <div className="text-[8px] font-mono text-text-t4 tabular-nums leading-none mt-0.5">
+                          {"F&G"}{" "}
+                          <span className={`font-semibold ${
+                            fgValue >= 75 ? "text-red-400"
+                            : fgValue >= 55 ? "text-amber-400"
+                            : fgValue >= 45 ? "text-text-t2"
+                            : fgValue >= 25 ? "text-blue-400"
+                            : "text-blue-500"
+                          }`}>{fgValue}</span>
+                        </div>
+                      ) : allTicks["BTC"]?.last !== undefined ? (
+                        <div className="text-[8px] font-mono text-text-t4 tabular-nums leading-none mt-0.5">
+                          {"BTC"}{" "}
+                          <span translate="no" className="font-semibold text-text-t2">
+                            {formatTickPrice(allTicks["BTC"]!.last, locale)}
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="text-[8px] font-mono text-text-t4 leading-none mt-0.5">—</div>
+                      )}
                     </div>
-                  )}
+
+                  </div>
 
                 </div>
 
