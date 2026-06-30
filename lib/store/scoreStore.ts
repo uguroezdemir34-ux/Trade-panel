@@ -11,14 +11,20 @@ import type { ScoreResult } from "@/lib/score/orchestrator";
 import type { Pair } from "@/lib/constants/pairs";
 
 interface ScoreStoreState {
-  /** Son hesaplanan score sonucu (pair başına) */
-  results: Partial<Record<Pair, ScoreResult>>;
+  /** Son hesaplanan score sonucu (pair başına).
+   *  undefined = hiç hesaplanmadı (yeni yükleme)
+   *  null      = hesaplandı ama candle yetersiz — "atlandı" sentinel
+   *  ScoreResult = geçerli skor
+   */
+  results: Partial<Record<Pair, ScoreResult | null>>;
   /** Hesaplama zamanı */
   computedAt: Partial<Record<Pair, number>>;
   /** Hesaplama devam ediyor mu */
   computing: boolean;
 
   setResult: (pair: Pair, result: ScoreResult, now: number) => void;
+  /** Candle yetersizliği nedeniyle hesaplanamadı — undefined'dan null'a geçirir. */
+  setSkipped: (pair: Pair, now: number) => void;
   setComputing: (v: boolean) => void;
   reset: () => void;
 }
@@ -31,6 +37,12 @@ export const useScoreStore = create<ScoreStoreState>((set) => ({
   setResult: (pair, result, now) =>
     set((s) => ({
       results: { ...s.results, [pair]: result },
+      computedAt: { ...s.computedAt, [pair]: now },
+    })),
+
+  setSkipped: (pair, now) =>
+    set((s) => ({
+      results: { ...s.results, [pair]: null },
       computedAt: { ...s.computedAt, [pair]: now },
     })),
 

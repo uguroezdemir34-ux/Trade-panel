@@ -37,6 +37,12 @@ export function useScoreEngine(): void {
   const candles = useCandleStore(
     (s) => s.candles,
     (prev, next) => {
+      // Fast path: any pair never scored → trigger immediately so the
+      // initial "waiting" screen clears as soon as candles arrive.
+      // null = skipped sentinel (insufficient candles), NOT undefined.
+      const { results } = useScoreStore.getState();
+      if (PAIRS.some((p) => results[p] === undefined)) return false;
+
       for (const pair of PAIRS) {
         for (const tf of ["15m", "1h", "4h"] as const) {
           const key = `${pair}_${tf}` as const;
@@ -53,7 +59,8 @@ export function useScoreEngine(): void {
       return true;
     },
   );
-  const setResult = useScoreStore((s) => s.setResult);
+  const setResult  = useScoreStore((s) => s.setResult);
+  const setSkipped = useScoreStore((s) => s.setSkipped);
   const scorerWeights = useSettingsStore((s) => s.scorerWeights);
 
   useEffect(() => {
@@ -172,6 +179,11 @@ export function useScoreEngine(): void {
         } catch {
           // Ignore scoring errors — stale result remains until next candle update
         }
+      } else {
+        // composeScoreInput returned null: insufficient candles for this pair.
+        // Write null sentinel so equality fn stops treating this pair as
+        // "never scored" — prevents perpetual re-trigger on data-starved pairs.
+        setSkipped(pair as Pair, now);
       }
     }
   }, [candles, setResult, scorerWeights]);
