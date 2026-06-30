@@ -21,6 +21,11 @@ const CMC_IDS: Record<string, number> = {
   APT: 21794,   TAO: 22974,   PENDLE: 21451, OP: 11840,   WIF: 29047,
 };
 const CDN_OVERRIDES: Record<string, string> = { POL: "matic" };
+/* Trust Wallet asset overrides — used when CMC ID is wrong/unavailable */
+const LOGO_OVERRIDES: Record<string, string> = {
+  PENDLE: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x808507121b80c02388fad14726482e061b8da827/logo.png",
+  WIF:    "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm/logo.png",
+};
 
 interface Props {
   activePair: Pair;
@@ -96,10 +101,13 @@ const GRID_COLS = "grid-cols-[1fr_56px_46px_40px_36px]";
 function CoinLogo({ pair, size = 44 }: { pair: string; size?: number }) {
   const color = pairColor(pair);
   const [failed, setFailed] = useState(false);
+  const logoOverride = LOGO_OVERRIDES[pair];
   const cmcId = CMC_IDS[pair];
-  const src   = cmcId
-    ? `https://s2.coinmarketcap.com/static/img/coins/64x64/${cmcId}.png`
-    : `https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@master/svg/color/${(CDN_OVERRIDES[pair] ?? pair.toLowerCase())}.svg`;
+  const src   = logoOverride
+    ? logoOverride
+    : cmcId
+      ? `https://s2.coinmarketcap.com/static/img/coins/64x64/${cmcId}.png`
+      : `https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@master/svg/color/${(CDN_OVERRIDES[pair] ?? pair.toLowerCase())}.svg`;
 
   if (failed) {
     return (
