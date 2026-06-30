@@ -27,7 +27,7 @@ const PAIR_COLORS: Record<string, string> = {
   BNB:   "#f3ba2f", ADA:  "#0033ad", AVAX: "#e84142", DOT:  "#e6007a",
   LINK:  "#2a5ada", POL:  "#8247e5", DOGE: "#c2a633", SHIB: "#ff4200",
   SUI:   "#4da2ff", NEAR: "#00c08b", TRX:  "#ef0027", APT:  "#4285f4",
-  TAO:   "#888888", PENDLE: "#8fbe00", OP:  "#ff0420", WIF:  "#a855f7",
+  TAO:   "#00c4b4", PENDLE: "#8fbe00", OP:  "#ff0420", WIF:  "#a855f7",
 };
 function pairColor(p: string): string { return PAIR_COLORS[p] ?? "#6366f1"; }
 
@@ -833,7 +833,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                   {/* İsim bloğu */}
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`font-mono text-[17px] font-black tracking-tight leading-tight ${isActive ? "" : "text-text-t1"}`}
+                      className={`font-mono text-[13px] font-bold tracking-tight leading-tight whitespace-nowrap truncate ${isActive ? "" : "text-text-t1"}`}
                       style={isActive ? { color } : undefined}
                     >
                       {pair}
