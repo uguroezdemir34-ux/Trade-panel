@@ -175,7 +175,8 @@ export default function GrafikPage() {
   const theme = useSettingsStore((s) => s.theme);
 
   const [pair, setPair]           = useState<Pair>("BTC");
-  usePriorityFetch(pair);
+  const [prioMs, setPrioMs]       = useState<number | null>(null);
+  usePriorityFetch(pair, setPrioMs);
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
   const [mobileView, setMobileView] = useState<"list" | "chart">("list");
   const [showEma20, setShowEma20]   = useState(true);
@@ -599,6 +600,12 @@ export default function GrafikPage() {
           {chartSection}
         </div>
       </div>
+      {/* DEV debug — priority fetch timing */}
+      {prioMs !== null && (
+        <div className="fixed bottom-2 right-2 z-50 bg-black/70 text-green-400 text-xs font-mono px-2 py-1 rounded pointer-events-none">
+          [PRIO] {pair} {prioMs}ms
+        </div>
+      )}
     </>
   );
 }

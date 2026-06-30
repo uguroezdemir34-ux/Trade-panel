@@ -27,7 +27,7 @@ const PRIORITY_TFS: Array<{ tf: Timeframe; limit: number }> = [
   { tf: "1d",  limit: CANDLE_LIMIT_1D },
 ];
 
-export function usePriorityFetch(pair: Pair): void {
+export function usePriorityFetch(pair: Pair, onDone?: (ms: number) => void): void {
   const setCandles = useCandleStore((s) => s.setCandles);
   const setError   = useCandleStore((s) => s.setError);
 
@@ -45,7 +45,10 @@ export function usePriorityFetch(pair: Pair): void {
           }
         }),
       );
-      console.log("[PRIO]", pair, "all 4 tf done in", Math.round(performance.now() - t0), "ms");
+      const ms = Math.round(performance.now() - t0);
+      console.log("[PRIO]", pair, "all 4 tf done in", ms, "ms");
+      onDone?.(ms);
     })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pair, setCandles, setError]);
 }
