@@ -75,7 +75,16 @@ export default function KararPage() {
   const t = useT();
   const locale = useLocale();
   const [activePair, setActivePair] = useState<Pair>("BTC");
-  usePriorityFetch(activePair);
+  const [isStale,     setIsStale]     = useState(false);
+  const [staleFailed, setStaleFailed] = useState(false);
+
+  useEffect(() => { setIsStale(false); setStaleFailed(false); }, [activePair]);
+
+  usePriorityFetch(
+    activePair,
+    (success) => { setIsStale(false); if (!success) setStaleFailed(true); },
+    ()        => { setIsStale(true);  setStaleFailed(false); },
+  );
   const [pairGroup, setPairGroup] = useState<PairGroup>("all");
   const [sortByScore, setSortByScore] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -865,6 +874,18 @@ export default function KararPage() {
                 <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-text-t4">
                   QUANTIX OS
                 </span>
+                {isStale && result && (
+                  <span
+                    className="w-1.5 h-1.5 rounded-full bg-amber-400/50 animate-pulse shrink-0"
+                    title="Veriler güncelleniyor…"
+                  />
+                )}
+                {staleFailed && result && (
+                  <span className="inline-flex items-center gap-1 font-mono text-[8px] text-red-400/70">
+                    <span className="w-1.5 h-1.5 rounded-full bg-red-400/60 shrink-0" />
+                    bayat veri
+                  </span>
+                )}
                 <span className="ml-auto font-mono text-[8px] text-text-t4/45 tracking-wider tabular-nums">
                   {activePair}
                 </span>
