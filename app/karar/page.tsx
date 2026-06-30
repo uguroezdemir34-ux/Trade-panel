@@ -69,11 +69,13 @@ import { usePairNotesStore } from "@/lib/store/pairNotesStore";
 import { PairSignalHistory } from "@/components/karar/PairSignalHistory";
 import { PairTradeStats } from "@/components/karar/PairTradeStats";
 import { WalletSummaryBar } from "@/components/karar/WalletSummaryBar";
+import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
 
 export default function KararPage() {
   const t = useT();
   const locale = useLocale();
   const [activePair, setActivePair] = useState<Pair>("BTC");
+  usePriorityFetch(activePair);
   const [pairGroup, setPairGroup] = useState<PairGroup>("all");
   const [sortByScore, setSortByScore] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);

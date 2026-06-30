@@ -24,6 +24,7 @@ import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel, MobileWatchlistView } from "@/components/grafik/WatchlistPanel";
 import { LivePriceStrip } from "@/components/karar/LivePriceStrip";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
+import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
@@ -174,6 +175,7 @@ export default function GrafikPage() {
   const theme = useSettingsStore((s) => s.theme);
 
   const [pair, setPair]           = useState<Pair>("BTC");
+  usePriorityFetch(pair);
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
   const [mobileView, setMobileView] = useState<"list" | "chart">("list");
   const [showEma20, setShowEma20]   = useState(true);
