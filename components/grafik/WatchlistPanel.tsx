@@ -13,7 +13,13 @@ import { useT } from "@/lib/i18n/context";
 import { Sparkline } from "@/components/grafik/Sparkline";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 
-/* CDN slug overrides (e.g. POL was MATIC in icon libraries) */
+/* CoinMarketCap IDs — official logos for all 20 pairs */
+const CMC_IDS: Record<string, number> = {
+  BTC: 1,       ETH: 1027,    XRP: 52,      SOL: 5426,    BNB: 1839,
+  ADA: 2010,    AVAX: 5805,   DOT: 6636,    LINK: 1975,   POL: 3890,
+  DOGE: 74,     SHIB: 5994,   SUI: 20947,   NEAR: 6535,   TRX: 1958,
+  APT: 21794,   TAO: 22974,   PENDLE: 21451, OP: 11840,   WIF: 29047,
+};
 const CDN_OVERRIDES: Record<string, string> = { POL: "matic" };
 
 interface Props {
@@ -89,9 +95,11 @@ const GRID_COLS = "grid-cols-[1fr_56px_46px_40px_36px]";
 /* ── Coin Logo (CDN ile gerçek ikon, hata olursa renkli badge) ── */
 function CoinLogo({ pair, size = 44 }: { pair: string; size?: number }) {
   const color = pairColor(pair);
-  const slug  = CDN_OVERRIDES[pair] ?? pair.toLowerCase();
-  const src   = `https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@master/svg/color/${slug}.svg`;
   const [failed, setFailed] = useState(false);
+  const cmcId = CMC_IDS[pair];
+  const src   = cmcId
+    ? `https://s2.coinmarketcap.com/static/img/coins/64x64/${cmcId}.png`
+    : `https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@master/svg/color/${(CDN_OVERRIDES[pair] ?? pair.toLowerCase())}.svg`;
 
   if (failed) {
     return (
