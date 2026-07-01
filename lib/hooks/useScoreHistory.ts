@@ -24,6 +24,13 @@ export function useScoreHistory(): void {
         verdict: result.verdict,
         direction: result.direction,
         ts,
+        sub: result.sub,
+        srModifier: result.srModifier,
+        sweepBonus: result.sweepBonus,
+        regimeBonus: result.regimeBonus,
+        pullbackActive: result.pullbackActive,
+        softBlocks: result.softBlocks,
+        blocks: result.blocks,
       });
     }
   }, [computedAt, results, addSnapshot]);
