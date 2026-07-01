@@ -172,6 +172,13 @@ export interface ScoreInput {
    */
   btcNearSR?: boolean;
 
+  /**
+   * ATR ratio = current ATR / son 20 bar ATR ortalaması.
+   * %80 altı (sıkışma) veya %120 üstü (genişleme) → goThreshold +8.
+   * null/undefined → gate atlanır.
+   */
+  atrRatio?: number | null;
+
   /** Scorer ağırlık çarpanları — ayarlar sayfasından gelir. Default: tümü 1.0 */
   scorerWeights?: ScorerWeights | null;
 
@@ -229,6 +236,7 @@ export interface ScoreReasons {
   timeGate?: string;
   oiDivergence?: string;
   btcSrGate?: string;
+  atrRatioGate?: string;
   drawdownGate?: string;
   adaptiveCut?: string;
   softBlock?: string;
@@ -538,6 +546,20 @@ export function computeScore(input: ScoreInput): ScoreResult {
     const before = goThreshold;
     goThreshold = Math.min(96, goThreshold + 8);
     reasons.chopGate = `📉 BTC chop rejimi — ADX ${btcAdx.toFixed(0)} < 20 → threshold ${before}→${goThreshold}`;
+  }
+
+  // ATR optimal pencere kapısı — %80 altı veya %120 üstü → R:R bozuluyor
+  const atrRatio = input.atrRatio ?? null;
+  if (atrRatio !== null) {
+    if (atrRatio > 1.20) {
+      const before = goThreshold;
+      goThreshold = Math.min(96, goThreshold + 8);
+      reasons.atrRatioGate = `📊 ATR genişleme (${(atrRatio * 100).toFixed(0)}% > 120%) — dur mesafesi geniş → threshold ${before}→${goThreshold}`;
+    } else if (atrRatio < 0.80) {
+      const before = goThreshold;
+      goThreshold = Math.min(96, goThreshold + 8);
+      reasons.atrRatioGate = `📊 ATR sıkışma (${(atrRatio * 100).toFixed(0)}% < 80%) — mean-reversion rejimi → threshold ${before}→${goThreshold}`;
+    }
   }
 
   // Zaman kalitesi kapısı — UTC saat bazlı düşük likidite tespiti

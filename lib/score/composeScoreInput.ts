@@ -184,6 +184,7 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     volRatio,
     fundingRate: input.fundingRate ?? null,
     atrPercentile: atrPctRes?.percentile ?? null,
+    atrRatio: atrPctRes?.atrRatio ?? null,
     adx4h: adx4h?.adx ?? null,
     ema21_1h,
     closes1h: closes1h.slice(-12), // pullback engine son 8-12 mum

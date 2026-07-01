@@ -21,6 +21,8 @@ export interface AtrPercentileResult {
   regime: AtrRegime;
   current: number;
   sampleSize: number;
+  /** current ATR / son 20 bar ATR ortalaması — 0.80-1.20 optimal pencere */
+  atrRatio: number;
 }
 
 export function atrPercentile(
@@ -63,10 +65,18 @@ export function atrPercentile(
   else if (percentile > 80) regime = "expansion";
   else regime = "normal";
 
+  // ATR ratio: son 20 bar ortalamasına göre mevcut konum
+  const lb = Math.min(20, atrSeries.length);
+  let ratioSum = 0;
+  for (let i = atrSeries.length - lb; i < atrSeries.length; i++) ratioSum += atrSeries[i];
+  const mean20 = ratioSum / lb;
+  const atrRatio = mean20 > 0 ? current / mean20 : 1;
+
   return {
     percentile,
     regime,
     current,
     sampleSize: atrSeries.length,
+    atrRatio,
   };
 }
