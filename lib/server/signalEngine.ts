@@ -23,6 +23,7 @@ import {
   computeOiVelocityWindow,
   oiVelocityScoreOrZero,
   type OiSnapshot,
+  type OiVelocityResult,
 } from "@/lib/market/oi-velocity";
 
 const OKX_BASE = "https://www.okx.com";
@@ -143,16 +144,16 @@ async function fetchOkxOpenInterest(
   }
 }
 
-/** OI snapshot'ı modül cache'e ekle, velocity skoru döndür. */
+/** OI snapshot'ı modül cache'e ekle, velocity skoru + ham sonuç döndür. */
 function appendOiAndGetVelocity(
   pair: Pair,
   oiResult: { oi: number; oiCcy: number } | null,
   price: number,
   now: number,
-): number {
-  if (!oiResult || price <= 0) return 0;
+): { score: number; result: OiVelocityResult | null } {
+  if (!oiResult || price <= 0) return { score: 0, result: null };
   const oiVal = oiResult.oiCcy > 0 ? oiResult.oiCcy : oiResult.oi;
-  if (oiVal <= 0) return 0;
+  if (oiVal <= 0) return { score: 0, result: null };
   const prev = _oiSnapshots.get(pair) ?? [];
   const trimmed = prev.filter((s) => now - s.timestamp < OI_SNAP_MAX_AGE_MS);
   const updated = [
@@ -160,7 +161,11 @@ function appendOiAndGetVelocity(
     { timestamp: now, openInterest: oiVal, price },
   ];
   _oiSnapshots.set(pair, updated);
-  return oiVelocityScoreOrZero(computeOiVelocityWindow(updated, pair, 5));
+  const velocityResult = computeOiVelocityWindow(updated, pair, 5);
+  return {
+    score: oiVelocityScoreOrZero(velocityResult),
+    result: velocityResult,
+  };
 }
 
 /** Score a single pair using server-fetched candles */
@@ -175,6 +180,7 @@ async function fetchAndScore(pair: Pair): Promise<{
   fg: number;
   fundingRate: number | null;
   oiVelocityScore: number;
+  oiVelocityResult: OiVelocityResult | null;
   signalTs: number;
   sub: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number; funding: number; macro: number };
   effectiveThreshold: number;
@@ -208,7 +214,7 @@ async function fetchAndScore(pair: Pair): Promise<{
 
   if (candles15m.length < CANDLE_MIN_15M) return null;
 
-  const oiVelocityScore = appendOiAndGetVelocity(pair, oiResult, latest.close, now);
+  const { score: oiVelocityScore, result: oiVelocityResult } = appendOiAndGetVelocity(pair, oiResult, latest.close, now);
 
   // F&G: source "fallback" → fetchFearGreed'in kendi TTL cache'i boşalmış + API down.
   // _lastFg varsa kullan; cold start'ta kabul edilebilir fallback (50).
@@ -252,6 +258,7 @@ async function fetchAndScore(pair: Pair): Promise<{
     fg,
     fundingRate,
     oiVelocityScore,
+    oiVelocityResult,
     now: latest.ts,
     srModifier: 0,
     sweep15m,
@@ -287,6 +294,7 @@ async function fetchAndScore(pair: Pair): Promise<{
     fg,
     fundingRate,
     oiVelocityScore,
+    oiVelocityResult,
     signalTs: latest.ts,
     sub: result.sub,
     effectiveThreshold: result.effectiveThreshold,
@@ -333,6 +341,7 @@ function scorePrevBar(
       fg,
       fundingRate,
       oiVelocityScore: null, // prev-bar OI velocity mevcut değil
+      oiVelocityResult: null,
       now: prevLatest.ts,
       srModifier: 0, // dedup approximation: S/R not recomputed for prev bar
       sweep15m: { type: null as null, strength: 0 }, // dedup: sweep not recomputed for prev bar

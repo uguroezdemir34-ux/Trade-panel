@@ -67,6 +67,12 @@ export interface ComposeInput {
    * null/undefined → chop gate uygulanmaz.
    */
   btcAdx1h?: number | null;
+
+  /**
+   * Ham OI velocity sonucu — Faz 2 OI divergence katkısı için.
+   * null/undefined → katkı 0.
+   */
+  oiVelocityResult?: import("@/lib/market/oi-velocity").OiVelocityResult | null;
 }
 
 /**
@@ -192,5 +198,6 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     now,
     oiVelocityScore: oiVelocityScore ?? null,
     btcAdx1h: input.btcAdx1h ?? null,
+    oiVelocityResult: input.oiVelocityResult ?? null,
   };
 }

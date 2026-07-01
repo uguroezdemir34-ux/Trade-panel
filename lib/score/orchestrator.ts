@@ -67,6 +67,8 @@ import {
   PULLBACK_CONSTANTS,
 } from "./pullback";
 import type { MtfTrendResult } from "@/lib/market/mtfTrend";
+import { computeOiDivergence } from "@/lib/market/oi-divergence";
+import type { OiVelocityResult } from "@/lib/market/oi-velocity";
 
 // ═══════════════════════════════════════════════════════════════════
 // INPUT/OUTPUT TYPES
@@ -157,6 +159,13 @@ export interface ScoreInput {
    */
   btcAdx1h?: number | null;
 
+  /**
+   * Ham OI velocity sonucu — computeOiDivergence için.
+   * Faz 2: direction × OI rejimi → +3 (confirm) / -6 (diverge) katkısı.
+   * null/undefined → katkı 0.
+   */
+  oiVelocityResult?: OiVelocityResult | null;
+
   /** Scorer ağırlık çarpanları — ayarlar sayfasından gelir. Default: tümü 1.0 */
   scorerWeights?: ScorerWeights | null;
 
@@ -211,6 +220,7 @@ export interface ScoreReasons {
   volBreakout?: string;
   atrRegime?: string;
   chopGate?: string;
+  oiDivergence?: string;
   drawdownGate?: string;
   adaptiveCut?: string;
   softBlock?: string;
@@ -241,6 +251,7 @@ export interface ScoreResult {
   srModifier: number;
   atrRegimeAdj: number;
   volBreakoutActive: boolean;
+  oiDivergenceContrib: number;
   // Pullback engine (paket #5e)
   signalType: SignalType;
   pullbackActive: boolean;
@@ -379,9 +390,15 @@ export function computeScore(input: ScoreInput): ScoreResult {
 
   // ───── 5. Total ─────
   const oiBonus = input.oiVelocityScore ?? 0;
+
+  // OI Divergence Faz 2: direction × OI rejimi → +3 (confirm) / -6 (diverge)
+  const oiDivResult = computeOiDivergence(input.oiVelocityResult ?? null, direction);
+  const oiDivergenceContrib =
+    oiDivResult === "confirm" ? 3 : oiDivResult === "diverge" ? -6 : 0;
+
   const total = Math.min(
     100,
-    Math.max(0, baseScore + sweepRes.bonus + regimeRes.bonus + srModifier + oiBonus),
+    Math.max(0, baseScore + sweepRes.bonus + regimeRes.bonus + srModifier + oiBonus + oiDivergenceContrib),
   );
   const score = Math.round(total);
 
@@ -398,6 +415,11 @@ export function computeScore(input: ScoreInput): ScoreResult {
   };
   if (sweepRes.reason) reasons.sweep = sweepRes.reason;
   if (regimeRes.reason) reasons.regime = regimeRes.reason;
+  if (oiDivResult === "confirm") {
+    reasons.oiDivergence = `✅ OI onaylıyor (${(input.oiVelocityResult?.regime ?? "").replace(/_/g, " ")}) → +3`;
+  } else if (oiDivResult === "diverge") {
+    reasons.oiDivergence = `⚠️ OI diverjans (${(input.oiVelocityResult?.regime ?? "").replace(/_/g, " ")}) → -6`;
+  }
   if (regimeRes.regime === "trending_strong" && (direction === "LONG" || direction === "SHORT")) {
     reasons.regimeRelax = `🔥 Trending strong regime · RSI threshold ${direction === "LONG" ? "75→80" : "25→20"} relaxed`;
   }
@@ -619,6 +641,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
     srModifier,
     atrRegimeAdj: atrReg.adj,
     volBreakoutActive: volBreakout.active,
+    oiDivergenceContrib,
     signalType: pullback.signalType,
     pullbackActive: pullback.active,
     pullbackThreshold,

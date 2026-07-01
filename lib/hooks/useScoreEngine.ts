@@ -162,6 +162,7 @@ export function useScoreEngine(): void {
         trades,
         fundingRate,
         oiVelocityScore,
+        oiVelocityResult,
         btcAdx1h,
         srModifier: 0,
         sweep15m,
