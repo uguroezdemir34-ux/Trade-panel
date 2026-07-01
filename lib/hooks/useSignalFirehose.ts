@@ -35,7 +35,8 @@ import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { computeOiDivergence } from "@/lib/market/oi-divergence";
 
-const SIGNAL_COOLDOWN_MS = 2 * 60 * 1000; // 2 dakika
+const SIGNAL_COOLDOWN_MS = 2 * 60 * 1000;  // 2 dakika
+const CONFIRM_DELAY_MS  = 5 * 60 * 1000;  // 5 dakika — giriş onay mumu
 
 export function useSignalFirehose(): void {
   const results = useScoreStore((s) => s.results);
@@ -44,8 +45,10 @@ export function useSignalFirehose(): void {
   const tgCreds = useCredentialStore((s) => s.telegram);
 
   // Ref'ler: değişim tetiklemez, sadece tracking için
-  const prevVerdicts = useRef<Partial<Record<Pair, Verdict>>>({});
-  const lastFiredAt = useRef<Partial<Record<Pair, number>>>({});
+  const prevVerdicts      = useRef<Partial<Record<Pair, Verdict>>>({});
+  const lastFiredAt       = useRef<Partial<Record<Pair, number>>>({});
+  // Onay bekleme: GO geçişinden 5 dk sonrasının epoch ms değeri
+  const pendingConfirmAt  = useRef<Partial<Record<Pair, number>>>({});
   const appendGoSignal = useGoSignalLogStore((s) => s.appendGoSignal);
 
   useEffect(() => {
@@ -55,15 +58,28 @@ export function useSignalFirehose(): void {
       const result = results[pair];
       if (!result) continue;
 
-      const verdict = result.verdict;
+      const verdict    = result.verdict;
       const prevVerdict = prevVerdicts.current[pair];
 
-      // non-go → go geçişi kontrolü
       const isGoTransition = verdict === "go" && prevVerdict !== "go";
-      const lastFired = lastFiredAt.current[pair] ?? 0;
-      const cooldownOk = now - lastFired > SIGNAL_COOLDOWN_MS;
+      const lastFired      = lastFiredAt.current[pair] ?? 0;
+      const cooldownOk     = now - lastFired > SIGNAL_COOLDOWN_MS;
+      const pendingAt      = pendingConfirmAt.current[pair];
 
-      if (isGoTransition && cooldownOk && !demoMode) {
+      // GO düştü → bekleyen onayı iptal et
+      if (prevVerdict === "go" && verdict !== "go" && pendingAt != null) {
+        delete pendingConfirmAt.current[pair];
+      }
+
+      // non-go → go geçişi: onay saatini kaydet, henüz sinyal atma
+      if (isGoTransition && cooldownOk && !demoMode && pendingAt == null) {
+        pendingConfirmAt.current[pair] = now + CONFIRM_DELAY_MS;
+      }
+
+      // 5 dk bekleme süresi doldu + hâlâ GO → sinyal at
+      const currentPending = pendingConfirmAt.current[pair];
+      if (verdict === "go" && currentPending != null && now >= currentPending && !demoMode) {
+        delete pendingConfirmAt.current[pair];
         lastFiredAt.current[pair] = now;
         if (result.direction !== "NEUTRAL") {
           const rawPrice = useMarketStore.getState().prices[pair]?.last;
