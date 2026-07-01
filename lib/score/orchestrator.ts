@@ -464,7 +464,11 @@ export function computeScore(input: ScoreInput): ScoreResult {
   if (atrReg.reason) reasons.atrRegime = atrReg.reason;
 
   const dailyOpposite = checkDailyTrendOpposite({ direction, px, ema50_1d: input.ema50_1d });
-  if (dailyOpposite) softBlocks.push(dailyOpposite);
+  if (dailyOpposite) {
+    softBlocks.push(dailyOpposite);
+  } else if (input.ema50_1d === null) {
+    softBlocks.push("📅 Günlük trend bilinmiyor — 1D veri yok (EMA50_1D hesaplanamadı)");
+  }
 
   // ───── MTF trend gate ─────
   // 1h/4h/1d EMA20 trendi sinyalle net şekilde çelişiyorsa GO → WAIT.

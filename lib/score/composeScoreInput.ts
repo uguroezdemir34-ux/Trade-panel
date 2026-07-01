@@ -32,6 +32,8 @@ export interface ComposeInput {
   candles1h: readonly OkxCandle[];
   /** 15m mumlar (en az 100) */
   candles15m: readonly OkxCandle[];
+  /** 1D mumlar — EMA50_1D için en az 50 bar gerekir. Eksikse ema50_1d null olur. */
+  candles1d?: readonly OkxCandle[];
   /** Macro: F&G değeri */
   fg: number;
   /** State: tüm risk store değerleri */
@@ -113,9 +115,9 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
   const ema21_1h = ema(closes1h, { period: 21 });
   const ema50_4h = ema(closes4h, { period: 50 });
   const ema200_4h = ema(closes4h, { period: 200 });
-  // 1d EMA50: 4h candle × 6 → 1d (approx); panel direkt 4h kullanıyor olabilir
-  // Şimdilik 4h EMA200 kullanalım — ileri pakette 1d candles eklenebilir
-  const ema50_1d = ema200_4h; // approximation
+  // Gerçek günlük EMA50 — candles1d sağlanmamışsa veya < 50 bar ise null → orchestrator soft block ekler
+  const closes1d = input.candles1d ? input.candles1d.map(toIndicatorCandle).map((c) => c.c) : [];
+  const ema50_1d = closes1d.length >= 50 ? ema(closes1d, { period: 50 }) : null;
 
   // ───── İndikatörler (1h ana timeframe) ─────
   const rsiVal = rsi(closes1h);

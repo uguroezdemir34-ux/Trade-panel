@@ -167,6 +167,7 @@ function appendOiAndGetVelocity(
 async function fetchAndScore(pair: Pair): Promise<{
   candles1h: Candle[];
   candles4h: Candle[];
+  candles1d: Candle[];
   score: number;
   verdict: "go" | "wait" | "no";
   direction: "LONG" | "SHORT" | "NEUTRAL";
@@ -192,7 +193,7 @@ async function fetchAndScore(pair: Pair): Promise<{
     fetchOkxFundingRate(instId),
     fetchOkxOpenInterest(instId),
     fetchFearGreed(now),
-    fetchOkxCandles(instId, "1D", 30),
+    fetchOkxCandles(instId, "1D", 60),
   ]);
 
   // Only use confirmed (closed) bars
@@ -247,6 +248,7 @@ async function fetchAndScore(pair: Pair): Promise<{
     candles1h,
     candles4h,
     candles15m,
+    candles1d,
     fg,
     fundingRate,
     oiVelocityScore,
@@ -277,6 +279,7 @@ async function fetchAndScore(pair: Pair): Promise<{
   return {
     candles1h,
     candles4h,
+    candles1d,
     score: result.score,
     verdict: result.verdict,
     direction: result.direction,
@@ -300,6 +303,7 @@ async function fetchAndScore(pair: Pair): Promise<{
 function scorePrevBar(
   candles1h: Candle[],
   candles4h: Candle[],
+  candles1d: Candle[],
   pair: Pair,
   fg: number,
   fundingRate: number | null,
@@ -315,6 +319,9 @@ function scorePrevBar(
   const prev4h = candles4h.filter((c) => c.ts <= prevLatest.ts);
   if (prev4h.length < CANDLE_MIN_4H) return null;
 
+  // 1d: re-align to previous bar's timestamp (daily bars mostly unchanged)
+  const prev1d = candles1d.filter((c) => c.ts <= prevLatest.ts);
+
   try {
     const composed = composeScoreInput({
       pair,
@@ -322,6 +329,7 @@ function scorePrevBar(
       candles1h: prev1h,
       candles4h: prev4h,
       candles15m: prev15m,
+      candles1d: prev1d,
       fg,
       fundingRate,
       oiVelocityScore: null, // prev-bar OI velocity mevcut değil
@@ -349,6 +357,7 @@ export async function computeServerSignal(pair: Pair): Promise<ServerSignalResul
     const prevVerdict = scorePrevBar(
       current.candles1h,
       current.candles4h,
+      current.candles1d,
       pair,
       current.fg,
       current.fundingRate,
