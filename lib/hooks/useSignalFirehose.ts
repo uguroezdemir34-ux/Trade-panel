@@ -35,7 +35,8 @@ import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { computeOiDivergence } from "@/lib/market/oi-divergence";
 
-const SIGNAL_COOLDOWN_MS = 2 * 60 * 1000;  // 2 dakika
+const SIGNAL_COOLDOWN_MS = 2 * 60 * 1000;   // 2 dakika
+const CONFIRM_DELAY_MS   = 5 * 60 * 1000;   // 5 dakika — momentary false-positive koruması
 
 export function useSignalFirehose(): void {
   const results = useScoreStore((s) => s.results);
@@ -43,8 +44,10 @@ export function useSignalFirehose(): void {
   const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
   const tgCreds = useCredentialStore((s) => s.telegram);
 
-  const prevVerdicts = useRef<Partial<Record<Pair, Verdict>>>({});
-  const lastFiredAt  = useRef<Partial<Record<Pair, number>>>({});
+  const prevVerdicts     = useRef<Partial<Record<Pair, Verdict>>>({});
+  const lastFiredAt      = useRef<Partial<Record<Pair, number>>>({});
+  // GO geçişinden 5 dk sonrasının epoch ms değeri — süre dolmadan sinyal atılmaz
+  const pendingConfirmAt = useRef<Partial<Record<Pair, number>>>({});
   const appendGoSignal = useGoSignalLogStore((s) => s.appendGoSignal);
 
   useEffect(() => {
@@ -60,33 +63,49 @@ export function useSignalFirehose(): void {
       const isGoTransition = verdict === "go" && prevVerdict !== "go";
       const lastFired      = lastFiredAt.current[pair] ?? 0;
       const cooldownOk     = now - lastFired > SIGNAL_COOLDOWN_MS;
+      const pendingAt      = pendingConfirmAt.current[pair];
 
-      if (isGoTransition && cooldownOk && !demoMode && result.direction !== "NEUTRAL") {
+      // GO düştü → bekleyen onayı iptal et
+      if (prevVerdict === "go" && verdict !== "go" && pendingAt != null) {
+        delete pendingConfirmAt.current[pair];
+      }
+
+      // non-go → go geçişi: onay saatini kaydet, henüz sinyal atma
+      if (isGoTransition && cooldownOk && !demoMode && result.direction !== "NEUTRAL" && pendingAt == null) {
+        pendingConfirmAt.current[pair] = now + CONFIRM_DELAY_MS;
+      }
+
+      // 5 dk bekleme doldu + hâlâ GO → sinyal at
+      const currentPending = pendingConfirmAt.current[pair];
+      if (verdict === "go" && currentPending != null && now >= currentPending && !demoMode) {
+        delete pendingConfirmAt.current[pair];
         lastFiredAt.current[pair] = now;
-        const rawPrice = useMarketStore.getState().prices[pair]?.last;
-        const livePrice = rawPrice ?? 0;
-        const oiResult = useMacroStore.getState().oiVelocity[pair] ?? null;
-        const oiDivergence = computeOiDivergence(oiResult, result.direction as "LONG" | "SHORT");
-        appendGoSignal({
-          ts: now,
-          pair,
-          direction: result.direction as "LONG" | "SHORT",
-          score: result.score,
-          effectiveThreshold: result.effectiveThreshold,
-          triggerPriceAtGo: livePrice,
-          priceWasStale: !rawPrice || rawPrice <= 0,
-          pullbackActive: result.pullbackActive,
-          regime: result.regime,
-          sub: result.sub,
-          sweepBonus: result.sweepBonus,
-          regimeBonus: result.regimeBonus,
-          blocks: result.blocks,
-          softBlocks: result.softBlocks,
-          engineVersion: SCORE_ENGINE_VERSION,
-          oiDivergence,
-          triggeredGates: result.triggeredShadowGates,
-        });
-        void fireSignal(pair, result, tgCreds, forwardTestMode);
+        if (result.direction !== "NEUTRAL") {
+          const rawPrice = useMarketStore.getState().prices[pair]?.last;
+          const livePrice = rawPrice ?? 0;
+          const oiResult = useMacroStore.getState().oiVelocity[pair] ?? null;
+          const oiDivergence = computeOiDivergence(oiResult, result.direction as "LONG" | "SHORT");
+          appendGoSignal({
+            ts: now,
+            pair,
+            direction: result.direction as "LONG" | "SHORT",
+            score: result.score,
+            effectiveThreshold: result.effectiveThreshold,
+            triggerPriceAtGo: livePrice,
+            priceWasStale: !rawPrice || rawPrice <= 0,
+            pullbackActive: result.pullbackActive,
+            regime: result.regime,
+            sub: result.sub,
+            sweepBonus: result.sweepBonus,
+            regimeBonus: result.regimeBonus,
+            blocks: result.blocks,
+            softBlocks: result.softBlocks,
+            engineVersion: SCORE_ENGINE_VERSION,
+            oiDivergence,
+            triggeredGates: result.triggeredShadowGates,
+          });
+          void fireSignal(pair, result, tgCreds, forwardTestMode);
+        }
       }
 
       prevVerdicts.current[pair] = verdict;
