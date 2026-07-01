@@ -16,6 +16,7 @@ import { adx } from "@/lib/indicators/adx";
 import { vwap } from "@/lib/indicators/vwap";
 import { volumeRatio } from "@/lib/indicators/volume-ratio";
 import { atrPercentile } from "@/lib/indicators/atr-percentile";
+import { computePoc } from "@/lib/indicators/poc";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import type { Candle as OkxCandle } from "@/lib/okx/candles";
 import type { ScoreInput } from "@/lib/score/orchestrator";
@@ -146,6 +147,7 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
   const vwapVal = vwap(c1h, new Date(now));
   const volRatio = volumeRatio(c1h);
   const atrPctRes = atrPercentile(c1h);
+  const pocResult = computePoc(c1h, livePrice, 168);
 
   // BB% hesaplama (panel uses bbPct: (close - lower) / (upper - lower))
   let bbPct: number | null = null;
@@ -207,5 +209,6 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     btcAdx1h: input.btcAdx1h ?? null,
     oiVelocityResult: input.oiVelocityResult ?? null,
     btcNearSR: input.btcNearSR ?? false,
+    poc: pocResult ?? null,
   };
 }

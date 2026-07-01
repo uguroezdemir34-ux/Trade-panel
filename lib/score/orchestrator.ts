@@ -69,6 +69,7 @@ import {
 import type { MtfTrendResult } from "@/lib/market/mtfTrend";
 import { computeOiDivergence } from "@/lib/market/oi-divergence";
 import type { OiVelocityResult } from "@/lib/market/oi-velocity";
+import type { PocResult } from "@/lib/indicators/poc";
 
 // ═══════════════════════════════════════════════════════════════════
 // INPUT/OUTPUT TYPES
@@ -174,10 +175,17 @@ export interface ScoreInput {
 
   /**
    * ATR ratio = current ATR / son 20 bar ATR ortalaması.
-   * %80 altı (sıkışma) veya %120 üstü (genişleme) → goThreshold +8.
+   * %80 altı (sıkışma) veya %120 üstü (genişleme) → goThreshold +5.
    * null/undefined → gate atlanır.
    */
   atrRatio?: number | null;
+
+  /**
+   * POC (Point of Control) — 7 günlük hacim profili zirve fiyatı.
+   * Fiyat < POC + LONG → kurumsal maliyet direnci → soft block.
+   * Fiyat > POC + SHORT → kurumsal maliyet desteği → soft block.
+   */
+  poc?: PocResult | null;
 
   /** Scorer ağırlık çarpanları — ayarlar sayfasından gelir. Default: tümü 1.0 */
   scorerWeights?: ScorerWeights | null;
@@ -237,6 +245,7 @@ export interface ScoreReasons {
   oiDivergence?: string;
   btcSrGate?: string;
   atrRatioGate?: string;
+  pocBlock?: string;
   drawdownGate?: string;
   adaptiveCut?: string;
   softBlock?: string;
@@ -529,6 +538,22 @@ export function computeScore(input: ScoreInput): ScoreResult {
     }
   }
 
+  // POC (Point of Control) — kurumsal maliyet bölgesi kontrolü
+  if (input.poc && direction !== "NEUTRAL") {
+    const poc = input.poc;
+    if (direction === "LONG" && !poc.abovePoc) {
+      const dist = Math.abs(poc.distancePct).toFixed(1);
+      const msg = `📊 POC direnci — fiyat kurumsal maliyet altında (POC: ${poc.poc.toFixed(0)}, -%${dist})`;
+      softBlocks.push(msg);
+      reasons.pocBlock = msg;
+    } else if (direction === "SHORT" && poc.abovePoc) {
+      const dist = Math.abs(poc.distancePct).toFixed(1);
+      const msg = `📊 POC desteği — fiyat kurumsal maliyet üstünde (POC: ${poc.poc.toFixed(0)}, +%${dist})`;
+      softBlocks.push(msg);
+      reasons.pocBlock = msg;
+    }
+  }
+
   // ───── 10. Bucket + goThreshold ─────
   // Panel davranışı (satır 7903): bucket baseScore üzerinden hesaplanır
   const bucket = getBucketStats(baseScore, trades);
@@ -544,21 +569,20 @@ export function computeScore(input: ScoreInput): ScoreResult {
   const btcAdx = input.btcAdx1h ?? null;
   if (btcAdx !== null && btcAdx < 20) {
     const before = goThreshold;
-    goThreshold = Math.min(96, goThreshold + 8);
+    goThreshold = Math.min(96, goThreshold + 5);
     reasons.chopGate = `📉 BTC chop rejimi — ADX ${btcAdx.toFixed(0)} < 20 → threshold ${before}→${goThreshold}`;
   }
 
   // ATR optimal pencere kapısı — sadece percentile gate devrede değilse uygula
-  // (atrReg.adj != 0 ise percentile gate zaten tepki verdi: çift ceza önlenir)
   const atrRatio = input.atrRatio ?? null;
   if (atrRatio !== null && atrReg.adj === 0) {
     if (atrRatio > 1.20) {
       const before = goThreshold;
-      goThreshold = Math.min(96, goThreshold + 8);
+      goThreshold = Math.min(96, goThreshold + 5);
       reasons.atrRatioGate = `📊 ATR genişleme (${(atrRatio * 100).toFixed(0)}% > 120%) — dur mesafesi geniş → threshold ${before}→${goThreshold}`;
     } else if (atrRatio < 0.80) {
       const before = goThreshold;
-      goThreshold = Math.min(96, goThreshold + 8);
+      goThreshold = Math.min(96, goThreshold + 5);
       reasons.atrRatioGate = `📊 ATR sıkışma (${(atrRatio * 100).toFixed(0)}% < 80%) — mean-reversion rejimi → threshold ${before}→${goThreshold}`;
     }
   }
@@ -566,21 +590,21 @@ export function computeScore(input: ScoreInput): ScoreResult {
   // Zaman kalitesi kapısı — UTC saat bazlı düşük likidite tespiti
   const utcHour = new Date(input.now).getUTCHours();
   if (utcHour >= 0 && utcHour < 4) {
-    // 00:00–04:00 UTC: Asya seansı düşük likidite — pump/dump riski yüksek
-    const before = goThreshold;
-    goThreshold = Math.min(96, goThreshold + 8);
-    reasons.timeGate = `🌙 Asya düşük likidite (${utcHour.toString().padStart(2, "0")}:xx UTC) → threshold ${before}→${goThreshold}`;
-  } else if (utcHour === 12) {
-    // 12:00–13:00 UTC: Londra → NY geçiş — volatilite spike penceresi
+    // 00:00–04:00 UTC: Asya seansı düşük likidite
     const before = goThreshold;
     goThreshold = Math.min(96, goThreshold + 5);
+    reasons.timeGate = `🌙 Asya düşük likidite (${utcHour.toString().padStart(2, "0")}:xx UTC) → threshold ${before}→${goThreshold}`;
+  } else if (utcHour === 12) {
+    // 12:00–13:00 UTC: Londra → NY geçiş
+    const before = goThreshold;
+    goThreshold = Math.min(96, goThreshold + 3);
     reasons.timeGate = `⚡ Londra→NY geçiş (12:xx UTC) → threshold ${before}→${goThreshold}`;
   }
 
   // BTC S/R proximity gate — BTC kendi seviyesine ≤%0.5 yakınsa altcoin sinyalleri riskli
   if (input.btcNearSR && pair !== "BTC") {
     const before = goThreshold;
-    goThreshold = Math.min(96, goThreshold + 8);
+    goThreshold = Math.min(96, goThreshold + 5);
     reasons.btcSrGate = `⚡ BTC S/R yakını (≤%0.5) → threshold ${before}→${goThreshold}`;
   }
 
