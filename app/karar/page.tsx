@@ -12,6 +12,7 @@ import { useRiskStore } from "@/lib/store/riskStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useMacroStore } from "@/lib/store/macroStore";
+import { computeOiDivergence } from "@/lib/market/oi-divergence";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
 import { useT, useLocale } from "@/lib/i18n/context";
@@ -127,6 +128,7 @@ export default function KararPage() {
   const funding = useMacroStore((s) => s.funding);
   const fgValue = useMacroStore((s) => s.fgValue);
   const marketCap = useMacroStore((s) => s.marketCap);
+  const oiVelocityForPair = useMacroStore((s) => s.oiVelocity[activePair] ?? null);
 
   // Keyboard shortcuts: 1-9 / [ ] / G / ?
   useEffect(() => {
@@ -252,6 +254,8 @@ export default function KararPage() {
 
   const signalDir: "LONG" | "SHORT" =
     result?.direction === "SHORT" ? "SHORT" : "LONG";
+
+  const oiDivergence = computeOiDivergence(oiVelocityForPair, result?.direction ?? "NEUTRAL");
 
   const flowResult = useFlowIntelligence(activePair, signalDir);
 
@@ -1084,6 +1088,36 @@ export default function KararPage() {
 
               {/* Flow drilldown */}
               <FlowAlignmentRow flow={flowResult} />
+
+              {/* OI Divergence — gözlem göstergesi, skor motoruna bağlı değil */}
+              {oiVelocityForPair && (
+                <div className="flex items-center justify-between bg-surface-s2 rounded-md px-3 py-1.5">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-2 h-2 rounded-full shrink-0"
+                      style={{
+                        backgroundColor:
+                          oiDivergence === "confirm" ? "#22c55e"
+                          : oiDivergence === "diverge" ? "#ef4444"
+                          : "#6b7280",
+                      }}
+                    />
+                    <span className="text-text-t4 text-[10px] font-mono tracking-widest uppercase">OI DIV</span>
+                    <span className="text-text-t4 text-[10px] font-mono opacity-60">
+                      {oiVelocityForPair.regime.replace(/_/g, " ")}
+                    </span>
+                  </div>
+                  <span className={`text-[10px] font-mono font-bold ${
+                    oiDivergence === "confirm" ? "text-signal-up"
+                    : oiDivergence === "diverge" ? "text-signal-down"
+                    : "text-text-t4"
+                  }`}>
+                    {oiDivergence === "confirm" ? "✓ ONAY"
+                    : oiDivergence === "diverge" ? "⚠ DIVERJANS"
+                    : "○ NÖTR"}
+                  </span>
+                </div>
+              )}
 
               {/* 4 analysis accordions + Detaylar */}
               <div className="flex flex-col gap-2">

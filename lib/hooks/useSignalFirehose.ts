@@ -32,6 +32,8 @@ import type { NotifyMessage } from "@/lib/notify/types";
 import { sendDiscordMessage } from "@/lib/notify/discord/channel";
 import { useGoSignalLogStore } from "@/lib/store/goSignalLogStore";
 import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
+import { useMacroStore } from "@/lib/store/macroStore";
+import { computeOiDivergence } from "@/lib/market/oi-divergence";
 
 const SIGNAL_COOLDOWN_MS = 2 * 60 * 1000; // 2 dakika
 
@@ -66,6 +68,8 @@ export function useSignalFirehose(): void {
         if (result.direction !== "NEUTRAL") {
           const rawPrice = useMarketStore.getState().prices[pair]?.last;
           const livePrice = rawPrice ?? 0;
+          const oiResult = useMacroStore.getState().oiVelocity[pair] ?? null;
+          const oiDivergence = computeOiDivergence(oiResult, result.direction as "LONG" | "SHORT");
           appendGoSignal({
             ts: now,
             pair,
@@ -82,6 +86,7 @@ export function useSignalFirehose(): void {
             blocks: result.blocks,
             softBlocks: result.softBlocks,
             engineVersion: SCORE_ENGINE_VERSION,
+            oiDivergence,
           });
         }
         void fireSignal(pair, result, tgCreds, forwardTestMode);

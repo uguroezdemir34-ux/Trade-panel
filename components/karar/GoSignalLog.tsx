@@ -318,7 +318,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
                     "grid items-center gap-x-2 px-3 py-1.5 font-mono text-2xs",
                     isUncertain ? "opacity-60" : "",
                   ].join(" ")}
-                  style={{ gridTemplateColumns: "40px 52px 28px 52px 12px 1fr" }}
+                  style={{ gridTemplateColumns: "40px 52px 28px 52px 12px 16px 1fr" }}
                   title={
                     isAmbiguous ? t("karar.ambiguousSignal")
                     : priceStale ? t("karar.stalePriceAtSignal")
@@ -338,6 +338,22 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
                   </span>
                   <span className={resultColor} title={resultTitle}>
                     {resultIcon}
+                  </span>
+                  <span
+                    className={
+                      e.oiDivergence === "confirm" ? "text-green-400"
+                      : e.oiDivergence === "diverge" ? "text-red-400"
+                      : "text-text-t4/20"
+                    }
+                    title={
+                      e.oiDivergence === "confirm" ? "OI: onaylıyor"
+                      : e.oiDivergence === "diverge" ? "OI: diverjans"
+                      : "OI: nötr / veri yok"
+                    }
+                  >
+                    {e.oiDivergence === "confirm" ? "◆"
+                    : e.oiDivergence === "diverge" ? "◇"
+                    : "·"}
                   </span>
                   <span
                     className="text-text-t4 tabular-nums text-right"

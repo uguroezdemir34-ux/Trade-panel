@@ -2,6 +2,7 @@ import { create } from "zustand";
 import type { Pair } from "@/lib/constants/pairs";
 import type { ScoreSubScores } from "@/lib/score/orchestrator";
 import type { Regime } from "@/lib/score/scorers";
+import type { OiDivergence } from "@/lib/market/oi-divergence";
 
 const MAX_ENTRIES = 200;
 const STORAGE_KEY = "gosignal_log_v1";
@@ -24,6 +25,8 @@ export interface GoSignalEntry {
   softBlocks: string[];
   /** Score engine version at signal time — undefined means pre-versioning (v0) */
   engineVersion?: string;
+  /** OI rejim diverjansı — sadece gözlem, skor motorunu etkilemez */
+  oiDivergence?: OiDivergence;
 }
 
 interface GoSignalLogState {
