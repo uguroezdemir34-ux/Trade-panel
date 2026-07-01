@@ -29,6 +29,7 @@ import { oiVelocityScoreOrZero } from "@/lib/market/oi-velocity";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
 import { detectLiquiditySweep } from "@/lib/sr/sweep";
 import { SR_SCALE_FACTOR } from "@/lib/score/version";
+import { adx as computeAdx } from "@/lib/indicators/adx";
 import type { Pair } from "@/lib/constants/pairs";
 
 export function useScoreEngine(): void {
@@ -73,6 +74,14 @@ export function useScoreEngine(): void {
     const accountStore = useAccountStore.getState();
     const positionStore = usePositionStore.getState();
     const tradesStore = useTradesStore.getState();
+
+    // BTC 1H ADX — piyasa geneli chop tespiti (tüm çiftler için ortak)
+    const btcCandles1h = candles["BTC_1h"] ?? EMPTY_CANDLES;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const btcAdx1h = btcCandles1h.length >= 14
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ? (computeAdx((btcCandles1h as any[]).map(toIndicatorCandle), 14)?.adx ?? null)
+      : null;
 
     for (const pair of PAIRS) {
       const candles4h = candles[`${pair}_4h`] ?? EMPTY_CANDLES;
@@ -140,6 +149,8 @@ export function useScoreEngine(): void {
         candles1h: candles1h as any,
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         candles15m: candles15m as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        candles1d: candles1d as any,
         fg,
         eventSkipUntil: null,
         btcCooldownUntil: riskStore.btcCooldownUntil || null,
@@ -151,6 +162,7 @@ export function useScoreEngine(): void {
         trades,
         fundingRate,
         oiVelocityScore,
+        btcAdx1h,
         srModifier: 0,
         sweep15m,
         timeQuality: { quality: 1, reason: "" },

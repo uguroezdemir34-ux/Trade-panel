@@ -60,6 +60,13 @@ export interface ComposeInput {
    * undefined/null → computeScore'da 0 olarak işlenir.
    */
   oiVelocityScore?: number | null;
+
+  /**
+   * BTC 1H ADX — piyasa geneli chop tespiti.
+   * useScoreEngine tarafından BTC candle'larından hesaplanıp tüm çiftlere geçirilir.
+   * null/undefined → chop gate uygulanmaz.
+   */
+  btcAdx1h?: number | null;
 }
 
 /**
@@ -184,5 +191,6 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     trades,
     now,
     oiVelocityScore: oiVelocityScore ?? null,
+    btcAdx1h: input.btcAdx1h ?? null,
   };
 }

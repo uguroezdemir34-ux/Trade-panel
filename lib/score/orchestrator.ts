@@ -150,6 +150,13 @@ export interface ScoreInput {
    */
   oiVelocityScore?: number | null;
 
+  /**
+   * BTC 1H ADX — piyasa geneli chop tespiti için.
+   * ADX < 20 → BTC range/chop modunda → goThreshold +8 (chop gate).
+   * null/undefined → chop gate uygulanmaz.
+   */
+  btcAdx1h?: number | null;
+
   /** Scorer ağırlık çarpanları — ayarlar sayfasından gelir. Default: tümü 1.0 */
   scorerWeights?: ScorerWeights | null;
 
@@ -203,6 +210,7 @@ export interface ScoreReasons {
   regimeRelax?: string;
   volBreakout?: string;
   atrRegime?: string;
+  chopGate?: string;
   drawdownGate?: string;
   adaptiveCut?: string;
   softBlock?: string;
@@ -493,6 +501,14 @@ export function computeScore(input: ScoreInput): ScoreResult {
 
   // ATR regime adj (panel satır 7937)
   goThreshold = Math.max(60, Math.min(96, goThreshold + atrReg.adj));
+
+  // BTC chop gate — BTC ADX < 20 → piyasa range modunda, trend sinyalleri güvenilmez
+  const btcAdx = input.btcAdx1h ?? null;
+  if (btcAdx !== null && btcAdx < 20) {
+    const before = goThreshold;
+    goThreshold = Math.min(96, goThreshold + 8);
+    reasons.chopGate = `📉 BTC chop rejimi — ADX ${btcAdx.toFixed(0)} < 20 → threshold ${before}→${goThreshold}`;
+  }
 
   // Drawdown protocol min score gate (panel satır 7947-7952)
   if (drawdownProtocol.tier !== "normal" && drawdownProtocol.minScore > goThreshold) {
