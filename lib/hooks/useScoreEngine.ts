@@ -83,6 +83,21 @@ export function useScoreEngine(): void {
       ? (computeAdx((btcCandles1h as any[]).map(toIndicatorCandle), 14)?.adx ?? null)
       : null;
 
+    // BTC S/R proximity gate — BTC kendi seviyesine ≤%0.5 yakınsa altcoin threshold +8
+    const btcCandles4h = candles["BTC_4h"] ?? EMPTY_CANDLES;
+    const btcPrice = marketStore.prices["BTC"]?.last ?? null;
+    let btcNearSR = false;
+    if (btcPrice && btcPrice > 0 && btcCandles4h.length >= 10 && btcCandles1h.length >= 10) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const btcC4h = (btcCandles4h as any[]).map(toIndicatorCandle);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const btcC1h = (btcCandles1h as any[]).map(toIndicatorCandle);
+      const btcSR = detectSRLevels(btcC4h, btcC1h, btcPrice, "NEUTRAL", null);
+      const distR = btcSR.levels.nearest_resistance?.distance_pct ?? Infinity;
+      const distS = btcSR.levels.nearest_support?.distance_pct ?? Infinity;
+      btcNearSR = Math.min(distR, distS) <= 0.5;
+    }
+
     for (const pair of PAIRS) {
       const candles4h = candles[`${pair}_4h`] ?? EMPTY_CANDLES;
       const candles1h = candles[`${pair}_1h`] ?? EMPTY_CANDLES;
@@ -164,6 +179,7 @@ export function useScoreEngine(): void {
         oiVelocityScore,
         oiVelocityResult,
         btcAdx1h,
+        btcNearSR,
         srModifier: 0,
         sweep15m,
         timeQuality: { quality: 1, reason: "" },

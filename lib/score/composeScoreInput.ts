@@ -69,6 +69,12 @@ export interface ComposeInput {
   btcAdx1h?: number | null;
 
   /**
+   * BTC kendi S/R seviyesine ≤%0.5 yakınsa true.
+   * useScoreEngine tarafından hesaplanır. undefined → gate atlanır.
+   */
+  btcNearSR?: boolean;
+
+  /**
    * Ham OI velocity sonucu — Faz 2 OI divergence katkısı için.
    * null/undefined → katkı 0.
    */
@@ -199,5 +205,6 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     oiVelocityScore: oiVelocityScore ?? null,
     btcAdx1h: input.btcAdx1h ?? null,
     oiVelocityResult: input.oiVelocityResult ?? null,
+    btcNearSR: input.btcNearSR ?? false,
   };
 }

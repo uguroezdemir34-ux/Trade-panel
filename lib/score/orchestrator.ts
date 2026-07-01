@@ -166,6 +166,12 @@ export interface ScoreInput {
    */
   oiVelocityResult?: OiVelocityResult | null;
 
+  /**
+   * BTC kendi S/R seviyesine ≤%0.5 yakınsa true — altcoin goThreshold +8.
+   * BTC pair'in kendisine uygulanmaz. undefined/false → gate atlanır.
+   */
+  btcNearSR?: boolean;
+
   /** Scorer ağırlık çarpanları — ayarlar sayfasından gelir. Default: tümü 1.0 */
   scorerWeights?: ScorerWeights | null;
 
@@ -222,6 +228,7 @@ export interface ScoreReasons {
   chopGate?: string;
   timeGate?: string;
   oiDivergence?: string;
+  btcSrGate?: string;
   drawdownGate?: string;
   adaptiveCut?: string;
   softBlock?: string;
@@ -545,6 +552,13 @@ export function computeScore(input: ScoreInput): ScoreResult {
     const before = goThreshold;
     goThreshold = Math.min(96, goThreshold + 5);
     reasons.timeGate = `⚡ Londra→NY geçiş (12:xx UTC) → threshold ${before}→${goThreshold}`;
+  }
+
+  // BTC S/R proximity gate — BTC kendi seviyesine ≤%0.5 yakınsa altcoin sinyalleri riskli
+  if (input.btcNearSR && pair !== "BTC") {
+    const before = goThreshold;
+    goThreshold = Math.min(96, goThreshold + 8);
+    reasons.btcSrGate = `⚡ BTC S/R yakını (≤%0.5) → threshold ${before}→${goThreshold}`;
   }
 
   // Drawdown protocol min score gate (panel satır 7947-7952)
