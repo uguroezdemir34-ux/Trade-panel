@@ -27,6 +27,8 @@ export interface GoSignalEntry {
   engineVersion?: string;
   /** OI rejim diverjansı — sadece gözlem, skor motorunu etkilemez */
   oiDivergence?: OiDivergence;
+  /** Gölge kapılar tetiklenme listesi (chopGate, atrRatioGate, timeGate, btcSrGate, pocBlock, oiDivergence:*) */
+  triggeredGates?: string[];
 }
 
 interface GoSignalLogState {

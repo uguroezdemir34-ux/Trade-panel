@@ -285,6 +285,8 @@ export interface ScoreResult {
   effectiveThreshold: number;
   // Overextended detail (UI için)
   overextFlags: number;
+  /** Gölge kapılar: tetiklendi ama threshold/score'a ETKİSİ YOK — sadece gözlem */
+  triggeredShadowGates: string[];
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -421,9 +423,10 @@ export function computeScore(input: ScoreInput): ScoreResult {
   const oiDivergenceContrib =
     oiDivResult === "confirm" ? 3 : oiDivResult === "diverge" ? -6 : 0;
 
+  // OI divergence gölge modda — total'e katılmıyor, sadece reasons/log için hesaplandı
   const total = Math.min(
     100,
-    Math.max(0, baseScore + sweepRes.bonus + regimeRes.bonus + srModifier + oiBonus + oiDivergenceContrib),
+    Math.max(0, baseScore + sweepRes.bonus + regimeRes.bonus + srModifier + oiBonus),
   );
   const score = Math.round(total);
 
@@ -538,19 +541,15 @@ export function computeScore(input: ScoreInput): ScoreResult {
     }
   }
 
-  // POC (Point of Control) — kurumsal maliyet bölgesi kontrolü
+  // POC (Point of Control) — gölge modda: soft block'a eklenmez, sadece reason'a kaydedilir
   if (input.poc && direction !== "NEUTRAL") {
     const poc = input.poc;
     if (direction === "LONG" && !poc.abovePoc) {
       const dist = Math.abs(poc.distancePct).toFixed(1);
-      const msg = `📊 POC direnci — fiyat kurumsal maliyet altında (POC: ${poc.poc.toFixed(0)}, -%${dist})`;
-      softBlocks.push(msg);
-      reasons.pocBlock = msg;
+      reasons.pocBlock = `📊 POC direnci — fiyat kurumsal maliyet altında (POC: ${poc.poc.toFixed(0)}, -%${dist}) (gölge)`;
     } else if (direction === "SHORT" && poc.abovePoc) {
       const dist = Math.abs(poc.distancePct).toFixed(1);
-      const msg = `📊 POC desteği — fiyat kurumsal maliyet üstünde (POC: ${poc.poc.toFixed(0)}, +%${dist})`;
-      softBlocks.push(msg);
-      reasons.pocBlock = msg;
+      reasons.pocBlock = `📊 POC desteği — fiyat kurumsal maliyet üstünde (POC: ${poc.poc.toFixed(0)}, +%${dist}) (gölge)`;
     }
   }
 
@@ -565,47 +564,35 @@ export function computeScore(input: ScoreInput): ScoreResult {
   // ATR regime adj (panel satır 7937)
   goThreshold = Math.max(60, Math.min(96, goThreshold + atrReg.adj));
 
-  // BTC chop gate — BTC ADX < 20 → piyasa range modunda, trend sinyalleri güvenilmez
+  // ── GÖLGE KAPILARI — threshold'u DEĞİŞTİRMEZ, sadece loglama için ──
+
+  // BTC chop gate (gölge)
   const btcAdx = input.btcAdx1h ?? null;
   if (btcAdx !== null && btcAdx < 20) {
-    const before = goThreshold;
-    goThreshold = Math.min(96, goThreshold + 5);
-    reasons.chopGate = `📉 BTC chop rejimi — ADX ${btcAdx.toFixed(0)} < 20 → threshold ${before}→${goThreshold}`;
+    reasons.chopGate = `📉 BTC chop rejimi — ADX ${btcAdx.toFixed(0)} < 20 (gölge)`;
   }
 
-  // ATR optimal pencere kapısı — sadece percentile gate devrede değilse uygula
+  // ATR optimal pencere kapısı (gölge) — atrReg.adj === 0 koşulu korunur
   const atrRatio = input.atrRatio ?? null;
   if (atrRatio !== null && atrReg.adj === 0) {
     if (atrRatio > 1.20) {
-      const before = goThreshold;
-      goThreshold = Math.min(96, goThreshold + 5);
-      reasons.atrRatioGate = `📊 ATR genişleme (${(atrRatio * 100).toFixed(0)}% > 120%) — dur mesafesi geniş → threshold ${before}→${goThreshold}`;
+      reasons.atrRatioGate = `📊 ATR genişleme (${(atrRatio * 100).toFixed(0)}% > 120%) — dur mesafesi geniş (gölge)`;
     } else if (atrRatio < 0.80) {
-      const before = goThreshold;
-      goThreshold = Math.min(96, goThreshold + 5);
-      reasons.atrRatioGate = `📊 ATR sıkışma (${(atrRatio * 100).toFixed(0)}% < 80%) — mean-reversion rejimi → threshold ${before}→${goThreshold}`;
+      reasons.atrRatioGate = `📊 ATR sıkışma (${(atrRatio * 100).toFixed(0)}% < 80%) — mean-reversion rejimi (gölge)`;
     }
   }
 
-  // Zaman kalitesi kapısı — UTC saat bazlı düşük likidite tespiti
+  // Zaman kalitesi kapısı (gölge)
   const utcHour = new Date(input.now).getUTCHours();
   if (utcHour >= 0 && utcHour < 4) {
-    // 00:00–04:00 UTC: Asya seansı düşük likidite
-    const before = goThreshold;
-    goThreshold = Math.min(96, goThreshold + 5);
-    reasons.timeGate = `🌙 Asya düşük likidite (${utcHour.toString().padStart(2, "0")}:xx UTC) → threshold ${before}→${goThreshold}`;
+    reasons.timeGate = `🌙 Asya düşük likidite (${utcHour.toString().padStart(2, "0")}:xx UTC) (gölge)`;
   } else if (utcHour === 12) {
-    // 12:00–13:00 UTC: Londra → NY geçiş
-    const before = goThreshold;
-    goThreshold = Math.min(96, goThreshold + 3);
-    reasons.timeGate = `⚡ Londra→NY geçiş (12:xx UTC) → threshold ${before}→${goThreshold}`;
+    reasons.timeGate = `⚡ Londra→NY geçiş (12:xx UTC) (gölge)`;
   }
 
-  // BTC S/R proximity gate — BTC kendi seviyesine ≤%0.5 yakınsa altcoin sinyalleri riskli
+  // BTC S/R proximity gate (gölge)
   if (input.btcNearSR && pair !== "BTC") {
-    const before = goThreshold;
-    goThreshold = Math.min(96, goThreshold + 5);
-    reasons.btcSrGate = `⚡ BTC S/R yakını (≤%0.5) → threshold ${before}→${goThreshold}`;
+    reasons.btcSrGate = `⚡ BTC S/R yakını (≤%0.5) (gölge)`;
   }
 
   // Drawdown protocol min score gate (panel satır 7947-7952)
@@ -614,6 +601,16 @@ export function computeScore(input: ScoreInput): ScoreResult {
     goThreshold = Math.min(96, drawdownProtocol.minScore);
     reasons.drawdownGate = `${drawdownProtocol.label} ${drawdownProtocol.reason} → threshold ${oldThreshold}→${goThreshold}`;
   }
+
+  // ── Gölge kapı tetiklenme logu ──
+  const triggeredShadowGates: string[] = [];
+  if (reasons.chopGate) triggeredShadowGates.push("chopGate");
+  if (reasons.atrRatioGate) triggeredShadowGates.push("atrRatioGate");
+  if (reasons.timeGate) triggeredShadowGates.push("timeGate");
+  if (reasons.btcSrGate) triggeredShadowGates.push("btcSrGate");
+  if (reasons.pocBlock) triggeredShadowGates.push("pocBlock");
+  if (oiDivResult === "diverge") triggeredShadowGates.push("oiDivergence:diverge");
+  else if (oiDivResult === "confirm") triggeredShadowGates.push("oiDivergence:confirm");
 
   // ───── 10b. Pullback engine (paket #5e) ─────
   const pullback = detectPullbackSetup({
@@ -689,7 +686,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
     reasons.lockRamp = `🔓 Lock released ${hoursSince}h ago — score ${goThreshold}+ needed (normal: 80, ramp: +5)`;
   }
 
-  // Overextended detail (UI gösterim için)
+  // Overextended detail (UI için)
   let overextFlags = 0;
   if (overext) {
     const flagsCount = (overext.match(/,/g) || []).length + 1;
@@ -723,5 +720,6 @@ export function computeScore(input: ScoreInput): ScoreResult {
     pullbackThreshold,
     effectiveThreshold,
     overextFlags,
+    triggeredShadowGates,
   };
 }
