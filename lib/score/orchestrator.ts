@@ -548,9 +548,10 @@ export function computeScore(input: ScoreInput): ScoreResult {
     reasons.chopGate = `📉 BTC chop rejimi — ADX ${btcAdx.toFixed(0)} < 20 → threshold ${before}→${goThreshold}`;
   }
 
-  // ATR optimal pencere kapısı — %80 altı veya %120 üstü → R:R bozuluyor
+  // ATR optimal pencere kapısı — sadece percentile gate devrede değilse uygula
+  // (atrReg.adj != 0 ise percentile gate zaten tepki verdi: çift ceza önlenir)
   const atrRatio = input.atrRatio ?? null;
-  if (atrRatio !== null) {
+  if (atrRatio !== null && atrReg.adj === 0) {
     if (atrRatio > 1.20) {
       const before = goThreshold;
       goThreshold = Math.min(96, goThreshold + 8);
