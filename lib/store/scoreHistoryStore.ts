@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { Pair } from "@/lib/constants/pairs";
-import type { Verdict } from "@/lib/score/orchestrator";
+import type { Verdict, ScoreSubScores } from "@/lib/score/orchestrator";
 import type { Direction } from "@/lib/score/direction";
 
 const MAX_SNAPSHOTS = 50;
@@ -11,6 +11,14 @@ export interface ScoreSnapshot {
   verdict: Verdict;
   direction: Direction;
   ts: number;
+  /** Postmortem alanları — eski kayıtlarda undefined olabilir */
+  sub?: ScoreSubScores;
+  srModifier?: number;
+  sweepBonus?: number;
+  regimeBonus?: number;
+  pullbackActive?: boolean;
+  softBlocks?: string[];
+  blocks?: string[];
 }
 
 interface ScoreHistoryState {
