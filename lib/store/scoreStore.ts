@@ -53,5 +53,5 @@ export const useScoreStore = create<ScoreStoreState>((set) => ({
 
 export const selectScoreResult =
   (pair: Pair) =>
-  (s: ScoreStoreState): ScoreResult | undefined =>
+  (s: ScoreStoreState): ScoreResult | null | undefined =>
     s.results[pair];
