@@ -220,6 +220,7 @@ export interface ScoreReasons {
   volBreakout?: string;
   atrRegime?: string;
   chopGate?: string;
+  timeGate?: string;
   oiDivergence?: string;
   drawdownGate?: string;
   adaptiveCut?: string;
@@ -530,6 +531,20 @@ export function computeScore(input: ScoreInput): ScoreResult {
     const before = goThreshold;
     goThreshold = Math.min(96, goThreshold + 8);
     reasons.chopGate = `📉 BTC chop rejimi — ADX ${btcAdx.toFixed(0)} < 20 → threshold ${before}→${goThreshold}`;
+  }
+
+  // Zaman kalitesi kapısı — UTC saat bazlı düşük likidite tespiti
+  const utcHour = new Date(input.now).getUTCHours();
+  if (utcHour >= 0 && utcHour < 4) {
+    // 00:00–04:00 UTC: Asya seansı düşük likidite — pump/dump riski yüksek
+    const before = goThreshold;
+    goThreshold = Math.min(96, goThreshold + 8);
+    reasons.timeGate = `🌙 Asya düşük likidite (${utcHour.toString().padStart(2, "0")}:xx UTC) → threshold ${before}→${goThreshold}`;
+  } else if (utcHour === 12) {
+    // 12:00–13:00 UTC: Londra → NY geçiş — volatilite spike penceresi
+    const before = goThreshold;
+    goThreshold = Math.min(96, goThreshold + 5);
+    reasons.timeGate = `⚡ Londra→NY geçiş (12:xx UTC) → threshold ${before}→${goThreshold}`;
   }
 
   // Drawdown protocol min score gate (panel satır 7947-7952)
