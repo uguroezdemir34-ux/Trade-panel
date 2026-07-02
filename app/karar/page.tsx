@@ -38,6 +38,7 @@ type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
 import { ScoreRing } from "@/components/karar/ScoreRing";
+import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
 import { PAIR_CATEGORY } from "@/lib/constants/pairMeta";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
 import { BlocksList } from "@/components/karar/BlocksList";
@@ -766,7 +767,18 @@ export default function KararPage() {
                     {p === "BTC" ? (
                       <div className="flex justify-center py-1">
                         {score !== undefined && pr?.goThreshold !== undefined && (
-                          <ScoreRing score={score} goThreshold={pr.goThreshold} size={60} />
+                          <div className="relative flex justify-center items-center w-20 h-[60px]">
+                            {/* Sparkline — ring'in ARKASINDA, yarı saydam, yanlardan taşar */}
+                            {snaps.length >= 2 && (
+                              <div className="absolute inset-0 flex items-center justify-center opacity-35 pointer-events-none z-0">
+                                <ScoreSparkline snapshots={snaps} width={80} height={22} />
+                              </div>
+                            )}
+                            {/* ScoreRing — önde */}
+                            <div className="relative z-10">
+                              <ScoreRing score={score} goThreshold={pr.goThreshold} size={60} id="BTC" />
+                            </div>
+                          </div>
                         )}
                       </div>
                     ) : (
