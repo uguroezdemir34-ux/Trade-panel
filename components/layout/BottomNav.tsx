@@ -20,12 +20,14 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useHydrated } from "@/lib/store/hydration";
 import { useT } from "@/lib/i18n/context";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
+import { useNavStore } from "@/lib/store/navStore";
 
 export function BottomNav(): React.ReactElement {
   const pathname = usePathname();
   const router = useRouter();
   const setLastTab = useSettingsStore((s) => s.setLastTab);
   const hydrated = useHydrated();
+  const setNavPending = useNavStore((s) => s.setPending);
   const t = useT();
   const triggeredAlarmCount = usePriceAlarmStore(
     (s) => s.alarms.filter((a) => a.status === "triggered").length,
@@ -48,6 +50,7 @@ export function BottomNav(): React.ReactElement {
                 href={tab.path}
                 prefetch={false}
                 onClick={() => {
+                  if (tab.path !== pathname) setNavPending(true);
                   if (hydrated) setLastTab(tab.id);
                 }}
                 className={[
