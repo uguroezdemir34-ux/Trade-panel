@@ -950,7 +950,6 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       chart.timeScale().fitContent();
       didFitRef.current = true;
     }
-    }
   }, [series, resetKey]);
 
   return (
