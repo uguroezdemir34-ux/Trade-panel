@@ -5,8 +5,10 @@
  * sonra arka planda taze veri çeker. Böylece ~1dk bekleme → anlık görüntü.
  *
  * Rate-limit fix: OKX public endpoint limiti 20 req/2s (paylaşımlı Vercel IP).
- * Max 3 eşzamanlı istek; fetchShort tamamlanınca fetchLong başlar (sıralı).
+ * Max 8 eşzamanlı istek; fetchShort tamamlanınca fetchLong başlar (sıralı).
  * Başarısız fetch → 1.5s sonra 1 otomatik retry, sonra bir sonraki poll'a bırak.
+ *
+ * Aktif pair önceliği: setFocusedPair() ile işaretlenen pair her batch'te öne alınır.
  */
 
 "use client";
@@ -31,8 +33,21 @@ const TIMEFRAMES_LONG: Timeframe[] = ["4h", "1d"];
 const POLL_INTERVAL_SHORT_MS = 60_000;
 const POLL_INTERVAL_LONG_MS = 5 * 60_000;
 
-/** Max eşzamanlı OKX isteği — paylaşımlı Vercel IP rate limit koruması */
-const MAX_CONCURRENT = 3;
+/** Max eşzamanlı OKX isteği */
+const MAX_CONCURRENT = 8;
+
+/** Aktif pair — her batch'te öne alınır. setFocusedPair() ile güncellenir. */
+let focusedPair: Pair | null = null;
+
+/** Karar/grafik sayfalarından çağrılır; aktif pair'i batch sırasının başına taşır. */
+export function setFocusedPair(pair: Pair): void {
+  focusedPair = pair;
+}
+
+function orderedPairs(): Pair[] {
+  if (!focusedPair) return [...PAIRS];
+  return [focusedPair, ...PAIRS.filter((p) => p !== focusedPair)];
+}
 
 function makeFetchTask(
   pair: string,
@@ -60,14 +75,14 @@ export function useCandlePoller(): void {
   const initializedRef = useRef(false);
 
   async function fetchShort(): Promise<void> {
-    const tasks = PAIRS.flatMap((pair) =>
+    const tasks = orderedPairs().flatMap((pair) =>
       TIMEFRAMES_SHORT.map((tf) => makeFetchTask(pair, tf, CANDLE_LIMIT, setCandles, setError)),
     );
     await runBatched(tasks, MAX_CONCURRENT);
   }
 
   async function fetchLong(): Promise<void> {
-    const tasks = PAIRS.flatMap((pair) => [
+    const tasks = orderedPairs().flatMap((pair) => [
       makeFetchTask(pair, "4h", CANDLE_LIMIT, setCandles, setError),
       makeFetchTask(pair, "1d", CANDLE_LIMIT_1D, setCandles, setError),
     ]);
