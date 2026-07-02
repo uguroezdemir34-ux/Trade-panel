@@ -47,6 +47,7 @@ import { useScoreMomentumAlerts } from "@/lib/hooks/useScoreMomentumAlerts";
 import { useConsecutiveLossAlert } from "@/lib/hooks/useConsecutiveLossAlert";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useLiqFeed } from "@/lib/hooks/useLiqFeed";
+import { NavProgressBar } from "./NavProgressBar";
 import { usePwaSetup } from "@/lib/hooks/usePwaSetup";
 import { useEmergencyStopGuard } from "@/lib/hooks/useEmergencyStopGuard";
 import { useSlProximityAlert } from "@/lib/hooks/useSlProximityAlert";
@@ -193,6 +194,7 @@ export function AppShell({
       <main className="app-main mx-auto max-w-screen-2xl px-4 pt-4 lg:px-6">
         {children}
       </main>
+      <NavProgressBar />
       <BottomNav />
       <QuickTradeSheet />
     </div>
