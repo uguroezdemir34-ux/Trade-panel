@@ -37,6 +37,8 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
+import { MiniGauge } from "@/components/karar/MiniGauge";
+import { PAIR_CATEGORY } from "@/lib/constants/pairMeta";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
 import { BlocksList } from "@/components/karar/BlocksList";
 import { ReasonsList } from "@/components/karar/ReasonsList";
@@ -102,6 +104,11 @@ export default function KararPage() {
   const [showMomentum, setShowMomentum] = useState(false);
   const [showDivergence, setShowDivergence] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+
+  // BTC card — score-change pulse (single-shot, no continuous animation)
+  const btcPrevScoreRef  = useRef<number | undefined>(undefined);
+  const btcPulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [btcPulseActive, setBtcPulseActive] = useState(false);
 
   const result = useScoreStore((s) => s.results[activePair]);
   const allResults = useScoreStore((s) => s.results);
@@ -174,6 +181,21 @@ export default function KararPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [allResults, activePair]);
+
+  // BTC pulse — fires once when BTC score value changes
+  const btcScoreForPulse = allResults["BTC"]?.score;
+  useEffect(() => {
+    if (btcScoreForPulse === undefined) return;
+    if (btcPrevScoreRef.current !== undefined && btcPrevScoreRef.current !== btcScoreForPulse) {
+      if (btcPulseTimerRef.current) clearTimeout(btcPulseTimerRef.current);
+      setBtcPulseActive(true);
+      btcPulseTimerRef.current = setTimeout(() => {
+        setBtcPulseActive(false);
+        btcPulseTimerRef.current = null;
+      }, 700);
+    }
+    btcPrevScoreRef.current = btcScoreForPulse;
+  }, [btcScoreForPulse]);
 
   const goPairs = useMemo(
     () => PAIRS.filter((p) => allResults[p]?.verdict === "go"),
@@ -663,11 +685,21 @@ export default function KararPage() {
                       </span>
                     </>
                   )}
+                  {p === "BTC" && btcPulseActive && (
+                    <span className="absolute inset-0 rounded-lg ring-1 ring-white/25 animate-[ping_600ms_ease-out_1] pointer-events-none z-20" aria-hidden />
+                  )}
 
                   <button
                     onClick={() => setActivePair(p as Pair)}
+                    style={p === "BTC" && v === "go" ? {
+                      boxShadow: goStrength === "strong"
+                        ? "0 0 12px 2px rgba(74,222,128,0.35)"
+                        : "0 0 10px 1px rgba(34,197,94,0.22)",
+                      willChange: "box-shadow",
+                    } : undefined}
                     className={[
                       "w-full text-left rounded-lg border p-1.5 font-mono transition-colors",
+                      p === "BTC" ? "max-h-28 overflow-hidden" : "",
                       isActive
                         ? "border-white/20 bg-surface-s2 text-text-t1"
                         : goStrength === "strong"
@@ -700,6 +732,11 @@ export default function KararPage() {
                           {isWatched ? "★" : "☆"}
                         </button>
                         <span className="text-[11px] font-bold text-text-t1 leading-none">{p}</span>
+                        {p === "BTC" && PAIR_CATEGORY[p] && (
+                          <span className="text-[7px] font-mono text-text-t4/60 border border-border/40 rounded-sm px-0.5 leading-none shrink-0">
+                            {PAIR_CATEGORY[p]}
+                          </span>
+                        )}
                         {alarmedPairs.has(p) && (
                           <span className="h-1 w-1 rounded-full bg-amber-400 shrink-0" />
                         )}
@@ -723,29 +760,37 @@ export default function KararPage() {
                       )}
                     </div>
 
-                    {/* Kapsül slider */}
-                    <div className="relative py-1.5">
-                      <div className="h-1.5 w-full rounded-full bg-surface-s2 overflow-hidden relative">
+                    {/* Kapsül slider / MiniGauge (BTC only) */}
+                    {p === "BTC" ? (
+                      <div className="flex justify-center py-0.5">
+                        {score !== undefined && pr?.goThreshold !== undefined && (
+                          <MiniGauge score={score} goThreshold={pr.goThreshold} />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="relative py-1.5">
+                        <div className="h-1.5 w-full rounded-full bg-surface-s2 overflow-hidden relative">
+                          {score !== undefined && (
+                            <div
+                              className={`absolute inset-y-0 left-0 rounded-full ${gradientClass}`}
+                              style={{ width: `${Math.min(100, score)}%` }}
+                            />
+                          )}
+                        </div>
                         {score !== undefined && (
                           <div
-                            className={`absolute inset-y-0 left-0 rounded-full ${gradientClass}`}
-                            style={{ width: `${Math.min(100, score)}%` }}
+                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-1.5 rounded-full bg-white/90 shadow-sm pointer-events-none"
+                            style={{ left: `${Math.min(98, score)}%` }}
+                          />
+                        )}
+                        {pr?.goThreshold !== undefined && (
+                          <div
+                            className="absolute top-1/2 -translate-y-1/2 h-3.5 w-px bg-white/25 pointer-events-none"
+                            style={{ left: `${Math.min(99, pr.goThreshold)}%` }}
                           />
                         )}
                       </div>
-                      {score !== undefined && (
-                        <div
-                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-1.5 rounded-full bg-white/90 shadow-sm pointer-events-none"
-                          style={{ left: `${Math.min(98, score)}%` }}
-                        />
-                      )}
-                      {pr?.goThreshold !== undefined && (
-                        <div
-                          className="absolute top-1/2 -translate-y-1/2 h-3.5 w-px bg-white/25 pointer-events-none"
-                          style={{ left: `${Math.min(99, pr.goThreshold)}%` }}
-                        />
-                      )}
-                    </div>
+                    )}
 
                     {/* Score sparkline — inline SVG polyline, snaps.length < 2 → null */}
                     {snaps.length >= 2 && (() => {
