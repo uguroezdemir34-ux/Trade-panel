@@ -7,11 +7,9 @@
  * Kompakt liste: pair | rejim | skor | OI% | fiyat%
  */
 
-import { useState, useEffect } from "react";
 import type { OiVelocityResult } from "@/lib/market/oi-velocity";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useT } from "@/lib/i18n/context";
-import { useMacroStore } from "@/lib/store/macroStore";
 
 interface Props {
   velocity: Partial<Record<Pair, OiVelocityResult>>;
@@ -37,51 +35,6 @@ function scoreColor(s: number): string {
   return "rgb(var(--text-t3))";
 }
 
-// ── TEMPORARY DEBUG — remove after diagnosis ──────────────────
-function OiDebugPanel() {
-  const oi = useMacroStore((s) => s.oi);
-  const oiSnapshots = useMacroStore((s) => s.oiSnapshots);
-  const oiFetchedAt = useMacroStore((s) => s.oiFetchedAt);
-  const oiLoading = useMacroStore((s) => s.oiLoading);
-  const [lsVal, setLsVal] = useState<string>("?");
-
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem("quantix_oi_snaps_v1");
-      if (!raw) { setLsVal("ABSENT"); return; }
-      const parsed = JSON.parse(raw) as Record<string, unknown[]>;
-      const counts = Object.entries(parsed)
-        .map(([k, v]) => `${k}:${Array.isArray(v) ? v.length : "?"}`)
-        .join(" ");
-      setLsVal(counts || "EMPTY_OBJ");
-    } catch {
-      setLsVal("PARSE_ERR");
-    }
-  }, []);
-
-  const oiRows = PAIRS.slice(0, 5).map((p) => {
-    const r = oi[p];
-    const snaps = oiSnapshots[p]?.length ?? 0;
-    return `${p}: oi=${r?.oi ?? "?"} oiCcy=${r?.oiCcy ?? "?"} src=${r?.source ?? "?"} snaps=${snaps}`;
-  });
-
-  const fetchedAgo = oiFetchedAt
-    ? `${Math.round((Date.now() - oiFetchedAt) / 1000)}s ago`
-    : "never";
-
-  return (
-    <div className="mt-2 rounded border border-yellow-500/50 bg-yellow-950/30 p-2 font-mono text-[9px] text-yellow-300">
-      <div className="mb-1 font-bold">⚠ DEBUG (geçici)</div>
-      <div>oiLoading={String(oiLoading)} | fetchedAt={fetchedAgo}</div>
-      <div>velocity count={Object.keys(useMacroStore.getState().oiVelocity).length}</div>
-      <div className="mt-1">OI fetch sonuçları (ilk 5):</div>
-      {oiRows.map((r) => <div key={r}>{r}</div>)}
-      <div className="mt-1">localStorage quantix_oi_snaps_v1:</div>
-      <div className="break-all">{lsVal}</div>
-    </div>
-  );
-}
-// ── END DEBUG ──────────────────────────────────────────────────
 
 export function OiVelocityCard({ velocity, loading }: Props): React.ReactElement {
   const t = useT();
@@ -155,8 +108,6 @@ export function OiVelocityCard({ velocity, loading }: Props): React.ReactElement
           );
         })}
       </div>
-
-      <OiDebugPanel />
     </div>
   );
 }
