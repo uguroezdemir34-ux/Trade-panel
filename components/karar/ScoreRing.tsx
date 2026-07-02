@@ -1,11 +1,11 @@
 "use client";
 
 /**
- * SCORE RING — BTC kart prototipi için küçük dairesel gauge.
+ * SCORE RING — tam 360° progress ring (Apple Watch activity ring tekniği).
  *
- * Tam daire progress ring: stroke-dasharray/dashoffset tekniği.
- * Tick, ibre, bezel yok — sadece arka plan halkası + dolgu halkası + ortada rakam.
- * size prop: px cinsinden kare alan (varsayılan 60). w-full YASAK.
+ * stroke-dasharray = TAM ÇEVRE → tam daire arka plan
+ * stroke-dashoffset = circumference - progress → skor kadar dolu
+ * rotate(-90) → saat 12'den başlar
  */
 
 interface Props {
@@ -15,19 +15,16 @@ interface Props {
 }
 
 export function ScoreRing({ score, goThreshold, size = 60 }: Props): React.ReactElement {
-  const v   = Math.max(0, Math.min(100, score));
-  const sw  = Math.max(4, size / 12);           // stroke width scales with size
-  const r   = size / 2 - sw / 2 - 1;            // radius: stays inside viewBox
-  const circ = 2 * Math.PI * r;
-  const offset = circ * (1 - v / 100);
-  const cx  = size / 2;
+  const strokeWidth  = 6;
+  const radius       = (size - strokeWidth) / 2;
+  const circumference = 2 * Math.PI * radius;   // TAM ÇEVRE, 360°
+  const progress     = (score / 100) * circumference;
+  const offset       = circumference - progress;
 
   const color =
-    v >= goThreshold ? "#22c55e" :
-    v >= 65          ? "#f59e0b" :
-                       "#ef4444";
-
-  const fontSize = Math.round(size * 0.295);    // ~18px at 60px
+    score >= goThreshold ? "#4ade80" :
+    score >= 65          ? "#fb923c" :
+                           "#f87171";
 
   return (
     <svg
@@ -35,38 +32,43 @@ export function ScoreRing({ score, goThreshold, size = 60 }: Props): React.React
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       className="shrink-0 block"
-      aria-label={`Skor: ${v}`}
+      aria-label={`Skor: ${score}`}
     >
-      {/* Track ring */}
+      {/* Arka plan halkası — tam daire, görünür gri */}
       <circle
-        cx={cx} cy={cx} r={r}
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
         fill="none"
-        stroke="#1a1e26"
-        strokeWidth={sw}
+        stroke="#374151"
+        strokeWidth={strokeWidth}
       />
-      {/* Progress ring — 12 o'clock start */}
+      {/* Progress halkası — skor kadar dolu, saat 12'den başlar */}
       <circle
-        cx={cx} cy={cx} r={r}
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
         fill="none"
         stroke={color}
-        strokeWidth={sw}
-        strokeLinecap="round"
-        strokeDasharray={circ}
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
         strokeDashoffset={offset}
-        transform={`rotate(-90 ${cx} ${cx})`}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
         style={{ transition: "stroke-dashoffset 0.3s ease-out, stroke 0.2s" }}
       />
-      {/* Score number centered */}
+      {/* Ortadaki rakam */}
       <text
-        x={cx} y={cx}
+        x="50%"
+        y="50%"
         textAnchor="middle"
         dominantBaseline="central"
-        fill={color}
-        fontSize={fontSize}
+        fill="white"
         fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
+        fontSize={size * 0.32}
       >
-        {v}
+        {score}
       </text>
     </svg>
   );
