@@ -3,7 +3,7 @@ name: Deploy to Vercel
 on:
   push:
     branches:
-      - claude/quantix-os-deployment-YXhhF
+      - main
 
 jobs:
   deploy:
