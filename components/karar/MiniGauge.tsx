@@ -40,7 +40,7 @@ export function MiniGauge({ score, goThreshold }: MiniGaugeProps): React.ReactEl
   const progressColor = v >= gt ? "#22c55e" : "#ef4444";
 
   return (
-    <svg viewBox="0 0 56 34" className="w-full" aria-hidden="true">
+    <svg viewBox="0 0 56 34" width="56" height="32" className="w-14 h-8 shrink-0" overflow="hidden" aria-hidden="true">
       {/* Track background */}
       <path d={arcPath(0, 100)} fill="none" stroke="#07080e" strokeWidth={3} strokeLinecap="butt" />
 
