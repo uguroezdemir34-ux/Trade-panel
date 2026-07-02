@@ -1,7 +1,12 @@
 "use client";
 
 /**
- * SCORE GAUGE — Luxury instrument cluster, premium dark-face / warm-gold bezel.
+ * SCORE GAUGE — 270° metallic speedometer.
+ * Prop interface unchanged: { score, threshold, goThreshold }
+ *
+ * Geometry: viewBox 220×196, centre (110,108), track radius R=66.
+ * Sweep: s=0 → 7-o'clock (bottom-left), s=50 → 12-o'clock (top),
+ *        s=100 → 5-o'clock (bottom-right). Total 270°.
  * DO NOT edit pt() / arcPath() / needle angle — score binding is correct.
  */
 
@@ -13,8 +18,8 @@ interface Props {
 
 const CX = 110;
 const CY = 108;
-const R  = 64;
-const SW = 11;
+const R  = 66;
+const SW = 8;
 
 function pt(s: number, r: number): [number, number] {
   const deg = -135 + 2.7 * s;
@@ -31,302 +36,303 @@ function arcPath(from: number, to: number, r: number): string {
 
 export function ScoreGauge({ score, threshold, goThreshold }: Props): React.ReactElement {
   const v = Math.max(0, Math.min(100, score));
-  const progressColor = v >= goThreshold ? "#22c55e" : "#f97316";
-  const scoreColor    = v >= threshold   ? "#22c55e" : v >= 65 ? "#f97316" : "#ef4444";
+  /* color: used for needle, hub shine, score text — threshold-based (per original logic) */
+  const color = v >= threshold ? "#22c55e" : v >= 65 ? "#f59e0b" : "#ef4444";
+  /* progressColor: used only for progress arc — must match 2-zone layout (goThreshold boundary) */
+  const progressColor = v >= goThreshold ? "#22c55e" : "#ef4444";
 
-  /* Needle — DO NOT CHANGE math */
+  /* Needle tip — DO NOT CHANGE */
+  const [nx, ny]     = pt(v, R - 8);
+
+  /* Threshold ticks */
+  const [tt1x, tt1y] = pt(threshold, R - SW / 2 - 3);
+  const [tt2x, tt2y] = pt(threshold, R + SW / 2 + 10);
+  const hasClassic   = goThreshold !== threshold;
+  const [ct1x, ct1y] = pt(goThreshold, R - SW / 2 - 2);
+  const [ct2x, ct2y] = pt(goThreshold, R + SW / 2 + 7);
+
+  /* Tapered needle polygon — wider at hub, tapers to tip */
   const needleRad = ((-135 + 2.7 * v) - 90) * Math.PI / 180;
   const perpRad   = needleRad + Math.PI / 2;
-  const [nx, ny]  = pt(v, R + 2);
+  const bw = 4.2;
+  const blx = (CX + bw * Math.cos(perpRad)).toFixed(1);
+  const bly = (CY + bw * Math.sin(perpRad)).toFixed(1);
+  const brx = (CX - bw * Math.cos(perpRad)).toFixed(1);
+  const bry = (CY - bw * Math.sin(perpRad)).toFixed(1);
+  const needlePoly = `M ${blx} ${bly} L ${nx.toFixed(1)} ${ny.toFixed(1)} L ${brx} ${bry} Z`;
 
-  /* ── HEAVY BLADE NEEDLE ──
-     Base: wide (hidden under hub)
-     Shoulder at r=42: still wide blade section
-     Tip: razor sharp
-  */
-  const bw = 13;     /* base half-width (at CX,CY) */
-  const mw = 8;      /* shoulder half-width (at r=42 — blade body) */
-  const tw = 0.28;   /* razor tip half-width */
-  const hw = 1.6;    /* spine highlight half-width */
-
-  /* Base */
-  const blx  = (CX + bw * Math.cos(perpRad)).toFixed(1);
-  const bly  = (CY + bw * Math.sin(perpRad)).toFixed(1);
-  const brx  = (CX - bw * Math.cos(perpRad)).toFixed(1);
-  const bry  = (CY - bw * Math.sin(perpRad)).toFixed(1);
-  /* Tip */
-  const ntlx = (nx + tw * Math.cos(perpRad)).toFixed(1);
-  const ntly = (ny + tw * Math.sin(perpRad)).toFixed(1);
-  const ntrx = (nx - tw * Math.cos(perpRad)).toFixed(1);
-  const ntry = (ny - tw * Math.sin(perpRad)).toFixed(1);
-  /* Shoulder — blade body starts here */
-  const [sx, sy] = pt(v, 42);
-  const smlx = (sx + mw * Math.cos(perpRad)).toFixed(1);
-  const smly = (sy + mw * Math.sin(perpRad)).toFixed(1);
-  const smrx = (sx - mw * Math.cos(perpRad)).toFixed(1);
-  const smry = (sy - mw * Math.sin(perpRad)).toFixed(1);
-
-  /* 6-vertex spatula polygon: wide base → shoulder → razor tip */
-  const needlePoly  = `M ${blx} ${bly} L ${smlx} ${smly} L ${ntlx} ${ntly} L ${ntrx} ${ntry} L ${smrx} ${smry} L ${brx} ${bry} Z`;
-
-  /* Spine strip (chrome center ridge) */
+  /* Highlight strip along needle spine (narrow center polygon) */
+  const hw = 0.9;
   const hlx = (CX + hw * Math.cos(perpRad)).toFixed(1);
   const hly = (CY + hw * Math.sin(perpRad)).toFixed(1);
   const hrx = (CX - hw * Math.cos(perpRad)).toFixed(1);
   const hry = (CY - hw * Math.sin(perpRad)).toFixed(1);
-  const needleSpine = `M ${hlx} ${hly} L ${ntlx} ${ntly} L ${ntrx} ${ntry} L ${hrx} ${hry} Z`;
+  const needleSpine = `M ${hlx} ${hly} L ${nx.toFixed(1)} ${ny.toFixed(1)} L ${hrx} ${hry} Z`;
 
-  /* Counterweight — fully inside hub */
-  const cwTipX = (CX + 16 * Math.cos(needleRad + Math.PI)).toFixed(1);
-  const cwTipY = (CY + 16 * Math.sin(needleRad + Math.PI)).toFixed(1);
-  const cbw = 4.2;
-  const cblx = (CX + cbw * Math.cos(perpRad)).toFixed(1);
-  const cbly = (CY + cbw * Math.sin(perpRad)).toFixed(1);
-  const cbrx = (CX - cbw * Math.cos(perpRad)).toFixed(1);
-  const cbry = (CY - cbw * Math.sin(perpRad)).toFixed(1);
-  const counterPoly = `M ${cblx} ${cbly} L ${cwTipX} ${cwTipY} L ${cbrx} ${cbry} Z`;
+  /*
+   * Bezel ring highlight arc — at r=95, from 210° to 315° (SVG convention,
+   * y-down), clockwise. This spans the top-left to top-right quadrant of the
+   * ring where a light source from above-left would create a catch-light.
+   * 210°: x=27.7  y=60.5   315°: x=177.2  y=40.8
+   */
+  const ringHiPath = "M 27.7 60.5 A 95 95 0 0 1 177.2 40.8";
 
-  /* Threshold ticks */
-  const [tt1x, tt1y] = pt(threshold,   R - SW / 2 - 5);
-  const [tt2x, tt2y] = pt(threshold,   R + SW / 2 + 12);
-  const hasClassic   = goThreshold !== threshold;
-  const [ct1x, ct1y] = pt(goThreshold, R - SW / 2 - 4);
-  const [ct2x, ct2y] = pt(goThreshold, R + SW / 2 + 9);
-
-  /* Zone separator */
-  const [zx1, zy1] = pt(goThreshold, R - SW / 2 - 1);
-  const [zx2, zy2] = pt(goThreshold, R + SW / 2 + 1);
+  /*
+   * Shadow arc — lower-right, from 30° to 60°.
+   * 30°: x=192.3 y=155.5   60°: x=157.5 y=190.3
+   */
+  const ringShadowPath = "M 192.3 155.5 A 95 95 0 0 1 157.5 190.3";
 
   return (
-    <svg viewBox="0 0 220 218" className="w-full select-none" aria-label={`Skor: ${v}/100`}>
+    <svg
+      viewBox="0 0 220 232"
+      className="w-full select-none"
+      aria-label={`Skor: ${v}/100`}
+    >
       <defs>
-        {/* ── WARM GOLD / CHAMPAGNE BEZEL ── */}
-        <linearGradient id="sg-bezel-outer" x1="15%" y1="0%" x2="85%" y2="100%">
-          <stop offset="0%"   stopColor="#e8d49a" />
-          <stop offset="8%"   stopColor="#c8a860" />
-          <stop offset="18%"  stopColor="#a07838" />
-          <stop offset="32%"  stopColor="#6a4e20" />
-          <stop offset="48%"  stopColor="#3e2e10" />
-          <stop offset="64%"  stopColor="#241a08" />
-          <stop offset="80%"  stopColor="#1a1206" />
-          <stop offset="100%" stopColor="#0e0a04" />
-        </linearGradient>
-        <linearGradient id="sg-bezel-mid" x1="20%" y1="5%" x2="80%" y2="95%">
-          <stop offset="0%"   stopColor="#d4b870" />
-          <stop offset="30%"  stopColor="#7a5a28" />
-          <stop offset="65%"  stopColor="#2e2010" />
-          <stop offset="100%" stopColor="#120e06" />
-        </linearGradient>
-        <linearGradient id="sg-bezel-inner" x1="25%" y1="5%" x2="75%" y2="95%">
-          <stop offset="0%"   stopColor="#b09050" />
-          <stop offset="40%"  stopColor="#5a4018" />
-          <stop offset="80%"  stopColor="#201608" />
-          <stop offset="100%" stopColor="#0e0a04" />
+        {/*
+          Ring gradient: 135° (top-left → bottom-right).
+          x1="0%" y1="0%" x2="100%" y2="100%" maps to TL→BR in SVG space.
+          Highlight: #9a8a68  Mid: #5a4e3a  Shadow: #26201a
+        */}
+        <linearGradient id="sg-metal" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stopColor="#9a8a68" />
+          <stop offset="18%"  stopColor="#7a6a50" />
+          <stop offset="35%"  stopColor="#5a4e3a" />
+          <stop offset="55%"  stopColor="#3e3428" />
+          <stop offset="75%"  stopColor="#2e261e" />
+          <stop offset="90%"  stopColor="#26201a" />
+          <stop offset="100%" stopColor="#1c1610" />
         </linearGradient>
 
-        {/* ── FACE ── */}
-        <radialGradient id="sg-face" cx="50%" cy="46%" r="72%">
-          <stop offset="0%"   stopColor="#12161e" />
-          <stop offset="40%"  stopColor="#080a10" />
-          <stop offset="100%" stopColor="#020304" />
+        {/* Outer dark collar behind ring */}
+        <linearGradient id="sg-outer" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%"   stopColor="#18120a" />
+          <stop offset="50%"  stopColor="#0e0a06" />
+          <stop offset="100%" stopColor="#060402" />
+        </linearGradient>
+
+        {/*
+          Glass face — dome radialGradient.
+          Centre slightly bright (#1b1e23) → darkens toward edge (#0a0b0d).
+          cx/cy offset gives the impression of curvature catching light from upper-left.
+        */}
+        <radialGradient id="sg-glass" cx="42%" cy="33%" r="68%">
+          <stop offset="0%"   stopColor="#1b1e23" />
+          <stop offset="48%"  stopColor="#131519" />
+          <stop offset="100%" stopColor="#0a0b0d" />
         </radialGradient>
+
+        {/* Edge vignette — deepens perimeter */}
         <radialGradient id="sg-vignette" cx="50%" cy="50%" r="50%">
-          <stop offset="30%"  stopColor="#000" stopOpacity="0" />
-          <stop offset="100%" stopColor="#000" stopOpacity="0.80" />
+          <stop offset="48%" stopColor="#000" stopOpacity="0" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.55" />
         </radialGradient>
 
-        {/* ── HUB ── */}
-        <radialGradient id="sg-hub" cx="22%" cy="18%" r="85%">
-          <stop offset="0%"   stopColor="#e8d49a" />
-          <stop offset="20%"  stopColor="#c0a060" />
-          <stop offset="48%"  stopColor="#7a5a28" />
-          <stop offset="78%"  stopColor="#3a2a0e" />
-          <stop offset="100%" stopColor="#14100a" />
-        </radialGradient>
-        <radialGradient id="sg-hub-face" cx="40%" cy="35%" r="72%">
-          <stop offset="0%"   stopColor="#1a1612" />
-          <stop offset="60%"  stopColor="#0a0806" />
-          <stop offset="100%" stopColor="#040302" />
+        {/* Chrome hub — bright top-left, dark bottom-right */}
+        <radialGradient id="sg-hub" cx="30%" cy="25%" r="75%">
+          <stop offset="0%"   stopColor="#dcdde0" />
+          <stop offset="38%"  stopColor="#989aa0" />
+          <stop offset="100%" stopColor="#3a3d42" />
         </radialGradient>
 
-        {/* ── NEEDLE chrome cross-section gradient
-             Goes PERPENDICULAR to needle direction (left-edge → right-edge)
-             Edges: dark metallic (visible against black face)
-             Center: bright chrome peak  ── */}
-        <linearGradient id="sg-needle-cross" gradientUnits="userSpaceOnUse"
-          x1={blx} y1={bly} x2={brx} y2={bry}>
-          <stop offset="0%"   stopColor="#242424" />
-          <stop offset="15%"  stopColor="#484848" />
-          <stop offset="38%"  stopColor="#909090" />
-          <stop offset="50%"  stopColor="#f0f0f0" />
-          <stop offset="62%"  stopColor="#909090" />
-          <stop offset="85%"  stopColor="#484848" />
-          <stop offset="100%" stopColor="#242424" />
-        </linearGradient>
+        {/* Needle drop-shadow only — no color spread */}
+        <filter id="sg-drop" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="1.5" stdDeviation="1.5"
+            floodColor="#000" floodOpacity="0.72" />
+        </filter>
 
-        {/* ── FILTERS ── */}
-        <filter id="sg-halo" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="7" />
+        {/* Score text: depth shadow only, zero glow spread */}
+        <filter id="sg-text-depth" x="-10%" y="-10%" width="120%" height="120%">
+          <feDropShadow dx="0" dy="1" stdDeviation="1.8"
+            floodColor="#000" floodOpacity="0.85" />
         </filter>
-        <filter id="sg-bloom" x="-25%" y="-25%" width="150%" height="150%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="3.5" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <filter id="sg-spine-glow" x="-150%" y="-150%" width="400%" height="400%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="2.5" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <filter id="sg-tip-glow" x="-200%" y="-200%" width="500%" height="500%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <filter id="sg-score-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
-          <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
-        </filter>
-        <filter id="sg-drop" x="-80%" y="-80%" width="260%" height="260%">
-          <feDropShadow dx="0" dy="4" stdDeviation="4.5" floodColor="#000" floodOpacity="0.95" />
+
+        {/* Progress arc: very subtle shadow (NOT a blur glow) */}
+        <filter id="sg-arc-shadow" x="-8%" y="-8%" width="116%" height="116%">
+          <feDropShadow dx="0" dy="0" stdDeviation="1"
+            floodColor="#000" floodOpacity="0.40" />
         </filter>
       </defs>
 
-      {/* ── VOID ── */}
-      <circle cx={CX} cy={CY} r={109} fill="#010102" />
+      {/* ── Outermost dark disk */}
+      <circle cx={CX} cy={CY} r={107} fill="#030404" />
 
-      {/* ── BEZEL ── */}
-      <circle cx={CX} cy={CY} r={106} fill="none" stroke="#080602" strokeWidth="6" />
-      <circle cx={CX} cy={CY} r={100} fill="none" stroke="url(#sg-bezel-outer)" strokeWidth="12" />
-      <path d="M 198 164 A 100 100 0 0 1 146 202"
-        fill="none" stroke="#050300" strokeWidth="7" strokeLinecap="round" opacity="0.92" />
-      <circle cx={CX} cy={CY} r={92.5} fill="none" stroke="url(#sg-bezel-mid)"   strokeWidth="5" />
-      <circle cx={CX} cy={CY} r={88}   fill="none" stroke="url(#sg-bezel-inner)" strokeWidth="3" />
-      <circle cx={CX} cy={CY} r={85.5} fill="none" stroke="#040302" strokeWidth="3.5" />
-      <circle cx={CX} cy={CY} r={84}   fill="none" stroke="#1e1808" strokeWidth="0.8" />
+      {/* ── Dark outer collar */}
+      <circle cx={CX} cy={CY} r={101} fill="none" stroke="url(#sg-outer)" strokeWidth="5" />
 
-      {/* ── FACE ── */}
-      <circle cx={CX} cy={CY} r={83} fill="url(#sg-face)" />
-      <circle cx={CX} cy={CY} r={81} fill="none" stroke={progressColor} strokeWidth="1.8" opacity="0.12" />
-      <circle cx={CX} cy={CY} r={83} fill="url(#sg-vignette)" />
-      <ellipse cx={CX} cy={CY - 32} rx={44} ry={15}
-        fill="none" stroke="#fff" strokeWidth="20" opacity="0.028" strokeLinecap="round" />
+      {/* ── Main bezel ring — smoky grey-bronze */}
+      <circle cx={CX} cy={CY} r={95} fill="none" stroke="url(#sg-metal)" strokeWidth="13" />
 
-      {/* ── TRACK ── */}
-      <path d={arcPath(0, 100, R)} fill="none" stroke="#010204" strokeWidth={SW + 11} />
-      <path d={arcPath(0, 100, R)} fill="none" stroke="#040610" strokeWidth={SW + 7} />
-      <path d={arcPath(0, goThreshold, R)} fill="none" stroke="#4e1200" strokeWidth={SW + 3} strokeLinecap="butt" />
-      <path d={arcPath(goThreshold, 100, R)} fill="none" stroke="#0c3010" strokeWidth={SW + 3} strokeLinecap="butt" />
-      <line x1={zx1.toFixed(1)} y1={zy1.toFixed(1)} x2={zx2.toFixed(1)} y2={zy2.toFixed(1)} stroke="#010308" strokeWidth="2.5" />
+      {/* ── Highlight arc: top-left catch-light on ring (210°→315°, CW) */}
+      <path
+        d={ringHiPath}
+        fill="none" stroke="#c8b890" strokeWidth="1.4"
+        strokeLinecap="round" opacity="0.32"
+      />
 
-      {/* ── ACTIVE ARC ── */}
+      {/* ── Shadow arc: bottom-right of ring (30°→60°, CW) */}
+      <path
+        d={ringShadowPath}
+        fill="none" stroke="#0a0806" strokeWidth="2"
+        strokeLinecap="round" opacity="0.55"
+      />
+
+      {/* ── Groove: dark inset channel between ring and face */}
+      <circle cx={CX} cy={CY} r={88}   fill="none" stroke="#09090c" strokeWidth="3" />
+      <circle cx={CX} cy={CY} r={86.5} fill="none" stroke="#242630" strokeWidth="0.6" />
+
+      {/* ── Glass dome face */}
+      <circle cx={CX} cy={CY} r={85} fill="url(#sg-glass)" />
+
+      {/* ── Vignette */}
+      <circle cx={CX} cy={CY} r={85} fill="url(#sg-vignette)" />
+
+      {/* ── Glass dome highlight — white ellipse stroke, upper third of face */}
+      <ellipse
+        cx={CX} cy={CY - 32}
+        rx={50} ry={18}
+        fill="none"
+        stroke="#ffffff" strokeWidth="11"
+        opacity="0.10"
+        strokeLinecap="round"
+      />
+
+      {/* ── Track background (270° channel) */}
+      <path d={arcPath(0, 100, R)} fill="none" stroke="#07080e" strokeWidth={SW + 5} />
+      <path d={arcPath(0, 100, R)} fill="none" stroke="#05060a" strokeWidth={SW + 2} />
+
+      {/* ── Zone 0 → goThreshold: RED — kılcal ince arka plan çizgisi */}
+      <path
+        d={arcPath(0, goThreshold, R)}
+        fill="none" stroke="#7a1f1f" strokeWidth={1} strokeLinecap="butt"
+      />
+
+      {/* ── Zone goThreshold → 100: GREEN — kılcal ince arka plan çizgisi */}
+      <path
+        d={arcPath(goThreshold, 100, R)}
+        fill="none" stroke="#1f5a2a" strokeWidth={1} strokeLinecap="butt"
+      />
+
+      {/* ── Active progress arc — ibrenin ucuna uzanan kılcal çizgi */}
       {v >= 1 && (
-        <>
-          <path d={arcPath(0, v, R)} fill="none" stroke={progressColor} strokeWidth={SW + 10} strokeLinecap="butt" opacity="0.12" filter="url(#sg-halo)" />
-          <path d={arcPath(0, v, R)} fill="none" stroke={progressColor} strokeWidth={SW + 4}  strokeLinecap="butt" opacity="0.30" filter="url(#sg-bloom)" />
-          <path d={arcPath(0, v, R)} fill="none" stroke={progressColor} strokeWidth={SW}      strokeLinecap="butt" opacity="0.95" />
-          <path d={arcPath(0, v, R)} fill="none" stroke="#ffffff"        strokeWidth="2"       strokeLinecap="butt" opacity="0.38" />
-          <path d={arcPath(0, v, R - 3)} fill="none" stroke="#000"      strokeWidth="1.5"     strokeLinecap="butt" opacity="0.20" />
-        </>
+        <path
+          d={arcPath(0, v, R)}
+          fill="none"
+          stroke={progressColor}
+          strokeWidth={0.8}
+          strokeLinecap="butt"
+        />
       )}
 
-      {/* ── TICK MARKS ── */}
-      {Array.from({ length: 49 }, (_, i) => {
-        const n = (i + 1) * 2;
-        if (n % 5 === 0) return null;
-        const [xa, ya] = pt(n, R + 15);
-        const [xb, yb] = pt(n, R + 17);
-        return <line key={`smt${n}`} x1={xa.toFixed(1)} y1={ya.toFixed(1)} x2={xb.toFixed(1)} y2={yb.toFixed(1)} stroke="#2a2010" strokeWidth="0.7" />;
-      })}
+      {/* ── Minor ticks (every 5 units) */}
       {Array.from({ length: 19 }, (_, i) => {
         const n = (i + 1) * 5;
         if (n % 10 === 0) return null;
-        const [xa, ya] = pt(n, R + 14);
-        const [xb, yb] = pt(n, R + 19);
-        return <line key={`mt${n}`} x1={xa.toFixed(1)} y1={ya.toFixed(1)} x2={xb.toFixed(1)} y2={yb.toFixed(1)} stroke="#5a4820" strokeWidth="1.1" />;
+        const [xa, ya] = pt(n, R + 8);
+        const [xb, yb] = pt(n, R + 13);
+        return (
+          <line key={`mt${n}`}
+            x1={xa.toFixed(1)} y1={ya.toFixed(1)}
+            x2={xb.toFixed(1)} y2={yb.toFixed(1)}
+            stroke="#6b7280" strokeWidth="1"
+          />
+        );
       })}
+
+      {/* ── Sub-minor ticks (every 2 units) */}
+      {Array.from({ length: 49 }, (_, i) => {
+        const n = (i + 1) * 2;
+        if (n % 5 === 0) return null;
+        const [xa, ya] = pt(n, R + 9);
+        const [xb, yb] = pt(n, R + 11);
+        return (
+          <line key={`smt${n}`}
+            x1={xa.toFixed(1)} y1={ya.toFixed(1)}
+            x2={xb.toFixed(1)} y2={yb.toFixed(1)}
+            stroke="#38404e" strokeWidth="0.6"
+          />
+        );
+      })}
+
+      {/* ── Major ticks + labels — ALL soft white #c2c7cd, NO red ever */}
       {Array.from({ length: 11 }, (_, i) => {
         const n = i * 10;
-        const [xa, ya] = pt(n, R + 12);
-        const [xb, yb] = pt(n, R + 23);
-        const [lx, ly] = pt(n, R + 33);
+        const [xa, ya] = pt(n, R + 7);
+        const [xb, yb] = pt(n, R + 16);
+        const [lx, ly] = pt(n, R + 24);
         return (
           <g key={`tk${n}`}>
-            <line x1={xa.toFixed(1)} y1={ya.toFixed(1)} x2={xb.toFixed(1)} y2={yb.toFixed(1)} stroke="#a08040" strokeWidth="2.2" />
-            <text x={lx.toFixed(1)} y={ly.toFixed(1)} textAnchor="middle" dominantBaseline="middle"
-              fill="#705830" fontSize="7" fontFamily="ui-monospace, SFMono-Regular, monospace">{n}</text>
+            <line
+              x1={xa.toFixed(1)} y1={ya.toFixed(1)}
+              x2={xb.toFixed(1)} y2={yb.toFixed(1)}
+              stroke="#cbd0d6" strokeWidth="2"
+            />
+            <text
+              x={lx.toFixed(1)} y={ly.toFixed(1)}
+              textAnchor="middle" dominantBaseline="middle"
+              fill="#c2c7cd"
+              fontSize="7.5"
+              fontFamily="ui-monospace, SFMono-Regular, monospace"
+            >
+              {n}
+            </text>
           </g>
         );
       })}
-      <line x1={tt1x.toFixed(1)} y1={tt1y.toFixed(1)} x2={tt2x.toFixed(1)} y2={tt2y.toFixed(1)} stroke="#e8d49a" strokeWidth="1.8" opacity="0.55" />
+
+      {/* ── Threshold tick (GO marker) */}
+      <line
+        x1={tt1x.toFixed(1)} y1={tt1y.toFixed(1)}
+        x2={tt2x.toFixed(1)} y2={tt2y.toFixed(1)}
+        stroke="#ffffff" strokeWidth="1.8" opacity="0.62"
+      />
+
+      {/* ── Classic threshold (pullback — dashed) */}
       {hasClassic && (
-        <line x1={ct1x.toFixed(1)} y1={ct1y.toFixed(1)} x2={ct2x.toFixed(1)} y2={ct2y.toFixed(1)} stroke="#e8d49a" strokeWidth="1" opacity="0.25" strokeDasharray="2 2" />
+        <line
+          x1={ct1x.toFixed(1)} y1={ct1y.toFixed(1)}
+          x2={ct2x.toFixed(1)} y2={ct2y.toFixed(1)}
+          stroke="#ffffff" strokeWidth="1" opacity="0.28" strokeDasharray="2 2"
+        />
       )}
 
-      {/* ── NEEDLE — heavy premium chrome blade ── */}
+      {/* ── NEEDLE — metallic tapered blade */}
+      {/* Drop shadow lifts needle off face surface */}
+      <path d={needlePoly} fill="#000" opacity="0.52" filter="url(#sg-drop)" />
+      {/* Dark grey base — flat mid-tone body */}
+      <path d={needlePoly} fill="#585c62" />
+      {/* Mid-tone layer adds volume */}
+      <path d={needlePoly} fill="#8a8e96" opacity="0.65" />
+      {/* Bright center spine — simulates concave grind, catchlight from above */}
+      <path d={needleSpine} fill="#e0e2e8" opacity="0.78" />
+      {/* Thin dark bevel edge — separates needle from face */}
+      <path d={needlePoly} fill="none" stroke="#1c1e24" strokeWidth="0.7" />
 
-      {/* Counterweight (hidden inside hub) */}
-      <path d={counterPoly} fill="#1a1410" />
-      <path d={counterPoly} fill="#604820" opacity="0.40" />
+      {/* ── CENTER HUB — chrome dome */}
+      <circle cx={CX} cy={CY} r="9.5"  fill="url(#sg-hub)" />
+      <circle cx={CX} cy={CY} r="5.5"  fill="#121416" />
+      <circle cx={CX} cy={CY} r="5.5"  fill="none" stroke="#72747a" strokeWidth="0.9" />
+      <circle cx={CX - 2.5} cy={CY - 2.5} r="1.4" fill="#fff" opacity="0.42" />
 
-      {/* Ambient color aura around whole blade */}
-      <path d={needlePoly} fill={scoreColor} opacity="0.06" filter="url(#sg-halo)" />
-
-      {/* Hard drop shadow */}
-      <path d={needlePoly} fill="#000" opacity="0.85" filter="url(#sg-drop)" />
-
-      {/* Solid dark body base */}
-      <path d={needlePoly} fill="#141414" />
-
-      {/* ── Chrome cross-section 3D cylinder illusion ──
-           Gradient runs LEFT-EDGE → RIGHT-EDGE perpendicular to blade direction.
-           Visible dark edges → bright chrome center — blade width clearly readable. */}
-      <path d={needlePoly} fill="url(#sg-needle-cross)" />
-
-      {/* Visible outline — defines blade boundaries against dark face */}
-      <path d={needlePoly} fill="none" stroke="#505050" strokeWidth="1.2" />
-
-      {/* Score-color tint outline — gives blade identity (orange or green) */}
-      <path d={needlePoly} fill="none" stroke={scoreColor} strokeWidth="1.8" opacity="0.28" />
-
-      {/* Left-edge chrome gleam (bevel highlight) */}
-      <path d={`M ${blx} ${bly} L ${smlx} ${smly} L ${ntlx} ${ntly}`}
-        fill="none" stroke="#e0e0e0" strokeWidth="1.2" opacity="0.55" strokeLinecap="round" />
-
-      {/* Colored spine glow (score color pulse through blade) */}
-      <path d={needleSpine} fill={scoreColor} opacity="0.90" filter="url(#sg-spine-glow)" />
-
-      {/* Chrome center spine highlight */}
-      <path d={needleSpine} fill="#efefef" opacity="0.70" />
-
-      {/* Score color tint on spine tip */}
-      <path d={needleSpine} fill={progressColor} opacity="0.22" />
-
-      {/* ── Plasma tip ── */}
-      <circle cx={nx.toFixed(1)} cy={ny.toFixed(1)} r="4.5"
-        fill={progressColor} opacity="0.60" filter="url(#sg-tip-glow)" />
-      <circle cx={nx.toFixed(1)} cy={ny.toFixed(1)} r="2.0"
-        fill="#ffffff" opacity="0.95" />
-      <circle cx={nx.toFixed(1)} cy={ny.toFixed(1)} r="0.8"
-        fill={progressColor} />
-
-      {/* ── HUB — warm gold dome with embedded score ── */}
-      <circle cx={CX} cy={CY} r={22}   fill="url(#sg-hub)" />
-      <circle cx={CX} cy={CY} r={22}   fill="none" stroke="#a08040" strokeWidth="1.1" />
-      <circle cx={CX} cy={CY} r={15.5} fill="url(#sg-hub-face)" />
-      <circle cx={CX} cy={CY} r={15.5} fill="none" stroke="#4a3010" strokeWidth="0.8" />
-
-      {/* Score glow */}
-      <text x={CX} y={CY + 2} textAnchor="middle" dominantBaseline="middle"
-        fill={scoreColor} fontSize="15" fontWeight="800"
+      {/*
+        ── SCORE NUMBER — sits BELOW the gauge disc, bottom-left corner.
+        At y=222 the outer disk (r=107, cy=108) does not cover x<56, so this
+        area is transparent SVG — the card background shows through.
+        Proof: (28-110)²+(222-108)²=6724+12996=19720 > 107²=11449.
+      */}
+      <text
+        x={28} y={222}
+        textAnchor="start"
+        fill={color}
+        stroke="#08090c" strokeWidth="5"
+        paintOrder="stroke fill"
+        fontSize="44" fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
-        opacity="0.55" filter="url(#sg-score-glow)">{v}</text>
-      {/* Score solid */}
-      <text x={CX} y={CY + 2} textAnchor="middle" dominantBaseline="middle"
-        fill={scoreColor} stroke="#010101" strokeWidth="1.5" paintOrder="stroke fill"
-        fontSize="15" fontWeight="800"
-        fontFamily="ui-monospace, SFMono-Regular, monospace">{v}</text>
-
-      {/* Hub specular */}
-      <circle cx={CX - 8} cy={CY - 8} r="3.2" fill="#ffe8a0" opacity="0.50" />
-      <circle cx={CX - 5} cy={CY - 5} r="1.4" fill="#ffffff" opacity="0.75" />
+        filter="url(#sg-text-depth)"
+      >
+        {v}
+      </text>
     </svg>
   );
 }

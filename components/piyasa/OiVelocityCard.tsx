@@ -7,9 +7,11 @@
  * Kompakt liste: pair | rejim | skor | OI% | fiyat%
  */
 
+import { useState, useEffect } from "react";
 import type { OiVelocityResult } from "@/lib/market/oi-velocity";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useT } from "@/lib/i18n/context";
+import { useMacroStore } from "@/lib/store/macroStore";
 
 interface Props {
   velocity: Partial<Record<Pair, OiVelocityResult>>;
@@ -18,13 +20,13 @@ interface Props {
 
 const REGIME_META: Record<
   string,
-  { label: string; color: string }
+  { label: string; short: string; color: string }
 > = {
-  aggressive_long:    { label: "Aggressive Long",  color: "#22C55E" },
-  short_squeeze_risk: { label: "Squeeze Risk",     color: "#EF4444" },
-  long_unwind:        { label: "Long Unwind",      color: "#F59E0B" },
-  bear_exhaustion:    { label: "Bear Exhaustion",  color: "#3B82F6" },
-  neutral:            { label: "Neutral",          color: "rgb(var(--text-t3))" },
+  aggressive_long:    { label: "Aggressive Long",  short: "Agg. Long",    color: "#22C55E" },
+  short_squeeze_risk: { label: "Squeeze Risk",     short: "Squeeze Risk", color: "#EF4444" },
+  long_unwind:        { label: "Long Unwind",      short: "Long Unwind",  color: "#F59E0B" },
+  bear_exhaustion:    { label: "Bear Exhaustion",  short: "Bear Exh.",    color: "#3B82F6" },
+  neutral:            { label: "Neutral",          short: "Neutral",      color: "rgb(var(--text-t3))" },
 };
 
 function scoreColor(s: number): string {
@@ -34,6 +36,52 @@ function scoreColor(s: number): string {
   if (s <= -1) return "#FCA5A5";
   return "rgb(var(--text-t3))";
 }
+
+// ── TEMPORARY DEBUG — remove after diagnosis ──────────────────
+function OiDebugPanel() {
+  const oi = useMacroStore((s) => s.oi);
+  const oiSnapshots = useMacroStore((s) => s.oiSnapshots);
+  const oiFetchedAt = useMacroStore((s) => s.oiFetchedAt);
+  const oiLoading = useMacroStore((s) => s.oiLoading);
+  const [lsVal, setLsVal] = useState<string>("?");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("quantix_oi_snaps_v1");
+      if (!raw) { setLsVal("ABSENT"); return; }
+      const parsed = JSON.parse(raw) as Record<string, unknown[]>;
+      const counts = Object.entries(parsed)
+        .map(([k, v]) => `${k}:${Array.isArray(v) ? v.length : "?"}`)
+        .join(" ");
+      setLsVal(counts || "EMPTY_OBJ");
+    } catch {
+      setLsVal("PARSE_ERR");
+    }
+  }, []);
+
+  const oiRows = PAIRS.slice(0, 5).map((p) => {
+    const r = oi[p];
+    const snaps = oiSnapshots[p]?.length ?? 0;
+    return `${p}: oi=${r?.oi ?? "?"} oiCcy=${r?.oiCcy ?? "?"} src=${r?.source ?? "?"} snaps=${snaps}`;
+  });
+
+  const fetchedAgo = oiFetchedAt
+    ? `${Math.round((Date.now() - oiFetchedAt) / 1000)}s ago`
+    : "never";
+
+  return (
+    <div className="mt-2 rounded border border-yellow-500/50 bg-yellow-950/30 p-2 font-mono text-[9px] text-yellow-300">
+      <div className="mb-1 font-bold">⚠ DEBUG (geçici)</div>
+      <div>oiLoading={String(oiLoading)} | fetchedAt={fetchedAgo}</div>
+      <div>velocity count={Object.keys(useMacroStore.getState().oiVelocity).length}</div>
+      <div className="mt-1">OI fetch sonuçları (ilk 5):</div>
+      {oiRows.map((r) => <div key={r}>{r}</div>)}
+      <div className="mt-1">localStorage quantix_oi_snaps_v1:</div>
+      <div className="break-all">{lsVal}</div>
+    </div>
+  );
+}
+// ── END DEBUG ──────────────────────────────────────────────────
 
 export function OiVelocityCard({ velocity, loading }: Props): React.ReactElement {
   const t = useT();
@@ -77,7 +125,7 @@ export function OiVelocityCard({ velocity, loading }: Props): React.ReactElement
                     className="truncate font-mono text-[9px] font-medium"
                     style={{ color: regime.color }}
                   >
-                    {regime.label}
+                    {regime.short}
                   </span>
                   <span
                     className="text-right font-mono text-xs font-bold tabular-nums"
@@ -107,6 +155,8 @@ export function OiVelocityCard({ velocity, loading }: Props): React.ReactElement
           );
         })}
       </div>
+
+      <OiDebugPanel />
     </div>
   );
 }
