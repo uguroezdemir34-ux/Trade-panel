@@ -21,6 +21,7 @@ import {
   loadCache,
   saveCache,
   CANDLE_LIMIT,
+  CANDLE_LIMIT_15M,
   CANDLE_LIMIT_1D,
 } from "@/lib/okx/candleFetch";
 
@@ -61,7 +62,9 @@ export function useCandlePoller(): void {
 
   async function fetchShort(): Promise<void> {
     const tasks = PAIRS.flatMap((pair) =>
-      TIMEFRAMES_SHORT.map((tf) => makeFetchTask(pair, tf, CANDLE_LIMIT, setCandles, setError)),
+      TIMEFRAMES_SHORT.map((tf) =>
+        makeFetchTask(pair, tf, tf === "15m" ? CANDLE_LIMIT_15M : CANDLE_LIMIT, setCandles, setError),
+      ),
     );
     await runBatched(tasks, MAX_CONCURRENT);
   }

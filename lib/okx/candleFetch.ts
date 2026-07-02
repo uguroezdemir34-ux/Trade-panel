@@ -9,8 +9,9 @@
 import { fetchCandles, type Candle, type Timeframe } from "@/lib/okx/candles";
 
 export const CACHE_PREFIX    = "qx_c_";
-export const CANDLE_LIMIT    = 210;
-export const CANDLE_LIMIT_1D = 60;
+export const CANDLE_LIMIT     = 210;
+export const CANDLE_LIMIT_15M = 50;  // ADX14 → 29 bar yeterli; backtest 1h proxy kullanır
+export const CANDLE_LIMIT_1D  = 60;
 const CACHE_MAX_AGE_MS       = 10 * 60 * 1000;
 
 export function cacheKey(pair: string, tf: string): string {
