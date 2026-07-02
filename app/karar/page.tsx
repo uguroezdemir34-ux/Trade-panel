@@ -14,6 +14,7 @@ import { usePositionStore } from "@/lib/store/positionStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { computeOiDivergence } from "@/lib/market/oi-divergence";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
+import { setFocusedPair } from "@/lib/hooks/useCandlePoller";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { formatTickPrice } from "@/lib/i18n/format";
@@ -79,7 +80,11 @@ export default function KararPage() {
   const [isStale,     setIsStale]     = useState(false);
   const [staleFailed, setStaleFailed] = useState(false);
 
-  useEffect(() => { setIsStale(false); setStaleFailed(false); }, [activePair]);
+  useEffect(() => {
+    setIsStale(false);
+    setStaleFailed(false);
+    setFocusedPair(activePair);
+  }, [activePair]);
 
   usePriorityFetch(
     activePair,
@@ -714,7 +719,11 @@ export default function KararPage() {
                     {/* Satır 2: 24S score + hacim */}
                     <div className="flex items-center justify-between gap-0.5 mb-0.5">
                       <span translate="no" className={`text-[8px] tabular-nums leading-none ${isActive ? "text-text-t3" : scoreColor}`}>
-                        {score !== undefined ? `24S ${score}${dirArrow}` : "24S ·"}
+                        {score !== undefined
+                          ? `24S ${score}${dirArrow}`
+                          : pr === undefined
+                          ? <span className="inline-block h-1.5 w-8 rounded bg-surface-s2 animate-pulse align-middle" />
+                          : "24S ·"}
                       </span>
                       {allTicks[p]?.vol24h !== undefined && (
                         <span translate="no" className="text-[8px] tabular-nums leading-none text-text-t4 shrink-0">
@@ -726,7 +735,9 @@ export default function KararPage() {
                     {/* Kapsül slider */}
                     <div className="relative py-1.5">
                       <div className="h-1.5 w-full rounded-full bg-surface-s2 overflow-hidden relative">
-                        {score !== undefined && (
+                        {pr === undefined ? (
+                          <div className="absolute inset-0 rounded-full bg-surface-s2/70 animate-pulse" />
+                        ) : score !== undefined && (
                           <div
                             className={`absolute inset-y-0 left-0 rounded-full ${gradientClass}`}
                             style={{ width: `${Math.min(100, score)}%` }}
@@ -783,7 +794,11 @@ export default function KararPage() {
                     {/* Büyük skor */}
                     <div className="flex items-center justify-center gap-0.5 mt-0.5">
                       <span translate="no" className={`text-sm font-bold tabular-nums leading-none ${isActive ? "text-text-t1" : scoreColor}`}>
-                        {score !== undefined ? score : "·"}
+                        {score !== undefined
+                          ? score
+                          : pr === undefined
+                          ? <span className="inline-block h-3.5 w-6 rounded bg-surface-s2 animate-pulse align-middle" />
+                          : "·"}
                       </span>
                       {dir && (
                         <span className={`text-[10px] leading-none ${isActive ? "text-text-t2" : scoreColor}`}>
