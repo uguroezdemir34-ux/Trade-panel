@@ -4,8 +4,8 @@
  * Stale-while-revalidate: mount'ta önce localStorage cache'den anında yükler,
  * sonra arka planda taze veri çeker. Böylece ~1dk bekleme → anlık görüntü.
  *
- * Rate-limit fix: OKX public endpoint limiti 20 req/2s (paylaşımlı Vercel IP).
- * Max 8 eşzamanlı istek; fetchShort tamamlanınca fetchLong başlar (sıralı).
+ * Rate-limit: OKX public endpoint limiti 20 req/2s (paylaşımlı Vercel IP).
+ * Max 12 eslesik istek; 20p×2TF=40 task → 4 tur. fetchShort biter, fetchLong baslar.
  * Başarısız fetch → 1.5s sonra 1 otomatik retry, sonra bir sonraki poll'a bırak.
  *
  * Aktif pair önceliği: setFocusedPair() ile işaretlenen pair her batch'te öne alınır.
@@ -33,8 +33,8 @@ const TIMEFRAMES_LONG: Timeframe[] = ["4h", "1d"];
 const POLL_INTERVAL_SHORT_MS = 60_000;
 const POLL_INTERVAL_LONG_MS = 5 * 60_000;
 
-/** Max eşzamanlı OKX isteği */
-const MAX_CONCURRENT = 8;
+/** Max eşzamanlı OKX isteği — 20 pair × 2 TF = 40 task/batch; 12 ile 4 tur */
+const MAX_CONCURRENT = 12;
 
 /** Aktif pair — her batch'te öne alınır. setFocusedPair() ile güncellenir. */
 let focusedPair: Pair | null = null;
