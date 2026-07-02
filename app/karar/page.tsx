@@ -37,7 +37,7 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
-import { MiniGauge } from "@/components/karar/MiniGauge";
+import { ScoreRing } from "@/components/karar/ScoreRing";
 import { PAIR_CATEGORY } from "@/lib/constants/pairMeta";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
 import { BlocksList } from "@/components/karar/BlocksList";
@@ -733,7 +733,7 @@ export default function KararPage() {
                         </button>
                         <span className="text-[11px] font-bold text-text-t1 leading-none">{p}</span>
                         {p === "BTC" && PAIR_CATEGORY[p] && (
-                          <span className="text-[7px] font-mono text-text-t4/60 border border-border/40 rounded-sm px-0.5 leading-none shrink-0">
+                          <span className="text-[7px] font-mono text-sky-400/80 shrink-0 leading-none">
                             {PAIR_CATEGORY[p]}
                           </span>
                         )}
@@ -748,23 +748,25 @@ export default function KararPage() {
                       )}
                     </div>
 
-                    {/* Satır 2: 24S score + hacim */}
-                    <div className="flex items-center justify-between gap-0.5 mb-0.5">
-                      <span translate="no" className={`text-[8px] tabular-nums leading-none ${isActive ? "text-text-t3" : scoreColor}`}>
-                        {score !== undefined ? `24S ${score}${dirArrow}` : "24S ·"}
-                      </span>
-                      {allTicks[p]?.vol24h !== undefined && (
-                        <span translate="no" className="text-[8px] tabular-nums leading-none text-text-t4 shrink-0">
-                          ${fmtCompact(allTicks[p]!.vol24h!)}
+                    {/* Satır 2: 24S score + hacim (BTC'de ScoreRing rakamı gösterir) */}
+                    {p !== "BTC" && (
+                      <div className="flex items-center justify-between gap-0.5 mb-0.5">
+                        <span translate="no" className={`text-[8px] tabular-nums leading-none ${isActive ? "text-text-t3" : scoreColor}`}>
+                          {score !== undefined ? `24S ${score}${dirArrow}` : "24S ·"}
                         </span>
-                      )}
-                    </div>
+                        {allTicks[p]?.vol24h !== undefined && (
+                          <span translate="no" className="text-[8px] tabular-nums leading-none text-text-t4 shrink-0">
+                            ${fmtCompact(allTicks[p]!.vol24h!)}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
-                    {/* Kapsül slider / MiniGauge (BTC only) */}
+                    {/* Kapsül slider / ScoreRing (BTC only) */}
                     {p === "BTC" ? (
-                      <div className="flex justify-center py-0.5">
+                      <div className="flex justify-center py-1">
                         {score !== undefined && pr?.goThreshold !== undefined && (
-                          <MiniGauge score={score} goThreshold={pr.goThreshold} />
+                          <ScoreRing score={score} goThreshold={pr.goThreshold} size={60} />
                         )}
                       </div>
                     ) : (
@@ -792,8 +794,8 @@ export default function KararPage() {
                       </div>
                     )}
 
-                    {/* Score sparkline — inline SVG polyline, snaps.length < 2 → null */}
-                    {snaps.length >= 2 && (() => {
+                    {/* Score sparkline — inline SVG polyline (BTC'de ScoreRing yeteri kadar bilgi verir) */}
+                    {p !== "BTC" && snaps.length >= 2 && (() => {
                       const minS = Math.min(...snaps.map((s) => s.score));
                       const maxS = Math.max(...snaps.map((s) => s.score));
                       const range = maxS - minS || 1;
@@ -825,8 +827,8 @@ export default function KararPage() {
                       );
                     })()}
 
-                    {/* Büyük skor */}
-                    <div className="flex items-center justify-center gap-0.5 mt-0.5">
+                    {/* Büyük skor (BTC'de ScoreRing içinde gösteriliyor) */}
+                    {p !== "BTC" && <div className="flex items-center justify-center gap-0.5 mt-0.5">
                       <span translate="no" className={`text-sm font-bold tabular-nums leading-none ${isActive ? "text-text-t1" : scoreColor}`}>
                         {score !== undefined ? score : "·"}
                       </span>
@@ -862,7 +864,7 @@ export default function KararPage() {
                           </span>
                         );
                       })()}
-                    </div>
+                    </div>}
 
                     {/* Alt: fiyat + market cap */}
                     <div className="flex items-center justify-between mt-1 gap-1">
