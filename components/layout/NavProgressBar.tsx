@@ -24,15 +24,27 @@ export function NavProgressBar(): React.ReactElement | null {
   }, [pathname, setPending]);
 
   useEffect(() => {
-    if (pending) {
-      setPhase("enter");
-      const t = setTimeout(() => setPhase("run"), 16);
-      return () => clearTimeout(t);
-    } else if (phaseRef.current === "run" || phaseRef.current === "enter") {
-      setPhase("done");
-      const t = setTimeout(() => setPhase("idle"), 500);
-      return () => clearTimeout(t);
+    if (!pending) {
+      if (phaseRef.current === "run" || phaseRef.current === "enter") {
+        setPhase("done");
+        const t = setTimeout(() => setPhase("idle"), 500);
+        return () => clearTimeout(t);
+      }
+      return;
     }
+
+    // 100ms delay: hızlı (cache hit) geçişlerde bar hiç görünmez
+    let t2: ReturnType<typeof setTimeout>;
+    const t1 = setTimeout(() => {
+      setPhase("enter");
+      t2 = setTimeout(() => setPhase("run"), 16);
+    }, 100);
+
+    return () => {
+      clearTimeout(t1);
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (t2) clearTimeout(t2);
+    };
   }, [pending]);
 
   if (phase === "idle") return null;
