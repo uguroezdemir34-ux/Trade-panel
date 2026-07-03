@@ -9,11 +9,11 @@ interface Props {
 }
 
 function bandColors(score: number): [string, string, string] {
-  if (score >= 80) return ["#B8962E", "#CEB052", "#B8962E"]; // gold
-  if (score >= 60) return ["#3B6A94", "#5485AF", "#3B6A94"]; // steel blue
-  if (score >= 40) return ["#A87840", "#C49458", "#A87840"]; // copper
-  if (score >= 30) return ["#7A3048", "#964460", "#7A3048"]; // burgundy
-  return ["#9B2A3A", "#B74050", "#9B2A3A"];                  // dark crimson
+  if (score >= 80) return ["#D4AF37", "#F0CC55", "#D4AF37"]; // gold
+  if (score >= 60) return ["#3F9C93", "#5CBAB0", "#3F9C93"]; // sapphire
+  if (score >= 40) return ["#C08A3E", "#DCA65A", "#C08A3E"]; // bronze
+  if (score >= 30) return ["#B25C74", "#CE7890", "#B25C74"]; // wine
+  return ["#C0455A", "#DC6176", "#C0455A"];                   // crimson
 }
 
 function buildSparkPath(snaps: number[], cx: number, cy: number, innerR: number): string {

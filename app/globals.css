@@ -40,12 +40,12 @@
   --signal-up:     34 197  94;
   --signal-down:  239  68  68;
 
-  /* Score band palette — Obsidian (muted, corporate) */
-  --signal-gold:     184 150  46;   /* #B8962E — skor ≥80 */
-  --signal-sapphire:  59 106 148;   /* #3B6A94 — skor 60-79 */
-  --signal-bronze:   168 120  64;   /* #A87840 — skor 40-59 */
-  --signal-wine:     122  48  72;   /* #7A3048 — skor 30-39 */
-  --signal-crimson:  155  42  58;   /* #9B2A3A — skor <30 */
+  /* Score band palette */
+  --signal-gold:     212 175  55;   /* #D4AF37 — skor ≥80 */
+  --signal-sapphire:  63 156 147;   /* #3F9C93 — skor 60-79 */
+  --signal-bronze:   192 138  62;   /* #C08A3E — skor 40-59 */
+  --signal-wine:     178  92 116;   /* #B25C74 — skor 30-39 */
+  --signal-crimson:  192  69  90;   /* #C0455A — skor <30 */
 
   /* Brand — turuncu-amber */
   --brand:        255 110  24;   /* #ff6e18 */
@@ -90,12 +90,12 @@
   --signal-up:     20 130  60;
   --signal-down:  188  28  28;
 
-  /* Score band palette — Obsidian light mode WCAG AA */
-  --signal-gold:     122  94  24;   /* #7A5E18 */
-  --signal-sapphire:  42  78 110;   /* #2A4E6E */
-  --signal-bronze:   122  85  32;   /* #7A5520 */
-  --signal-wine:      92  32  56;   /* #5C2038 */
-  --signal-crimson:  114  21  32;   /* #721520 */
+  /* Score band palette — light mode WCAG AA */
+  --signal-gold:     138 109  31;   /* #8A6D1F */
+  --signal-sapphire:  31 111 107;   /* #1F6F6B */
+  --signal-bronze:   140  94  31;   /* #8C5E1F */
+  --signal-wine:     122  51  71;   /* #7A3347 */
+  --signal-crimson:  139  38  53;   /* #8B2635 */
 
   /* Brand — koyu turuncu, beyaz üzerinde kontrast */
   --brand:        186  68   0;   /* #ba4400 — 5.1:1 */
