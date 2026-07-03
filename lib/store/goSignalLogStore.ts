@@ -23,6 +23,8 @@ export interface GoSignalEntry {
   regimeBonus: number;
   blocks: string[];
   softBlocks: string[];
+  /** S/R proximity modifier applied to score — undefined on pre-v3 entries */
+  srModifier?: number;
   /** Score engine version at signal time — undefined means pre-versioning (v0) */
   engineVersion?: string;
   /** OI rejim diverjansı — sadece gözlem, skor motorunu etkilemez */

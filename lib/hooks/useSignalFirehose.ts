@@ -85,6 +85,7 @@ export function useSignalFirehose(): void {
             regimeBonus: result.regimeBonus,
             blocks: result.blocks,
             softBlocks: result.softBlocks,
+            srModifier: result.srModifier,
             engineVersion: SCORE_ENGINE_VERSION,
             oiDivergence,
           });

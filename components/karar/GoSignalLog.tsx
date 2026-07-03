@@ -6,6 +6,7 @@ import { useTradesStore } from "@/lib/store/tradesStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import type { Pair } from "@/lib/constants/pairs";
 import { useT } from "@/lib/i18n/context";
+import { GoSignalPostmortem } from "./GoSignalPostmortem";
 
 const PAGE_SIZE = 50;
 type DirFilter = "all" | "LONG" | "SHORT";
@@ -91,6 +92,7 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
   const [filterRange, setFilterRange] = useState<RangeFilter>("all");
   const [minScore, setMinScore] = useState(0);
   const [page, setPage] = useState(1);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
 
   // All GO entries, newest first
   const allGoEntries = useMemo(() => {
@@ -311,56 +313,72 @@ export function GoSignalLog({ emptyFallback }: { emptyFallback?: React.ReactNode
                 : tradeResult === "open" ? t("karar.tradeOpen")
                 : t("karar.noTradeAfterSignal");
 
+              const isExpanded = expandedKey === key;
+              const canExpand = tradeResult === "loss";
+
               return (
-                <div
-                  key={key}
-                  className={[
-                    "grid items-center gap-x-2 px-3 py-1.5 font-mono text-2xs",
-                    isUncertain ? "opacity-60" : "",
-                  ].join(" ")}
-                  style={{ gridTemplateColumns: "40px 52px 28px 52px 12px 16px 1fr" }}
-                  title={
-                    isAmbiguous ? t("karar.ambiguousSignal")
-                    : priceStale ? t("karar.stalePriceAtSignal")
-                    : undefined
-                  }
-                >
-                  <span className="text-text-t2 font-bold tracking-wide">
-                    {e.pair}
-                    {isUncertain && <span className="text-yellow-500/60 ml-0.5 font-normal">~</span>}
-                  </span>
-                  <span className={isLong ? "text-green-400" : "text-red-400"}>
-                    {isLong ? "▲ LONG" : "▼ SHORT"}
-                  </span>
-                  <span className="text-green-400 tabular-nums font-bold">{e.score}</span>
-                  <span className="text-text-t4 tabular-nums text-right">
-                    {formatTriggerPrice(e.triggerPriceAtGo)}
-                  </span>
-                  <span className={resultColor} title={resultTitle}>
-                    {resultIcon}
-                  </span>
-                  <span
-                    className={
-                      e.oiDivergence === "confirm" ? "text-green-400"
-                      : e.oiDivergence === "diverge" ? "text-red-400"
-                      : "text-text-t4/20"
-                    }
+                <div key={key} className={isUncertain ? "opacity-60" : ""}>
+                  <div
+                    className={[
+                      "grid items-center gap-x-2 px-3 py-1.5 font-mono text-2xs",
+                      canExpand ? "cursor-pointer hover:bg-white/[0.02] transition-colors" : "",
+                    ].join(" ")}
+                    style={{ gridTemplateColumns: "40px 52px 28px 52px 12px 16px 1fr 12px" }}
                     title={
-                      e.oiDivergence === "confirm" ? "OI: onaylıyor"
-                      : e.oiDivergence === "diverge" ? "OI: diverjans"
-                      : "OI: nötr / veri yok"
+                      isAmbiguous ? t("karar.ambiguousSignal")
+                      : priceStale ? t("karar.stalePriceAtSignal")
+                      : canExpand ? "Stopout postmortem — tıkla"
+                      : undefined
                     }
+                    onClick={canExpand ? () => setExpandedKey(isExpanded ? null : key) : undefined}
                   >
-                    {e.oiDivergence === "confirm" ? "◆"
-                    : e.oiDivergence === "diverge" ? "◇"
-                    : "·"}
-                  </span>
-                  <span
-                    className="text-text-t4 tabular-nums text-right"
-                    title={fullTime(e.ts)}
-                  >
-                    {timeAgo(e.ts, t)}
-                  </span>
+                    <span className="text-text-t2 font-bold tracking-wide">
+                      {e.pair}
+                      {isUncertain && <span className="text-yellow-500/60 ml-0.5 font-normal">~</span>}
+                    </span>
+                    <span className={isLong ? "text-green-400" : "text-red-400"}>
+                      {isLong ? "▲ LONG" : "▼ SHORT"}
+                    </span>
+                    <span className="text-green-400 tabular-nums font-bold">{e.score}</span>
+                    <span className="text-text-t4 tabular-nums text-right">
+                      {formatTriggerPrice(e.triggerPriceAtGo)}
+                    </span>
+                    <span className={resultColor} title={resultTitle}>
+                      {resultIcon}
+                    </span>
+                    <span
+                      className={
+                        e.oiDivergence === "confirm" ? "text-green-400"
+                        : e.oiDivergence === "diverge" ? "text-red-400"
+                        : "text-text-t4/20"
+                      }
+                      title={
+                        e.oiDivergence === "confirm" ? "OI: onaylıyor"
+                        : e.oiDivergence === "diverge" ? "OI: diverjans"
+                        : "OI: nötr / veri yok"
+                      }
+                    >
+                      {e.oiDivergence === "confirm" ? "◆"
+                      : e.oiDivergence === "diverge" ? "◇"
+                      : "·"}
+                    </span>
+                    <span
+                      className="text-text-t4 tabular-nums text-right"
+                      title={fullTime(e.ts)}
+                    >
+                      {timeAgo(e.ts, t)}
+                    </span>
+                    {canExpand ? (
+                      <span className={`text-text-t4/50 text-[9px] leading-none ${isExpanded ? "rotate-180 inline-block" : ""}`}>
+                        ▾
+                      </span>
+                    ) : (
+                      <span />
+                    )}
+                  </div>
+                  {isExpanded && canExpand && (
+                    <GoSignalPostmortem entry={e} />
+                  )}
                 </div>
               );
             })}
