@@ -689,6 +689,9 @@ export default function KararPage() {
                   {p === "BTC" && btcPulseActive && (
                     <span className="absolute inset-0 rounded-lg ring-1 ring-white/25 animate-[ping_600ms_ease-out_1] pointer-events-none z-20" aria-hidden />
                   )}
+                  {isActive && (
+                    <div className="absolute inset-0 rounded-lg ring-1 ring-white/40 pointer-events-none z-10" />
+                  )}
 
                   <button
                     onClick={() => setActivePair(p as Pair)}
