@@ -74,6 +74,7 @@ import { PairSignalHistory } from "@/components/karar/PairSignalHistory";
 import { PairTradeStats } from "@/components/karar/PairTradeStats";
 import { WalletSummaryBar } from "@/components/karar/WalletSummaryBar";
 import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
+import { MarketPulseCard } from "@/components/karar/MarketPulseCard";
 
 export default function KararPage() {
   const t = useT();
@@ -586,6 +587,9 @@ export default function KararPage() {
               );
             })}
           </div>
+
+          {/* Market Pulse — regime, F&G, GO count, avg score, BTC.D */}
+          <MarketPulseCard />
 
           {/* Pair grid header — skor sıralaması toggle */}
           <div className="flex items-center justify-end">
