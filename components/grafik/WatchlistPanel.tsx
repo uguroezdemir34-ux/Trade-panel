@@ -303,26 +303,26 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
   const cvdClr = cvd
     ? cvd.w15m.direction === "bullish" ? "text-emerald-400"
     : cvd.w15m.direction === "bearish" ? "text-red-400"
-    : "text-zinc-400"
-    : "text-zinc-500";
+    : "text-text-t3"
+    : "text-text-t4";
 
   const scoreBg =
-    sc == null ? "bg-zinc-700"    :
-    sc >= 70   ? "bg-emerald-600" :
-    sc >= 40   ? "bg-amber-600"   :
+    sc == null ? "bg-border-strong" :
+    sc >= 70   ? "bg-emerald-600"   :
+    sc >= 40   ? "bg-amber-600"     :
                  "bg-red-600";
 
   const verdictBg =
     verdict === "go"   ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" :
     verdict === "wait" ? "bg-amber-500/20 text-amber-400 border-amber-500/40"       :
     verdict === "no"   ? "bg-red-500/20 text-red-400 border-red-500/40"             :
-                         "bg-zinc-800 text-zinc-500 border-zinc-700";
+                         "bg-surface-s2 text-text-t4 border-border";
 
   return (
-    <div className="shrink-0 mx-2 mb-2 mt-1 rounded-lg border border-zinc-700 bg-zinc-900/80 p-3">
+    <div className="shrink-0 mx-2 mb-2 mt-1 rounded-lg border border-border bg-bg-card2 p-3">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="font-mono text-[11px] font-bold text-white tracking-wide">
+          <span className="font-mono text-[11px] font-bold text-text-t1 tracking-wide">
             {activePair} /&nbsp;USDT
           </span>
           {direction && direction !== "NEUTRAL" && (
@@ -333,12 +333,12 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
             </span>
           )}
         </div>
-        <span className={`flex items-center justify-center w-8 h-6 rounded font-mono text-xs font-bold text-white shrink-0 ${scoreBg}`}>
+        <span className={`flex items-center justify-center w-8 h-6 rounded font-mono text-xs font-bold text-text-t1 shrink-0 ${scoreBg}`}>
           {sc ?? "—"}
         </span>
       </div>
       <div className="mb-2.5">
-        <div className="font-mono text-[20px] font-bold text-white tabular-nums leading-none">
+        <div className="font-mono text-[20px] font-bold text-text-t1 tabular-nums leading-none">
           {last > 0 ? fmtPrice(last) : "—"}
         </div>
         <div className={`font-mono text-[11px] tabular-nums font-semibold mt-0.5 ${chgColor(chg)}`}>
@@ -347,25 +347,25 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
       </div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-2 mb-2.5">
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlistVolumeDelta")}</p>
+          <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlistVolumeDelta")}</p>
           <p className={`font-mono text-[11px] font-semibold tabular-nums ${cvdClr}`}>{cvdRatio ?? "—"}</p>
         </div>
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlist24hHigh")}</p>
+          <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlist24hHigh")}</p>
           <p className="font-mono text-[10px] font-semibold text-emerald-400 tabular-nums">
             {high24 != null && high24 > 0 ? fmtPrice(high24) : "—"}
           </p>
         </div>
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlistVerdict")}</p>
+          <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlistVerdict")}</p>
           <p className={`font-mono text-[11px] font-bold uppercase ${
             verdict === "go"   ? "text-emerald-400" :
             verdict === "wait" ? "text-amber-400"   :
-            verdict === "no"   ? "text-red-400"     : "text-zinc-500"
+            verdict === "no"   ? "text-red-400"     : "text-text-t4"
           }`}>{verdict ? verdict.toUpperCase() : "—"}</p>
         </div>
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlist24hLow")}</p>
+          <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlist24hLow")}</p>
           <p className="font-mono text-[10px] font-semibold text-red-400 tabular-nums">
             {low24 != null && low24 > 0 ? fmtPrice(low24) : "—"}
           </p>
