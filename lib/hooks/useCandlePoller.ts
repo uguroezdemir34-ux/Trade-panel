@@ -32,7 +32,7 @@ const POLL_INTERVAL_SHORT_MS = 60_000;
 const POLL_INTERVAL_LONG_MS = 5 * 60_000;
 
 /** Max eşzamanlı OKX isteği — paylaşımlı Vercel IP rate limit koruması */
-const MAX_CONCURRENT = 3;
+const MAX_CONCURRENT = 6;
 
 function makeFetchTask(
   pair: string,

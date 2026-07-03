@@ -37,16 +37,19 @@ export function saveCache(pair: string, tf: string, data: Candle[]): void {
   }
 }
 
-/** Tek fetch — başarısız olursa 1.5s sonra 1 retry. */
+/** Tek fetch — başarısız olursa exponential backoff ile 2 retry (1s, 3s). */
 export async function fetchWithRetry(
   pair: string,
   tf: Timeframe,
   limit: number,
 ): Promise<Candle[] | null> {
-  const result = await fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
-  if (result) return result;
-  await new Promise<void>((r) => setTimeout(r, 1_500));
-  return fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
+  const delays = [1_000, 3_000];
+  for (let i = 0; i <= delays.length; i++) {
+    const result = await fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
+    if (result) return result;
+    if (i < delays.length) await new Promise<void>((r) => setTimeout(r, delays[i]));
+  }
+  return null;
 }
 
 /** Görevleri max N eşzamanlı çalıştır. */
