@@ -52,18 +52,21 @@ export async function fetchWithRetry(
   return null;
 }
 
-/** Görevleri max N eşzamanlı çalıştır. */
+/** Görevleri max N eşzamanlı çalıştır; staggerMs: worker başlangıç aralığı. */
 export async function runBatched(
   tasks: Array<() => Promise<void>>,
   concurrency: number,
+  staggerMs = 0,
 ): Promise<void> {
   const queue = [...tasks];
-  async function worker(): Promise<void> {
+  async function worker(index: number): Promise<void> {
+    if (staggerMs > 0 && index > 0)
+      await new Promise<void>((r) => setTimeout(r, index * staggerMs));
     let task = queue.shift();
     while (task) {
       await task();
       task = queue.shift();
     }
   }
-  await Promise.all(Array.from({ length: Math.min(concurrency, tasks.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(concurrency, tasks.length) }, (_, i) => worker(i)));
 }

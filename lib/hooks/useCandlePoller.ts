@@ -5,8 +5,9 @@
  * sonra arka planda taze veri çeker. Böylece ~1dk bekleme → anlık görüntü.
  *
  * Rate-limit fix: OKX public endpoint limiti 20 req/2s (paylaşımlı Vercel IP).
- * Max 3 eşzamanlı istek; fetchShort tamamlanınca fetchLong başlar (sıralı).
- * Başarısız fetch → 1.5s sonra 1 otomatik retry, sonra bir sonraki poll'a bırak.
+ * Max 6 eşzamanlı istek; fetchShort tamamlanınca fetchLong başlar (sıralı).
+ * İlk fetch 1s geciktirilir (usePriorityFetch BTC burst'ü bitmeden başlatma).
+ * Worker'lar 150/200ms stagger ile başlar → OKX rate limit altında kalır.
  */
 
 "use client";
@@ -63,7 +64,7 @@ export function useCandlePoller(): void {
     const tasks = PAIRS.flatMap((pair) =>
       TIMEFRAMES_SHORT.map((tf) => makeFetchTask(pair, tf, CANDLE_LIMIT, setCandles, setError)),
     );
-    await runBatched(tasks, MAX_CONCURRENT);
+    await runBatched(tasks, MAX_CONCURRENT, 150);
   }
 
   async function fetchLong(): Promise<void> {
@@ -71,7 +72,7 @@ export function useCandlePoller(): void {
       makeFetchTask(pair, "4h", CANDLE_LIMIT, setCandles, setError),
       makeFetchTask(pair, "1d", CANDLE_LIMIT_1D, setCandles, setError),
     ]);
-    await runBatched(tasks, MAX_CONCURRENT);
+    await runBatched(tasks, MAX_CONCURRENT, 200);
   }
 
   useEffect(() => {
@@ -86,16 +87,18 @@ export function useCandlePoller(): void {
       });
     }
 
+    // 1s gecikme: usePriorityFetch (BTC 4 TF) tamamlanmadan başlatma — burst kontrolü
     // Sıralı: short tamamlanınca long başlar → eşzamanlı OKX istek sayısı ≤ MAX_CONCURRENT
-    void (async () => {
+    const initTimer = setTimeout(async () => {
       await fetchShort();
       await fetchLong();
-    })();
+    }, 1_000);
 
     shortTimerRef.current = setInterval(fetchShort, POLL_INTERVAL_SHORT_MS);
     longTimerRef.current = setInterval(fetchLong, POLL_INTERVAL_LONG_MS);
 
     return () => {
+      clearTimeout(initTimer);
       if (shortTimerRef.current) clearInterval(shortTimerRef.current);
       if (longTimerRef.current) clearInterval(longTimerRef.current);
     };
