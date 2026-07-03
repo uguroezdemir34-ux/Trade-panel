@@ -25,12 +25,20 @@ function buildSparkPath(snaps: number[], cx: number, cy: number, innerR: number)
   const min = Math.min(...snaps);
   const max = Math.max(...snaps);
   const range = max - min || 1;
-  const pts = snaps.map((v, i) => {
-    const x = x0 + (i / (snaps.length - 1)) * w;
-    const y = y0 - ((v - min) / range) * h;
-    return `${x.toFixed(1)},${y.toFixed(1)}`;
-  });
-  return `M${pts.join("L")}`;
+
+  const pts = snaps.map((v, i) => ({
+    x: x0 + (i / (snaps.length - 1)) * w,
+    y: y0 - ((v - min) / range) * h,
+  }));
+
+  let d = `M${pts[0].x.toFixed(1)},${pts[0].y.toFixed(1)}`;
+  for (let i = 1; i < pts.length; i++) {
+    const prev = pts[i - 1];
+    const curr = pts[i];
+    const cpx = ((prev.x + curr.x) / 2).toFixed(1);
+    d += ` C${cpx},${prev.y.toFixed(1)} ${cpx},${curr.y.toFixed(1)} ${curr.x.toFixed(1)},${curr.y.toFixed(1)}`;
+  }
+  return d;
 }
 
 export function ScoreRingV2({
@@ -68,26 +76,34 @@ export function ScoreRingV2({
         </linearGradient>
       </defs>
 
-      {/* Sparkline — ring'in arkasında, band rengiyle */}
+      {/* Kart zemini — ring içine derinlik */}
+      <circle
+        cx={size / 2} cy={size / 2} r={radius - strokeWidth / 2}
+        fill="rgb(var(--bg-card))"
+      />
+
+      {/* Sparkline — smooth cubic bezier, band rengi */}
       {sparkPath && (
         <path
           d={sparkPath}
           fill="none"
           stroke={gradFrom}
           strokeWidth={1}
-          strokeOpacity={0.40}
+          strokeOpacity={0.35}
           strokeLinecap="round"
           strokeLinejoin="round"
         />
       )}
 
-      {/* Arka plan halkası */}
+      {/* Track halkası — tema uyumlu ince yiv */}
       <circle
         cx={size / 2} cy={size / 2} r={radius}
-        fill="none" stroke="#374151" strokeWidth={strokeWidth}
+        fill="none"
+        stroke="rgb(var(--border))"
+        strokeWidth={strokeWidth}
       />
 
-      {/* Progress halkası */}
+      {/* Progress halkası — çift katman glow */}
       <circle
         cx={size / 2} cy={size / 2} r={radius}
         fill="none"
@@ -99,31 +115,20 @@ export function ScoreRingV2({
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
         style={{
           transition: "stroke-dashoffset 0.3s ease-out",
-          filter: `drop-shadow(0 0 4px ${glowColor}99)`,
+          filter: `drop-shadow(0 0 3px ${glowColor}cc) drop-shadow(0 0 8px ${glowColor}44)`,
         }}
       />
 
-      {/* Skor rakamı — band rengiyle */}
+      {/* Skor rakamı — tam orta, band rengi */}
       <text
-        x="50%" y="45%"
+        x="50%" y="50%"
         textAnchor="middle" dominantBaseline="central"
-        fill={gradFrom} fontWeight="700"
+        fill={gradFrom}
+        fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
-        fontSize={size * 0.32}
+        fontSize={size * 0.36}
       >
         {score}
-      </text>
-
-      {/* "AI Score:" etiketi — rakamın altında, ring içinde */}
-      <text
-        x="50%" y="68%"
-        textAnchor="middle" dominantBaseline="central"
-        fill="rgb(var(--text-t3))"
-        fontFamily="ui-monospace, SFMono-Regular, monospace"
-        fontSize={size * 0.13}
-        letterSpacing="0.04em"
-      >
-        AI Score:
       </text>
     </svg>
   );
