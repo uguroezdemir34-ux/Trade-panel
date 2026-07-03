@@ -49,76 +49,82 @@ export function ScoreRingV2({
   const sparkPath     = buildSparkPath(snaps, size / 2, size / 2, radius - strokeWidth - 1);
 
   return (
-    <div className="flex flex-col items-center gap-0.5">
-      <span className="text-[9px] font-medium tracking-widest uppercase" style={{ color: gradFrom }}>
-        AI Score:
-      </span>
-      <svg
-        width={size}
-        height={size}
-        viewBox={`0 0 ${size} ${size}`}
-        className="shrink-0 block"
-        style={{ color: "rgb(var(--text-t1))" }}
-        aria-label={`AI Score: ${score}`}
-      >
-        <defs>
-          <linearGradient
-            id={gradientId}
-            x1="0" y1="0"
-            x2={size} y2={size}
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0%"   stopColor={gradFrom} />
-            <stop offset="100%" stopColor={gradTo}   />
-          </linearGradient>
-        </defs>
-
-        {/* Sparkline — ring'in arkasında, band rengiyle */}
-        {sparkPath && (
-          <path
-            d={sparkPath}
-            fill="none"
-            stroke={gradFrom}
-            strokeWidth={1}
-            strokeOpacity={0.25}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        )}
-
-        {/* Arka plan halkası */}
-        <circle
-          cx={size / 2} cy={size / 2} r={radius}
-          fill="none" stroke="#374151" strokeWidth={strokeWidth}
-        />
-
-        {/* Progress halkası */}
-        <circle
-          cx={size / 2} cy={size / 2} r={radius}
-          fill="none"
-          stroke={`url(#${gradientId})`}
-          strokeWidth={strokeWidth}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-          style={{
-            transition: "stroke-dashoffset 0.3s ease-out",
-            filter: `drop-shadow(0 0 4px ${glowColor}99)`,
-          }}
-        />
-
-        {/* Ortadaki skor rakamı */}
-        <text
-          x="50%" y="50%"
-          textAnchor="middle" dominantBaseline="central"
-          fill="currentColor" fontWeight="700"
-          fontFamily="ui-monospace, SFMono-Regular, monospace"
-          fontSize={size * 0.32}
+    <svg
+      width={size}
+      height={size}
+      viewBox={`0 0 ${size} ${size}`}
+      className="shrink-0 block"
+      aria-label={`AI Score: ${score}`}
+    >
+      <defs>
+        <linearGradient
+          id={gradientId}
+          x1="0" y1="0"
+          x2={size} y2={size}
+          gradientUnits="userSpaceOnUse"
         >
-          {score}
-        </text>
-      </svg>
-    </div>
+          <stop offset="0%"   stopColor={gradFrom} />
+          <stop offset="100%" stopColor={gradTo}   />
+        </linearGradient>
+      </defs>
+
+      {/* Sparkline — ring'in arkasında, band rengiyle */}
+      {sparkPath && (
+        <path
+          d={sparkPath}
+          fill="none"
+          stroke={gradFrom}
+          strokeWidth={1}
+          strokeOpacity={0.40}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+
+      {/* Arka plan halkası */}
+      <circle
+        cx={size / 2} cy={size / 2} r={radius}
+        fill="none" stroke="#374151" strokeWidth={strokeWidth}
+      />
+
+      {/* Progress halkası */}
+      <circle
+        cx={size / 2} cy={size / 2} r={radius}
+        fill="none"
+        stroke={`url(#${gradientId})`}
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        strokeDashoffset={offset}
+        strokeLinecap="round"
+        transform={`rotate(-90 ${size / 2} ${size / 2})`}
+        style={{
+          transition: "stroke-dashoffset 0.3s ease-out",
+          filter: `drop-shadow(0 0 4px ${glowColor}99)`,
+        }}
+      />
+
+      {/* Skor rakamı — band rengiyle */}
+      <text
+        x="50%" y="45%"
+        textAnchor="middle" dominantBaseline="central"
+        fill={gradFrom} fontWeight="700"
+        fontFamily="ui-monospace, SFMono-Regular, monospace"
+        fontSize={size * 0.32}
+      >
+        {score}
+      </text>
+
+      {/* "AI Score:" etiketi — rakamın altında, ring içinde */}
+      <text
+        x="50%" y="68%"
+        textAnchor="middle" dominantBaseline="central"
+        fill="rgb(var(--text-t3))"
+        fontFamily="ui-monospace, SFMono-Regular, monospace"
+        fontSize={size * 0.13}
+        letterSpacing="0.04em"
+      >
+        AI Score:
+      </text>
+    </svg>
   );
 }
