@@ -28,6 +28,15 @@ function fmtCompact(v: number): string {
   return v.toFixed(0);
 }
 
+function activeBorderClass(s: number | undefined): string {
+  if (s === undefined) return "border-white/20";
+  if (s >= 80) return "border-teal-400/60";
+  if (s >= 60) return "border-blue-400/60";
+  if (s >= 40) return "border-amber-400/60";
+  if (s >= 30) return "border-purple-400/60";
+  return "border-red-400/40";
+}
+
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
   majors: ["BTC", "ETH", "BNB", "XRP", "SOL", "APT"],
@@ -37,8 +46,6 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
-import { ScoreRing } from "@/components/karar/ScoreRing";
-import { ScoreSparkline } from "@/components/karar/ScoreSparkline";
 import { PAIR_CATEGORY } from "@/lib/constants/pairMeta";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
 import { BlocksList } from "@/components/karar/BlocksList";
@@ -74,6 +81,9 @@ import { PairSignalHistory } from "@/components/karar/PairSignalHistory";
 import { PairTradeStats } from "@/components/karar/PairTradeStats";
 import { WalletSummaryBar } from "@/components/karar/WalletSummaryBar";
 import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
+import { CoinIcon } from "@/components/karar/CoinIcon";
+import { ScoreRingV2 } from "@/components/karar/ScoreRingV2";
+import { MarketPulseWidget } from "@/components/karar/MarketPulseWidget";
 
 export default function KararPage() {
   const t = useT();
@@ -112,6 +122,7 @@ export default function KararPage() {
   const [showMomentum, setShowMomentum] = useState(false);
   const [showDivergence, setShowDivergence] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showMarketPulse, setShowMarketPulse] = useState(true);
 
   // BTC card — score-change pulse (single-shot, no continuous animation)
   const btcPrevScoreRef  = useRef<number | undefined>(undefined);
@@ -255,18 +266,6 @@ export default function KararPage() {
   const displayPairsRef = useRef<readonly Pair[]>(displayPairs);
   displayPairsRef.current = displayPairs;
 
-  const pairMomentum = useMemo<Partial<Record<Pair, number>>>(() => {
-    try {
-      const out: Partial<Record<Pair, number>> = {};
-      for (const p of PAIRS) {
-        const snaps = scoreHistory[p];
-        if (!Array.isArray(snaps) || snaps.length < 4) continue;
-        const recent = snaps.slice(-4);
-        out[p] = recent[recent.length - 1].score - recent[0].score;
-      }
-      return out;
-    } catch { return {}; }
-  }, [scoreHistory]);
 
 
   const latestScoreTime = useMemo(() => {
@@ -511,15 +510,20 @@ export default function KararPage() {
 
       <SessionStatsBar />
 
-      {/* Keyboard shortcut hint — sağ üst köşe */}
-      <div className="flex justify-end -mt-1">
-        <button
-          onClick={() => setShowShortcuts(true)}
-          className="font-mono text-2xs text-text-t4 hover:text-text-t2 transition-colors border border-border/40 rounded px-2 py-0.5"
-          title={t("karar.keyboardShortcutHint")}
-        >
-          ⌨ ?
-        </button>
+      {/* Header row: MarketPulseWidget + keyboard shortcut */}
+      <div className="flex items-center justify-between -mt-1">
+        {showMarketPulse && (
+          <MarketPulseWidget onClose={() => setShowMarketPulse(false)} />
+        )}
+        <div className={showMarketPulse ? "" : "ml-auto"}>
+          <button
+            onClick={() => setShowShortcuts(true)}
+            className="font-mono text-2xs text-text-t4 hover:text-text-t2 transition-colors border border-border/40 rounded px-2 py-0.5"
+            title={t("karar.keyboardShortcutHint")}
+          >
+            ⌨ ?
+          </button>
+        </div>
       </div>
 
       {/* Desktop 2-column layout */}
@@ -652,21 +656,6 @@ export default function KararPage() {
                 : goStrength === "medium" ? "bg-green-500/5"
                 : "bg-yellow-500/5";
 
-              const scoreColor =
-                v === "go"
-                  ? goStrength === "strong" ? "text-green-300"
-                    : goStrength === "weak"  ? "text-yellow-400"
-                    : "text-green-400"
-                  : v === "wait"
-                  ? "text-yellow-400"
-                  : "text-text-t4";
-
-              const gradientClass =
-                v === "go"    ? "bg-gradient-to-r from-green-600 to-green-400"
-                : v === "wait"  ? "bg-gradient-to-r from-amber-600 to-amber-400"
-                : v === "no"    ? "bg-gradient-to-r from-red-700/50 to-red-500/30"
-                : "bg-surface-s2";
-
               const dirArrow = dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
 
               const pairChg = allTicks[p]?.chg ?? null;
@@ -676,9 +665,6 @@ export default function KararPage() {
                 : pairChg < 0 ? "text-signal-down"
                 : "text-text-t4";
 
-              const momentum = pairMomentum[p];
-              const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
-              const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
 
               const isWatched = watchlistPairs.includes(p);
 
@@ -699,7 +685,7 @@ export default function KararPage() {
 
                   <button
                     onClick={() => setActivePair(p as Pair)}
-                    style={p === "BTC" && v === "go" ? {
+                    style={v === "go" ? {
                       boxShadow: goStrength === "strong"
                         ? "0 0 12px 2px rgba(74,222,128,0.35)"
                         : "0 0 10px 1px rgba(34,197,94,0.22)",
@@ -707,9 +693,8 @@ export default function KararPage() {
                     } : undefined}
                     className={[
                       "w-full text-left rounded-lg border p-1.5 font-mono transition-colors",
-                      p === "BTC" ? "max-h-28 overflow-hidden" : "",
                       isActive
-                        ? "border-white/20 bg-surface-s2 text-text-t1"
+                        ? `${activeBorderClass(score)} bg-surface-s2 text-text-t1`
                         : goStrength === "strong"
                         ? `border-green-400/50 ${goBgClass} text-text-t3 hover:text-text-t2`
                         : goStrength
@@ -739,8 +724,9 @@ export default function KararPage() {
                         >
                           {isWatched ? "★" : "☆"}
                         </button>
+                        <CoinIcon pair={p as Pair} size={18} />
                         <span className="text-[11px] font-bold text-text-t1 leading-none">{p}</span>
-                        {p === "BTC" && PAIR_CATEGORY[p] && (
+                        {PAIR_CATEGORY[p] && (
                           <span className="text-[7px] font-mono text-sky-400/80 shrink-0 leading-none">
                             {PAIR_CATEGORY[p]}
                           </span>
@@ -756,134 +742,31 @@ export default function KararPage() {
                       )}
                     </div>
 
-                    {/* Satır 2: 24S score + hacim (BTC'de ScoreRing rakamı gösterir) */}
-                    {p !== "BTC" && (
-                      <div className="flex items-center justify-between gap-0.5 mb-0.5">
-                        <span translate="no" className={`text-[8px] tabular-nums leading-none ${isActive ? "text-text-t3" : scoreColor}`}>
-                          {score !== undefined ? `24S ${score}${dirArrow}` : "24S ·"}
+                    {/* ScoreRingV2 — tüm paritelerde */}
+                    <div className="flex justify-center py-0.5">
+                      {score !== undefined && pr?.goThreshold !== undefined ? (
+                        <ScoreRingV2
+                          score={score}
+                          goThreshold={pr.goThreshold}
+                          snaps={snaps.map((s) => s.score)}
+                          size={52}
+                          id={p}
+                        />
+                      ) : (
+                        <div className="h-[64px] flex items-center justify-center">
+                          <span className="text-text-t4 font-mono text-lg">·</span>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* WAIT badge */}
+                    {v === "wait" && score !== undefined && (
+                      <div className="flex justify-center -mt-0.5">
+                        <span translate="no" className="text-[8px] font-mono text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
+                          {`Wait ${dirArrow}${score}`}
                         </span>
-                        {allTicks[p]?.vol24h !== undefined && (
-                          <span translate="no" className="text-[8px] tabular-nums leading-none text-text-t4 shrink-0">
-                            ${fmtCompact(allTicks[p]!.vol24h!)}
-                          </span>
-                        )}
                       </div>
                     )}
-
-                    {/* Kapsül slider / ScoreRing (BTC only) */}
-                    {p === "BTC" ? (
-                      <div className="flex justify-center py-1">
-                        {score !== undefined && pr?.goThreshold !== undefined && (
-                          <div className="relative flex justify-center items-center w-20 h-[60px]">
-                            {/* Sparkline — ring'in ARKASINDA, yarı saydam, yanlardan taşar */}
-                            {snaps.length >= 2 && (
-                              <div className="absolute inset-0 flex items-center justify-center opacity-35 pointer-events-none z-0">
-                                <ScoreSparkline snapshots={snaps} width={80} height={22} />
-                              </div>
-                            )}
-                            {/* ScoreRing — önde */}
-                            <div className="relative z-10">
-                              <ScoreRing score={score} goThreshold={pr.goThreshold} size={60} id="BTC" />
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="relative py-1.5">
-                        <div className="h-1.5 w-full rounded-full bg-surface-s2 overflow-hidden relative">
-                          {score !== undefined && (
-                            <div
-                              className={`absolute inset-y-0 left-0 rounded-full ${gradientClass}`}
-                              style={{ width: `${Math.min(100, score)}%` }}
-                            />
-                          )}
-                        </div>
-                        {score !== undefined && (
-                          <div
-                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-1.5 rounded-full bg-white/90 shadow-sm pointer-events-none"
-                            style={{ left: `${Math.min(98, score)}%` }}
-                          />
-                        )}
-                        {pr?.goThreshold !== undefined && (
-                          <div
-                            className="absolute top-1/2 -translate-y-1/2 h-3.5 w-px bg-white/25 pointer-events-none"
-                            style={{ left: `${Math.min(99, pr.goThreshold)}%` }}
-                          />
-                        )}
-                      </div>
-                    )}
-
-                    {/* Score sparkline — inline SVG polyline (BTC'de ScoreRing yeteri kadar bilgi verir) */}
-                    {p !== "BTC" && snaps.length >= 2 && (() => {
-                      const minS = Math.min(...snaps.map((s) => s.score));
-                      const maxS = Math.max(...snaps.map((s) => s.score));
-                      const range = maxS - minS || 1;
-                      const pts = snaps
-                        .map((s, i) =>
-                          `${(1 + (i / (snaps.length - 1)) * 58).toFixed(1)},${(9 - ((s.score - minS) / range) * 8).toFixed(1)}`,
-                        )
-                        .join(" ");
-                      const col =
-                        snaps.at(-1)!.score > snaps[0].score
-                          ? "#22c55e"
-                          : snaps.at(-1)!.score < snaps[0].score
-                          ? "#ef4444"
-                          : "#52566a";
-                      return (
-                        <div className="-mt-0.5 mb-0.5">
-                          <svg width="100%" height="10" viewBox="0 0 60 10" preserveAspectRatio="none">
-                            <polyline
-                              points={pts}
-                              fill="none"
-                              stroke={col}
-                              strokeWidth="1.3"
-                              strokeLinejoin="round"
-                              strokeLinecap="round"
-                              opacity="0.65"
-                            />
-                          </svg>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Büyük skor (BTC'de ScoreRing içinde gösteriliyor) */}
-                    {p !== "BTC" && <div className="flex items-center justify-center gap-0.5 mt-0.5">
-                      <span translate="no" className={`text-sm font-bold tabular-nums leading-none ${isActive ? "text-text-t1" : scoreColor}`}>
-                        {score !== undefined ? score : "·"}
-                      </span>
-                      {dir && (
-                        <span className={`text-[10px] leading-none ${isActive ? "text-text-t2" : scoreColor}`}>
-                          {dirArrow}
-                        </span>
-                      )}
-                      {showMom && (
-                        <span className={`text-[8px] leading-none ml-px ${momColor}`}>
-                          {(momentum ?? 0) > 0 ? "▲" : "▼"}
-                        </span>
-                      )}
-                      {/* Delta badge — son 12 snapshot ile fark, 0dk ise gizle */}
-                      {snaps.length >= 2 && (() => {
-                        const fi = Math.max(0, snaps.length - 12);
-                        const first = snaps[fi];
-                        const last  = snaps[snaps.length - 1];
-                        const dVal  = last.score - first.score;
-                        const dMin  = Math.round((last.ts - first.ts) / 60_000);
-                        if (dMin === 0) return null;
-                        const sign = dVal > 0 ? "+" : "";
-                        const dc =
-                          dVal > 0 ? "text-green-400"
-                          : dVal < 0 ? "text-red-400"
-                          : "text-text-t4";
-                        return (
-                          <span
-                            translate="no"
-                            className={`ml-1 font-mono text-[7px] tabular-nums leading-none opacity-70 ${dc}`}
-                          >
-                            ~{dMin}dk {sign}{Math.round(dVal)}
-                          </span>
-                        );
-                      })()}
-                    </div>}
 
                     {/* Alt: fiyat + market cap */}
                     <div className="flex items-center justify-between mt-1 gap-1">

@@ -21,7 +21,7 @@ export const BRAND = {
   /** Tagline kısa (mobile başlık altı) */
   taglineShort: "Flow Intelligence",
   /** Versiyon etiketi */
-  version: "v3",
+  version: "v3.1",
 } as const;
 
 /**
