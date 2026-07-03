@@ -26,7 +26,7 @@ export function MarketPulseWidget({ value = 62, onClose }: Props) {
       </div>
 
       {/* Value */}
-      <span className="font-mono font-bold text-sm text-white tabular-nums">
+      <span className="font-mono font-bold text-sm text-text-t1 tabular-nums">
         {value}%
       </span>
 
@@ -34,7 +34,7 @@ export function MarketPulseWidget({ value = 62, onClose }: Props) {
       {onClose && (
         <button
           onClick={onClose}
-          className="ml-1 text-text-t4 hover:text-white transition-colors leading-none"
+          className="ml-1 text-text-t4 hover:text-text-t1 transition-colors leading-none"
           aria-label="Market Pulse kapat"
         >
           ✕

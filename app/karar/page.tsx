@@ -478,8 +478,8 @@ export default function KararPage() {
     <div className="flex flex-col gap-3">
       {/* Forward Test Mode banner */}
       {forwardTestMode && (
-        <div className="flex items-center gap-2 rounded-lg border border-[#22C55E]/30 bg-[#22C55E]/8 px-3 py-2">
-          <span className="font-mono text-xs font-bold tracking-widest text-[#22C55E]">
+        <div className="flex items-center gap-2 rounded-lg border border-signal-green/30 bg-signal-green/8 px-3 py-2">
+          <span className="font-mono text-xs font-bold tracking-widest text-signal-green">
             FWD TEST
           </span>
           <span className="text-text-t2 font-mono text-xs">
