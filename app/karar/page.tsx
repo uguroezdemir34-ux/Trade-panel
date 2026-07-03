@@ -97,6 +97,13 @@ export default function KararPage() {
   const watchlistLoad = useWatchlistStore((s) => s.load);
 
   useEffect(() => { watchlistLoad(); }, [watchlistLoad]);
+
+  // Geçici debug — ?debug=1 query param'ı varsa Eruda mobil konsol yükle
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("debug=1")) {
+      import("eruda").then((eruda) => eruda.default.init());
+    }
+  }, []);
   const [showConfirm, setShowConfirm] = useState(false);
   const [isExecuting, setIsExecuting] = useState(false);
   const [execError, setExecError] = useState<string | null>(null);
