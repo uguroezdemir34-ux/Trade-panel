@@ -43,6 +43,12 @@ const config: Config = {
           // Aliases: text-signal-up / text-signal-down
           up: "rgb(var(--signal-green) / <alpha-value>)",
           down: "rgb(var(--signal-red) / <alpha-value>)",
+          // Score band palette — premium
+          gold:     "rgb(var(--signal-gold) / <alpha-value>)",
+          sapphire: "rgb(var(--signal-sapphire) / <alpha-value>)",
+          bronze:   "rgb(var(--signal-bronze) / <alpha-value>)",
+          wine:     "rgb(var(--signal-wine) / <alpha-value>)",
+          crimson:  "rgb(var(--signal-crimson) / <alpha-value>)",
         },
         soft: {
           green: "rgb(var(--signal-green) / 0.08)",

@@ -40,6 +40,13 @@
   --signal-up:     34 197  94;
   --signal-down:  239  68  68;
 
+  /* Score band palette — premium lacivert/altın tema */
+  --signal-gold:     212 175  55;   /* #D4AF37 — skor ≥80 */
+  --signal-sapphire:  63 156 147;   /* #3F9C93 — skor 60-79 */
+  --signal-bronze:   192 138  62;   /* #C08A3E — skor 40-59 */
+  --signal-wine:     178  92 116;   /* #B25C74 — skor 30-39 */
+  --signal-crimson:  192  69  90;   /* #C0455A — skor <30 */
+
   /* Brand — turuncu-amber */
   --brand:        255 110  24;   /* #ff6e18 */
   --brand-accent: 255 148  72;   /* #ff9448 */
@@ -82,6 +89,13 @@
   --signal-blue:   28  80 220;   /* #1c50dc — 6.3:1 */
   --signal-up:     20 130  60;
   --signal-down:  188  28  28;
+
+  /* Score band palette — light mode WCAG AA */
+  --signal-gold:     138 109  31;   /* #8A6D1F */
+  --signal-sapphire:  31 111 107;   /* #1F6F6B */
+  --signal-bronze:   140  94  31;   /* #8C5E1F */
+  --signal-wine:     122  51  71;   /* #7A3347 */
+  --signal-crimson:  139  38  53;   /* #8B2635 */
 
   /* Brand — koyu turuncu, beyaz üzerinde kontrast */
   --brand:        186  68   0;   /* #ba4400 — 5.1:1 */
