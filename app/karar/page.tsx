@@ -741,6 +741,11 @@ export default function KararPage() {
                             {PAIR_CATEGORY[p]}
                           </span>
                         )}
+                        {v === "wait" && (
+                          <span className="text-[7px] font-mono text-amber-400/70 shrink-0 leading-none">
+                            WAIT
+                          </span>
+                        )}
                         {alarmedPairs.has(p) && (
                           <span className="h-1 w-1 rounded-full bg-amber-400 shrink-0" />
                         )}
