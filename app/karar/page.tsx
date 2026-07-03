@@ -74,7 +74,6 @@ import { PairSignalHistory } from "@/components/karar/PairSignalHistory";
 import { PairTradeStats } from "@/components/karar/PairTradeStats";
 import { WalletSummaryBar } from "@/components/karar/WalletSummaryBar";
 import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
-import { MarketPulseCard } from "@/components/karar/MarketPulseCard";
 
 export default function KararPage() {
   const t = useT();
@@ -588,9 +587,6 @@ export default function KararPage() {
             })}
           </div>
 
-          {/* Market Pulse — regime, F&G, GO count, avg score, BTC.D */}
-          <MarketPulseCard />
-
           {/* Pair grid header — skor sıralaması toggle */}
           <div className="flex items-center justify-end">
             <button
@@ -693,9 +689,6 @@ export default function KararPage() {
                   {p === "BTC" && btcPulseActive && (
                     <span className="absolute inset-0 rounded-lg ring-1 ring-white/25 animate-[ping_600ms_ease-out_1] pointer-events-none z-20" aria-hidden />
                   )}
-                  {isActive && (
-                    <div className="absolute inset-0 rounded-lg ring-1 ring-white/40 pointer-events-none z-10" />
-                  )}
 
                   <button
                     onClick={() => setActivePair(p as Pair)}
@@ -743,11 +736,6 @@ export default function KararPage() {
                         {p === "BTC" && PAIR_CATEGORY[p] && (
                           <span className="text-[7px] font-mono text-sky-400/80 shrink-0 leading-none">
                             {PAIR_CATEGORY[p]}
-                          </span>
-                        )}
-                        {v === "wait" && (
-                          <span className="text-[7px] font-mono text-amber-400/70 shrink-0 leading-none">
-                            WAIT
                           </span>
                         )}
                         {alarmedPairs.has(p) && (
