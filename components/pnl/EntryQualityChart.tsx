@@ -89,7 +89,7 @@ export function EntryQualityChart({ trades }: Props): React.ReactElement | null 
                       style={{ width: `${100 - winWidthPct}%` }}
                     />
                     {/* Label */}
-                    <span className="absolute inset-0 flex items-center justify-center font-mono tabular-nums text-white/90" style={{ fontSize: 9 }}>
+                    <span className="absolute inset-0 flex items-center justify-center font-mono tabular-nums text-text-t1" style={{ fontSize: 9 }}>
                       {b.wins}W / {b.losses}L
                     </span>
                   </div>
