@@ -57,7 +57,7 @@ export function ScoreRingV2({
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
-        className="shrink-0 block"
+        className="shrink-0 block dark:text-white text-gray-900"
         aria-label={`AI Score: ${score}`}
       >
         <defs>
@@ -111,7 +111,7 @@ export function ScoreRingV2({
         <text
           x="50%" y="50%"
           textAnchor="middle" dominantBaseline="central"
-          fill="white" fontWeight="700"
+          fill="currentColor" fontWeight="700"
           fontFamily="ui-monospace, SFMono-Regular, monospace"
           fontSize={size * 0.32}
         >
