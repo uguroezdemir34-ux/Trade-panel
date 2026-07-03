@@ -54,6 +54,7 @@ export function ScoreRingV2({
   const offset        = circumference - (Math.min(Math.max(score, 0), 100) / 100) * circumference;
   const [gradFrom, gradTo, glowColor] = bandColors(score);
   const gradientId    = `sgv2-${id}`;
+  const trackColor    = `${gradFrom}1f`; // band rengi %12 — hafif parlayan yiv
   const sparkPath     = buildSparkPath(snaps, size / 2, size / 2, radius - strokeWidth - 1);
 
   return (
@@ -76,13 +77,7 @@ export function ScoreRingV2({
         </linearGradient>
       </defs>
 
-      {/* Kart zemini — ring içine derinlik */}
-      <circle
-        cx={size / 2} cy={size / 2} r={radius - strokeWidth / 2}
-        fill="rgb(var(--bg-card))"
-      />
-
-      {/* Sparkline — smooth cubic bezier, band rengi */}
+      {/* Sparkline — smooth cubic bezier */}
       {sparkPath && (
         <path
           d={sparkPath}
@@ -95,15 +90,15 @@ export function ScoreRingV2({
         />
       )}
 
-      {/* Track halkası — tema uyumlu ince yiv */}
+      {/* Track halkası — band rengiyle tonlanmış yiv */}
       <circle
         cx={size / 2} cy={size / 2} r={radius}
         fill="none"
-        stroke="rgb(var(--border))"
+        stroke={trackColor}
         strokeWidth={strokeWidth}
       />
 
-      {/* Progress halkası — çift katman glow */}
+      {/* Progress halkası — güçlü çift glow */}
       <circle
         cx={size / 2} cy={size / 2} r={radius}
         fill="none"
@@ -115,11 +110,11 @@ export function ScoreRingV2({
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
         style={{
           transition: "stroke-dashoffset 0.3s ease-out",
-          filter: `drop-shadow(0 0 3px ${glowColor}cc) drop-shadow(0 0 8px ${glowColor}44)`,
+          filter: `drop-shadow(0 0 4px ${glowColor}dd) drop-shadow(0 0 10px ${glowColor}55)`,
         }}
       />
 
-      {/* Skor rakamı — tam orta, band rengi */}
+      {/* Skor rakamı — tam orta, band rengi + subtle glow */}
       <text
         x="50%" y="50%"
         textAnchor="middle" dominantBaseline="central"
@@ -127,6 +122,7 @@ export function ScoreRingV2({
         fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
         fontSize={size * 0.36}
+        style={{ filter: `drop-shadow(0 0 4px ${gradFrom}88)` }}
       >
         {score}
       </text>
