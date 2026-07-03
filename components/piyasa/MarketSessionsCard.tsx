@@ -147,7 +147,7 @@ export function MarketSessionsCard(): React.ReactElement {
                   }}
                 />
                 <div
-                  className="absolute top-0 h-full w-0.5 bg-white/60 rounded-full"
+                  className="absolute top-0 h-full w-0.5 bg-text-t2 rounded-full"
                   style={{ left: `${(utcHour / 24) * 100}%` }}
                 />
               </div>

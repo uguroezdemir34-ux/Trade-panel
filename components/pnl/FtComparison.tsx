@@ -97,7 +97,7 @@ export function FtComparison({ trades }: Props): React.ReactElement | null {
         <span className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
           {t("pnl.ftComparison.title")}
         </span>
-        <span className="rounded border border-[#22C55E]/30 bg-[#22C55E]/8 px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-widest text-[#22C55E]">
+        <span className="rounded border border-signal-green/30 bg-signal-green/8 px-1.5 py-0.5 font-mono text-[9px] font-bold tracking-widest text-signal-green">
           {t("pnl.ftComparison.badge")}
         </span>
       </div>

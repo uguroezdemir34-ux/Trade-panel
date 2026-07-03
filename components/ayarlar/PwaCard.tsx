@@ -168,7 +168,7 @@ export function PwaCard(): React.ReactElement {
             disabled={subscribing || pushPermission === "denied"}
             className={[
               "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none disabled:opacity-40",
-              pushEnabled ? "bg-brand" : "bg-surface-2",
+              pushEnabled ? "bg-brand" : "bg-surface-s2",
             ].join(" ")}
             role="switch"
             aria-checked={pushEnabled}
