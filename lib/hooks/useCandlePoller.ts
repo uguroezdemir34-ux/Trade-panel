@@ -2,12 +2,14 @@
  * CANDLE POLLER — Her pair + timeframe için mum verisini periyodik çeker.
  *
  * Stale-while-revalidate: mount'ta önce localStorage cache'den anında yükler,
- * sonra arka planda taze veri çeker. Böylece ~1dk bekleme → anlık görüntü.
+ * sonra arka planda taze veri çeker.
  *
- * Rate-limit fix: OKX public endpoint limiti 20 req/2s (paylaşımlı Vercel IP).
- * Max 6 eşzamanlı istek; fetchShort tamamlanınca fetchLong başlar (sıralı).
- * İlk fetch 1s geciktirilir (usePriorityFetch BTC burst'ü bitmeden başlatma).
- * Worker'lar 150/200ms stagger ile başlar → OKX rate limit altında kalır.
+ * İlk yükleme (fetchPairAllTFs): Her pair için 4 TF birlikte çekilir.
+ * composeScoreInput candles4h >= 200 gerektirir — short/long sıralı yaklaşım
+ * bunu bozuyordu (4h gelmeden score hesaplanamıyordu). Per-pair yaklaşım ile
+ * her pair kendi verisiyle anında skor alır.
+ *
+ * Sonraki poll'lar: fetchShort (1h+15m) 60s'de bir, fetchLong (4h+1d) 5dk'da bir.
  */
 
 "use client";
@@ -32,7 +34,9 @@ const TIMEFRAMES_LONG: Timeframe[] = ["4h", "1d"];
 const POLL_INTERVAL_SHORT_MS = 60_000;
 const POLL_INTERVAL_LONG_MS = 5 * 60_000;
 
-/** Max eşzamanlı OKX isteği — paylaşımlı Vercel IP rate limit koruması */
+/** İlk yükleme: 2 pair eşzamanlı = max 8 OKX isteği — rate limit koruması */
+const MAX_CONCURRENT_INIT = 2;
+/** Sonraki poll'lar için max eşzamanlı TF isteği */
 const MAX_CONCURRENT = 6;
 
 function makeFetchTask(
@@ -60,6 +64,24 @@ export function useCandlePoller(): void {
   const longTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const initializedRef = useRef(false);
 
+  /** İlk yükleme: pair başına 4 TF birlikte çek (usePriorityFetch mantığı). */
+  async function fetchPairAllTFs(pair: string): Promise<void> {
+    const TFS: Array<[Timeframe, number]> = [
+      ["15m", CANDLE_LIMIT],
+      ["1h",  CANDLE_LIMIT],
+      ["4h",  CANDLE_LIMIT],
+      ["1d",  CANDLE_LIMIT_1D],
+    ];
+    await Promise.all(
+      TFS.map(([tf, limit]) =>
+        fetchWithRetry(pair, tf, limit).then((c) => {
+          if (c) { setCandles(pair as Pair, tf, c, Date.now()); saveCache(pair, tf, c); }
+          else setError(pair as Pair, tf, "fetch_failed");
+        }),
+      ),
+    );
+  }
+
   async function fetchShort(): Promise<void> {
     const tasks = PAIRS.flatMap((pair) =>
       TIMEFRAMES_SHORT.map((tf) => makeFetchTask(pair, tf, CANDLE_LIMIT, setCandles, setError)),
@@ -76,7 +98,7 @@ export function useCandlePoller(): void {
   }
 
   useEffect(() => {
-    // Stale-while-revalidate: cache'den anında yükle, sonra fetch
+    // Stale-while-revalidate: cache'den anında yükle
     if (!initializedRef.current) {
       initializedRef.current = true;
       PAIRS.forEach((pair) => {
@@ -87,11 +109,13 @@ export function useCandlePoller(): void {
       });
     }
 
-    // 1s gecikme: usePriorityFetch (BTC 4 TF) tamamlanmadan başlatma — burst kontrolü
-    // Sıralı: short tamamlanınca long başlar → eşzamanlı OKX istek sayısı ≤ MAX_CONCURRENT
+    // 1s gecikme: usePriorityFetch (BTC) tamamlanmadan başlatma
+    // Per-pair: 4 TF birlikte → composeScoreInput (4h >= 200) anında geçer
     const initTimer = setTimeout(async () => {
-      await fetchShort();
-      await fetchLong();
+      await runBatched(
+        PAIRS.map((pair) => () => fetchPairAllTFs(pair)),
+        MAX_CONCURRENT_INIT,
+      );
     }, 1_000);
 
     shortTimerRef.current = setInterval(fetchShort, POLL_INTERVAL_SHORT_MS);
