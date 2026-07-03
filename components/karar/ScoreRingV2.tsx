@@ -57,7 +57,8 @@ export function ScoreRingV2({
         width={size}
         height={size}
         viewBox={`0 0 ${size} ${size}`}
-        className="shrink-0 block dark:text-white text-gray-900"
+        className="shrink-0 block"
+        style={{ color: "rgb(var(--text-t1))" }}
         aria-label={`AI Score: ${score}`}
       >
         <defs>
