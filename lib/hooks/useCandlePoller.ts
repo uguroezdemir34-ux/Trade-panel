@@ -51,8 +51,10 @@ const TIMEFRAMES_LONG: Timeframe[] = ["4h", "1d"];
 const POLL_INTERVAL_SHORT_MS = 60_000;
 const POLL_INTERVAL_LONG_MS = 5 * 60_000;
 
-/** İlk yükleme: 2 pair eşzamanlı = max 8 OKX isteği — rate limit koruması */
-const MAX_CONCURRENT_INIT = 2;
+/** İlk yükleme: 4 pair eşzamanlı = max 16 OKX isteği.
+ * Peak: 4×4TF=16 req; OKX shared-IP tahmini ~20 req/2s — makul tampon.
+ * Active pair getPriorityPair() ile zaten atlandığı için burst overlap yok. */
+const MAX_CONCURRENT_INIT = 4;
 /** Sonraki poll'lar için max eşzamanlı TF isteği */
 const MAX_CONCURRENT = 6;
 
