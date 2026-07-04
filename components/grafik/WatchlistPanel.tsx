@@ -929,7 +929,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
 /* ── WatchlistPanel (masaüstü yan panel) ── */
 export function WatchlistPanel({ activePair, onPairChange }: Props): React.ReactElement {
   return (
-    <div className="hidden md:flex flex-col border border-border bg-bg-card rounded-lg overflow-hidden select-none w-[290px] shrink-0 self-stretch">
+    <div className="hidden md:flex flex-col border border-border bg-bg-card rounded-lg overflow-hidden select-none w-[290px] shrink-0 sticky top-[56px] max-h-[calc(100vh-72px)]">
       <WatchlistContent activePair={activePair} onPairChange={onPairChange} />
     </div>
   );
