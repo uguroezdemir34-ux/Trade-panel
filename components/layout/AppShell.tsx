@@ -52,6 +52,7 @@ import { useEmergencyStopGuard } from "@/lib/hooks/useEmergencyStopGuard";
 import { useSlProximityAlert } from "@/lib/hooks/useSlProximityAlert";
 import { usePriorityAlerts } from "@/lib/hooks/usePriorityAlerts";
 import { useCapacitorApp } from "@/lib/hooks/useCapacitorApp";
+import { useGoSignalOutcomeTracker } from "@/lib/hooks/useGoSignalOutcomeTracker";
 import { QuickTradeSheet } from "@/components/mobile/QuickTradeSheet";
 import { DisclaimerModal } from "./DisclaimerModal";
 import { useAuthStub } from "@/lib/auth/stubs";
@@ -139,6 +140,8 @@ export function AppShell({
   usePwaSetup();
   // Capacitor native lifecycle — back button, StatusBar, SplashScreen
   useCapacitorApp();
+  // GO sinyal sonrası 15dk/1sa fiyat hareketi takibi
+  useGoSignalOutcomeTracker();
 
   useEffect(() => {
     if (!authLoaded) return;

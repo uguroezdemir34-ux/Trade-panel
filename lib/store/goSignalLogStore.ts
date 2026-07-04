@@ -7,6 +7,17 @@ import type { OiDivergence } from "@/lib/market/oi-divergence";
 const MAX_ENTRIES = 200;
 const STORAGE_KEY = "gosignal_log_v1";
 
+export interface GoSignalOutcome {
+  /** Fiyat sinyal yönünde mi, tersine mi hareket etti */
+  isAdverse: boolean;
+  /** (capturePrice - entryPrice) / entryPrice * 100 */
+  movePct: number;
+  /** Ölçüm anındaki fiyat */
+  price: number;
+  /** Ölçüm yapıldığı epoch ms */
+  ts: number;
+}
+
 export interface GoSignalEntry {
   ts: number;
   pair: Pair;
@@ -29,11 +40,21 @@ export interface GoSignalEntry {
   oiDivergence?: OiDivergence;
   /** Gölge kapılar tetiklenme listesi (chopGate, atrRatioGate, timeGate, btcSrGate, pocBlock, oiDivergence:*) */
   triggeredGates?: string[];
+  /** Sinyal sonrası 15 dakikadaki fiyat hareketi (yalnızca browser açıksa doldurulur) */
+  outcome15m?: GoSignalOutcome;
+  /** Sinyal sonrası 1 saatteki fiyat hareketi (yalnızca browser açıksa doldurulur) */
+  outcome1h?: GoSignalOutcome;
 }
 
 interface GoSignalLogState {
   entries: GoSignalEntry[];
   appendGoSignal: (entry: GoSignalEntry) => void;
+  updateOutcome: (
+    pair: Pair,
+    ts: number,
+    field: "outcome15m" | "outcome1h",
+    data: GoSignalOutcome,
+  ) => void;
   getAll: () => GoSignalEntry[];
   clear: () => void;
 }
@@ -74,6 +95,16 @@ export const useGoSignalLogStore = create<GoSignalLogState>((set, get) => {
         // Dedup: same pair+ts already in store (double-render guard)
         if (s.entries.some((e) => e.pair === entry.pair && e.ts === entry.ts)) return s;
         const updated = [...s.entries, entry].slice(-MAX_ENTRIES);
+        saveEntries(updated);
+        return { entries: updated };
+      }),
+
+    updateOutcome: (pair, ts, field, data) =>
+      set((s) => {
+        const idx = s.entries.findIndex((e) => e.pair === pair && e.ts === ts);
+        if (idx === -1) return s;
+        const updated = [...s.entries];
+        updated[idx] = { ...updated[idx], [field]: data };
         saveEntries(updated);
         return { entries: updated };
       }),
