@@ -1124,6 +1124,7 @@ export const tr: Dictionary = {
     drawCancelStep2: "↩ 2.adım iptal",
     drawCancelStep1: "↩ 1.nokta iptal",
     drawCancelAll: "✕ İptal",
+    drawnLinesLabel: "çizgi",
     priceCaptureCopied: "Kopyalandı ✓ veya kaydet",
     priceCaptureLabel: "Fiyat",
     priceCopyAs: "{label} olarak kopyala",

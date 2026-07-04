@@ -21,7 +21,6 @@ interface Props {
   showSplit: boolean;
   showFlow: boolean;
   clickMode: ChartClickMode;
-  hasDrawnLines: boolean;
   onTimeframeChange: (tf: Timeframe) => void;
   onToggleEma20: () => void;
   onToggleEma50: () => void;
@@ -36,7 +35,6 @@ interface Props {
   onToggleSplit: () => void;
   onToggleFlow: () => void;
   onSetClickMode: (mode: ChartClickMode) => void;
-  onClearDrawnLines: () => void;
 }
 
 const TIMEFRAMES: Timeframe[] = ["1m", "5m", "15m", "1h", "4h", "1d"];
@@ -56,7 +54,6 @@ export function ChartControls({
   showSplit,
   showFlow,
   clickMode,
-  hasDrawnLines,
   onTimeframeChange,
   onToggleEma20,
   onToggleEma50,
@@ -71,7 +68,6 @@ export function ChartControls({
   onToggleSplit,
   onToggleFlow,
   onSetClickMode,
-  onClearDrawnLines,
 }: Props): React.ReactElement {
   const t = useT();
 
@@ -96,7 +92,7 @@ export function ChartControls({
       </div>
 
       {/* Row 2 — Overlays + Tools */}
-      <div className="flex flex-wrap items-center gap-1 px-3 py-2">
+      <div className="flex flex-nowrap items-center gap-1 px-3 py-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
         {/* Indicator dropdown — EMA/RSI/MACD/BB + İşlemler */}
         <IndicatorDropdown
           showEma20={showEma20}
@@ -124,40 +120,15 @@ export function ChartControls({
         <Toggle active={showSr} onClick={onToggleSr} accent="#a3e635">
           {t("grafik.showSr")}
         </Toggle>
-
-        {/* Divider */}
-        <div className="w-px h-3.5 bg-border/50 mx-0.5 shrink-0" />
-
-        {/* Tools */}
         <Toggle active={showSplit} onClick={onToggleSplit} accent="#6366f1">
           {t("grafik.split")}
         </Toggle>
-        <Toggle active={showFlow} onClick={onToggleFlow} accent="#8b5cf6">
-          {t("grafik.flow")}
-        </Toggle>
-        <Toggle
-          active={clickMode === "hline"}
-          onClick={() => onSetClickMode(clickMode === "hline" ? "none" : "hline")}
-          accent="#f59e0b"
-        >
-          {t("grafik.hline")}
-        </Toggle>
-        {hasDrawnLines && (
-          <button
-            onClick={onClearDrawnLines}
-            className="rounded border border-border px-1.5 py-1 font-mono text-2xs text-text-t4 hover:text-red-400 hover:border-red-400 transition-colors shrink-0"
-            title={t("grafik.clearLines")}
-          >
-            ✕
-          </button>
-        )}
-        <Toggle
-          active={clickMode === "price"}
-          onClick={() => onSetClickMode(clickMode === "price" ? "none" : "price")}
-          accent="#22c55e"
-        >
-          {t("grafik.priceMode")}
-        </Toggle>
+        <ToolsDropdown
+          showFlow={showFlow}
+          clickMode={clickMode}
+          onToggleFlow={onToggleFlow}
+          onSetClickMode={onSetClickMode}
+        />
       </div>
     </div>
   );
@@ -203,7 +174,7 @@ function IndicatorDropdown({
       <button
         onClick={() => setOpen((v) => !v)}
         className={[
-          "flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-2xs font-bold tracking-widest uppercase whitespace-nowrap shrink-0 transition-colors",
+          "flex items-center gap-1.5 rounded border px-1.5 py-2.5 font-mono text-2xs font-bold tracking-widest uppercase whitespace-nowrap shrink-0 transition-colors",
           activeCount > 0
             ? "border-brand/50 bg-brand/10 text-brand"
             : "border-border text-text-t3 hover:bg-surface-2",
@@ -219,6 +190,78 @@ function IndicatorDropdown({
       </button>
       {open && (
         <div className="absolute top-full left-0 mt-1 z-50 bg-bg-card border border-border rounded-lg shadow-xl p-1.5 flex flex-col gap-0.5 min-w-[140px]">
+          {items.map((item) => (
+            <button
+              key={item.label}
+              onClick={item.toggle}
+              className="flex items-center gap-2 px-2.5 py-1.5 rounded hover:bg-surface-2 transition-colors text-left"
+            >
+              <span
+                className="w-2 h-2 rounded-full shrink-0 border"
+                style={
+                  item.active
+                    ? { backgroundColor: item.accent, borderColor: item.accent }
+                    : { borderColor: "#374151", backgroundColor: "transparent" }
+                }
+              />
+              <span className={`font-mono text-2xs tracking-wider ${item.active ? "text-text-t1" : "text-text-t3"}`}>
+                {item.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ToolsDropdown({
+  showFlow, clickMode, onToggleFlow, onSetClickMode,
+}: {
+  showFlow: boolean; clickMode: ChartClickMode;
+  onToggleFlow: () => void; onSetClickMode: (mode: ChartClickMode) => void;
+}) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const activeCount = [showFlow, clickMode === "hline", clickMode === "price"].filter(Boolean).length;
+
+  useEffect(() => {
+    if (!open) return;
+    function onOutside(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [open]);
+
+  const items = [
+    { label: t("grafik.flow"),      active: showFlow,              toggle: onToggleFlow,                                                    accent: "#8b5cf6" },
+    { label: t("grafik.hline"),     active: clickMode === "hline", toggle: () => onSetClickMode(clickMode === "hline" ? "none" : "hline"), accent: "#f59e0b" },
+    { label: t("grafik.priceMode"), active: clickMode === "price", toggle: () => onSetClickMode(clickMode === "price" ? "none" : "price"), accent: "#22c55e" },
+  ];
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={[
+          "flex items-center gap-1.5 rounded border px-1.5 py-2.5 font-mono text-2xs font-bold tracking-widest uppercase whitespace-nowrap shrink-0 transition-colors",
+          activeCount > 0
+            ? "border-brand/50 bg-brand/10 text-brand"
+            : "border-border text-text-t3 hover:bg-surface-2",
+        ].join(" ")}
+      >
+        ⚙
+        {activeCount > 0 && (
+          <span className="rounded-full bg-brand text-bg-page text-[8px] font-bold w-3.5 h-3.5 flex items-center justify-center shrink-0">
+            {activeCount}
+          </span>
+        )}
+        <span className="text-text-t4 text-[10px]">{open ? "▲" : "▼"}</span>
+      </button>
+      {open && (
+        <div className="absolute top-full right-0 mt-1 z-50 bg-bg-card border border-border rounded-lg shadow-xl p-1.5 flex flex-col gap-0.5 min-w-[120px]">
           {items.map((item) => (
             <button
               key={item.label}
@@ -263,7 +306,7 @@ function Toggle({
       onClick={onClick}
       style={active && accent ? activeStyle : undefined}
       className={[
-        "rounded border px-2 py-1 font-mono text-2xs font-bold tracking-widest uppercase whitespace-nowrap shrink-0 transition-colors",
+        "rounded border px-1.5 py-2.5 font-mono text-2xs font-bold tracking-widest uppercase whitespace-nowrap shrink-0 transition-colors",
         active && !accent ? "border-text-t1 bg-text-t1 text-bg-page" : "",
         !active ? "border-border text-text-t3 hover:bg-surface-2" : "",
       ].join(" ")}

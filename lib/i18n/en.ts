@@ -1124,6 +1124,7 @@ export const en: Dictionary = {
     drawCancelStep2: "↩ Cancel step 2",
     drawCancelStep1: "↩ Cancel step 1",
     drawCancelAll: "✕ Cancel",
+    drawnLinesLabel: "lines",
     priceCaptureCopied: "Copied ✓ or save",
     priceCaptureLabel: "Price",
     priceCopyAs: "Copy as {label}",

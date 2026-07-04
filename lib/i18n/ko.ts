@@ -986,6 +986,7 @@ volumeSection: "VOLUME",
     drawCancelStep1: "↩ Cancel step 1",
     // TODO: translate
     drawCancelAll: "✕ Cancel",
+    drawnLinesLabel: "lines",
     // TODO: translate
     priceCaptureCopied: "Copied ✓ or save",
     // TODO: translate

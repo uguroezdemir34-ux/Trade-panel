@@ -391,7 +391,6 @@ export default function GrafikPage() {
         showSr={showSr}
         showSplit={showSplit}
         clickMode={clickMode}
-        hasDrawnLines={drawnLines.length > 0}
         onTimeframeChange={setTimeframe}
         onToggleEma20={() => setShowEma20((v) => !v)}
         onToggleEma50={() => setShowEma50((v) => !v)}
@@ -407,7 +406,6 @@ export default function GrafikPage() {
         showFlow={showFlow}
         onToggleFlow={() => setShowFlow((v) => !v)}
         onSetClickMode={handleSetClickMode}
-        onClearDrawnLines={() => setDrawnLines([])}
       />
 
       <ChartLegend
@@ -423,23 +421,42 @@ export default function GrafikPage() {
         showSr={showSr}
       />
 
-      {/* Active mode indicator */}
-      {clickMode !== "none" && (
+      {/* Active mode indicator + drawn lines count */}
+      {(clickMode !== "none" || drawnLines.length > 0) && (
         <div className={`flex items-center gap-2 rounded border px-3 py-1.5 text-xs font-mono ${
-          clickMode === "hline"
-            ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-400"
-            : "border-green-500/40 bg-green-500/10 text-green-400"
+          clickMode !== "none"
+            ? clickMode === "hline"
+              ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-400"
+              : "border-green-500/40 bg-green-500/10 text-green-400"
+            : "border-border/50 bg-surface-2/50 text-text-t3"
         }`}>
-          <span className="animate-pulse">●</span>
-          {clickMode === "hline"
-            ? t("grafik.drawHline")
-            : t("grafik.drawPrice")}
-          <button
-            onClick={() => handleSetClickMode("none")}
-            className="ml-auto min-h-[40px] px-2 flex items-center opacity-60 hover:opacity-100"
-          >
-            {t("grafik.drawCancelAll")}
-          </button>
+          {clickMode !== "none" && (
+            <>
+              <span className="animate-pulse">●</span>
+              <span>{clickMode === "hline" ? t("grafik.drawHline") : t("grafik.drawPrice")}</span>
+              <button
+                onClick={() => handleSetClickMode("none")}
+                className="min-h-[40px] px-2 flex items-center opacity-60 hover:opacity-100"
+              >
+                {t("grafik.drawCancelAll")}
+              </button>
+            </>
+          )}
+          {drawnLines.length > 0 && (
+            <>
+              {clickMode !== "none" && <div className="w-px h-3.5 bg-current/20 mx-1 shrink-0" />}
+              <span className="font-mono text-[10px] tabular-nums">
+                {drawnLines.length} {t("grafik.drawnLinesLabel")}
+              </span>
+              <button
+                onClick={() => setDrawnLines([])}
+                className="ml-auto shrink-0 font-mono text-[10px] min-h-[40px] px-2 flex items-center opacity-60 hover:opacity-100 hover:text-red-400"
+                title={t("grafik.clearLines")}
+              >
+                ✕
+              </button>
+            </>
+          )}
         </div>
       )}
 
