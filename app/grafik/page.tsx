@@ -28,7 +28,12 @@ import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
-  { ssr: false },
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[480px] rounded border border-border bg-bg-card animate-pulse" />
+    ),
+  },
 );
 
 const VOL_UP = "rgba(34,197,94,0.5)";
