@@ -490,29 +490,26 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Dominance */}
-      <div className="shrink-0 px-2 pt-2 pb-1.5 border-b border-border/50">
-        <p className="text-text-t4 font-mono text-[9px] uppercase tracking-widest mb-1.5">Dominance</p>
-        <div className="flex flex-col gap-0.5">
-          {([
-            { label: "BTC.D",  val: btcD,  chg: btcDChange24h },
-            { label: "ETH.D",  val: ethD,  chg: ethDChange24h },
-            { label: "USDT.D", val: usdtD, chg: null },
-          ] as const).map(({ label, val, chg }) => (
-            <div key={label} className="flex items-center justify-between">
-              <span className="text-text-t3 font-mono text-[10px]">{label}</span>
-              <div className="flex items-center gap-1">
-                {chg !== null && chg !== undefined && (
-                  <span className={`font-mono text-[9px] ${domChgColor(chg)}`}>
-                    {chg >= 0 ? "+" : ""}{chg.toFixed(1)}
-                  </span>
-                )}
-                <span className="text-text-t2 font-mono text-[10px] font-medium tabular-nums">
-                  {fmtDom(val)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="shrink-0 flex items-center border-b border-border/50">
+        {([
+          { label: "BTC.D",  val: btcD,  chg: btcDChange24h },
+          { label: "ETH.D",  val: ethD,  chg: ethDChange24h },
+          { label: "USDT.D", val: usdtD, chg: null },
+        ] as const).map(({ label, val, chg }, i) => (
+          <div key={label} className={`flex flex-col items-center flex-1 py-1.5 ${i < 2 ? "border-r border-border/30" : ""}`}>
+            <span className="text-text-t4 font-mono text-[8px] uppercase tracking-widest leading-none">{label}</span>
+            <span className="text-text-t2 font-mono text-[10px] font-medium tabular-nums leading-none mt-0.5">
+              {fmtDom(val)}
+            </span>
+            {chg !== null && chg !== undefined ? (
+              <span className={`font-mono text-[8px] leading-none ${domChgColor(chg)}`}>
+                {chg >= 0 ? "+" : ""}{chg.toFixed(1)}
+              </span>
+            ) : (
+              <span className="font-mono text-[8px] leading-none text-text-t4">—</span>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Header */}
@@ -932,7 +929,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
 /* ── WatchlistPanel (masaüstü yan panel) ── */
 export function WatchlistPanel({ activePair, onPairChange }: Props): React.ReactElement {
   return (
-    <div className="hidden md:flex flex-col border border-border bg-bg-card rounded-lg overflow-hidden select-none w-[266px] shrink-0 self-stretch">
+    <div className="hidden md:flex flex-col border border-border bg-bg-card rounded-lg overflow-hidden select-none w-[290px] shrink-0 self-stretch">
       <WatchlistContent activePair={activePair} onPairChange={onPairChange} />
     </div>
   );

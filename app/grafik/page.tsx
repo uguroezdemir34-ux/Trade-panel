@@ -22,7 +22,6 @@ import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel, MobileWatchlistView } from "@/components/grafik/WatchlistPanel";
-import { LivePriceStrip } from "@/components/karar/LivePriceStrip";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
 import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
 
@@ -179,8 +178,7 @@ export default function GrafikPage() {
   const theme = useSettingsStore((s) => s.theme);
 
   const [pair, setPair]           = useState<Pair>("BTC");
-  const [prioMs, setPrioMs]       = useState<number | null>(null);
-  usePriorityFetch(pair, setPrioMs);
+  usePriorityFetch(pair);
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
   const [mobileView, setMobileView] = useState<"list" | "chart">("list");
   const [showEma20, setShowEma20]   = useState(true);
@@ -596,20 +594,11 @@ export default function GrafikPage() {
 
       {/* ── Masaüstü: yan yana layout ── */}
       <div className="hidden md:flex gap-3 items-start">
-        <div className="hidden md:block">
-          <LivePriceStrip variant="vertical" />
-        </div>
         <WatchlistPanel activePair={pair} onPairChange={setPair} />
         <div className="flex-1 min-w-0 flex flex-col gap-3">
           {chartSection}
         </div>
       </div>
-      {/* DEV debug — priority fetch timing */}
-      {prioMs !== null && (
-        <div className="fixed bottom-2 right-2 z-50 bg-black/70 text-green-400 text-xs font-mono px-2 py-1 rounded pointer-events-none">
-          [PRIO] {pair} {prioMs}ms
-        </div>
-      )}
     </>
   );
 }
