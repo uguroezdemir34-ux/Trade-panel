@@ -36,6 +36,7 @@ import { type Candle, type Timeframe } from "@/lib/okx/candles";
 import { useCandleStore } from "@/lib/store/candleStore";
 import {
   fetchWithRetry,
+  getPriorityPair,
   runBatched,
   loadCache,
   saveCache,
@@ -134,16 +135,18 @@ export function useCandlePoller(): void {
       });
     }
 
-    // 1s gecikme: usePriorityFetch (BTC) tamamlanmadan başlatma
-    // Per-pair: 4 TF birlikte → composeScoreInput (4h >= 200) anında geçer
+    // 250ms: usePriorityFetch'in ilk OKX isteklerini göndermesine yetecek süre.
+    // Active pair getPriorityPair() ile filtrelendiği için tam bitmesini beklemek gerekmez.
     const initTimer = setTimeout(async () => {
+      const skipPair = getPriorityPair();
+      const pairsToFetch = PAIRS.filter((p) => p !== skipPair);
       const batchT0 = performance.now();
       await runBatched(
-        PAIRS.map((pair) => () => fetchPairAllTFs(pair)),
+        pairsToFetch.map((pair) => () => fetchPairAllTFs(pair)),
         MAX_CONCURRENT_INIT,
       );
-      perfLog({ type: "init_complete", totalMs: Math.round(performance.now() - batchT0), pairs: PAIRS.length });
-    }, 1_000);
+      perfLog({ type: "init_complete", totalMs: Math.round(performance.now() - batchT0), pairs: pairsToFetch.length });
+    }, 250);
 
     shortTimerRef.current = setInterval(fetchShort, POLL_INTERVAL_SHORT_MS);
     longTimerRef.current = setInterval(fetchLong, POLL_INTERVAL_LONG_MS);

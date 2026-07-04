@@ -18,6 +18,7 @@
 import { useEffect } from "react";
 import { useCandleStore } from "@/lib/store/candleStore";
 import {
+  setPriorityPair,
   fetchWithRetry,
   saveCache,
   cacheKey,
@@ -58,6 +59,7 @@ export function usePriorityFetch(
   const setError   = useCandleStore((s) => s.setError);
 
   useEffect(() => {
+    setPriorityPair(pair);
     // Step 1 — Sync: 2 dakikadan yeni cache varsa hemen store'a yaz.
     const snap = useCandleStore.getState().candles;
     let preloadedAny = false;
@@ -92,7 +94,6 @@ export function usePriorityFetch(
         );
       } finally {
         const ms = Math.round(performance.now() - t0);
-        console.log("[PRIO]", pair, "all 4 tf done in", ms, "ms");
         onDone?.(anySuccess, ms);
       }
     })();

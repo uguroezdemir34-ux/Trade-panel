@@ -56,6 +56,11 @@ export async function fetchWithRetry(
   return null;
 }
 
+/** usePriorityFetch tarafından şu an çekilen pair — poller init'te bu pair'i atlar. */
+let _priorityPair: string | null = null;
+export function setPriorityPair(pair: string): void { _priorityPair = pair; }
+export function getPriorityPair(): string | null { return _priorityPair; }
+
 /** Görevleri max N eşzamanlı çalıştır; staggerMs: worker başlangıç aralığı. */
 export async function runBatched(
   tasks: Array<() => Promise<void>>,
