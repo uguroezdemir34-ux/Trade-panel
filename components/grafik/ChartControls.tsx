@@ -92,8 +92,8 @@ export function ChartControls({
       </div>
 
       {/* Row 2 — Overlays + Tools */}
-      <div className="flex flex-nowrap items-center gap-1 px-3 py-2 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-        {/* Indicator dropdown — EMA/RSI/MACD/BB + İşlemler */}
+      <div className="flex items-center gap-1 px-3 py-2">
+        {/* Left: no overflow — absolute dropdown not clipped */}
         <IndicatorDropdown
           showEma20={showEma20}
           showEma50={showEma50}
@@ -111,18 +111,22 @@ export function ChartControls({
           onToggleTrades={onToggleTrades}
           label={t("grafik.indicators")}
         />
-        <Toggle active={showVolume} onClick={onToggleVolume} accent="#6366f1">
-          {t("grafik.showVolume")}
-        </Toggle>
-        <Toggle active={showVwap} onClick={onToggleVwap} accent="#f97316">
-          {t("grafik.showVwap")}
-        </Toggle>
-        <Toggle active={showSr} onClick={onToggleSr} accent="#a3e635">
-          {t("grafik.showSr")}
-        </Toggle>
-        <Toggle active={showSplit} onClick={onToggleSplit} accent="#6366f1">
-          {t("grafik.split")}
-        </Toggle>
+        {/* Center: scrollable toggles only — overflow confined here */}
+        <div className="flex flex-nowrap items-center gap-1 flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+          <Toggle active={showVolume} onClick={onToggleVolume} accent="#6366f1">
+            {t("grafik.showVolume")}
+          </Toggle>
+          <Toggle active={showVwap} onClick={onToggleVwap} accent="#f97316">
+            {t("grafik.showVwap")}
+          </Toggle>
+          <Toggle active={showSr} onClick={onToggleSr} accent="#a3e635">
+            {t("grafik.showSr")}
+          </Toggle>
+          <Toggle active={showSplit} onClick={onToggleSplit} accent="#6366f1">
+            {t("grafik.split")}
+          </Toggle>
+        </div>
+        {/* Right: no overflow — absolute dropdown not clipped */}
         <ToolsDropdown
           showFlow={showFlow}
           clickMode={clickMode}
