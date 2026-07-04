@@ -846,7 +846,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                   {/* İsim bloğu */}
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`font-mono text-[13px] font-bold tracking-tight leading-tight whitespace-nowrap truncate ${isActive ? "" : "text-text-t1"}`}
+                      className={`font-mono text-[11px] font-bold tracking-tight leading-tight whitespace-nowrap truncate ${isActive ? "" : "text-text-t1"}`}
                       style={isActive ? { color } : undefined}
                     >
                       {pair}
@@ -867,15 +867,15 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
 
                   {/* Fiyat + değişim + QX skoru */}
                   <div className="w-[112px] shrink-0 flex flex-col items-end gap-1">
-                    <p className="font-mono text-[15px] font-bold text-text-t1 tabular-nums leading-none w-full text-right truncate">
+                    <p className="font-mono text-[13px] font-bold text-text-t1 tabular-nums leading-none w-full text-right truncate">
                       {last > 0 ? fmtPrice(last) : "—"}
                     </p>
                     <div className="flex items-center gap-1.5">
-                      <span className={`font-mono text-[12px] tabular-nums ${chgColor(chg)}`}>
+                      <span className={`font-mono text-[10px] tabular-nums ${chgColor(chg)}`}>
                         {fmtPct(chg)}
                       </span>
                       {sc != null && (
-                        <span className={`flex items-center justify-center w-9 h-5 rounded font-mono text-[11px] font-bold text-white ${scoreBg}`}>
+                        <span className={`flex items-center justify-center w-9 h-5 rounded font-mono text-[9px] font-bold text-white ${scoreBg}`}>
                           {sc}
                         </span>
                       )}
