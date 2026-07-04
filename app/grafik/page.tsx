@@ -61,7 +61,7 @@ function buildSeries(
     ema20: boolean; ema50: boolean; ema200: boolean; volume: boolean;
     rsi: boolean; macd: boolean; bb: boolean; vwap: boolean; sr: boolean;
     trades: boolean; alarmLevels: AlarmLevel[]; tradeLevels: TradeLevelLine[];
-    drawnLines: DrawnLine[]; livePrice?: number;
+    drawnLines: DrawnLine[];
   },
 ): ChartSeries {
   const candlePoints = candles.map((c) => ({
@@ -171,7 +171,6 @@ function buildSeries(
     bb: bbBands, vwap: vwapBands, alarmLevels: opts.alarmLevels,
     markers, srLevels, tradeLevels: opts.tradeLevels,
     drawnLines: opts.drawnLines,
-    currentPrice: opts.livePrice,
   };
 }
 
@@ -327,11 +326,10 @@ export default function GrafikPage() {
       volume: showVolume, rsi: showRsi, macd: showMacd, bb: showBb,
       vwap: showVwap, sr: showSr, trades: showTrades,
       alarmLevels, tradeLevels, drawnLines,
-      livePrice: livePrice ?? undefined,
     }),
     [candles, trades, pair, showEma20, showEma50, showEma200, showVolume,
      showRsi, showMacd, showBb, showVwap, showSr, showTrades,
-     alarmLevels, tradeLevels, drawnLines, livePrice],
+     alarmLevels, tradeLevels, drawnLines],
   );
 
   // Secondary series (split view — EMA200 + volume only, same drawnLines)
@@ -342,9 +340,8 @@ export default function GrafikPage() {
       volume: showVolume, rsi: false, macd: false, bb: false,
       vwap: false, sr: showSr, trades: false,
       alarmLevels: [], tradeLevels, drawnLines,
-      livePrice: livePrice ?? undefined,
     });
-  }, [showSplit, secCandles, trades, pair, showVolume, showSr, tradeLevels, drawnLines, livePrice]);
+  }, [showSplit, secCandles, trades, pair, showVolume, showSr, tradeLevels, drawnLines]);
 
   // Click handler dispatched to the appropriate mode
   const handlePriceClick = useCallback((price: number) => {
@@ -500,6 +497,7 @@ export default function GrafikPage() {
             theme={theme}
             onChartClick={handlePriceClick}
             resetKey={`${pair}_${timeframe}`}
+            currentPrice={livePrice ?? undefined}
           />
         </div>
 
@@ -517,6 +515,7 @@ export default function GrafikPage() {
                 theme={theme}
                 onChartClick={handlePriceClick}
                 resetKey={`${pair}_${secTf}`}
+                currentPrice={livePrice ?? undefined}
               />
             ) : (
               <div className="flex items-center justify-center h-[360px] rounded border border-border bg-bg-card">
