@@ -66,21 +66,16 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Sayfalar: network-first, offline fallback
+  // Sayfalar: stale-while-revalidate — cache varsa anında sun, arka planda güncelle
   event.respondWith(
-    fetch(request)
-      .then((res) => {
-        if (res.ok) {
-          const clone = res.clone();
-          caches.open(CACHE).then((c) => c.put(request, clone));
-        }
-        return res;
-      })
-      .catch(() =>
-        caches
-          .match(request)
-          .then((cached) => cached ?? caches.match(OFFLINE_PAGE)),
-      ),
+    caches.match(request).then((cached) => {
+      const networkFetch = fetch(request).then((response) => {
+        caches.open(CACHE).then((cache) => cache.put(request, response.clone()));
+        return response;
+      });
+      event.waitUntil(networkFetch.catch(() => {}));
+      return cached || networkFetch;
+    }),
   );
 });
 

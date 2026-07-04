@@ -46,7 +46,6 @@ export function BottomNav(): React.ReactElement {
             <li key={tab.id}>
               <Link
                 href={tab.path}
-                prefetch={false}
                 onClick={() => {
                   if (hydrated) setLastTab(tab.id);
                 }}
