@@ -10,6 +10,22 @@
 "use client";
 
 import { useEffect } from "react";
+
+// --- debug instrumentation (?debug=1 only) ---
+function isDebug(): boolean {
+  if (typeof window === "undefined") return false;
+  try { return new URLSearchParams(window.location.search).get("debug") === "1"; }
+  catch { return false; }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function perfLog(entry: Record<string, unknown>): void {
+  if (!isDebug()) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w = window as any;
+  if (!w.__PERF_LOG__) w.__PERF_LOG__ = [];
+  w.__PERF_LOG__.push({ ...entry, _ts: Date.now() });
+}
+// --- end debug ---
 import { PAIRS } from "@/lib/constants/pairs";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
@@ -66,6 +82,7 @@ export function useScoreEngine(): void {
 
   useEffect(() => {
     const now = Date.now();
+    const engineT0 = isDebug() ? performance.now() : 0;
 
     // Snapshot — subscription yok, re-render tetiklemiyor
     const marketStore = useMarketStore.getState();
@@ -203,7 +220,9 @@ export function useScoreEngine(): void {
           } as DirectionInput);
           const srResult = detectSRLevels(c4hInd, c1hInd, input.px, direction, input.volRatio);
           const srModifier = srResult.modifier * SR_SCALE_FACTOR;
+          const scoreT0 = isDebug() ? performance.now() : 0;
           const result = computeScore({ ...input, srModifier, scorerWeights: scorerWeights ?? null, mtfResult });
+          perfLog({ type: "score_compute", pair, durationMs: +((performance.now() - scoreT0).toFixed(2)) });
           setResult(pair as Pair, result, now);
         } catch {
           // Ignore scoring errors — stale result remains until next candle update
@@ -215,5 +234,6 @@ export function useScoreEngine(): void {
         setSkipped(pair as Pair, now);
       }
     }
+    perfLog({ type: "engine_cycle", totalMs: +((performance.now() - engineT0).toFixed(1)), pairs: PAIRS.length });
   }, [candles, setResult, scorerWeights]);
 }

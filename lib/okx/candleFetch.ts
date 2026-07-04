@@ -42,12 +42,16 @@ export async function fetchWithRetry(
   pair: string,
   tf: Timeframe,
   limit: number,
+  onRetry?: (waitMs: number, attempt: number) => void,
 ): Promise<Candle[] | null> {
   const delays = [1_000, 3_000];
   for (let i = 0; i <= delays.length; i++) {
     const result = await fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
     if (result) return result;
-    if (i < delays.length) await new Promise<void>((r) => setTimeout(r, delays[i]));
+    if (i < delays.length) {
+      onRetry?.(delays[i], i + 1);
+      await new Promise<void>((r) => setTimeout(r, delays[i]));
+    }
   }
   return null;
 }

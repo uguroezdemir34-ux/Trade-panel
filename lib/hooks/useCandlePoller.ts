@@ -15,6 +15,22 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+
+// --- debug instrumentation (?debug=1 only) ---
+function isDebug(): boolean {
+  if (typeof window === "undefined") return false;
+  try { return new URLSearchParams(window.location.search).get("debug") === "1"; }
+  catch { return false; }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function perfLog(entry: Record<string, unknown>): void {
+  if (!isDebug()) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w = window as any;
+  if (!w.__PERF_LOG__) w.__PERF_LOG__ = [];
+  w.__PERF_LOG__.push({ ...entry, _ts: Date.now() });
+}
+// --- end debug ---
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { type Candle, type Timeframe } from "@/lib/okx/candles";
 import { useCandleStore } from "@/lib/store/candleStore";
@@ -66,6 +82,8 @@ export function useCandlePoller(): void {
 
   /** İlk yükleme: pair başına 4 TF birlikte çek (usePriorityFetch mantığı). */
   async function fetchPairAllTFs(pair: string): Promise<void> {
+    const t0 = performance.now();
+    let pairRetries = 0;
     const TFS: Array<[Timeframe, number]> = [
       ["15m", CANDLE_LIMIT],
       ["1h",  CANDLE_LIMIT],
@@ -74,12 +92,19 @@ export function useCandlePoller(): void {
     ];
     await Promise.all(
       TFS.map(([tf, limit]) =>
-        fetchWithRetry(pair, tf, limit).then((c) => {
+        fetchWithRetry(pair, tf, limit, (waitMs, attempt) => {
+          pairRetries++;
+          perfLog({ type: "fetch_retry", pair, tf, attempt, waitMs });
+        }).then((c) => {
           if (c) { setCandles(pair as Pair, tf, c, Date.now()); saveCache(pair, tf, c); }
-          else setError(pair as Pair, tf, "fetch_failed");
+          else {
+            setError(pair as Pair, tf, "fetch_failed");
+            perfLog({ type: "fetch_failed", pair, tf });
+          }
         }),
       ),
     );
+    perfLog({ type: "fetch_pair", pair, durationMs: Math.round(performance.now() - t0), retries: pairRetries });
   }
 
   async function fetchShort(): Promise<void> {
@@ -112,10 +137,12 @@ export function useCandlePoller(): void {
     // 1s gecikme: usePriorityFetch (BTC) tamamlanmadan başlatma
     // Per-pair: 4 TF birlikte → composeScoreInput (4h >= 200) anında geçer
     const initTimer = setTimeout(async () => {
+      const batchT0 = performance.now();
       await runBatched(
         PAIRS.map((pair) => () => fetchPairAllTFs(pair)),
         MAX_CONCURRENT_INIT,
       );
+      perfLog({ type: "init_complete", totalMs: Math.round(performance.now() - batchT0), pairs: PAIRS.length });
     }, 1_000);
 
     shortTimerRef.current = setInterval(fetchShort, POLL_INTERVAL_SHORT_MS);
