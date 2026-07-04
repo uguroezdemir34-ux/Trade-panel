@@ -1,20 +1,26 @@
 "use client";
 
-import type { Position } from "@/lib/okx/positions";
+import { usePositionStore } from "@/lib/store/positionStore";
+import { useMarketStore } from "@/lib/store/marketStore";
+import { useSettingsStore } from "@/lib/store/settingsStore";
 import { computeLiveUpl, computeRoe } from "@/lib/sizer/position-pnl";
 import { formatPrice, formatPercent } from "@/lib/i18n/format";
-import { useSettingsStore } from "@/lib/store/settingsStore";
 
 interface Props {
-  position: Position;
-  livePrice: number;
+  pair: string;
 }
 
-export function PositionOverlayBar({ position, livePrice }: Props): React.ReactElement {
+export function PositionOverlayBar({ pair }: Props): React.ReactElement | null {
+  const position = usePositionStore(
+    (s) => s.positions.find((p) => p.pair === pair && p.direction !== "NEUTRAL") ?? null,
+  );
+  const livePrice = useMarketStore((s) => s.prices[pair]?.last ?? null);
   const locale = useSettingsStore((s) => s.locale);
+
+  if (!position || livePrice === null) return null;
+
   const upl = computeLiveUpl(position, livePrice);
   const roe = computeRoe(position, livePrice);
-
   const isLong = position.direction === "LONG";
   const uplPositive = upl >= 0;
   const uplColor = uplPositive ? "text-signal-green" : "text-signal-red";
@@ -28,7 +34,6 @@ export function PositionOverlayBar({ position, livePrice }: Props): React.ReactE
           : "border-signal-red/30 bg-signal-red/5",
       ].join(" ")}
     >
-      {/* Direction badge */}
       <span
         className={`shrink-0 text-[10px] font-bold uppercase tracking-widest ${isLong ? "text-signal-green" : "text-signal-red"}`}
       >
@@ -37,7 +42,6 @@ export function PositionOverlayBar({ position, livePrice }: Props): React.ReactE
 
       <span className="shrink-0 text-text-t4">·</span>
 
-      {/* Entry price */}
       <span className="shrink-0 text-text-t3">Entry</span>
       <span className="shrink-0 tabular-nums text-text-t1">
         {formatPrice(position.entryPx, locale)}
@@ -45,7 +49,6 @@ export function PositionOverlayBar({ position, livePrice }: Props): React.ReactE
 
       <span className="shrink-0 text-text-t4">·</span>
 
-      {/* UPL + ROE */}
       <span className={`shrink-0 tabular-nums font-bold ${uplColor}`}>
         {formatPrice(upl, locale, true)}
       </span>
@@ -55,10 +58,8 @@ export function PositionOverlayBar({ position, livePrice }: Props): React.ReactE
 
       <span className="shrink-0 text-text-t4">·</span>
 
-      {/* Leverage */}
       <span className="shrink-0 text-text-t3">{position.leverage}×</span>
 
-      {/* Size — pushed right */}
       <span className="ml-auto shrink-0 tabular-nums text-[10px] text-text-t4">
         {position.size} {position.pair}
       </span>

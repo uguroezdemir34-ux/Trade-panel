@@ -310,11 +310,6 @@ export default function GrafikPage() {
     return lines;
   }, [positions, trades, pair]);
 
-  const activePosition = useMemo(
-    () => (positions ?? []).find((p) => p.pair === pair && p.direction !== "NEUTRAL") ?? null,
-    [positions, pair],
-  );
-
   const alarmLevels = useMemo<AlarmLevel[]>(
     () =>
       alarms
@@ -426,6 +421,8 @@ export default function GrafikPage() {
         showVwap={showVwap}
         showSr={showSr}
       />
+
+      <PositionOverlayBar pair={pair} />
 
       {/* Active mode indicator + drawn lines count */}
       {(clickMode !== "none" || drawnLines.length > 0) && (
@@ -611,9 +608,6 @@ export default function GrafikPage() {
               <span className="font-mono text-sm font-bold text-text-t1">{pair} · USDT</span>
             </div>
             {chartSection}
-            {activePosition !== null && livePrice !== null && (
-              <PositionOverlayBar position={activePosition} livePrice={livePrice} />
-            )}
           </div>
         )}
       </div>
@@ -623,9 +617,6 @@ export default function GrafikPage() {
         <WatchlistPanel activePair={pair} onPairChange={setPair} />
         <div className="flex-1 min-w-0 flex flex-col gap-3">
           {chartSection}
-          {activePosition !== null && livePrice !== null && (
-            <PositionOverlayBar position={activePosition} livePrice={livePrice} />
-          )}
         </div>
       </div>
     </>
