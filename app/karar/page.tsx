@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useScoreStore } from "@/lib/store/scoreStore";
@@ -155,6 +155,18 @@ export default function KararPage() {
   const fgValue = useMacroStore((s) => s.fgValue);
   const marketCap = useMacroStore((s) => s.marketCap);
   const oiVelocityForPair = useMacroStore((s) => s.oiVelocity[activePair] ?? null);
+
+  const handleCloseMarketPulse = useCallback(() => setShowMarketPulse(false), []);
+
+  const snapScoresByPair = useMemo(() => {
+    const out: Partial<Record<string, number[]>> = {};
+    for (const p of PAIRS) {
+      out[p] = (scoreHistory[p] ?? [])
+        .filter((s) => typeof s.score === "number" && isFinite(s.score))
+        .map((s) => s.score);
+    }
+    return out;
+  }, [scoreHistory]);
 
   // Keyboard shortcuts: 1-9 / [ ] / G / ?
   useEffect(() => {
@@ -513,7 +525,7 @@ export default function KararPage() {
       {/* Header row: MarketPulseWidget + keyboard shortcut */}
       <div className="flex items-center justify-between -mt-1">
         {showMarketPulse && (
-          <MarketPulseWidget onClose={() => setShowMarketPulse(false)} />
+          <MarketPulseWidget onClose={handleCloseMarketPulse} />
         )}
         <div className={showMarketPulse ? "" : "ml-auto"}>
           <button
@@ -628,10 +640,6 @@ export default function KararPage() {
               const dir = pr?.direction;
               const isActive = activePair === p;
 
-              /* Score history snapshots — valid numbers only */
-              const snaps = (scoreHistory[p] ?? []).filter(
-                (s) => typeof s.score === "number" && isFinite(s.score),
-              );
 
               const goGap = v === "go" && score !== undefined && pr?.effectiveThreshold !== undefined
                 ? score - pr.effectiveThreshold
@@ -748,7 +756,7 @@ export default function KararPage() {
                         <ScoreRingV2
                           score={score}
                           goThreshold={pr.goThreshold}
-                          snaps={snaps.map((s) => s.score)}
+                          snaps={snapScoresByPair[p] ?? []}
                           size={52}
                           id={p}
                         />

@@ -1,4 +1,5 @@
 "use client";
+import { memo } from "react";
 
 interface Props {
   score: number;
@@ -41,7 +42,7 @@ function buildSparkPath(snaps: number[], cx: number, cy: number, innerR: number)
   return d;
 }
 
-export function ScoreRingV2({
+function ScoreRingV2Impl({
   score,
   goThreshold: _goThreshold,
   snaps = [],
@@ -129,3 +130,11 @@ export function ScoreRingV2({
     </svg>
   );
 }
+
+export const ScoreRingV2 = memo(ScoreRingV2Impl, (prev, next) =>
+  prev.score === next.score &&
+  prev.goThreshold === next.goThreshold &&
+  prev.size === next.size &&
+  prev.id === next.id &&
+  prev.snaps === next.snaps
+);

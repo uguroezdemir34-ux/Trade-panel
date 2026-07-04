@@ -1,11 +1,12 @@
 "use client";
+import { memo } from "react";
 
 interface Props {
   value?: number;
   onClose?: () => void;
 }
 
-export function MarketPulseWidget({ value = 62, onClose }: Props) {
+export const MarketPulseWidget = memo(function MarketPulseWidget({ value = 62, onClose }: Props) {
   return (
     <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface-s2 border border-white/10 text-xs">
       {/* Spinner */}
@@ -44,4 +45,4 @@ export function MarketPulseWidget({ value = 62, onClose }: Props) {
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
-}
+});
