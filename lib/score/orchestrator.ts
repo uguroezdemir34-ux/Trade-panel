@@ -54,8 +54,6 @@ import {
   checkCorrelationCluster,
   checkAtrRegime,
   checkDailyTrendOpposite,
-  checkSpikeCandle,
-  checkEmaDistance,
 } from "./blocks";
 import { getBucketStats, type Trade } from "@/lib/bucket/stats";
 import {
@@ -254,8 +252,6 @@ export interface ScoreReasons {
   lockRamp?: string;
   pullback?: string;
   pullbackThreshold?: string;
-  spikeCandle?: string;
-  emaDistance?: string;
 }
 
 export interface ScoreResult {
@@ -543,18 +539,6 @@ export function computeScore(input: ScoreInput): ScoreResult {
     if (mtfOpposite) {
       softBlocks.push("📅 MTF ters trend — günlük trend sinyale karşı");
     }
-  }
-
-  // ───── Spike candle + EMA distance soft blocks ─────
-  const spikeBlock = checkSpikeCandle(closes1h);
-  if (spikeBlock) {
-    softBlocks.push(spikeBlock);
-    reasons.spikeCandle = spikeBlock;
-  }
-  const emaDistBlock = checkEmaDistance(px, ema21_1h, direction);
-  if (emaDistBlock) {
-    softBlocks.push(emaDistBlock);
-    reasons.emaDistance = emaDistBlock;
   }
 
   // POC (Point of Control) — gölge modda: soft block'a eklenmez, sadece reason'a kaydedilir
