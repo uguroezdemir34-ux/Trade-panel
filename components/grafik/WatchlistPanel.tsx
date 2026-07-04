@@ -579,7 +579,7 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
                 {/* Pair info — navigasyon */}
                 <button
                   onClick={() => onPairChange(pair)}
-                  className={`flex-1 grid ${GRID_COLS} gap-x-1 items-center px-2 py-1.5 text-left min-w-0`}
+                  className={`flex-1 grid ${GRID_COLS} gap-x-1 items-center px-2 py-2.5 text-left min-w-0`}
                 >
                   <span className={`font-mono text-[10px] font-semibold truncate ${isActive ? "text-brand" : "text-text-t2"}`}>
                     {pair}

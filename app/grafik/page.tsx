@@ -436,7 +436,7 @@ export default function GrafikPage() {
             : t("grafik.drawPrice")}
           <button
             onClick={() => handleSetClickMode("none")}
-            className="ml-auto opacity-60 hover:opacity-100"
+            className="ml-auto min-h-[40px] px-2 flex items-center opacity-60 hover:opacity-100"
           >
             {t("grafik.drawCancelAll")}
           </button>
@@ -455,7 +455,7 @@ export default function GrafikPage() {
               <button
                 key={label}
                 onClick={() => void copyToClipboard(fmtPrice(capturedPrice))}
-                className={`rounded border px-2 py-0.5 font-mono text-2xs tracking-wider transition-colors ${
+                className={`rounded border px-2 py-2 font-mono text-2xs tracking-wider transition-colors ${
                   label === "SL"
                     ? "border-red-500/40 text-red-400 hover:bg-red-500/10"
                     : label.startsWith("TP")
