@@ -1,5 +1,6 @@
 "use client";
 import { memo } from "react";
+import { useSettingsStore } from "@/lib/store/settingsStore";
 
 interface Props {
   score: number;
@@ -7,6 +8,11 @@ interface Props {
   snaps?: number[];
   size?: number;
   id?: string;
+}
+
+// isDark is injected by the public ScoreRingV2 wrapper so the comparator can see it
+interface InternalProps extends Props {
+  isDark: boolean;
 }
 
 function bandColors(score: number): [string, string, string] {
@@ -48,15 +54,23 @@ function ScoreRingV2Impl({
   snaps = [],
   size = 60,
   id = "ring2",
-}: Props): React.ReactElement {
+  isDark,
+}: InternalProps): React.ReactElement {
   const strokeWidth   = 6;
   const radius        = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset        = circumference - (Math.min(Math.max(score, 0), 100) / 100) * circumference;
   const [gradFrom, gradTo, glowColor] = bandColors(score);
   const gradientId    = `sgv2-${id}`;
-  const trackColor    = `${gradFrom}1f`; // band rengi %12 — hafif parlayan yiv
+  const bezelGradId   = `sgv2-bezel-${id}`;
+  const trackColor    = `${gradFrom}1f`;
   const sparkPath     = buildSparkPath(snaps, size / 2, size / 2, radius - strokeWidth - 1);
+
+  // Bezel gradient stops — dark: silver/gunmetal, light: gold/bronze
+  const bezelStop0 = isDark ? "#c8cdd4" : "#e8d880";
+  const bezelStop1 = isDark ? "#6e7880" : "#b09030";
+  const bezelStop2 = isDark ? "#3a4048" : "#7a6020";
+  const bezelStop3 = isDark ? "#1e2228" : "#3a2c08";
 
   return (
     <svg
@@ -76,7 +90,29 @@ function ScoreRingV2Impl({
           <stop offset="0%"   stopColor={gradFrom} />
           <stop offset="100%" stopColor={gradTo}   />
         </linearGradient>
+
+        {/* Metallic bezel gradient — dark: silver/gunmetal, light: gold/bronze */}
+        <linearGradient
+          id={bezelGradId}
+          x1="0" y1="0"
+          x2="0" y2={size}
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%"   stopColor={bezelStop0} />
+          <stop offset="35%"  stopColor={bezelStop1} />
+          <stop offset="70%"  stopColor={bezelStop2} />
+          <stop offset="100%" stopColor={bezelStop3} />
+        </linearGradient>
       </defs>
+
+      {/* Metallic bezel ring */}
+      <circle
+        cx={size / 2} cy={size / 2} r={size / 2 - 1.5}
+        fill="none"
+        stroke={`url(#${bezelGradId})`}
+        strokeWidth={2.5}
+        opacity={0.85}
+      />
 
       {/* Sparkline — smooth cubic bezier */}
       {sparkPath && (
@@ -91,7 +127,7 @@ function ScoreRingV2Impl({
         />
       )}
 
-      {/* Track halkası — band rengiyle tonlanmış yiv */}
+      {/* Track ring — band-tinted groove */}
       <circle
         cx={size / 2} cy={size / 2} r={radius}
         fill="none"
@@ -99,7 +135,7 @@ function ScoreRingV2Impl({
         strokeWidth={strokeWidth}
       />
 
-      {/* Progress halkası — güçlü çift glow */}
+      {/* Progress ring — dual glow */}
       <circle
         cx={size / 2} cy={size / 2} r={radius}
         fill="none"
@@ -115,7 +151,21 @@ function ScoreRingV2Impl({
         }}
       />
 
-      {/* Skor rakamı — tam orta, band rengi + subtle glow */}
+      {/* Emboss highlight — 1px offset layer behind main score text */}
+      <text
+        x={size / 2 - 1} y={size / 2 - 1}
+        textAnchor="middle" dominantBaseline="central"
+        fill={isDark ? "#ffffff" : "#fffbe8"}
+        fontWeight="700"
+        fontFamily="ui-monospace, SFMono-Regular, monospace"
+        fontSize={size * 0.36}
+        opacity={0.18}
+        aria-hidden
+      >
+        {score}
+      </text>
+
+      {/* Score number — centered, band color + subtle glow */}
       <text
         x="50%" y="50%"
         textAnchor="middle" dominantBaseline="central"
@@ -131,10 +181,16 @@ function ScoreRingV2Impl({
   );
 }
 
-export const ScoreRingV2 = memo(ScoreRingV2Impl, (prev, next) =>
+const ScoreRingV2Memo = memo(ScoreRingV2Impl, (prev, next) =>
   prev.score === next.score &&
   prev.goThreshold === next.goThreshold &&
   prev.size === next.size &&
   prev.id === next.id &&
-  prev.snaps === next.snaps
+  prev.snaps === next.snaps &&
+  prev.isDark === next.isDark   // ← tema değişince re-render tetiklenir
 );
+
+export function ScoreRingV2(props: Props): React.ReactElement {
+  const isDark = useSettingsStore((s) => s.theme) === "dark";
+  return <ScoreRingV2Memo {...props} isDark={isDark} />;
+}
