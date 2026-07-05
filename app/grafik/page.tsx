@@ -23,6 +23,7 @@ import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel, MobileWatchlistView } from "@/components/grafik/WatchlistPanel";
+import { PairDropdownMini } from "@/components/grafik/PairDropdownMini";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
 import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
 
@@ -195,6 +196,7 @@ export default function GrafikPage() {
 
   // New tool state (not persisted — session only)
   const [showSplit, setShowSplit]       = useState(false);
+  const [secPair, setSecPair]           = useState<Pair>("ETH");
   const [showFlow, setShowFlow]         = useState(false);
   const [clickMode, setClickMode]       = useState<ChartClickMode>("none");
   const [drawnLines, setDrawnLines]     = useState<DrawnLine[]>([]);
@@ -254,11 +256,11 @@ export default function GrafikPage() {
   useEffect(() => {
     if (!showSplit) { setSecCandles([]); return; }
     setSecLoading(true);
-    fetchCandles(pair, secTf, 200)
+    fetchCandles(secPair, secTf, 200)
       .then((data) => { setSecCandles(data ?? []); })
       .catch(() => { setSecCandles([]); })
       .finally(() => { setSecLoading(false); });
-  }, [showSplit, pair, secTf]);
+  }, [showSplit, secPair, secTf]);
 
   // Live candle stream — updates last candle via RAF-throttled WS (ADIM 3)
   useOkxCandleStream(pair, timeframe);
@@ -268,7 +270,8 @@ export default function GrafikPage() {
   const trades     = useTradesStore((s) => s.trades);
   const positions  = usePositionStore((s) => s.positions);
   const alarms     = usePriceAlarmStore((s) => s.alarms);
-  const livePrice  = useMarketStore((s) => s.prices[pair]?.last ?? null);
+  const livePrice    = useMarketStore((s) => s.prices[pair]?.last ?? null);
+  const secLivePrice = useMarketStore((s) => s.prices[secPair]?.last ?? null);
 
   const tradeLevels = useMemo<TradeLevelLine[]>(() => {
     const allPos = positions ?? [];
@@ -334,13 +337,13 @@ export default function GrafikPage() {
   // Secondary series (split view — EMA200 + volume only, same drawnLines)
   const secSeries = useMemo<ChartSeries | null>(() => {
     if (!showSplit || secCandles.length === 0) return null;
-    return buildSeries(secCandles, trades, pair, {
+    return buildSeries(secCandles, trades, secPair, {
       ema20: false, ema50: false, ema200: true,
       volume: showVolume, rsi: false, macd: false, bb: false,
       vwap: false, sr: showSr, trades: false,
       alarmLevels: [], tradeLevels, drawnLines,
     });
-  }, [showSplit, secCandles, trades, pair, showVolume, showSr, tradeLevels, drawnLines]);
+  }, [showSplit, secCandles, trades, secPair, showVolume, showSr, tradeLevels, drawnLines]);
 
   // Click handler dispatched to the appropriate mode
   const handlePriceClick = useCallback((price: number) => {
@@ -522,18 +525,21 @@ export default function GrafikPage() {
         {/* Secondary chart (split view) */}
         {showSplit && (
           <div className="flex-1 min-w-0">
-            <p className="mb-1 font-mono text-2xs text-text-t4 uppercase tracking-wider">
-              {pair} · {secTf.toUpperCase()}
-              {secLoading && <span className="ml-2 opacity-50">…</span>}
-            </p>
+            <div className="mb-1 flex items-center gap-1.5">
+              <PairDropdownMini value={secPair} onChange={setSecPair} />
+              <span className="font-mono text-2xs text-text-t4 uppercase tracking-wider">
+                · {secTf.toUpperCase()}
+              </span>
+              {secLoading && <span className="font-mono text-2xs text-text-t4 opacity-50">…</span>}
+            </div>
             {secSeries ? (
               <PriceChart
                 series={secSeries}
                 height={360}
                 theme={theme}
                 onChartClick={handlePriceClick}
-                resetKey={`${pair}_${secTf}`}
-                currentPrice={livePrice ?? undefined}
+                resetKey={`${secPair}_${secTf}`}
+                currentPrice={secLivePrice ?? undefined}
               />
             ) : (
               <div className="flex items-center justify-center h-[360px] rounded border border-border bg-bg-card">
