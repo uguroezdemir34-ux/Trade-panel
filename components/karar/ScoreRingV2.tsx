@@ -15,6 +15,20 @@ interface InternalProps extends Props {
   isDark: boolean;
 }
 
+function blendColor(base: string, tint: string, t: number): string {
+  const parse = (h: string) => [
+    parseInt(h.slice(1, 3), 16),
+    parseInt(h.slice(3, 5), 16),
+    parseInt(h.slice(5, 7), 16),
+  ];
+  const [br, bg, bb] = parse(base);
+  const [tr, tg, tb] = parse(tint);
+  const r = Math.round(br + (tr - br) * t);
+  const g = Math.round(bg + (tg - bg) * t);
+  const b = Math.round(bb + (tb - bb) * t);
+  return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
+}
+
 function bandColors(score: number): [string, string, string, boolean] {
   if (score >= 80) return ["#D4AF37", "#F0CC55", "#D4AF37", false]; // gold
   if (score >= 60) return ["#3F9C93", "#5CBAB0", "#3F9C93", false]; // sapphire
@@ -70,11 +84,14 @@ function ScoreRingV2Impl({
   const trackColor    = `${gradFrom}1f`;
   const sparkPath     = buildSparkPath(snaps, size / 2, size / 2, radius - strokeWidth - 1);
 
-  // Bezel gradient stops — dark: silver/gunmetal, light: gold/bronze
-  const bezelStop0 = isDark ? "#dde2e8" : "#f4e890";
-  const bezelStop1 = isDark ? "#8a9298" : "#c8a838";
-  const bezelStop2 = isDark ? "#2e3440" : "#6a5018";
-  const bezelStop3 = isDark ? "#14181e" : "#281e04";
+  // Bezel gradient stops — base metal + 12% band-color tint for subtle tone shift
+  const bezelBase0 = isDark ? "#dde2e8" : "#f4e890";
+  const bezelBase1 = isDark ? "#8a9298" : "#c8a838";
+  const bezelBase2 = isDark ? "#2e3440" : "#6a5018";
+  const bezelStop0 = blendColor(bezelBase0, gradFrom, 0.12);
+  const bezelStop1 = blendColor(bezelBase1, gradFrom, 0.12);
+  const bezelStop2 = blendColor(bezelBase2, gradFrom, 0.12);
+  const bezelStop3 = isDark ? "#14181e" : "#281e04"; // darkest stop — band tint not visible here
 
   return (
     <svg
