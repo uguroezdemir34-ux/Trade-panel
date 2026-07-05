@@ -57,20 +57,24 @@ function ScoreRingV2Impl({
   isDark,
 }: InternalProps): React.ReactElement {
   const strokeWidth   = 6;
-  const radius        = (size - strokeWidth) / 2;
+  const bezelStroke   = 4.5;                                    // defined before radius (TDZ-safe)
+  const bezelR        = size / 2 - bezelStroke / 2 - 0.5;      // outer edge = 29.5, inside viewBox
+  const radius        = (size - strokeWidth) / 2 - bezelStroke - 1; // inset to clear bezel gap
   const circumference = 2 * Math.PI * radius;
   const offset        = circumference - (Math.min(Math.max(score, 0), 100) / 100) * circumference;
   const [gradFrom, gradTo, glowColor] = bandColors(score);
   const gradientId    = `sgv2-${id}`;
   const bezelGradId   = `sgv2-bezel-${id}`;
+  const faceGradId    = `sgv2-face-${id}`;
+  const specGradId    = `sgv2-spec-${id}`;
   const trackColor    = `${gradFrom}1f`;
   const sparkPath     = buildSparkPath(snaps, size / 2, size / 2, radius - strokeWidth - 1);
 
   // Bezel gradient stops — dark: silver/gunmetal, light: gold/bronze
-  const bezelStop0 = isDark ? "#c8cdd4" : "#e8d880";
-  const bezelStop1 = isDark ? "#6e7880" : "#b09030";
-  const bezelStop2 = isDark ? "#3a4048" : "#7a6020";
-  const bezelStop3 = isDark ? "#1e2228" : "#3a2c08";
+  const bezelStop0 = isDark ? "#dde2e8" : "#f4e890";
+  const bezelStop1 = isDark ? "#8a9298" : "#c8a838";
+  const bezelStop2 = isDark ? "#2e3440" : "#6a5018";
+  const bezelStop3 = isDark ? "#14181e" : "#281e04";
 
   return (
     <svg
@@ -103,18 +107,45 @@ function ScoreRingV2Impl({
           <stop offset="70%"  stopColor={bezelStop2} />
           <stop offset="100%" stopColor={bezelStop3} />
         </linearGradient>
+
+        {/* Radial face gradient — dark: cool dark steel, light: warm ivory */}
+        <radialGradient
+          id={faceGradId}
+          cx="50%" cy="42%" r="55%"
+          fx="50%" fy="35%"
+        >
+          <stop offset="0%"   stopColor={isDark ? "#2a2e36" : "#ede8d8"} />
+          <stop offset="60%"  stopColor={isDark ? "#1a1e24" : "#d8d0b8"} />
+          <stop offset="100%" stopColor={isDark ? "#0e1016" : "#c4b890"} />
+        </radialGradient>
+
+        {/* Specular radial gradient — white fade, top-left highlight */}
+        <radialGradient
+          id={specGradId}
+          cx={size * 0.40} cy={size * 0.34} r={size * 0.17}
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop offset="0%"   stopColor="#ffffff" stopOpacity={isDark ? 0.50 : 0.38} />
+          <stop offset="100%" stopColor="#ffffff" stopOpacity={0} />
+        </radialGradient>
       </defs>
 
-      {/* Metallic bezel ring */}
+      {/* Face — radial gradient metallic inner surface */}
       <circle
-        cx={size / 2} cy={size / 2} r={size / 2 - 1.5}
-        fill="none"
-        stroke={`url(#${bezelGradId})`}
-        strokeWidth={2.5}
-        opacity={0.85}
+        cx={size / 2} cy={size / 2} r={radius - strokeWidth / 2}
+        fill={`url(#${faceGradId})`}
       />
 
-      {/* Sparkline — smooth cubic bezier */}
+      {/* Metallic bezel ring — geometrically outside track/progress gap */}
+      <circle
+        cx={size / 2} cy={size / 2} r={bezelR}
+        fill="none"
+        stroke={`url(#${bezelGradId})`}
+        strokeWidth={bezelStroke}
+        opacity={0.9}
+      />
+
+      {/* Sparkline — smooth cubic bezier, auto-scales with radius */}
       {sparkPath && (
         <path
           d={sparkPath}
@@ -151,15 +182,23 @@ function ScoreRingV2Impl({
         }}
       />
 
-      {/* Emboss highlight — 1px offset layer behind main score text */}
+      {/* Specular highlight — top-left metallic reflection, 0.6px inside face edge */}
+      <ellipse
+        cx={size * 0.40} cy={size * 0.34}
+        rx={size * 0.11} ry={size * 0.06}
+        fill={`url(#${specGradId})`}
+        transform={`rotate(-30 ${size * 0.40} ${size * 0.34})`}
+      />
+
+      {/* Emboss highlight — 1.5px offset layer behind main score text */}
       <text
-        x={size / 2 - 1} y={size / 2 - 1}
+        x={size / 2 - 1.5} y={size / 2 - 1.5}
         textAnchor="middle" dominantBaseline="central"
         fill={isDark ? "#ffffff" : "#fffbe8"}
         fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
         fontSize={size * 0.36}
-        opacity={0.18}
+        opacity={0.30}
         aria-hidden
       >
         {score}
@@ -187,7 +226,7 @@ const ScoreRingV2Memo = memo(ScoreRingV2Impl, (prev, next) =>
   prev.size === next.size &&
   prev.id === next.id &&
   prev.snaps === next.snaps &&
-  prev.isDark === next.isDark   // ← tema değişince re-render tetiklenir
+  prev.isDark === next.isDark
 );
 
 export function ScoreRingV2(props: Props): React.ReactElement {
