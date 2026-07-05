@@ -65,11 +65,12 @@ function fmtPct(chg: number | undefined | null): string {
 }
 function fmtPrice(p: number): string {
   if (p <= 0) return "—";
-  if (p < 0.00001) return p.toExponential(2);
-  if (p < 0.01)    return p.toFixed(6);
-  if (p < 1)       return p.toFixed(4);
-  if (p < 100)     return p.toFixed(3);
-  return p.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  if (p < 0.000001) return p.toExponential(2);
+  if (p < 0.001)    return p.toFixed(8);
+  if (p < 0.01)     return p.toFixed(6);
+  if (p < 1)        return p.toFixed(4);
+  if (p < 100)      return p.toFixed(4);
+  return p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function fmtAbs(abs: number, last: number): string {
   if (last <= 0) return "—";
