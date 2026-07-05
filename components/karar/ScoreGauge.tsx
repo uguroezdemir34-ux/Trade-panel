@@ -162,15 +162,15 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       {/* ── Highlight arc: top-left catch-light on ring (210°→315°, CW) */}
       <path
         d={ringHiPath}
-        fill="none" stroke={isDark ? "#c8b890" : "#f4e090"} strokeWidth="1.4"
-        strokeLinecap="round" opacity="0.32"
+        fill="none" stroke={isDark ? "#c8b890" : "#f4e090"} strokeWidth="2.0"
+        strokeLinecap="round" opacity="0.55"
       />
 
       {/* ── Shadow arc: bottom-right of ring (30°→60°, CW) */}
       <path
         d={ringShadowPath}
         fill="none" stroke={isDark ? "#0a0806" : "#2a1e06"} strokeWidth="2"
-        strokeLinecap="round" opacity="0.55"
+        strokeLinecap="round" opacity="0.75"
       />
 
       {/* ── Groove: dark inset channel between ring and face */}
@@ -321,6 +321,17 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
         area is transparent SVG — the card background shows through.
         Proof: (28-110)²+(222-108)²=6724+12996=19720 > 107²=11449.
       */}
+      {/* Emboss highlight — 1px up-left offset, light tone, low opacity */}
+      <text
+        x={27} y={221}
+        textAnchor="start"
+        fill={isDark ? "#ffffff" : "#fffbe8"}
+        opacity="0.18"
+        fontSize="44" fontWeight="700"
+        fontFamily="ui-monospace, SFMono-Regular, monospace"
+      >
+        {v}
+      </text>
       <text
         x={28} y={222}
         textAnchor="start"
