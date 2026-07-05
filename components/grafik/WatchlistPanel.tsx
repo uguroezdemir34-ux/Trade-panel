@@ -838,10 +838,10 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:brightness-110 transition-all select-none"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left active:brightness-110 transition-all select-none"
                 >
                   {/* Coin logosu */}
-                  <CoinLogo pair={pair} size={52} />
+                  <CoinLogo pair={pair} size={40} />
 
                   {/* İsim bloğu */}
                   <div className="flex-1 min-w-0">
@@ -859,9 +859,9 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                   {/* Sparkline */}
                   <div className="shrink-0">
                     {sparkPoints.length >= 2 ? (
-                      <Sparkline points={sparkPoints} color={sparkColor} width={62} height={32} />
+                      <Sparkline points={sparkPoints} color={sparkColor} width={50} height={24} />
                     ) : (
-                      <div style={{ width: 62, height: 32 }} />
+                      <div style={{ width: 50, height: 24 }} />
                     )}
                   </div>
 

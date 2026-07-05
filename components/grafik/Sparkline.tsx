@@ -38,10 +38,10 @@ export function Sparkline({ points, color = "#22c55e", width = 54, height = 26 }
       <polyline
         points={pts}
         stroke={color}
-        strokeWidth="1.5"
+        strokeWidth="0.8"
         strokeLinejoin="round"
         strokeLinecap="round"
-        opacity={0.9}
+        opacity={0.45}
       />
     </svg>
   );
