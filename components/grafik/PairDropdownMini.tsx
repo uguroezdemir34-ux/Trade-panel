@@ -12,7 +12,7 @@ export function PairDropdownMini({ value, onChange }: Props) {
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as Pair)}
-        className="appearance-none cursor-pointer rounded border border-border bg-bg-surface px-2 py-0.5 pr-5 font-mono text-2xs font-bold text-text-t1 uppercase tracking-wider transition-colors hover:border-text-t3 focus:outline-none focus:border-text-t2"
+        className="appearance-none cursor-pointer rounded border border-border bg-bg-card px-2 py-0.5 pr-5 max-w-[4.5rem] font-mono text-2xs font-bold text-text-t1 uppercase tracking-wider transition-colors hover:border-text-t3 focus:outline-none focus:border-text-t2"
       >
         {PAIRS.map((p) => (
           <option key={p} value={p}>{p}</option>

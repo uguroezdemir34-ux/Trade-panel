@@ -584,7 +584,7 @@ export default function GrafikPage() {
     timeframe, showEma20, showEma50, showEma200, showTrades, showVolume,
     showRsi, showMacd, showBb, showVwap, showSr, showSplit, showFlow,
     clickMode, drawnLines, capturedPrice, secLoading, secSeries, series,
-    pair, secTf, theme, t, handleSetClickMode, handlePriceClick,
+    pair, secPair, secTf, theme, t, handleSetClickMode, handlePriceClick,
   ]);
 
   return (
