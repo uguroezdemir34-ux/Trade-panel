@@ -15,12 +15,12 @@ interface InternalProps extends Props {
   isDark: boolean;
 }
 
-function bandColors(score: number): [string, string, string] {
-  if (score >= 80) return ["#D4AF37", "#F0CC55", "#D4AF37"]; // gold
-  if (score >= 60) return ["#3F9C93", "#5CBAB0", "#3F9C93"]; // sapphire
-  if (score >= 40) return ["#C08A3E", "#DCA65A", "#C08A3E"]; // bronze
-  if (score >= 30) return ["#B25C74", "#CE7890", "#B25C74"]; // wine
-  return ["#C0455A", "#DC6176", "#C0455A"];                   // crimson
+function bandColors(score: number): [string, string, string, boolean] {
+  if (score >= 80) return ["#D4AF37", "#F0CC55", "#D4AF37", false]; // gold
+  if (score >= 60) return ["#3F9C93", "#5CBAB0", "#3F9C93", false]; // sapphire
+  if (score >= 40) return ["#C08A3E", "#DCA65A", "#C08A3E", false]; // bronze
+  if (score >= 30) return ["#C4607E", "#E08AA8", "#C4607E", true];  // wine  (glow boost)
+  return ["#D44E65", "#F0708A", "#D44E65", true];                   // crimson (glow boost)
 }
 
 function buildSparkPath(snaps: number[], cx: number, cy: number, innerR: number): string {
@@ -62,7 +62,7 @@ function ScoreRingV2Impl({
   const radius        = (size - strokeWidth) / 2 - bezelStroke - 1; // inset to clear bezel gap
   const circumference = 2 * Math.PI * radius;
   const offset        = circumference - (Math.min(Math.max(score, 0), 100) / 100) * circumference;
-  const [gradFrom, gradTo, glowColor] = bandColors(score);
+  const [gradFrom, gradTo, glowColor, glowBoost] = bandColors(score);
   const gradientId    = `sgv2-${id}`;
   const bezelGradId   = `sgv2-bezel-${id}`;
   const faceGradId    = `sgv2-face-${id}`;
@@ -115,8 +115,9 @@ function ScoreRingV2Impl({
           fx="50%" fy="35%"
         >
           <stop offset="0%"   stopColor={isDark ? "#2a2e36" : "#ede8d8"} />
-          <stop offset="60%"  stopColor={isDark ? "#1a1e24" : "#d8d0b8"} />
-          <stop offset="100%" stopColor={isDark ? "#0e1016" : "#c4b890"} />
+          <stop offset="55%"  stopColor={isDark ? "#1a1e24" : "#d8d0b8"} />
+          <stop offset="82%"  stopColor={isDark ? "#07080c" : "#a89060"} />
+          <stop offset="100%" stopColor={isDark ? "#030406" : "#8a7040"} />
         </radialGradient>
 
         {/* Specular radial gradient — white fade, top-left highlight */}
@@ -178,7 +179,7 @@ function ScoreRingV2Impl({
         transform={`rotate(-90 ${size / 2} ${size / 2})`}
         style={{
           transition: "stroke-dashoffset 0.3s ease-out",
-          filter: `drop-shadow(0 0 4px ${glowColor}dd) drop-shadow(0 0 10px ${glowColor}55)`,
+          filter: `drop-shadow(0 0 4px ${glowColor}${glowBoost ? "ff" : "dd"}) drop-shadow(0 0 10px ${glowColor}${glowBoost ? "77" : "55"})`,
         }}
       />
 
