@@ -190,6 +190,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         fixRightEdge: true,
       },
       rightPriceScale: { borderColor: tc.border },
+      handleScroll: { vertTouchDrag: false },
       crosshair: { mode: 1 },
     });
     chartRef.current = chart;

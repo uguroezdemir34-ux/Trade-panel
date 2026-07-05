@@ -508,9 +508,12 @@ export default function GrafikPage() {
         {/* Primary chart */}
         <div className={showSplit ? "flex-1 min-w-0" : "w-full"}>
           {showSplit && (
-            <p className="mb-1 font-mono text-2xs text-text-t4 uppercase tracking-wider">
-              {pair} · {timeframe.toUpperCase()}
-            </p>
+            <div className="mb-1 flex items-center gap-1.5">
+              <PairDropdownMini value={pair} onChange={setPair} />
+              <span className="font-mono text-2xs text-text-t4 uppercase tracking-wider">
+                · {timeframe.toUpperCase()}
+              </span>
+            </div>
           )}
           <PriceChart
             series={series}
@@ -611,7 +614,8 @@ export default function GrafikPage() {
               >
                 {t("grafik.mobileBack")}
               </button>
-              <span className="font-mono text-sm font-bold text-text-t1">{pair} · USDT</span>
+              <PairDropdownMini value={pair} onChange={setPair} size="lg" />
+              <span className="font-mono text-sm font-bold text-text-t1 opacity-50">· USDT</span>
             </div>
             {chartSection}
           </div>
