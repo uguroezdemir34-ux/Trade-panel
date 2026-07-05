@@ -13,6 +13,8 @@ import { useTradesStore } from "@/lib/store/tradesStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { computeOiDivergence } from "@/lib/market/oi-divergence";
+import { computeMtfTrend } from "@/lib/market/mtfTrend";
+import type { MtfTrendResult } from "@/lib/market/mtfTrend";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
 import { useT, useLocale } from "@/lib/i18n/context";
@@ -167,6 +169,41 @@ export default function KararPage() {
     }
     return out;
   }, [scoreHistory]);
+
+  // MTF trend data for the pair grid — smart equality so only 1h/4h/1d candle closes trigger recompute
+  const allCandlesForMtf = useCandleStore(
+    (s) => s.candles,
+    (prev, next) => {
+      for (const pair of PAIRS) {
+        for (const tf of ["1h", "4h", "1d"] as const) {
+          const key = `${pair}_${tf}` as const;
+          const p = prev[key];
+          const n = next[key];
+          if (p === n) continue;
+          if (!p || !n || p.length !== n.length) return false;
+          const pLast = p[p.length - 1];
+          const nLast = n[n.length - 1];
+          if (!pLast || !nLast) return false;
+          if (pLast.ts !== nLast.ts || pLast.confirm !== nLast.confirm) return false;
+        }
+      }
+      return true;
+    },
+  );
+
+  const mtfResults = useMemo(() => {
+    const out: Partial<Record<Pair, MtfTrendResult>> = {};
+    for (const pair of PAIRS) {
+      const c1h = allCandlesForMtf[`${pair}_1h`] ?? EMPTY_CANDLES;
+      const c4h = allCandlesForMtf[`${pair}_4h`] ?? EMPTY_CANDLES;
+      const c1d = allCandlesForMtf[`${pair}_1d`] ?? EMPTY_CANDLES;
+      if (c1h.length >= 20) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        out[pair] = computeMtfTrend(pair, c1h as any, c4h as any, c1d as any);
+      }
+    }
+    return out;
+  }, [allCandlesForMtf]);
 
   // Keyboard shortcuts: 1-9 / [ ] / G / ?
   useEffect(() => {
@@ -773,6 +810,24 @@ export default function KararPage() {
                         <span translate="no" className="text-[8px] font-mono text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
                           {`Wait ${dirArrow}${score}`}
                         </span>
+                      </div>
+                    )}
+
+                    {/* MTF mini trend satırı: 1H / 4H / 1D */}
+                    {mtfResults[p]?.trends && (
+                      <div className="flex justify-center gap-2.5 mt-1 border-t border-border/30 pt-1">
+                        {mtfResults[p]!.trends.map((t) => (
+                          <span key={t.tf} className="flex flex-col items-center" style={{ gap: "1px" }}>
+                            <span className="text-2xs font-mono uppercase tracking-wider text-text-t4 leading-none">{t.tf}</span>
+                            <span className={`text-[10px] font-mono leading-none ${
+                              t.direction === "up"   ? "text-[#22c55e]"
+                              : t.direction === "down" ? "text-[#ef4444]/80"
+                              : "text-text-t4"
+                            }`}>
+                              {t.direction === "up" ? "▲" : t.direction === "down" ? "▼" : "─"}
+                            </span>
+                          </span>
+                        ))}
                       </div>
                     )}
 
