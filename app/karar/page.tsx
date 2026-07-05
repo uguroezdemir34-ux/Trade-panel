@@ -818,11 +818,11 @@ export default function KararPage() {
                       <div className="flex justify-center gap-2.5 mt-1 border-t border-border/30 pt-1">
                         {mtfResults[p]!.trends.map((t) => (
                           <span key={t.tf} className="flex flex-col items-center" style={{ gap: "1px" }}>
-                            <span className="text-2xs font-mono uppercase tracking-wider text-text-t4 leading-none">{t.tf}</span>
+                            <span className="text-2xs font-mono uppercase tracking-wider text-text-t2/70 leading-none">{t.tf}</span>
                             <span className={`text-[10px] font-mono leading-none ${
                               t.direction === "up"   ? "text-[#22c55e]"
                               : t.direction === "down" ? "text-[#ef4444]/80"
-                              : "text-text-t4"
+                              : "text-text-t2/50"
                             }`}>
                               {t.direction === "up" ? "▲" : t.direction === "down" ? "▼" : "─"}
                             </span>
