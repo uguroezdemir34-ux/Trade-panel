@@ -737,7 +737,7 @@ export default function KararPage() {
                       willChange: "box-shadow",
                     } : undefined}
                     className={[
-                      "w-full text-left rounded-lg border p-1.5 font-mono transition-colors",
+                      "w-full text-left rounded-lg border p-1.5 font-mono transition-colors card-depth",
                       isActive
                         ? `${activeBorderClass(score)} bg-surface-s2 text-text-t1`
                         : goStrength === "strong"
