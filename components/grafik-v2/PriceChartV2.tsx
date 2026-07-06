@@ -60,6 +60,15 @@ import {
 
 // ─── Module-level constants ────────────────────────────────────────────────
 
+function chartPriceFormat(price: number): { type: "price"; precision: number; minMove: number } {
+  if (price < 0.001)  return { type: "price", precision: 8, minMove: 0.00000001 };
+  if (price < 0.01)   return { type: "price", precision: 6, minMove: 0.000001   };
+  if (price < 1)      return { type: "price", precision: 4, minMove: 0.0001     };
+  if (price < 100)    return { type: "price", precision: 3, minMove: 0.001      };
+  if (price < 10_000) return { type: "price", precision: 2, minMove: 0.01       };
+  return                     { type: "price", precision: 0, minMove: 1          };
+}
+
 const EXT_SECONDS = 100_000_000;
 
 const FIB_RATIOS = [
@@ -804,8 +813,13 @@ export function PriceChartV2({
       didFitRef.current = false;
       chart.priceScale("right").applyOptions({ autoScale: true });
     }
+    if (series.candles.length > 0) {
+      const last = series.candles[series.candles.length - 1] as { close: number };
+      candleRef.current?.applyOptions({ priceFormat: chartPriceFormat(last.close) });
+    }
     if (!didFitRef.current && series.candles.length > 0) {
       chart.timeScale().fitContent();
+      chart.timeScale().scrollToRealTime();
       didFitRef.current = true;
     }
   }, [series, resetKey]); // eslint-disable-line react-hooks/exhaustive-deps
