@@ -37,6 +37,16 @@ const PriceChart = dynamic(
   },
 );
 
+const PriceChartV2 = dynamic(
+  () => import("@/components/grafik-v2/PriceChartV2").then((m) => m.PriceChartV2),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[480px] rounded border border-border bg-bg-card animate-pulse" />
+    ),
+  },
+);
+
 const VOL_UP = "rgba(34,197,94,0.5)";
 const VOL_DOWN = "rgba(239,68,68,0.5)";
 
@@ -177,7 +187,9 @@ function buildSeries(
 
 export default function GrafikPage() {
   const t = useT();
-  const theme = useSettingsStore((s) => s.theme);
+  const theme           = useSettingsStore((s) => s.theme);
+  const chartVersion    = useSettingsStore((s) => s.chartVersion);
+  const setChartVersion = useSettingsStore((s) => s.setChartVersion);
 
   const [pair, setPair]           = useState<Pair>("BTC");
   usePriorityFetch(pair);
@@ -503,6 +515,21 @@ export default function GrafikPage() {
         </div>
       )}
 
+      {/* V1 / V2 renderer toggle */}
+      <div className="flex justify-end">
+        <button
+          onClick={() => setChartVersion(chartVersion === "v2" ? "v1" : "v2")}
+          className={`font-mono text-2xs px-2 py-0.5 rounded border transition-colors ${
+            chartVersion === "v2"
+              ? "border-brand/40 bg-brand/10 text-brand"
+              : "border-border text-text-t4 hover:text-text-t2"
+          }`}
+          title={chartVersion === "v2" ? "Chart V2 aktif — V1'e geç" : "Chart V1 aktif — V2'ye geç"}
+        >
+          {chartVersion === "v2" ? "V2 ✓" : "V2"}
+        </button>
+      </div>
+
       {/* Chart grid — single or split */}
       <div className={`flex gap-3 ${showSplit ? "flex-col md:flex-row" : "flex-col"}`}>
         {/* Primary chart */}
@@ -515,14 +542,26 @@ export default function GrafikPage() {
               </span>
             </div>
           )}
-          <PriceChart
-            series={series}
-            height={showSplit ? 360 : 480}
-            theme={theme}
-            onChartClick={handlePriceClick}
-            resetKey={`${pair}_${timeframe}`}
-            currentPrice={livePrice ?? undefined}
-          />
+          {chartVersion === "v2" ? (
+            <PriceChartV2
+              series={series}
+              height={showSplit ? 360 : 480}
+              theme={theme}
+              onChartClick={handlePriceClick}
+              resetKey={`${pair}_${timeframe}`}
+              currentPrice={livePrice ?? undefined}
+              drawnLines={drawnLines}
+            />
+          ) : (
+            <PriceChart
+              series={series}
+              height={showSplit ? 360 : 480}
+              theme={theme}
+              onChartClick={handlePriceClick}
+              resetKey={`${pair}_${timeframe}`}
+              currentPrice={livePrice ?? undefined}
+            />
+          )}
         </div>
 
         {/* Secondary chart (split view) */}
@@ -536,14 +575,26 @@ export default function GrafikPage() {
               {secLoading && <span className="font-mono text-2xs text-text-t4 opacity-50">…</span>}
             </div>
             {secSeries ? (
-              <PriceChart
-                series={secSeries}
-                height={360}
-                theme={theme}
-                onChartClick={handlePriceClick}
-                resetKey={`${secPair}_${secTf}`}
-                currentPrice={secLivePrice ?? undefined}
-              />
+              chartVersion === "v2" ? (
+                <PriceChartV2
+                  series={secSeries}
+                  height={360}
+                  theme={theme}
+                  onChartClick={handlePriceClick}
+                  resetKey={`${secPair}_${secTf}`}
+                  currentPrice={secLivePrice ?? undefined}
+                  drawnLines={drawnLines}
+                />
+              ) : (
+                <PriceChart
+                  series={secSeries}
+                  height={360}
+                  theme={theme}
+                  onChartClick={handlePriceClick}
+                  resetKey={`${secPair}_${secTf}`}
+                  currentPrice={secLivePrice ?? undefined}
+                />
+              )
             ) : (
               <div className="flex items-center justify-center h-[360px] rounded border border-border bg-bg-card">
                 <span className="font-mono text-2xs text-text-t4">
@@ -588,6 +639,7 @@ export default function GrafikPage() {
     showRsi, showMacd, showBb, showVwap, showSr, showSplit, showFlow,
     clickMode, drawnLines, capturedPrice, secLoading, secSeries, series,
     pair, secPair, secTf, theme, t, handleSetClickMode, handlePriceClick,
+    chartVersion, setChartVersion,
   ]);
 
   return (
