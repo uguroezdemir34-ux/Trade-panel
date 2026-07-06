@@ -86,6 +86,7 @@ import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
 import { CoinIcon } from "@/components/karar/CoinIcon";
 import { ScoreRingV2 } from "@/components/karar/ScoreRingV2";
 import { MarketPulseWidget } from "@/components/karar/MarketPulseWidget";
+import { SignalAccuracyCard } from "@/components/karar/SignalAccuracyCard";
 
 export default function KararPage() {
   const t = useT();
@@ -558,6 +559,8 @@ export default function KararPage() {
       )}
 
       <SessionStatsBar />
+
+      <SignalAccuracyCard />
 
       {/* Header row: MarketPulseWidget + keyboard shortcut */}
       <div className="flex items-center justify-between -mt-1">
