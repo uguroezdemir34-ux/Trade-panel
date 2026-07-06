@@ -1,0 +1,28 @@
+name: Preview Test Deploy
+
+on:
+  push:
+    branches:
+      - test/rightoffset-isolation
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Discover Vercel project metadata
+        id: meta
+        run: |
+          JSON=$(curl -sf -H "Authorization: Bearer ${{ secrets.VERCEL_TOKEN }}" \
+            "https://api.vercel.com/v9/projects/quantix-os-new")
+          PROJECT_ID=$(echo $JSON | jq -r '.id')
+          ORG_ID=$(echo $JSON | jq -r '.accountId')
+          echo "project_id=$PROJECT_ID" >> $GITHUB_OUTPUT
+          echo "org_id=$ORG_ID" >> $GITHUB_OUTPUT
+
+      - name: Deploy preview
+        run: npx vercel --yes --token=${{ secrets.VERCEL_TOKEN }}
+        env:
+          VERCEL_ORG_ID: ${{ steps.meta.outputs.org_id }}
+          VERCEL_PROJECT_ID: ${{ steps.meta.outputs.project_id }}
