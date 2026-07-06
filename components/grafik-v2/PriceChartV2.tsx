@@ -502,7 +502,7 @@ export function PriceChartV2({
         borderColor: tc.border,
         rightOffset: CHART_DEFAULTS.rightOffset,
         fixLeftEdge: true,
-        fixRightEdge: true,
+        fixRightEdge: false,
       },
       rightPriceScale: { borderColor: tc.border },
       handleScroll: { vertTouchDrag: false },
