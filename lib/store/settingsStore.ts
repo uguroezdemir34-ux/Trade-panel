@@ -46,6 +46,9 @@ export type Theme = z.infer<typeof themeSchema>;
 const exchangeSchema = z.enum(["okx", "binance", "bybit"]);
 export type ActiveExchange = z.infer<typeof exchangeSchema>;
 
+const chartVersionSchema = z.enum(["v1", "v2"]);
+export type ChartVersion = z.infer<typeof chartVersionSchema>;
+
 const settingsSchema = z.object({
   lastTab: tabIdSchema,
   demoMode: z.boolean(),
@@ -65,6 +68,7 @@ const settingsSchema = z.object({
   }).nullable(),
   activeExchange: exchangeSchema,
   discordWebhookUrl: z.string().nullable(),
+  chartVersion: chartVersionSchema,
 });
 
 export type SettingsData = z.infer<typeof settingsSchema>;
@@ -89,6 +93,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   scorerWeights: null,
   activeExchange: "okx" as ActiveExchange,
   discordWebhookUrl: null,
+  chartVersion: "v1" as ChartVersion,
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -111,6 +116,7 @@ const KEYS = {
   scorerWeights: "scorer_weights",
   activeExchange: "active_exchange",
   discordWebhookUrl: "discord_webhook_url",
+  chartVersion: "chart_version",
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -134,6 +140,7 @@ interface SettingsStoreState extends SettingsData {
   setAudioAlertsEnabled: (on: boolean) => void;
   setActiveExchange: (e: ActiveExchange) => void;
   setDiscordWebhookUrl: (url: string | null) => void;
+  setChartVersion: (v: ChartVersion) => void;
   /** Tüm ayarları varsayılana sıfırla */
   reset: () => void;
   /** localStorage'tan tekrar yükle (SSR sonrası hydrate için) */
@@ -219,6 +226,11 @@ export function loadSettings(): SettingsData {
       KEYS.discordWebhookUrl,
       DEFAULT_SETTINGS.discordWebhookUrl,
       z.string().nullable(),
+    ),
+    chartVersion: loadFromStorage<ChartVersion>(
+      KEYS.chartVersion,
+      DEFAULT_SETTINGS.chartVersion,
+      chartVersionSchema,
     ),
   };
 }
@@ -312,6 +324,11 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ discordWebhookUrl: url });
   },
 
+  setChartVersion: (v) => {
+    saveToStorage(KEYS.chartVersion, v);
+    set({ chartVersion: v });
+  },
+
   reset: () => {
     // Sadece state'i sıfırla, localStorage'a yaz
     saveToStorage(KEYS.lastTab, DEFAULT_SETTINGS.lastTab);
@@ -332,6 +349,7 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     saveToStorage(KEYS.scorerWeights, DEFAULT_SETTINGS.scorerWeights);
     saveToStorage(KEYS.activeExchange, DEFAULT_SETTINGS.activeExchange);
     saveToStorage(KEYS.discordWebhookUrl, DEFAULT_SETTINGS.discordWebhookUrl);
+    saveToStorage(KEYS.chartVersion, DEFAULT_SETTINGS.chartVersion);
     set({ ...DEFAULT_SETTINGS });
   },
 
