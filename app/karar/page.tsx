@@ -87,6 +87,7 @@ import { CoinIcon } from "@/components/karar/CoinIcon";
 import { ScoreRingV2 } from "@/components/karar/ScoreRingV2";
 import { MarketPulseWidget } from "@/components/karar/MarketPulseWidget";
 import { SignalAccuracyCard } from "@/components/karar/SignalAccuracyCard";
+import { MissedSignalsBanner } from "@/components/karar/MissedSignalsBanner";
 
 export default function KararPage() {
   const t = useT();
@@ -537,6 +538,8 @@ export default function KararPage() {
           </span>
         </div>
       )}
+
+      <MissedSignalsBanner />
 
       <WalletSummaryBar />
 
