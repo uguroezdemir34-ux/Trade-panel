@@ -88,7 +88,7 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
 
   return (
     <svg
-      viewBox="0 0 220 232"
+      viewBox="0 0 220 218"
       className="w-full select-none"
       aria-label={`Skor: ${v}/100`}
     >
@@ -315,30 +315,25 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       <circle cx={CX} cy={CY} r="5.5"  fill="none" stroke="#72747a" strokeWidth="0.9" />
       <circle cx={CX - 2.5} cy={CY - 2.5} r="1.4" fill="#fff" opacity="0.42" />
 
-      {/*
-        ── SCORE NUMBER — sits BELOW the gauge disc, bottom-left corner.
-        At y=222 the outer disk (r=107, cy=108) does not cover x<56, so this
-        area is transparent SVG — the card background shows through.
-        Proof: (28-110)²+(222-108)²=6724+12996=19720 > 107²=11449.
-      */}
       {/* Emboss highlight — 1px up-left offset, light tone, low opacity */}
       <text
-        x={27} y={221}
-        textAnchor="start"
+        x={CX - 1} y={169}
+        textAnchor="middle"
         fill={isDark ? "#ffffff" : "#fffbe8"}
         opacity="0.18"
-        fontSize="44" fontWeight="700"
+        fontSize="32" fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
       >
         {v}
       </text>
+      {/* Score number — centered in the 90° bottom gap of the 270° arc */}
       <text
-        x={28} y={222}
-        textAnchor="start"
+        x={CX} y={170}
+        textAnchor="middle"
         fill={color}
-        stroke="#08090c" strokeWidth="5"
+        stroke="#08090c" strokeWidth="4"
         paintOrder="stroke fill"
-        fontSize="44" fontWeight="700"
+        fontSize="32" fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
         filter="url(#sg-text-depth)"
       >
