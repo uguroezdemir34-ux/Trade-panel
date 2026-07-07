@@ -526,7 +526,7 @@ export default function KararPage() {
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2 sm:gap-3">
       {/* Forward Test Mode banner */}
       {forwardTestMode && (
         <div className="flex items-center gap-2 rounded-lg border border-signal-green/30 bg-signal-green/8 px-3 py-2">
@@ -869,7 +869,7 @@ export default function KararPage() {
             <>
               {/* ── Premium hero card ── */}
               <div
-                className="rounded-xl flex flex-col gap-3 p-4"
+                className="rounded-xl flex flex-col gap-2 sm:gap-3 px-4 py-2 sm:py-4"
                 style={{
                   border: "1px solid transparent",
                   background: "linear-gradient(rgb(var(--bg-card)), rgb(var(--bg-card))) padding-box, linear-gradient(135deg, rgba(184, 140, 60, 0.38) 0%, rgba(90, 70, 25, 0.08) 50%, rgba(184, 140, 60, 0.38) 100%) border-box",
@@ -878,7 +878,7 @@ export default function KararPage() {
               >
 
               {/* QUANTIX OS header band */}
-              <div className="-mt-4 -mx-4 mb-1 px-4 py-1.5 rounded-t-[10px] flex items-center gap-2 select-none panel-header-band">
+              <div className="-mt-2 sm:-mt-4 -mx-4 mb-1 px-4 py-0.5 sm:py-1.5 rounded-t-[10px] flex items-center gap-2 select-none panel-header-band">
                 <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-text-t4">
                   QUANTIX OS
                 </span>
@@ -900,10 +900,10 @@ export default function KararPage() {
               </div>
 
               {/* 2-col from md (768px): left = info/badges, right = score gauge */}
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
+              <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-start md:gap-4">
 
                 {/* Left sub-col: price header + position strip + verdict + protection badges */}
-                <div className="flex flex-col gap-3 md:flex-1 md:min-w-0">
+                <div className="flex flex-col gap-2 sm:gap-3 md:flex-1 md:min-w-0">
 
                   {/* Price header */}
                   <PairPriceHeader
@@ -965,7 +965,7 @@ export default function KararPage() {
                 <div className="flex gap-2 items-start md:w-52 md:shrink-0">
 
                   {/* Gauge */}
-                  <div className="flex-1 min-w-0">
+                  <div className="w-[140px] shrink-0 md:flex-1 md:min-w-0">
                     <ScoreGauge
                       score={result.score}
                       threshold={result.effectiveThreshold}
@@ -974,7 +974,7 @@ export default function KararPage() {
                   </div>
 
                   {/* SM + FLOW badge + VOL DELTA + GO/F&G — kadranın sağında dikey sıra */}
-                  <div className="flex flex-col gap-1.5 w-[82px] shrink-0">
+                  <div className="grid grid-cols-2 gap-1 flex-1 md:flex md:flex-col md:gap-1.5 md:w-[82px] md:shrink-0">
 
                     {/* Smart Money */}
                     {flowResult && (
@@ -1603,7 +1603,7 @@ function PairPriceHeader({
     : "text-text-t3";
 
   return (
-    <div className="flex items-center justify-between bg-surface-s1 rounded-lg px-3 py-2.5">
+    <div className="flex items-center justify-between bg-surface-s1 rounded-lg px-3 py-2 sm:py-2.5">
       <span className="font-mono text-base font-bold text-text-t1 tracking-wide">{pair}</span>
       <div className="flex items-center gap-3">
         {price !== null && (

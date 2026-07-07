@@ -69,7 +69,7 @@ export function WalletSummaryBar() {
     <div className="rounded-xl border border-border bg-surface-s1 overflow-hidden">
 
       {/* ── Üst: Equity / Margin Barı / Günlük P&L ──────────────────── */}
-      <div className="grid grid-cols-3 gap-3 px-3 py-2.5">
+      <div className="grid grid-cols-3 gap-3 px-3 py-1.5 sm:py-2.5">
 
         {/* Toplam Özsermaye */}
         <div className="flex flex-col gap-0.5 min-w-0">
