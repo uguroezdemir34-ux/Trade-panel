@@ -88,6 +88,7 @@ import { ScoreRingV2 } from "@/components/karar/ScoreRingV2";
 import { MarketPulseWidget } from "@/components/karar/MarketPulseWidget";
 import { SignalAccuracyCard } from "@/components/karar/SignalAccuracyCard";
 import { MissedSignalsBanner } from "@/components/karar/MissedSignalsBanner";
+import { PositionAccordion } from "@/components/karar/PositionAccordion";
 
 export default function KararPage() {
   const t = useT();
@@ -154,7 +155,6 @@ export default function KararPage() {
   const trades = useTradesStore((s) => s.trades);
   const openPending = useTradesStore((s) => s.openPending);
   const openPositions = usePositionStore((s) => s.positions);
-  const openUpl = openPositions.reduce((sum, p) => sum + p.upl, 0);
   const funding = useMacroStore((s) => s.funding);
   const fgValue = useMacroStore((s) => s.fgValue);
   const marketCap = useMacroStore((s) => s.marketCap);
@@ -539,27 +539,13 @@ export default function KararPage() {
         </div>
       )}
 
+      <PositionAccordion />
+
       <MissedSignalsBanner />
 
       <WalletSummaryBar />
 
       <StreakBanner />
-
-      {/* Mini open positions bar — only when positions exist */}
-      {openPositions.length > 0 && (
-        <Link
-          href="/portfolyo"
-          className="flex items-center justify-between rounded-lg border border-border bg-surface-s1 px-3 py-1.5 font-mono text-2xs hover:bg-surface-s2 transition-colors"
-        >
-          <span className="text-text-t3">
-            {openPositions.length} {t("app.openPositions")}
-          </span>
-          <span translate="no" className={`font-semibold tabular-nums ${openUpl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
-            {`UPL ${openUpl >= 0 ? "+" : ""}${openUpl.toFixed(0)} $`}
-          </span>
-          <span className="text-text-t4">→</span>
-        </Link>
-      )}
 
       <SessionStatsBar />
 
