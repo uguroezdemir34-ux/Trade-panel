@@ -19,6 +19,7 @@ const CMC_IDS: Record<string, number> = {
   ADA: 2010,    AVAX: 5805,   DOT: 6636,    LINK: 1975,   POL: 3890,
   DOGE: 74,     SHIB: 5994,   SUI: 20947,   NEAR: 6535,   TRX: 1958,
   APT: 21794,   TAO: 22974,   PENDLE: 21451, OP: 11840,   WIF: 29047,
+  PEPE: 24478,
 };
 const CDN_OVERRIDES: Record<string, string> = { POL: "matic" };
 /* Trust Wallet asset overrides — used when CMC ID is wrong/unavailable */
@@ -39,6 +40,7 @@ const PAIR_COLORS: Record<string, string> = {
   LINK:  "#2a5ada", POL:  "#8247e5", DOGE: "#c2a633", SHIB: "#ff4200",
   SUI:   "#4da2ff", NEAR: "#00c08b", TRX:  "#ef0027", APT:  "#4285f4",
   TAO:   "#00c4b4", PENDLE: "#8fbe00", OP:  "#ff0420", WIF:  "#a855f7",
+  PEPE:  "#00b050",
 };
 function pairColor(p: string): string { return PAIR_COLORS[p] ?? "#6366f1"; }
 
@@ -49,6 +51,7 @@ const COIN_NAMES: Record<string, string> = {
   LINK: "Chainlink",   POL: "Polygon",         DOGE: "Dogecoin",    SHIB: "Shiba Inu",
   SUI: "Sui",          NEAR: "NEAR Protocol",  TRX: "TRON",         APT: "Aptos",
   TAO: "Bittensor",    PENDLE: "Pendle",        OP: "Optimism",      WIF: "dogwifhat",
+  PEPE: "Pepe",
 };
 function coinName(p: string): string { return COIN_NAMES[p] ?? p; }
 
