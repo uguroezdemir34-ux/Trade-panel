@@ -20,6 +20,7 @@ export const PAIR_CATEGORY: Partial<Record<Pair, PairCategory>> = {
   DOGE:   "Meme",
   SHIB:   "Meme",
   WIF:    "Meme",
+  PEPE:   "Meme",
   BNB:    "Infra",
   DOT:    "Infra",
   TAO:    "Infra",

@@ -30,6 +30,15 @@ import { VerticalLinePrimitive } from "@/lib/chart/primitives/VerticalLinePrimit
 import { CrossLinePrimitive } from "@/lib/chart/primitives/CrossLinePrimitive";
 import { FibTimeZonePrimitive } from "@/lib/chart/primitives/FibTimeZonePrimitive";
 
+function chartPriceFormat(price: number): { type: "price"; precision: number; minMove: number } {
+  if (price < 0.001)  return { type: "price", precision: 8, minMove: 0.00000001 };
+  if (price < 0.01)   return { type: "price", precision: 6, minMove: 0.000001   };
+  if (price < 1)      return { type: "price", precision: 4, minMove: 0.0001     };
+  if (price < 100)    return { type: "price", precision: 3, minMove: 0.001      };
+  if (price < 10_000) return { type: "price", precision: 2, minMove: 0.01       };
+  return                     { type: "price", precision: 0, minMove: 1          };
+}
+
 interface Props {
   series: ChartSeries;
   height?: number;
@@ -697,6 +706,10 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     });
 
     candle.setData(series.candles as CandlestickData<Time>[]);
+    const lastClose = (series.candles as CandlestickData<Time>[]).at(-1)?.close;
+    if (lastClose && lastClose > 0) {
+      candle.applyOptions({ priceFormat: chartPriceFormat(lastClose) });
+    }
 
     // EMA20
     if (series.ema20?.length) {
