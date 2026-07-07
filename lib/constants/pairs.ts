@@ -19,6 +19,7 @@ export const PAIRS = [
   "PENDLE", // Pendle — DeFi yield
   "OP",   // Optimism — L2
   "WIF",  // Dogwifhat — meme/Solana
+  "PEPE", // Pepe — meme/Ethereum
 ] as const;
 
 export type Pair = (typeof PAIRS)[number];

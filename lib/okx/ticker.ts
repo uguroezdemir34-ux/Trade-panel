@@ -31,6 +31,7 @@ const PAIR_TO_INST: Record<Pair, string> = {
   PENDLE: "PENDLE-USDT-SWAP",
   OP:     "OP-USDT-SWAP",
   WIF:    "WIF-USDT-SWAP",
+  PEPE:   "PEPE-USDT-SWAP",
 };
 
 /**
