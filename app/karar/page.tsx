@@ -74,6 +74,7 @@ import { formatCvd } from "@/lib/orderflow/cvd";
 import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { computeScoreVelocity } from "@/lib/score/velocity";
+import { computeHoldExitGuide, HOLD_EXIT_LABEL_TEXT } from "@/lib/score/holdExitGuide";
 import { SessionStatsBar } from "@/components/karar/SessionStatsBar";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
@@ -881,6 +882,24 @@ export default function KararPage() {
                         );
                       })()}
                     </div>
+
+                    {/* Hold/Exit Guide — sadece results[p] + scoreHistory[p]'den türetilir, skor motoruna dokunmaz */}
+                    {(() => {
+                      const guide = computeHoldExitGuide(pr, snaps);
+                      if (!guide) return null;
+                      const gc =
+                        guide === "max_hold" ? "text-green-400 bg-green-400/10"
+                        : guide === "quick_profit" ? "text-amber-400 bg-amber-400/10"
+                        : guide === "early_exit_warning" ? "text-red-400 bg-red-400/10"
+                        : "text-text-t4 bg-text-t4/10";
+                      return (
+                        <div className="flex justify-center -mt-0.5 mb-0.5">
+                          <span translate="no" className={`text-[8px] font-mono px-1.5 py-0.5 rounded leading-none ${gc}`}>
+                            {HOLD_EXIT_LABEL_TEXT[guide]}
+                          </span>
+                        </div>
+                      );
+                    })()}
 
                     {/* WAIT badge */}
                     {v === "wait" && score !== undefined && (
