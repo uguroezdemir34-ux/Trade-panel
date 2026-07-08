@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useGoSignalLogStore } from "@/lib/store/goSignalLogStore";
-import { useMarketStore } from "@/lib/store/marketStore";
 import type { Pair } from "@/lib/constants/pairs";
 
 const LS_KEY = "qx_last_seen_ts";
@@ -11,33 +10,38 @@ const SS_KEY = "qx_missed_banner_shown";
 interface BannerData {
   count: number;
   topPair: Pair;
-  chg: number;
+  signalTs: number;
+  signalPrice: number;
+}
+
+function fmtTime(ts: number): string {
+  const d = new Date(ts);
+  return d.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function fmtPrice(p: number): string {
+  if (p >= 10000) return `$${p.toLocaleString("en", { maximumFractionDigits: 0 })}`;
+  if (p >= 100)   return `$${p.toFixed(2)}`;
+  if (p >= 1)     return `$${p.toFixed(3)}`;
+  if (p >= 0.01)  return `$${p.toFixed(4)}`;
+  return `$${p.toFixed(6)}`;
 }
 
 function computeBanner(lastSeenTs: number): BannerData | null {
   const entries = useGoSignalLogStore.getState().entries;
-  const prices = useMarketStore.getState().prices;
 
   const missed = entries.filter((e) => e.ts > lastSeenTs);
   if (missed.length === 0) return null;
 
-  // Find pair with highest |chg24h| among missed pairs
-  const missedPairs: Pair[] = [...new Set<Pair>(missed.map((e) => e.pair))];
-  let topPair: Pair = missedPairs[0] as Pair;
-  let topAbsChg = 0;
+  // Most recent missed signal shown as "top"
+  const top = missed.reduce((a, b) => (b.ts > a.ts ? b : a));
 
-  for (const pair of missedPairs) {
-    const tick = prices[pair];
-    if (!tick) continue;
-    const abs = Math.abs(tick.chg);
-    if (abs > topAbsChg) {
-      topAbsChg = abs;
-      topPair = pair as Pair;
-    }
-  }
-
-  const chg = prices[topPair]?.chg ?? 0;
-  return { count: missed.length, topPair, chg };
+  return {
+    count: missed.length,
+    topPair: top.pair,
+    signalTs: top.ts,
+    signalPrice: top.triggerPriceAtGo,
+  };
 }
 
 export function MissedSignalsBanner(): React.ReactElement | null {
@@ -69,9 +73,6 @@ export function MissedSignalsBanner(): React.ReactElement | null {
 
   if (!banner) return null;
 
-  const sign = banner.chg >= 0 ? "+" : "";
-  const chgColor = banner.chg >= 0 ? "text-green-400" : "text-red-400";
-
   return (
     <div className="flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-mono">
       <span className="text-amber-300">
@@ -79,10 +80,9 @@ export function MissedSignalsBanner(): React.ReactElement | null {
         <span className="font-bold text-white">{banner.count} GO sinyali</span>
         {" · "}
         <span className="font-bold text-white">{banner.topPair}</span>{" "}
-        <span className={chgColor}>
-          %{sign}{banner.chg.toFixed(1)}
-        </span>{" "}
-        <span className="text-text-t4">(24s)</span>
+        <span className="text-text-t2">{fmtPrice(banner.signalPrice)}</span>
+        {" · "}
+        <span className="text-text-t4">{fmtTime(banner.signalTs)}</span>
       </span>
       <button
         onClick={() => setBanner(null)}
