@@ -27,36 +27,37 @@ const OKX_CONTRACT_SIZE: Partial<Record<Pair, number>> = {
   BNB: 0.01,
   ADA: 100,
   AVAX: 0.1,
-  DOT: 1,
   LINK: 0.1,
-  POL: 10,
   DOGE: 100,
   SHIB: 100_000,
   SUI: 1,
   NEAR: 1,
-  TRX: 1_000,
   APT: 1,
   TAO: 0.01,
   PENDLE: 1,
   OP: 1,
   WIF: 1,
+  // HYPE/ONDO/TIA/JUP/ENA/SEI: ctVal henüz doğrulanmadı, `?? 1` fallback
+  // kullanılıyor (bkz. CLAUDE.md backlog notu) — takip diff'inde tamamlanacak.
 };
 
 // ── Symbol → Pair maps ───────────────────────────────────────────────────────
 const BINANCE_PAIR: Record<string, Pair> = {
   BTCUSDT: "BTC", ETHUSDT: "ETH", XRPUSDT: "XRP", SOLUSDT: "SOL",
-  BNBUSDT: "BNB", ADAUSDT: "ADA", AVAXUSDT: "AVAX", DOTUSDT: "DOT",
-  LINKUSDT: "LINK", POLUSDT: "POL", MATICUSDT: "POL", DOGEUSDT: "DOGE",
-  "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR", TRXUSDT: "TRX",
+  BNBUSDT: "BNB", ADAUSDT: "ADA", AVAXUSDT: "AVAX",
+  LINKUSDT: "LINK", DOGEUSDT: "DOGE",
+  "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR",
   APTUSDT: "APT", TAOUSDT: "TAO", PENDLEUSDT: "PENDLE", OPUSDT: "OP", WIFUSDT: "WIF",
+  HYPEUSDT: "HYPE", ONDOUSDT: "ONDO", TIAUSDT: "TIA", JUPUSDT: "JUP", ENAUSDT: "ENA", SEIUSDT: "SEI",
 };
 
 const BYBIT_PAIR: Record<string, Pair> = {
   BTCUSDT: "BTC", ETHUSDT: "ETH", XRPUSDT: "XRP", SOLUSDT: "SOL",
-  BNBUSDT: "BNB", ADAUSDT: "ADA", AVAXUSDT: "AVAX", DOTUSDT: "DOT",
-  LINKUSDT: "LINK", POLUSDT: "POL", MATICUSDT: "POL", DOGEUSDT: "DOGE",
-  "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR", TRXUSDT: "TRX",
+  BNBUSDT: "BNB", ADAUSDT: "ADA", AVAXUSDT: "AVAX",
+  LINKUSDT: "LINK", DOGEUSDT: "DOGE",
+  "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR",
   APTUSDT: "APT", TAOUSDT: "TAO", PENDLEUSDT: "PENDLE", OPUSDT: "OP", WIFUSDT: "WIF",
+  HYPEUSDT: "HYPE", ONDOUSDT: "ONDO", TIAUSDT: "TIA", JUPUSDT: "JUP", ENAUSDT: "ENA", SEIUSDT: "SEI",
 };
 
 // Binance / Bybit "1000X" symbols: reported size is in 1000 units

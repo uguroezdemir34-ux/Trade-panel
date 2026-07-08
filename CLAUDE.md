@@ -210,6 +210,22 @@ top-level catch'i yok — buradan bir exception fırlarsa o cycle'da PAIRS
 döngüsü o noktadan sonrası için sessizce durabilir (unhandled promise
 rejection). Şu an aktif tetiklendiğine dair kanıt yok, ama kırılgan.
 
+**HYPE/ONDO/TIA/JUP/ENA/SEI — eksik kalibrasyon verisi (bilinçli, düşük risk):**
+Bu 6 coin eklenirken şu değerler kasıtlı olarak boş bırakıldı, hepsi
+"gerçek veriyle kalibrasyon" kategorisinde, ayrı bir takip diff'inde
+tamamlanacak:
+- `lib/hooks/useLiqFeed.ts` → `OKX_CONTRACT_SIZE` (ctVal) — `?? 1` fallback
+  kullanılıyor, etkisi yalnızca liquidation notional gösterimi (kozmetik,
+  skor motoruna/GO kararına/emir mekanizmasına sızmıyor — teyit edildi).
+- `lib/orderflow/vpin.ts` → `ALT_VPIN_CONFIGS` — `DEFAULT_VPIN_CONFIG`
+  ($50M, BTC boyutu) kısa süreliğine kullanılıyor, `tradeFeedStore.ts`'teki
+  dinamik kalibrasyon canlı hacimden birkaç saniye içinde düzeltiyor.
+- `components/grafik/WatchlistPanel.tsx` → `CMC_IDS` — eksik girişte
+  `CoinLogo` bileşeni otomatik ikinci CDN'e, o da olmazsa harf rozetine
+  düşüyor (crash yok, sadece logo eksik/placeholder görünür).
+- `PAIR_COLORS` (aynı dosya) — bu 6 coin için hex kodları marka kılavuzuyla
+  doğrulanmadı, yaklaşık değerler.
+
 ---
 
 ## 10. LocalStorage Anahtarları

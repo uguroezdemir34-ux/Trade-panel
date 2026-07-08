@@ -47,7 +47,7 @@ const DELTA_BADGE_WINDOW_MIN = 30;
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
   majors: ["BTC", "ETH", "BNB", "XRP", "SOL", "APT"],
-  alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "TRX", "SUI", "TAO", "PENDLE", "OP"],
+  alts:   ["ADA", "AVAX", "LINK", "NEAR", "SUI", "TAO", "PENDLE", "OP", "HYPE", "ONDO", "TIA", "JUP", "ENA", "SEI"],
   meme:   ["DOGE", "SHIB", "WIF"],
 };
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
