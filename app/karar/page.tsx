@@ -39,6 +39,11 @@ function activeBorderClass(s: number | undefined): string {
   return "border-red-400/40";
 }
 
+/* Skor hızı pencereleri — snapshot cadence'i ~15dk (candle kapanışına bağlı) olduğu için
+   5dk gibi daha kısa bir pencere sahte hassasiyet verir, o yüzden desteklenmiyor. */
+const MOMENTUM_WINDOW_MIN = 15;
+const DELTA_BADGE_WINDOW_MIN = 30;
+
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
   majors: ["BTC", "ETH", "BNB", "XRP", "SOL", "APT"],
@@ -68,6 +73,7 @@ import { useFlowIntelligence } from "@/lib/hooks/useFlowIntelligence";
 import { formatCvd } from "@/lib/orderflow/cvd";
 import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
+import { computeScoreVelocity } from "@/lib/score/velocity";
 import { SessionStatsBar } from "@/components/karar/SessionStatsBar";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
@@ -326,6 +332,17 @@ export default function KararPage() {
   const displayPairsRef = useRef<readonly Pair[]>(displayPairs);
   displayPairsRef.current = displayPairs;
 
+  /* 15dk zaman-penceresi bazlı skor hızı — snapshot sayısı değil, ts farkına göre */
+  const pairMomentum = useMemo<Partial<Record<Pair, number>>>(() => {
+    try {
+      const out: Partial<Record<Pair, number>> = {};
+      for (const p of PAIRS) {
+        const v = computeScoreVelocity(scoreHistory[p], MOMENTUM_WINDOW_MIN);
+        if (v) out[p] = v.delta;
+      }
+      return out;
+    } catch { return {}; }
+  }, [scoreHistory]);
 
 
   const latestScoreTime = useMemo(() => {
@@ -711,6 +728,12 @@ export default function KararPage() {
                 : pairChg < 0 ? "text-signal-down"
                 : "text-text-t4";
 
+              const snaps = (scoreHistory[p] ?? []).filter(
+                (s) => typeof s.score === "number" && isFinite(s.score),
+              );
+              const momentum = pairMomentum[p];
+              const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
+              const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
 
               const isWatched = watchlistPairs.includes(p);
 
@@ -803,6 +826,29 @@ export default function KararPage() {
                           <span className="text-text-t4 font-mono text-lg">·</span>
                         </div>
                       )}
+                      {showMom && (
+                        <span className={`text-[8px] leading-none ml-px ${momColor}`}>
+                          {(momentum ?? 0) > 0 ? "▲" : "▼"}
+                        </span>
+                      )}
+                      {/* Delta badge — 30dk zaman-penceresi, 0dk ise gizle */}
+                      {(() => {
+                        const v = computeScoreVelocity(snaps, DELTA_BADGE_WINDOW_MIN);
+                        if (!v || v.actualMin === 0) return null;
+                        const sign = v.delta > 0 ? "+" : "";
+                        const dc =
+                          v.delta > 0 ? "text-green-400"
+                          : v.delta < 0 ? "text-red-400"
+                          : "text-text-t4";
+                        return (
+                          <span
+                            translate="no"
+                            className={`ml-1 font-mono text-[7px] tabular-nums leading-none opacity-70 ${dc}`}
+                          >
+                            ~{v.actualMin}dk {sign}{Math.round(v.delta)}
+                          </span>
+                        );
+                      })()}
                     </div>
 
                     {/* WAIT badge */}
