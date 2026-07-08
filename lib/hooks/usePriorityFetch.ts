@@ -82,6 +82,12 @@ export function usePriorityFetch(
       try {
         await Promise.all(
           PRIORITY_TFS.map(async ({ tf, limit }) => {
+            // TTL guard: 2 dakikadan yeni veri varsa network fetch'i atla
+            const lastFetched = useCandleStore.getState().lastFetchedAt[`${pair}_${tf}` as `${Pair}_${Timeframe}`];
+            if (lastFetched && Date.now() - lastFetched < STALE_CACHE_MAX_AGE) {
+              anySuccess = true;
+              return;
+            }
             const candles = await fetchWithRetry(pair, tf, limit);
             if (candles) {
               setCandles(pair, tf, candles, Date.now());
