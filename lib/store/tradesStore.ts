@@ -86,7 +86,21 @@ const tradeSnapshotSchema = z.object({
   notes: z.string().optional(),
 });
 
-const tradesArraySchema = z.array(tradeSnapshotSchema);
+/**
+ * Diziyi tek blok olarak değil, eleman eleman doğrular — tek bir bozuk/artık
+ * kayıt (örn. PAIRS'ten çıkarılmış bir parite) tüm trade geçmişini silmesin diye.
+ * z.array(tradeSnapshotSchema).safeParse(...) tüm-ya-da-hiç çalışırdı; bunun
+ * yerine yalnızca geçersiz olan TEK kaydı düşürür, geri kalanı korur.
+ */
+function parseTradesLenient(raw: unknown): TradeSnapshot[] {
+  if (!Array.isArray(raw)) return [];
+  const out: TradeSnapshot[] = [];
+  for (const item of raw) {
+    const r = tradeSnapshotSchema.safeParse(item);
+    if (r.success) out.push(r.data as TradeSnapshot);
+  }
+  return out;
+}
 
 // ═══════════════ STORE ═══════════════
 
@@ -264,12 +278,8 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
   getOpen: () => get().trades.filter((t) => t.status === "open"),
 
   rehydrate: () => {
-    const loaded = loadFromStorage<TradeSnapshot[]>(
-      STORAGE_KEY,
-      [],
-      tradesArraySchema,
-    );
-    set({ trades: loaded });
+    const raw = loadFromStorage<unknown>(STORAGE_KEY, []);
+    set({ trades: parseTradesLenient(raw) });
   },
 
   mergeFromDb: (dbTrades) => {
