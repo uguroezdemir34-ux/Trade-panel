@@ -18,7 +18,11 @@ export const HOLD_EXIT_LABEL_TEXT: Record<HoldExitLabel, string> = {
 const WINDOW_MIN = 15;
 const VELOCITY_THRESHOLD = 5;
 const TRENDING_REGIMES = new Set<ScoreResult["regime"]>(["trending_strong", "trending_weak"]);
-const RANGING_REGIMES = new Set<ScoreResult["regime"]>(["ranging_meanrev", "mixed"]);
+/** dirConfidence eşiği — "yön belirsiz" için. regime alanı baseScore<75'te hep
+ *  "unknown" döndüğü için (scorers.ts scoreRegimeBonus), düşük skorlu paritelerde
+ *  kullanılamıyor; dirConfidence/counterTrend ise skor seviyesinden bağımsız,
+ *  her zaman dolu geliyor. */
+const LOW_DIR_CONFIDENCE = 1;
 
 /**
  * Saf türetme — results[pair] ve scoreHistory[pair]'den okur, skor motoruna
@@ -65,7 +69,7 @@ export function computeHoldExitGuide(
 
   // Satır 4 — Bekle / Net Sinyal Yok
   if (
-    RANGING_REGIMES.has(result.regime) &&
+    (result.dirConfidence <= LOW_DIR_CONFIDENCE || result.counterTrend === true) &&
     velocity !== null &&
     Math.abs(velocity.delta) < VELOCITY_THRESHOLD
   ) {
