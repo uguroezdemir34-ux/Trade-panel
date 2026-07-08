@@ -169,10 +169,13 @@ export async function handleOkxProxy(
  * Eksik creds → null döner (proxy çağrıldığında NO_KEYS hatası verir,
  * çökme yok — bu davranış panel ile uyumlu).
  */
+let _credWarned = false;
+
 export function loadServerConfigFromEnv(env: Record<string, string | undefined>): OkxServerConfig {
   const prodOk = !!env.OKX_API_KEY && !!env.OKX_API_SECRET && !!env.OKX_API_PASSPHRASE;
   const demoOk = !!env.OKX_DEMO_API_KEY && !!env.OKX_DEMO_API_SECRET && !!env.OKX_DEMO_API_PASSPHRASE;
-  if (!prodOk && !demoOk && typeof console !== "undefined") {
+  if (!prodOk && !demoOk && !_credWarned) {
+    _credWarned = true;
     console.warn("[QUANTIX ENV] ⚠️  OKX credentials eksik — OKX_API_KEY / OKX_DEMO_API_KEY ayarlanmamış.");
   }
   return {
