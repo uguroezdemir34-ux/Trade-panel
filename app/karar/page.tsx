@@ -28,6 +28,11 @@ function fmtCompact(v: number): string {
   return v.toFixed(0);
 }
 
+/* Skor hızı pencereleri — snapshot cadence'i ~15dk (candle kapanışına bağlı) olduğu için
+   5dk gibi daha kısa bir pencere sahte hassasiyet verir, o yüzden desteklenmiyor. */
+const MOMENTUM_WINDOW_MIN = 15;
+const DELTA_BADGE_WINDOW_MIN = 30;
+
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
   majors: ["BTC", "ETH", "BNB", "XRP", "SOL", "APT"],
@@ -56,6 +61,7 @@ import { useFlowIntelligence } from "@/lib/hooks/useFlowIntelligence";
 import { formatCvd } from "@/lib/orderflow/cvd";
 import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
+import { computeScoreVelocity } from "@/lib/score/velocity";
 import { SessionStatsBar } from "@/components/karar/SessionStatsBar";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
@@ -225,14 +231,13 @@ export default function KararPage() {
   const displayPairsRef = useRef<readonly Pair[]>(displayPairs);
   displayPairsRef.current = displayPairs;
 
+  /* 15dk zaman-penceresi bazlı skor hızı — snapshot sayısı değil, ts farkına göre */
   const pairMomentum = useMemo<Partial<Record<Pair, number>>>(() => {
     try {
       const out: Partial<Record<Pair, number>> = {};
       for (const p of PAIRS) {
-        const snaps = scoreHistory[p];
-        if (!Array.isArray(snaps) || snaps.length < 4) continue;
-        const recent = snaps.slice(-4);
-        out[p] = recent[recent.length - 1].score - recent[0].score;
+        const v = computeScoreVelocity(scoreHistory[p], MOMENTUM_WINDOW_MIN);
+        if (v) out[p] = v.delta;
       }
       return out;
     } catch { return {}; }
@@ -795,25 +800,21 @@ export default function KararPage() {
                           {(momentum ?? 0) > 0 ? "▲" : "▼"}
                         </span>
                       )}
-                      {/* Delta badge — son 12 snapshot ile fark, 0dk ise gizle */}
-                      {snaps.length >= 2 && (() => {
-                        const fi = Math.max(0, snaps.length - 12);
-                        const first = snaps[fi];
-                        const last  = snaps[snaps.length - 1];
-                        const dVal  = last.score - first.score;
-                        const dMin  = Math.round((last.ts - first.ts) / 60_000);
-                        if (dMin === 0) return null;
-                        const sign = dVal > 0 ? "+" : "";
+                      {/* Delta badge — 30dk zaman-penceresi, 0dk ise gizle */}
+                      {(() => {
+                        const v = computeScoreVelocity(snaps, DELTA_BADGE_WINDOW_MIN);
+                        if (!v || v.actualMin === 0) return null;
+                        const sign = v.delta > 0 ? "+" : "";
                         const dc =
-                          dVal > 0 ? "text-green-400"
-                          : dVal < 0 ? "text-red-400"
+                          v.delta > 0 ? "text-green-400"
+                          : v.delta < 0 ? "text-red-400"
                           : "text-text-t4";
                         return (
                           <span
                             translate="no"
                             className={`ml-1 font-mono text-[7px] tabular-nums leading-none opacity-70 ${dc}`}
                           >
-                            ~{dMin}dk {sign}{Math.round(dVal)}
+                            ~{v.actualMin}dk {sign}{Math.round(v.delta)}
                           </span>
                         );
                       })()}
