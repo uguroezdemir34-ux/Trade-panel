@@ -48,6 +48,16 @@ import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import { adx as computeAdx } from "@/lib/indicators/adx";
 import type { Pair } from "@/lib/constants/pairs";
 
+function yieldToEventLoop(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    if (typeof requestIdleCallback !== "undefined") {
+      requestIdleCallback(() => resolve(), { timeout: 50 });
+    } else {
+      setTimeout(resolve, 0);
+    }
+  });
+}
+
 export function useScoreEngine(): void {
   // Trigger: only when 15m/1h/4h last candle timestamps/confirm flags change.
   // Prevents score recomputation on 1d-only polls or identity-equal updates.
@@ -81,6 +91,7 @@ export function useScoreEngine(): void {
   const scorerWeights = useSettingsStore((s) => s.scorerWeights);
 
   useEffect(() => {
+    let cancelled = false;
     const now = Date.now();
     const engineT0 = isDebug() ? performance.now() : 0;
 
@@ -115,7 +126,9 @@ export function useScoreEngine(): void {
       btcNearSR = Math.min(distR, distS) <= 0.5;
     }
 
+    void (async () => {
     for (const pair of PAIRS) {
+      if (cancelled) return;
       const candles4h = candles[`${pair}_4h`] ?? EMPTY_CANDLES;
       const candles1h = candles[`${pair}_1h`] ?? EMPTY_CANDLES;
       const candles15m = candles[`${pair}_15m`] ?? EMPTY_CANDLES;
@@ -233,7 +246,10 @@ export function useScoreEngine(): void {
         // "never scored" — prevents perpetual re-trigger on data-starved pairs.
         setSkipped(pair as Pair, now);
       }
+      await yieldToEventLoop();
     }
     perfLog({ type: "engine_cycle", totalMs: +((performance.now() - engineT0).toFixed(1)), pairs: PAIRS.length });
+    })();
+    return () => { cancelled = true; };
   }, [candles, setResult, scorerWeights]);
 }
