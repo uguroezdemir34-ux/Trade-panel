@@ -198,6 +198,18 @@ Runtime'da Next.js bundler çözer — gerçek mantık hatası yok.
 
 > Yeni gerçek hata tespit edilirse buraya ekle, node_modules hataları ekleme.
 
+**`useScoreEngine` sessiz hata yutma (araştırma bulgusu, henüz düzeltilmedi):**
+`lib/hooks/useScoreEngine.ts:240-242` — per-pair try/catch bloğu exception'ı
+sessizce yutuyor, ne `setResult` ne `setSkipped` çağırıyor; bu pair için
+`results[pair]` sonsuza dek `undefined` kalabiliyor (skor motoruna
+dokunmadan düzeltilecek — scope: `lib/score/*` kapsamına girer, düzeltme
+için chat onayı gerekir).
+Ayrıca `composeScoreInput()` (satır 188) ve `computeMtfTrend()` (satır 220)
+çağrıları try/catch'in **dışında**, sarmalayan `async` IIFE'nin de
+top-level catch'i yok — buradan bir exception fırlarsa o cycle'da PAIRS
+döngüsü o noktadan sonrası için sessizce durabilir (unhandled promise
+rejection). Şu an aktif tetiklendiğine dair kanıt yok, ama kırılgan.
+
 ---
 
 ## 10. LocalStorage Anahtarları

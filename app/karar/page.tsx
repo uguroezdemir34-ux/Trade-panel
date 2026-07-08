@@ -345,16 +345,21 @@ export default function KararPage() {
   }, [scoreHistory]);
 
   /* TEMP DEBUG — velocity badge tanılama, iş bitince kaldırılacak.
-     scoreHistory değiştiğinde (yani ~15dk cadence'te) bir kez loglar, per-render/per-tick değil. */
+     scoreHistory değiştiğinde (yani ~15dk cadence'te) bir kez loglar, per-render/per-tick değil.
+     resultState ayrımı: "undefined" = useScoreEngine'in try/catch'i sessizce yuttu (gerçek bug),
+     "null(skipped)" = composeScoreInput meşru şekilde null döndü (candle/fiyat eksik, setSkipped çalıştı),
+     "ok" = skor normal hesaplandı ama yine de history büyümüyorsa ayrı bir sorun var demektir. */
   useEffect(() => {
     for (const p of PAIRS) {
       const snaps = scoreHistory[p] ?? [];
       const n = snaps.length;
       const gapMin = n >= 2 ? Math.round((snaps[n - 1].ts - snaps[n - 2].ts) / 60_000) : null;
+      const r = allResults[p];
+      const resultState = r === undefined ? "undefined" : r === null ? "null(skipped)" : `ok(score=${r.score})`;
       // eslint-disable-next-line no-console
-      console.log(`[velocity-debug] ${p}: snapshots=${n} lastGap=${gapMin === null ? "n/a" : `${gapMin}dk`}`);
+      console.log(`[velocity-debug] ${p}: snapshots=${n} lastGap=${gapMin === null ? "n/a" : `${gapMin}dk`} resultState=${resultState}`);
     }
-  }, [scoreHistory]);
+  }, [scoreHistory, allResults]);
 
   const latestScoreTime = useMemo(() => {
     const times = Object.values(computedAt).filter((v): v is number => v !== undefined);
