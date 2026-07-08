@@ -344,6 +344,17 @@ export default function KararPage() {
     } catch { return {}; }
   }, [scoreHistory]);
 
+  /* TEMP DEBUG — velocity badge tanılama, iş bitince kaldırılacak.
+     scoreHistory değiştiğinde (yani ~15dk cadence'te) bir kez loglar, per-render/per-tick değil. */
+  useEffect(() => {
+    for (const p of PAIRS) {
+      const snaps = scoreHistory[p] ?? [];
+      const n = snaps.length;
+      const gapMin = n >= 2 ? Math.round((snaps[n - 1].ts - snaps[n - 2].ts) / 60_000) : null;
+      // eslint-disable-next-line no-console
+      console.log(`[velocity-debug] ${p}: snapshots=${n} lastGap=${gapMin === null ? "n/a" : `${gapMin}dk`}`);
+    }
+  }, [scoreHistory]);
 
   const latestScoreTime = useMemo(() => {
     const times = Object.values(computedAt).filter((v): v is number => v !== undefined);
@@ -831,10 +842,20 @@ export default function KararPage() {
                           {(momentum ?? 0) > 0 ? "▲" : "▼"}
                         </span>
                       )}
-                      {/* Delta badge — 30dk zaman-penceresi, 0dk ise gizle */}
+                      {/* Delta badge — 30dk zaman-penceresi. TEMP DEBUG: veri yoksa "–" (boş bırakma yerine),
+                          "veri yok" ile "hiç render edilmedi" ayrımı netleşsin diye — iş bitince eski haline dönecek. */}
                       {(() => {
                         const v = computeScoreVelocity(snaps, DELTA_BADGE_WINDOW_MIN);
-                        if (!v || v.actualMin === 0) return null;
+                        if (!v || v.actualMin === 0) {
+                          return (
+                            <span
+                              translate="no"
+                              className="ml-1 font-mono text-[7px] tabular-nums leading-none opacity-40 text-text-t4"
+                            >
+                              –
+                            </span>
+                          );
+                        }
                         const sign = v.delta > 0 ? "+" : "";
                         const dc =
                           v.delta > 0 ? "text-green-400"
