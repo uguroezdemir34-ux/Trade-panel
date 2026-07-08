@@ -75,18 +75,18 @@ export function MissedSignalsBanner(): React.ReactElement | null {
 
   return (
     <div className="flex items-center justify-between rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs font-mono">
-      <span className="text-amber-300">
+      <span className="text-amber-600 dark:text-amber-300">
         ⚡ Dışarıdayken:{" "}
-        <span className="font-bold text-white">{banner.count} GO sinyali</span>
+        <span className="font-bold text-gray-900 dark:text-white">{banner.count} GO sinyali</span>
         {" · "}
-        <span className="font-bold text-white">{banner.topPair}</span>{" "}
-        <span className="text-text-t2">{fmtPrice(banner.signalPrice)}</span>
+        <span className="font-bold text-gray-900 dark:text-white">{banner.topPair}</span>{" "}
+        <span className="text-gray-700 dark:text-text-t2">{fmtPrice(banner.signalPrice)}</span>
         {" · "}
-        <span className="text-text-t4">{fmtTime(banner.signalTs)}</span>
+        <span className="text-gray-500 dark:text-text-t4">{fmtTime(banner.signalTs)}</span>
       </span>
       <button
         onClick={() => setBanner(null)}
-        className="ml-3 text-text-t4 hover:text-text-t2 transition-colors leading-none"
+        className="ml-3 text-gray-400 dark:text-text-t4 hover:text-gray-600 dark:hover:text-text-t2 transition-colors leading-none"
         aria-label="Kapat"
       >
         ✕
