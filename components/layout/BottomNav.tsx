@@ -52,6 +52,9 @@ export function BottomNav(): React.ReactElement {
                 href={tab.path}
                 onClick={() => {
                   if (hydrated) setLastTab(tab.id);
+                  // [QX PERF] teşhis — production'a gitmeyecek
+                  (window as { __qx_nav_ts?: number }).__qx_nav_ts = performance.now();
+                  console.log("[QX PERF] nav:click", tab.path, new Date().toLocaleTimeString("tr-TR"));
                 }}
                 className={[
                   "flex min-h-[44px] flex-col items-center justify-center gap-0.5 py-2",

@@ -99,6 +99,15 @@ export default function KararPage() {
 
   useEffect(() => { setIsStale(false); setStaleFailed(false); }, [activePair]);
 
+  // [QX PERF] teşhis — production'a gitmeyecek
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const w = window as { __qx_nav_ts?: number };
+    const navTs = w.__qx_nav_ts;
+    const mountDelta = navTs ? Math.round(performance.now() - navTs) : null;
+    console.log(`[QX PERF] karar:mount ${mountDelta != null ? `+${mountDelta}ms` : "(cold)"}`);
+  }, []);
+
   usePriorityFetch(
     activePair,
     (success) => { setIsStale(false); if (!success) setStaleFailed(true); },
