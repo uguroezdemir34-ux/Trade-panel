@@ -348,16 +348,21 @@ export default function KararPage() {
      scoreHistory değiştiğinde (yani ~15dk cadence'te) bir kez loglar, per-render/per-tick değil.
      resultState ayrımı: "undefined" = useScoreEngine'in try/catch'i sessizce yuttu (gerçek bug),
      "null(skipped)" = composeScoreInput meşru şekilde null döndü (candle/fiyat eksik, setSkipped çalıştı),
-     "ok" = skor normal hesaplandı ama yine de history büyümüyorsa ayrı bir sorun var demektir. */
+     "ok" = skor normal hesaplandı ama yine de history büyümüyorsa ayrı bir sorun var demektir.
+     candles1h/candles4h: candleStore.getState() ile snapshot okunuyor (yeni subscription açmıyor,
+     ekstra re-render tetiklemiyor) — composeScoreInput'un 200 eşiğiyle karşılaştırmak için. */
   useEffect(() => {
+    const candles = useCandleStore.getState().candles;
     for (const p of PAIRS) {
       const snaps = scoreHistory[p] ?? [];
       const n = snaps.length;
       const gapMin = n >= 2 ? Math.round((snaps[n - 1].ts - snaps[n - 2].ts) / 60_000) : null;
       const r = allResults[p];
       const resultState = r === undefined ? "undefined" : r === null ? "null(skipped)" : `ok(score=${r.score})`;
+      const c1h = candles[`${p}_1h`]?.length ?? 0;
+      const c4h = candles[`${p}_4h`]?.length ?? 0;
       // eslint-disable-next-line no-console
-      console.log(`[velocity-debug] ${p}: snapshots=${n} lastGap=${gapMin === null ? "n/a" : `${gapMin}dk`} resultState=${resultState}`);
+      console.log(`[velocity-debug] ${p}: snapshots=${n} lastGap=${gapMin === null ? "n/a" : `${gapMin}dk`} resultState=${resultState} candles1h=${c1h} candles4h=${c4h}`);
     }
   }, [scoreHistory, allResults]);
 
