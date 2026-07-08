@@ -7,8 +7,6 @@ import { LocaleHtmlSync } from "@/components/layout/LocaleHtmlSync";
 import { BRAND_META } from "@/lib/brand";
 import { SonnerToaster } from "@/components/layout/SonnerToaster";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: BRAND_META.title,
   description: BRAND_META.description,
