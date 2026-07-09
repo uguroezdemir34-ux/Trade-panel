@@ -125,6 +125,16 @@ const ALT_VPIN_CONFIGS: Partial<Record<Pair, VpinConfig>> = {
   PENDLE: { bucketSizeUsd:   100_000, windowSize: 50 },
   OP:     { bucketSizeUsd:   250_000, windowSize: 50 },
   WIF:    { bucketSizeUsd:   100_000, windowSize: 50 },
+  // Aşağıdaki 6'sı WebSearch üzerinden bulunan kaba 24s hacim / 50 tahmini
+  // (gerçek zamanlı OKX verisine bu ortamdan erişilemedi) — sadece seed,
+  // tradeFeedStore.ts'teki dinamik kalibrasyon birkaç saniye içinde
+  // canlı hacme göre düzeltiyor.
+  HYPE:   { bucketSizeUsd: 9_000_000, windowSize: 50 }, // ~$450M/gün
+  ONDO:   { bucketSizeUsd: 1_500_000, windowSize: 50 }, // ~$75M/gün
+  TIA:    { bucketSizeUsd:   900_000, windowSize: 50 }, // ~$44M/gün
+  JUP:    { bucketSizeUsd: 1_000_000, windowSize: 50 }, // ~$50M/gün
+  ENA:    { bucketSizeUsd: 2_000_000, windowSize: 50 }, // ~$97M/gün
+  SEI:    { bucketSizeUsd:   500_000, windowSize: 50 }, // ~$27M/gün
 };
 
 export function getDefaultConfig(pair: Pair): VpinConfig {
