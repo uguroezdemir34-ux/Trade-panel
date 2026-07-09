@@ -210,6 +210,21 @@ top-level catch'i yok — buradan bir exception fırlarsa o cycle'da PAIRS
 döngüsü o noktadan sonrası için sessizce durabilir (unhandled promise
 rejection). Şu an aktif tetiklendiğine dair kanıt yok, ama kırılgan.
 
+**Anomali Dedektörü — Faz 1 + Faz 2 tamamlandı (kullanıcı onayıyla erken alındı):**
+Faz 1 (OI-çöküş) ve Faz 2 (order book duvarı) ikisi de tamamlandı —
+`lib/score/anomalyDetector.ts` → `computeAnomalyLight()` (`anomaly_oi ||
+anomaly_wall`), kart köşesinde tek ⚠️ ikonu. Faz 2 için yeni dosyalar:
+`lib/okx/orderbook.ts` (fetch+parse, `/api/v5/market/books?sz=5`),
+`lib/market/orderbook-imbalance.ts` (saf hesap, WALL_RATIO_THRESHOLD=3),
+`lib/store/orderBookStore.ts` (ephemeral, persist yok),
+`lib/hooks/useOrderBookPoller.ts` (3dk cadence, `runBatched` ile
+concurrency=3/stagger=250ms, `AppShell`'e t+4s'te eklendi). Faz 2 başlangıçta
+mevcut mobil performans sorunuyla çakışma riski nedeniyle backlog'a
+alınmıştı; kullanıcı bu riski bilerek ve açıkça "şimdi tamamla" talimatıyla
+erken aldırdı — ileride bir performans regresyonu görülürse ayrı bir
+düzeltme turu olarak ele alınacak. `useScoreEngine.ts`/`orchestrator.ts`/
+`lib/score/*` skor hesaplama dosyalarına hiç dokunulmadı.
+
 **HYPE/ONDO/TIA/JUP/ENA/SEI — eksik kalibrasyon verisi (bilinçli, düşük risk):**
 Bu 6 coin eklenirken şu değerler kasıtlı olarak boş bırakıldı, hepsi
 "gerçek veriyle kalibrasyon" kategorisinde, ayrı bir takip diff'inde

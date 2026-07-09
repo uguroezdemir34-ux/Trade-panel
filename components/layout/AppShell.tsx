@@ -39,6 +39,7 @@ import { useGoAlerts } from "@/lib/hooks/useGoAlerts";
 import { useScoreHistory } from "@/lib/hooks/useScoreHistory";
 import { useBalancePoller } from "@/lib/hooks/useBalancePoller";
 import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
+import { useOrderBookPoller } from "@/lib/hooks/useOrderBookPoller";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
 import { useSignalFirehose } from "@/lib/hooks/useSignalFirehose";
@@ -116,6 +117,7 @@ export function AppShell({
   usePositionPoller(1_000); // t+1s
   useBalancePoller(2_000);  // t+2s
   useMacroPoller(3_000);    // t+3s — en yavaş değişen veri, en son
+  useOrderBookPoller(4_000); // t+4s — Anomali Işığı Faz 2 (order book duvarı), 3dk cadence
   // Günlük P&L takip → drawdown protokol tier güncelle (güvenlik kritik)
   useDailyPnlTracker();
   // Order flow trade feed → tradeFeedStore (CVD/VPIN/SMC için)
