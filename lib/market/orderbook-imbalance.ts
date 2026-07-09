@@ -17,6 +17,16 @@ export interface OrderBookImbalanceResult {
   /** Ağır basan tarafın diğerine oranı, her zaman >= 1 */
   ratio: number;
   wallSide: WallSide;
+  /**
+   * "Balina İzleri" genişletmesi — duvarın (dominant taraftaki tek en büyük
+   * seviyenin) fiyatı/büyüklüğü/mesafesi. wallSide "neutral" ise veya top-5
+   * içinde en iyi bid/ask fiyatı okunamıyorsa null (geriye dönük uyumlu —
+   * eski çağıranlar bu alanları hiç okumasa da kırılmaz).
+   */
+  wallPrice: number | null;
+  wallSizeUsd: number | null;
+  /** Orta fiyata (best bid/ask ortalaması) göre mutlak yüzde mesafe */
+  wallDistancePct: number | null;
   ts: number;
 }
 
@@ -24,6 +34,12 @@ const WALL_RATIO_THRESHOLD = 3;
 
 function depthUsd(levels: readonly OrderBookLevel[]): number {
   return levels.reduce((sum, l) => sum + l.price * l.size, 0);
+}
+
+/** Bir taraftaki (bids veya asks) tek en büyük USD değerli seviyeyi bulur. */
+function findWallLevel(levels: readonly OrderBookLevel[]): OrderBookLevel | null {
+  if (levels.length === 0) return null;
+  return levels.reduce((max, l) => (l.price * l.size > max.price * max.size ? l : max), levels[0]);
 }
 
 export function computeOrderBookImbalance(
@@ -41,11 +57,31 @@ export function computeOrderBookImbalance(
   const wallSide: WallSide =
     ratio < WALL_RATIO_THRESHOLD ? "neutral" : bidHeavier ? "bid" : "ask";
 
+  let wallPrice: number | null = null;
+  let wallSizeUsd: number | null = null;
+  let wallDistancePct: number | null = null;
+
+  if (wallSide !== "neutral") {
+    const dominantLevels = wallSide === "bid" ? snap.bids : snap.asks;
+    const wallLevel = findWallLevel(dominantLevels);
+    const bestBid = snap.bids[0]?.price;
+    const bestAsk = snap.asks[0]?.price;
+    if (wallLevel && bestBid && bestAsk) {
+      const midPrice = (bestBid + bestAsk) / 2;
+      wallPrice = wallLevel.price;
+      wallSizeUsd = wallLevel.price * wallLevel.size;
+      wallDistancePct = midPrice > 0 ? Math.abs(((wallPrice - midPrice) / midPrice) * 100) : null;
+    }
+  }
+
   return {
     bidDepthUsd,
     askDepthUsd,
     ratio: parseFloat(ratio.toFixed(4)),
     wallSide,
+    wallPrice,
+    wallSizeUsd,
+    wallDistancePct,
     ts: snap.ts,
   };
 }

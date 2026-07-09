@@ -787,7 +787,11 @@ export default function KararPage() {
 
               return (
                 <div key={p} className="relative group">
-                  <AnomalyBadge oiAnomaly={oiCollapseAnomaly} wallAnomaly={orderBookWallAnomaly} />
+                  <AnomalyBadge
+                    oiAnomaly={oiCollapseAnomaly}
+                    wallAnomaly={orderBookWallAnomaly}
+                    wallDetail={allOrderBookImbalance[p] ?? null}
+                  />
                   {goStrength && !isActive && (
                     <>
                       <div className={`absolute inset-0 rounded-lg ring-1 ${goRingClass} animate-pulse pointer-events-none`} />
