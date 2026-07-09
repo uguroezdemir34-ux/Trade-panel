@@ -248,14 +248,45 @@ Finnhub sessizce atlanır, sadece RSS kaynakları kullanılır — bkz. §13
 kullanıcı aksiyonu. `useScoreEngine.ts`/`orchestrator.ts`/`lib/score/*`'a
 hiç dokunulmadı.
 
-**`MarketPulseWidget.tsx` — statik/hardcoded %62 (araştırma bulgusu, henüz
-düzeltilmedi):** `components/karar/MarketPulseWidget.tsx` ("Market Pulse /
-AI Sentiment Index" kartı, `/karar` header row) hiçbir gerçek veriye
-bağlanmamış — `value` prop'unun default'u sabit `62`, çağıran taraf
-(`app/karar/page.tsx`) hiç `value` geçmiyor, hesaplama/store/fetch yok.
-Görsel bir placeholder (`58cb0ff` commit'inde eklendi). Yukarıdaki Haber
-Akışı özelliğiyle karıştırılmamalı — ayrı, önceden var olan bir bileşen.
-Gerçek veriye bağlanmalı ya da kaldırılmalı, ayrı bir onay gerektirir.
+**`MarketPulseWidget.tsx` — gerçek veriye bağlandı (statik %62 düzeltildi):**
+Önceden `value` prop'u hiç geçilmiyordu, sabit default `62` gösteriliyordu.
+Artık `lib/score/marketPulse.ts` → `computeMarketPulseIndex(allResults)` —
+QUANTIX'in kendi 24 coin evreninin direction×dirConfidence ağırlıklı net
+yön endeksi (`app/karar/page.tsx`'te `useMemo`, F&G Index'in yerini almaz,
+ona ek iç kaynaklı bir gösterge). Geçerli sonuç yoksa `null` döner, kart o
+durumda hiç render edilmez (sahte yüzde göstermez — Hold/Exit Guide'daki
+disiplinle aynı). Saf türetme, `useScoreEngine`/`orchestrator.ts`'e hiç
+dokunulmadı.
+
+**Görsel Kalite Paketi — Ticker Tape + Score Heatmap + Glow genişletmesi
+tamamlandı, Glassmorphism ertelendi:** Üç fikir önce performans
+araştırmasıyla değerlendirildi (CPU/GPU maliyet + mobil perf çakışma
+riski), onaylanan sıralamayla uygulandı:
+- `components/karar/TickerTape.tsx` — 24 pair canlı fiyat+%chg şeridi.
+  Sadece CSS `transform`+`will-change` (GPU compositor thread'i,
+  `app/globals.css`'te `@keyframes ticker-scroll`) — `requestAnimationFrame`
+  kasıtlı olarak kullanılmadı (ana thread'i paylaşıp mevcut mobil perf
+  sorunuyla rekabet ederdi). `prefers-reduced-motion` override'ı da var.
+- `components/karar/ScoreHeatmap.tsx` + `lib/market/heatmapLayout.ts` —
+  24 coin'in skor+yön özeti, hücre boyutu flex-grow ağırlıklı (gerçek
+  squarified treemap/`d3-hierarchy` değil — 24 sabit eleman için elle
+  yazılmış basit grid yeterli, yeni bağımlılık yok). Sadece
+  `scoreStore.results` değiştiğinde (candle-close cadence) tetiklenir,
+  hesaplamanın kendisi `requestIdleCallback`'e ertelenir
+  (`useScoreEngine.ts`'teki `yieldToEventLoop` ile aynı desen) —
+  `useScoreEngine`'in kendi yield noktalarıyla çakışmasın diye.
+- GO kart glow'u (`app/karar/page.tsx` `boxShadow`) 2 kademeden 3 kademeye
+  çıkarıldı (strong/medium=yeşil, weak=sarı) — ring/ping'in zaten kullandığı
+  renk ayrımıyla tutarlı hale getirildi (önceden weak de yeşil glow
+  alıyordu, ring'iyle uyumsuzdu). Hâlâ statik `box-shadow`, `backdrop-filter`
+  yok, hâlâ sadece `v==="go"` kartlar.
+- **Ertelenen (Madde 4):** 24 karta tam glassmorphism (`backdrop-filter:
+  blur()`) — mobil perf sorunu (kök neden `useScoreEngine` senkron döngüsü,
+  yield fix uygulandı ama tam çözülmedi) USB debugging ile kesin teşhis
+  edilip çözülene kadar **hiç başlanmayacak**. Backdrop-filter'ın orta/düşük
+  segment Android GPU'larında compositor'ı ciddi yorduğu, 24 ayrı blur
+  katmanının bu riski büyüteceği araştırmayla tespit edildi.
+`useScoreEngine.ts`/`orchestrator.ts`/`lib/score/*`'a hiç dokunulmadı.
 
 **HYPE/ONDO/TIA/JUP/ENA/SEI — eksik kalibrasyon verisi (bilinçli, düşük risk):**
 Bu 6 coin eklenirken şu değerler kasıtlı olarak boş bırakıldı, hepsi
