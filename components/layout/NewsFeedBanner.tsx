@@ -1,8 +1,14 @@
 "use client";
 
 /**
- * PİYASA CANLI NABIZ — arayüzün tepesinde dönen sınıflandırılmış haber
- * şeridi. newsStore'dan okur, ~8sn'de bir bir sonraki habere geçer.
+ * HABER AKIŞI — arayüzün tepesinde dönen sınıflandırılmış haber şeridi.
+ * newsStore'dan okur, ~8sn'de bir bir sonraki habere geçer.
+ *
+ * Not: components/karar/MarketPulseWidget.tsx (sabit %62 "AI Sentiment
+ * Index" kartı) ile İSİM/KAVRAM OLARAK KARIŞTIRILMASIN — o ayrı, önceden
+ * var olan, gerçek veriye hiç bağlanmamış bir placeholder (bkz. CLAUDE.md
+ * §9 backlog notu). Bu component bilinçli olarak "Market Pulse"/"Sentiment"
+ * adlandırmasından kaçınır.
  *
  * Sadece görsel/bilgilendirme katmanı — skor/GO kararına hiç girmez,
  * useScoreEngine/orchestrator'a dokunmaz. Anahtar kelime tabanlı
@@ -20,9 +26,9 @@ import type { NewsSentiment } from "@/lib/news/types";
 const ROTATE_MS = 8_000;
 
 const SENTIMENT_I18N_KEY: Record<NewsSentiment, string> = {
-  positive: "marketPulse.positive",
-  negative: "marketPulse.negative",
-  neutral: "marketPulse.neutral",
+  positive: "newsFeed.positive",
+  negative: "newsFeed.negative",
+  neutral: "newsFeed.neutral",
 };
 
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
@@ -31,7 +37,7 @@ const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
   neutral: "text-text-t3 bg-text-t3/10",
 };
 
-export function MarketPulseBanner(): React.ReactElement | null {
+export function NewsFeedBanner(): React.ReactElement | null {
   const items = useNewsStore((s) => s.items);
   const t = useT();
   const [index, setIndex] = useState(0);
@@ -65,7 +71,7 @@ export function MarketPulseBanner(): React.ReactElement | null {
         {current.title}
       </a>
       <span className="text-text-t4 ml-auto hidden shrink-0 sm:inline">
-        {t("marketPulse.disclaimer")}
+        {t("newsFeed.disclaimer")}
       </span>
     </div>
   );

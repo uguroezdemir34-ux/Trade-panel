@@ -227,7 +227,7 @@ erken aldırdı — ileride bir performans regresyonu görülürse ayrı bir
 düzeltme turu olarak ele alınacak. `useScoreEngine.ts`/`orchestrator.ts`/
 `lib/score/*` skor hesaplama dosyalarına hiç dokunulmadı.
 
-**Piyasa Canlı Nabız — Haber/Sentiment katmanı tamamlandı (Görev 4):**
+**Haber Akışı — Haber/Sentiment katmanı tamamlandı (Görev 4):**
 CoinDesk+Cointelegraph RSS (birincil, aracısız) + Finnhub `/news?category=crypto`
 (tamamlayıcı, ücretsiz key) → anahtar kelime tabanlı Pozitif/Negatif/Nötr
 sınıflandırma (`lib/news/sentimentClassifier.ts` — FinBERT değil, kasıtlı:
@@ -238,11 +238,24 @@ RSS parse — regex değil, CDATA/encoding köşe durumlarında sessiz bozuk ver
 riskini azaltmak için), `app/api/news/route.ts` (10dk sunucu cache),
 `lib/store/newsStore.ts` (ephemeral), `lib/hooks/useNewsPoller.ts` (20dk
 cadence, `AppShell`'e t+5s'te eklendi — per-pair değil, tek global istek,
-OKX rate limitine hiç girmiyor), `components/layout/MarketPulseBanner.tsx`
+OKX rate limitine hiç girmiyor), `components/layout/NewsFeedBanner.tsx`
 (AppHeader altında global şerit, "otomatik sinyal değil" uyarısı kalıcı
-görünür). `FINNHUB_API_KEY` eksikse Finnhub sessizce atlanır, sadece RSS
-kaynakları kullanılır — bkz. §13 kullanıcı aksiyonu. `useScoreEngine.ts`/
-`orchestrator.ts`/`lib/score/*`'a hiç dokunulmadı.
+görünür — ilk sürümde "MarketPulseBanner" adıyla eklenmişti, önceden var
+olan `components/karar/MarketPulseWidget.tsx` ile isim çakışması fark
+edilince "Haber Akışı"/`NewsFeedBanner`'a yeniden adlandırıldı, i18n
+anahtarları `marketPulse.*` → `newsFeed.*`). `FINNHUB_API_KEY` eksikse
+Finnhub sessizce atlanır, sadece RSS kaynakları kullanılır — bkz. §13
+kullanıcı aksiyonu. `useScoreEngine.ts`/`orchestrator.ts`/`lib/score/*`'a
+hiç dokunulmadı.
+
+**`MarketPulseWidget.tsx` — statik/hardcoded %62 (araştırma bulgusu, henüz
+düzeltilmedi):** `components/karar/MarketPulseWidget.tsx` ("Market Pulse /
+AI Sentiment Index" kartı, `/karar` header row) hiçbir gerçek veriye
+bağlanmamış — `value` prop'unun default'u sabit `62`, çağıran taraf
+(`app/karar/page.tsx`) hiç `value` geçmiyor, hesaplama/store/fetch yok.
+Görsel bir placeholder (`58cb0ff` commit'inde eklendi). Yukarıdaki Haber
+Akışı özelliğiyle karıştırılmamalı — ayrı, önceden var olan bir bileşen.
+Gerçek veriye bağlanmalı ya da kaldırılmalı, ayrı bir onay gerektirir.
 
 **HYPE/ONDO/TIA/JUP/ENA/SEI — eksik kalibrasyon verisi (bilinçli, düşük risk):**
 Bu 6 coin eklenirken şu değerler kasıtlı olarak boş bırakıldı, hepsi
@@ -348,7 +361,7 @@ Kullanıcı aksiyonu bekleyen:
 - ⏳ Clerk env vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` → Vercel
 - ⏳ Stripe env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` → Vercel
 - ⏳ Finnhub env var: `FINNHUB_API_KEY` → Vercel (ücretsiz key, finnhub.io/register).
-  Eksikse Piyasa Canlı Nabız (`/api/news`) sessizce Finnhub'ı atlar, sadece
+  Eksikse Haber Akışı (`/api/news`) sessizce Finnhub'ı atlar, sadece
   CoinDesk+Cointelegraph RSS ile çalışmaya devam eder — crash yok, sadece
   haber kapsamı daralır.
 

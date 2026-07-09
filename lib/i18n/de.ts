@@ -1184,7 +1184,7 @@ toolCursor: "Cursor",
     notConfigured: "Not configured yet",
   },
 
-  marketPulse: {
+  newsFeed: {
     positive: "Positive",
     negative: "Negative",
     neutral: "Neutral",

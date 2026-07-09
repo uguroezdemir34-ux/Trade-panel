@@ -1395,7 +1395,7 @@ export const tr: Dictionary = {
     profileNoTrades: "Henüz kapalı işlem yok — işlem yaptıkça profil dolacak.",
   },
 
-  marketPulse: {
+  newsFeed: {
     positive: "Pozitif",
     negative: "Negatif",
     neutral: "Nötr",

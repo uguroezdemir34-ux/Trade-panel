@@ -1,5 +1,5 @@
 /**
- * NEWS STORE — Piyasa Canlı Nabız şeridi için sınıflandırılmış haberler.
+ * NEWS STORE — Haber Akışı şeridi için sınıflandırılmış haberler.
  *
  * Ephemeral/canlı veri — localStorage persist yok (orderBookStore ile aynı
  * sınıf: her sayfa yüklemesinde poller yeniden doldurur).

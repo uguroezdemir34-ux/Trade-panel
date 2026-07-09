@@ -1395,7 +1395,7 @@ export const en: Dictionary = {
     profileNoTrades: "No closed trades yet — profile will populate as you trade.",
   },
 
-  marketPulse: {
+  newsFeed: {
     positive: "Positive",
     negative: "Negative",
     neutral: "Neutral",

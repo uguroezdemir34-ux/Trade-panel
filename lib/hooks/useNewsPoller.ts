@@ -1,5 +1,5 @@
 /**
- * NEWS POLLER — Piyasa Canlı Nabız şeridi için periyodik güncelleme.
+ * NEWS POLLER — Haber Akışı şeridi için periyodik güncelleme.
  *
  * /api/news çağırır (server-side RSS+Finnhub proxy), sonucu newsStore'a
  * yazar. 20dk cadence — kullanıcının istediği 15-30dk aralığının ortası.
