@@ -241,6 +241,8 @@ export const tr: Dictionary = {
     holdExitQuickProfit: "Hızlı Kar Al",
     holdExitEarlyExitWarning: "Erken Tahliye Uyarısı",
     holdExitWaitNoSignal: "Bekle / Net Sinyal Yok",
+    squeezeRadarLabel: "Sıkışma Radarı",
+    squeezeRadarDesc: "Volatilite sıkışması gösteren coinler (ATR persentili) — potansiyel breakout öncesi",
 },
   watchlist: {
     toast: {

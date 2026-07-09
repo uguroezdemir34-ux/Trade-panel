@@ -102,6 +102,7 @@ import { MissedSignalsBanner } from "@/components/karar/MissedSignalsBanner";
 import { PositionAccordion } from "@/components/karar/PositionAccordion";
 import { TickerTape } from "@/components/karar/TickerTape";
 import { ScoreHeatmap } from "@/components/karar/ScoreHeatmap";
+import { SqueezeRadarBanner } from "@/components/karar/SqueezeRadarBanner";
 
 export default function KararPage() {
   const t = useT();
@@ -594,6 +595,8 @@ export default function KararPage() {
       <TickerTape />
 
       <ScoreHeatmap onSelect={setActivePair} />
+
+      <SqueezeRadarBanner />
 
       {/* Forward Test Mode banner */}
       {forwardTestMode && (

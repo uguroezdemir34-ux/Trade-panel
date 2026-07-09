@@ -241,6 +241,8 @@ export const en: Dictionary = {
     holdExitQuickProfit: "Take Quick Profit",
     holdExitEarlyExitWarning: "Early Exit Warning",
     holdExitWaitNoSignal: "Wait / No Clear Signal",
+    squeezeRadarLabel: "Squeeze Radar",
+    squeezeRadarDesc: "Coins showing volatility compression (ATR percentile) — potential pre-breakout",
 },
   watchlist: {
     toast: {
