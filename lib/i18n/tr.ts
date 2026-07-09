@@ -1047,7 +1047,8 @@ export const tr: Dictionary = {
       desc: "ATR(14) / fiyat · 1s mumları",
     },
     correlationCard: {
-      desc: "Yüksek korelasyon → benzer risk · yeşil=BTC ile aynı yön",
+      title: "{anchor} Korelasyon · {window}g",
+      desc: "Yüksek korelasyon → benzer risk · yeşil={anchor} ile aynı yön",
     },
     oi: {
       title: "AÇIK POZİSYON (OI)",

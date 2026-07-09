@@ -884,7 +884,7 @@ volumeSection: "VOLUMEN",
     marketSessions: { title: "Market Sessions", overlap: "Session Overlap", overlapDesc: "higher liquidity & volatility", open: "OPEN", closed: "CLOSED", closesIn: "closes in", opensIn: "opens in", },
     marketBreadth: { title: "Market Breadth", },
     oiVelocity: { title: "OI Velocity", loading: "~5m", colRegime: "Regime", colScore: "Score", colOI: "OI%", colPrice: "Price%", },
-    volatilityRank: { title: "Volatility Rank (ATR%)", desc: "ATR(14) / price · 1h candles", }, correlationCard: { desc: "High correlation → similar risk · green=same direction as BTC", },
+    volatilityRank: { title: "Volatility Rank (ATR%)", desc: "ATR(14) / price · 1h candles", }, correlationCard: { title: "{anchor} Correlation · {window}d", desc: "High correlation → similar risk · green=same direction as {anchor}", },
   },
 
   grafik: {

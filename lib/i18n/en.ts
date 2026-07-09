@@ -1075,7 +1075,8 @@ export const en: Dictionary = {
       desc: "ATR(14) / price · 1h candles",
     },
     correlationCard: {
-      desc: "High correlation → similar risk · green=same direction as BTC",
+      title: "{anchor} Correlation · {window}d",
+      desc: "High correlation → similar risk · green=same direction as {anchor}",
     },
   },
 
