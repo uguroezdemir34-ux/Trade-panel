@@ -75,6 +75,7 @@ import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { computeScoreVelocity } from "@/lib/score/velocity";
 import { computeHoldExitGuide, HOLD_EXIT_LABEL_I18N_KEY } from "@/lib/score/holdExitGuide";
+import { computeMarketPulseIndex } from "@/lib/score/marketPulse";
 import { computeOiCollapseAnomaly, computeOrderBookWallAnomaly } from "@/lib/score/anomalyDetector";
 import { useOrderBookStore } from "@/lib/store/orderBookStore";
 import { AnomalyBadge } from "@/components/karar/AnomalyBadge";
@@ -290,6 +291,14 @@ export default function KararPage() {
 
   const goPairs = useMemo(
     () => PAIRS.filter((p) => allResults[p]?.verdict === "go"),
+    [allResults],
+  );
+
+  // Market Pulse Index — 24 coin evreninin direction×dirConfidence ağırlıklı
+  // net yön eğilimi. Saf türetme, useScoreEngine'e dokunmaz. Geçerli sonuç
+  // yoksa null — kart sahte bir yüzde göstermesin diye.
+  const marketPulseIndex = useMemo(
+    () => computeMarketPulseIndex(allResults),
     [allResults],
   );
 
@@ -606,10 +615,10 @@ export default function KararPage() {
 
       {/* Header row: MarketPulseWidget + keyboard shortcut */}
       <div className="flex items-center justify-between -mt-1">
-        {showMarketPulse && (
-          <MarketPulseWidget onClose={handleCloseMarketPulse} />
+        {showMarketPulse && marketPulseIndex !== null && (
+          <MarketPulseWidget value={marketPulseIndex} onClose={handleCloseMarketPulse} />
         )}
-        <div className={showMarketPulse ? "" : "ml-auto"}>
+        <div className={showMarketPulse && marketPulseIndex !== null ? "" : "ml-auto"}>
           <button
             onClick={() => setShowShortcuts(true)}
             className="font-mono text-2xs text-text-t4 hover:text-text-t2 transition-colors border border-border/40 rounded px-2 py-0.5"
