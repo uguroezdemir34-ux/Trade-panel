@@ -75,8 +75,9 @@ import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { computeScoreVelocity } from "@/lib/score/velocity";
 import { computeHoldExitGuide, HOLD_EXIT_LABEL_TEXT } from "@/lib/score/holdExitGuide";
-import { computeAnomalyLight } from "@/lib/score/anomalyDetector";
+import { computeOiCollapseAnomaly, computeOrderBookWallAnomaly } from "@/lib/score/anomalyDetector";
 import { useOrderBookStore } from "@/lib/store/orderBookStore";
+import { AnomalyBadge } from "@/components/karar/AnomalyBadge";
 import { SessionStatsBar } from "@/components/karar/SessionStatsBar";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
@@ -766,24 +767,12 @@ export default function KararPage() {
               // Anomali Işığı — FAZ 1 (OI-çöküş) + FAZ 2 (order book duvarı):
               // sadece mevcut results[p] + macroStore.oiVelocity[p] +
               // orderBookStore.imbalance[p]'den okur, yeni fetch yok.
-              const oiAnomaly = computeAnomalyLight(
-                pr,
-                allOiVelocity[p] ?? null,
-                allOrderBookImbalance[p] ?? null,
-              );
+              const oiCollapseAnomaly = computeOiCollapseAnomaly(pr, allOiVelocity[p] ?? null);
+              const orderBookWallAnomaly = computeOrderBookWallAnomaly(pr, allOrderBookImbalance[p] ?? null);
 
               return (
                 <div key={p} className="relative group">
-                  {oiAnomaly && (
-                    <span
-                      className="absolute top-0.5 right-0.5 z-10 text-[10px] leading-none pointer-events-none"
-                      style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.6))" }}
-                      title="Anomali — puan yüksek ama OI ani çöküyor olabilir veya sinyal yönünün karşısında ağır bir emir duvarı var"
-                      aria-label="OI anomali uyarısı"
-                    >
-                      ⚠️
-                    </span>
-                  )}
+                  <AnomalyBadge oiAnomaly={oiCollapseAnomaly} wallAnomaly={orderBookWallAnomaly} />
                   {goStrength && !isActive && (
                     <>
                       <div className={`absolute inset-0 rounded-lg ring-1 ${goRingClass} animate-pulse pointer-events-none`} />

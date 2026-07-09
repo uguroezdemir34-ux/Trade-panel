@@ -17,8 +17,8 @@ import type { OrderBookImbalanceResult } from "@/lib/market/orderbook-imbalance"
  * ağır satış duvarı, veya SHORT sinyali + altta ağır alış duvarı), bu
  * hareketi bloklayabilecek bir engel anlamına gelir.
  *
- * İki faz `computeAnomalyLight` içinde `anomaly_oi || anomaly_wall` olarak
- * birleşir — kart köşesinde tek bir uyarı ikonu.
+ * İki faz caller'da (`app/karar/page.tsx`) `anomaly_oi || anomaly_wall`
+ * olarak birleşir — kart köşesinde tek bir uyarı ikonu (bkz. AnomalyBadge).
  */
 
 const NEAR_THRESHOLD_MARGIN = 10;
@@ -54,16 +54,4 @@ export function computeOrderBookWallAnomaly(
   if (result.direction === "SHORT" && imbalance.wallSide === "bid") return true;
 
   return false;
-}
-
-/** Kart köşesindeki tek "Anomali Işığı" ikonu için birleşik sinyal. */
-export function computeAnomalyLight(
-  result: ScoreResult | null | undefined,
-  oiVelocity: OiVelocityResult | null | undefined,
-  imbalance: OrderBookImbalanceResult | null | undefined,
-): boolean {
-  return (
-    computeOiCollapseAnomaly(result, oiVelocity) ||
-    computeOrderBookWallAnomaly(result, imbalance)
-  );
 }
