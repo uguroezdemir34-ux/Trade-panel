@@ -104,7 +104,9 @@ export function useSignalFirehose(): void {
             oiDivergence,
             triggeredGates: result.triggeredShadowGates,
           });
-          void fireSignal(pair, result, tgCreds, forwardTestMode);
+          fireSignal(pair, result, tgCreds, forwardTestMode).catch((err) => {
+            console.warn(`[signal-firehose] ${pair} sinyal gönderimi başarısız:`, err);
+          });
         }
       }
 
