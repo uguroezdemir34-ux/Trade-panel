@@ -405,6 +405,17 @@ textarea {
 }
 .flow-led { animation: flow-led-ring 2s ease-in-out infinite; }
 
+/* Ticker Tape — sürekli akan fiyat şeridi. Sadece transform (GPU compositor
+   thread'inde çalışır, ana thread'i meşgul etmez) — requestAnimationFrame
+   KULLANILMIYOR, bilinçli karar (bkz. CLAUDE.md §9 Görsel Kalite Paketi). */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-tape-track { animation: none !important; }
+}
+
 /* === Hero card dış kabuk — nötr karanlık metal çerçeve ===
    --border-strong tokeni: dark=58 58 58, light=136 136 152.
    Kart gövdesi bg-card tokenından, çerçeve sadece kenarda. */

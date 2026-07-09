@@ -100,6 +100,7 @@ import { MarketPulseWidget } from "@/components/karar/MarketPulseWidget";
 import { SignalAccuracyCard } from "@/components/karar/SignalAccuracyCard";
 import { MissedSignalsBanner } from "@/components/karar/MissedSignalsBanner";
 import { PositionAccordion } from "@/components/karar/PositionAccordion";
+import { TickerTape } from "@/components/karar/TickerTape";
 
 export default function KararPage() {
   const t = useT();
@@ -589,6 +590,8 @@ export default function KararPage() {
 
   return (
     <div className="flex flex-col gap-2 sm:gap-3">
+      <TickerTape />
+
       {/* Forward Test Mode banner */}
       {forwardTestMode && (
         <div className="flex items-center gap-2 rounded-lg border border-signal-green/30 bg-signal-green/8 px-3 py-2">
