@@ -8,11 +8,15 @@ export type HoldExitLabel =
   | "early_exit_warning"
   | "wait_no_signal";
 
-export const HOLD_EXIT_LABEL_TEXT: Record<HoldExitLabel, string> = {
-  max_hold: "Maksimum Taşı",
-  quick_profit: "Hızlı Kar Al",
-  early_exit_warning: "Erken Tahliye Uyarısı",
-  wait_no_signal: "Bekle / Net Sinyal Yok",
+/**
+ * HoldExitLabel → i18n anahtarı (lib/i18n/*.ts `karar.*`). Görüntü metni
+ * burada değil, çeviri sözlüklerinde — dil değişince otomatik güncellenir.
+ */
+export const HOLD_EXIT_LABEL_I18N_KEY: Record<HoldExitLabel, string> = {
+  max_hold: "karar.holdExitMaxHold",
+  quick_profit: "karar.holdExitQuickProfit",
+  early_exit_warning: "karar.holdExitEarlyExitWarning",
+  wait_no_signal: "karar.holdExitWaitNoSignal",
 };
 
 const WINDOW_MIN = 15;

@@ -74,7 +74,7 @@ import { formatCvd } from "@/lib/orderflow/cvd";
 import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
 import { computeScoreVelocity } from "@/lib/score/velocity";
-import { computeHoldExitGuide, HOLD_EXIT_LABEL_TEXT } from "@/lib/score/holdExitGuide";
+import { computeHoldExitGuide, HOLD_EXIT_LABEL_I18N_KEY } from "@/lib/score/holdExitGuide";
 import { computeOiCollapseAnomaly, computeOrderBookWallAnomaly } from "@/lib/score/anomalyDetector";
 import { useOrderBookStore } from "@/lib/store/orderBookStore";
 import { AnomalyBadge } from "@/components/karar/AnomalyBadge";
@@ -900,14 +900,14 @@ export default function KararPage() {
                       const guide = computeHoldExitGuide(pr, snaps);
                       if (!guide) return null;
                       const gc =
-                        guide === "max_hold" ? "text-green-400 bg-green-400/10"
-                        : guide === "quick_profit" ? "text-amber-400 bg-amber-400/10"
-                        : guide === "early_exit_warning" ? "text-red-400 bg-red-400/10"
-                        : "text-text-t4 bg-text-t4/10";
+                        guide === "max_hold" ? "text-signal-green bg-soft-green"
+                        : guide === "quick_profit" ? "text-signal-amber bg-soft-amber"
+                        : guide === "early_exit_warning" ? "text-signal-red bg-soft-red"
+                        : "text-text-t3 bg-text-t3/10";
                       return (
                         <div className="flex justify-center -mt-0.5 mb-0.5">
-                          <span translate="no" className={`text-[8px] font-mono px-1.5 py-0.5 rounded leading-none ${gc}`}>
-                            {HOLD_EXIT_LABEL_TEXT[guide]}
+                          <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded leading-none ${gc}`}>
+                            {t(HOLD_EXIT_LABEL_I18N_KEY[guide])}
                           </span>
                         </div>
                       );

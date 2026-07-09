@@ -237,6 +237,10 @@ export const tr: Dictionary = {
     emaAbove: "Üstünde",
     emaBelow: "Altında",
     emaNoData: "Veri Yok",
+    holdExitMaxHold: "Maksimum Taşı",
+    holdExitQuickProfit: "Hızlı Kar Al",
+    holdExitEarlyExitWarning: "Erken Tahliye Uyarısı",
+    holdExitWaitNoSignal: "Bekle / Net Sinyal Yok",
 },
   watchlist: {
     toast: {
