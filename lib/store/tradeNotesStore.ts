@@ -16,7 +16,21 @@ const tradeNoteSchema = z.object({
   updatedAt: z.number(),
 });
 
-const notesMapSchema = z.record(z.string(), tradeNoteSchema);
+/**
+ * Notları tek blok olarak değil, kayıt kayıt doğrular — tek bir bozuk/eski
+ * şemalı not tüm trade notu koleksiyonunu silmesin diye. Eskiden
+ * notesMapSchema.safeParse(wholeObject) tüm-ya-da-hiç çalışıyordu (tradesStore
+ * ile aynı risk); bunun yerine yalnızca geçersiz olan TEK kaydı düşürür.
+ */
+function parseNotesLenient(raw: unknown): Record<string, TradeNote> {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const out: Record<string, TradeNote> = {};
+  for (const [tradeId, value] of Object.entries(raw as Record<string, unknown>)) {
+    const r = tradeNoteSchema.safeParse(value);
+    if (r.success) out[tradeId] = r.data;
+  }
+  return out;
+}
 
 interface TradeNotesStoreState {
   notes: Record<string, TradeNote>;
@@ -45,11 +59,7 @@ export const useTradeNotesStore = create<TradeNotesStoreState>((set, get) => ({
   },
 
   rehydrate: () => {
-    const loaded = loadFromStorage<Record<string, TradeNote>>(
-      STORAGE_KEY,
-      {},
-      notesMapSchema,
-    );
-    set({ notes: loaded });
+    const raw = loadFromStorage<unknown>(STORAGE_KEY, {});
+    set({ notes: parseNotesLenient(raw) });
   },
 }));
