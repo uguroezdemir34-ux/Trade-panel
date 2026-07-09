@@ -40,6 +40,8 @@ import { useScoreHistory } from "@/lib/hooks/useScoreHistory";
 import { useBalancePoller } from "@/lib/hooks/useBalancePoller";
 import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
 import { useOrderBookPoller } from "@/lib/hooks/useOrderBookPoller";
+import { useNewsPoller } from "@/lib/hooks/useNewsPoller";
+import { MarketPulseBanner } from "./MarketPulseBanner";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
 import { useSignalFirehose } from "@/lib/hooks/useSignalFirehose";
@@ -118,6 +120,7 @@ export function AppShell({
   useBalancePoller(2_000);  // t+2s
   useMacroPoller(3_000);    // t+3s — en yavaş değişen veri, en son
   useOrderBookPoller(4_000); // t+4s — Anomali Işığı Faz 2 (order book duvarı), 3dk cadence
+  useNewsPoller(5_000);      // t+5s — Piyasa Canlı Nabız (RSS+Finnhub haber sentiment), 20dk cadence
   // Günlük P&L takip → drawdown protokol tier güncelle (güvenlik kritik)
   useDailyPnlTracker();
   // Order flow trade feed → tradeFeedStore (CVD/VPIN/SMC için)
@@ -194,6 +197,7 @@ export function AppShell({
       <DisclaimerModal />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />
+      <MarketPulseBanner />
       <AlarmToastContainer />
       <main className="app-main mx-auto max-w-screen-2xl px-4 pt-4 lg:px-6">
         {children}

@@ -1394,4 +1394,11 @@ export const en: Dictionary = {
     profileTrades: "Trades",
     profileNoTrades: "No closed trades yet — profile will populate as you trade.",
   },
+
+  marketPulse: {
+    positive: "Positive",
+    negative: "Negative",
+    neutral: "Neutral",
+    disclaimer: "Not an automated signal — informational only",
+  },
 };

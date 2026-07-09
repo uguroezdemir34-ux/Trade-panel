@@ -212,9 +212,11 @@ rejection). Şu an aktif tetiklendiğine dair kanıt yok, ama kırılgan.
 
 **Anomali Dedektörü — Faz 1 + Faz 2 tamamlandı (kullanıcı onayıyla erken alındı):**
 Faz 1 (OI-çöküş) ve Faz 2 (order book duvarı) ikisi de tamamlandı —
-`lib/score/anomalyDetector.ts` → `computeAnomalyLight()` (`anomaly_oi ||
-anomaly_wall`), kart köşesinde tek ⚠️ ikonu. Faz 2 için yeni dosyalar:
-`lib/okx/orderbook.ts` (fetch+parse, `/api/v5/market/books?sz=5`),
+`lib/score/anomalyDetector.ts` → `computeOiCollapseAnomaly()` +
+`computeOrderBookWallAnomaly()` (caller'da `anomaly_oi || anomaly_wall`
+birleştirilir, bkz. `components/karar/AnomalyBadge.tsx`), kart köşesinde tek
+⚠️ ikonu (tap-to-show tooltip, ~4.5sn otomatik kapanır). Faz 2 için yeni
+dosyalar: `lib/okx/orderbook.ts` (fetch+parse, `/api/v5/market/books?sz=5`),
 `lib/market/orderbook-imbalance.ts` (saf hesap, WALL_RATIO_THRESHOLD=3),
 `lib/store/orderBookStore.ts` (ephemeral, persist yok),
 `lib/hooks/useOrderBookPoller.ts` (3dk cadence, `runBatched` ile
@@ -224,6 +226,23 @@ alınmıştı; kullanıcı bu riski bilerek ve açıkça "şimdi tamamla" talima
 erken aldırdı — ileride bir performans regresyonu görülürse ayrı bir
 düzeltme turu olarak ele alınacak. `useScoreEngine.ts`/`orchestrator.ts`/
 `lib/score/*` skor hesaplama dosyalarına hiç dokunulmadı.
+
+**Piyasa Canlı Nabız — Haber/Sentiment katmanı tamamlandı (Görev 4):**
+CoinDesk+Cointelegraph RSS (birincil, aracısız) + Finnhub `/news?category=crypto`
+(tamamlayıcı, ücretsiz key) → anahtar kelime tabanlı Pozitif/Negatif/Nötr
+sınıflandırma (`lib/news/sentimentClassifier.ts` — FinBERT değil, kasıtlı:
+araştırma FinBERT'in bile "ton"u algılayıp fiyat-etkisini kaçırdığını
+gösterdi, kripto başlıkları daha formülaik bir olay-kelime dağarcığı
+kullanıyor). Yeni dosyalar: `lib/news/fetchNewsFeed.ts` (fast-xml-parser ile
+RSS parse — regex değil, CDATA/encoding köşe durumlarında sessiz bozuk veri
+riskini azaltmak için), `app/api/news/route.ts` (10dk sunucu cache),
+`lib/store/newsStore.ts` (ephemeral), `lib/hooks/useNewsPoller.ts` (20dk
+cadence, `AppShell`'e t+5s'te eklendi — per-pair değil, tek global istek,
+OKX rate limitine hiç girmiyor), `components/layout/MarketPulseBanner.tsx`
+(AppHeader altında global şerit, "otomatik sinyal değil" uyarısı kalıcı
+görünür). `FINNHUB_API_KEY` eksikse Finnhub sessizce atlanır, sadece RSS
+kaynakları kullanılır — bkz. §13 kullanıcı aksiyonu. `useScoreEngine.ts`/
+`orchestrator.ts`/`lib/score/*`'a hiç dokunulmadı.
 
 **HYPE/ONDO/TIA/JUP/ENA/SEI — eksik kalibrasyon verisi (bilinçli, düşük risk):**
 Bu 6 coin eklenirken şu değerler kasıtlı olarak boş bırakıldı, hepsi
@@ -328,6 +347,10 @@ Tamamlanan (bu session):
 Kullanıcı aksiyonu bekleyen:
 - ⏳ Clerk env vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` → Vercel
 - ⏳ Stripe env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` → Vercel
+- ⏳ Finnhub env var: `FINNHUB_API_KEY` → Vercel (ücretsiz key, finnhub.io/register).
+  Eksikse Piyasa Canlı Nabız (`/api/news`) sessizce Finnhub'ı atlar, sadece
+  CoinDesk+Cointelegraph RSS ile çalışmaya devam eder — crash yok, sadece
+  haber kapsamı daralır.
 
 Sonraki geliştirme fırsatları:
 1. **Pozisyon sayfası** — açık pozisyonlar için daha detaylı P&L + TP/SL yönetimi

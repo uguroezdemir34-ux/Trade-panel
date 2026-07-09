@@ -1182,4 +1182,11 @@ toolCursor: "Курсор",
     binanceButton: "Follow on Binance →",
     notConfigured: "Not configured yet",
   },
+
+  marketPulse: {
+    positive: "Positive",
+    negative: "Negative",
+    neutral: "Neutral",
+    disclaimer: "Not an automated signal — informational only",
+  },
 };

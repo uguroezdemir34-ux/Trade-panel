@@ -1394,4 +1394,11 @@ export const tr: Dictionary = {
     profileTrades: "İşlem",
     profileNoTrades: "Henüz kapalı işlem yok — işlem yaptıkça profil dolacak.",
   },
+
+  marketPulse: {
+    positive: "Pozitif",
+    negative: "Negatif",
+    neutral: "Nötr",
+    disclaimer: "Otomatik bir sinyal değil — sadece bilgilendirme amaçlı",
+  },
 };
