@@ -101,6 +101,7 @@ import { SignalAccuracyCard } from "@/components/karar/SignalAccuracyCard";
 import { MissedSignalsBanner } from "@/components/karar/MissedSignalsBanner";
 import { PositionAccordion } from "@/components/karar/PositionAccordion";
 import { TickerTape } from "@/components/karar/TickerTape";
+import { ScoreHeatmap } from "@/components/karar/ScoreHeatmap";
 
 export default function KararPage() {
   const t = useT();
@@ -591,6 +592,8 @@ export default function KararPage() {
   return (
     <div className="flex flex-col gap-2 sm:gap-3">
       <TickerTape />
+
+      <ScoreHeatmap onSelect={setActivePair} />
 
       {/* Forward Test Mode banner */}
       {forwardTestMode && (
