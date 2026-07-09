@@ -804,9 +804,14 @@ export default function KararPage() {
                   <button
                     onClick={() => setActivePair(p as Pair)}
                     style={v === "go" ? {
+                      // 3 kademeli glow — goRingClass/goPingClass'ın zaten kullandığı
+                      // strong/medium=yeşil, weak=sarı renk ayrımıyla tutarlı hale
+                      // getirildi (önceden weak de yeşil glow alıyordu, ring'iyle uyumsuzdu).
                       boxShadow: goStrength === "strong"
                         ? "0 0 12px 2px rgba(74,222,128,0.35)"
-                        : "0 0 10px 1px rgba(34,197,94,0.22)",
+                        : goStrength === "medium"
+                        ? "0 0 10px 1px rgba(34,197,94,0.22)"
+                        : "0 0 8px 1px rgba(234,179,8,0.20)",
                       willChange: "box-shadow",
                     } : undefined}
                     className={[
