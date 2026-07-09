@@ -217,9 +217,6 @@ tamamlanacak:
 - `lib/hooks/useLiqFeed.ts` → `OKX_CONTRACT_SIZE` (ctVal) — `?? 1` fallback
   kullanılıyor, etkisi yalnızca liquidation notional gösterimi (kozmetik,
   skor motoruna/GO kararına/emir mekanizmasına sızmıyor — teyit edildi).
-- `lib/orderflow/vpin.ts` → `ALT_VPIN_CONFIGS` — `DEFAULT_VPIN_CONFIG`
-  ($50M, BTC boyutu) kısa süreliğine kullanılıyor, `tradeFeedStore.ts`'teki
-  dinamik kalibrasyon canlı hacimden birkaç saniye içinde düzeltiyor.
 - `components/grafik/WatchlistPanel.tsx` → `CMC_IDS` — eksik girişte
   `CoinLogo` bileşeni otomatik ikinci CDN'e, o da olmazsa harf rozetine
   düşüyor (crash yok, sadece logo eksik/placeholder görünür).
