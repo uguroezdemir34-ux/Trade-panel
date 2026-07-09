@@ -148,12 +148,12 @@ export function PositionAccordion(): React.ReactElement | null {
 
               <div className="flex items-center gap-1.5 ml-auto shrink-0">
                 <span
-                  className={`font-mono text-sm font-bold tabular-nums ${uplSafe >= 0 ? "pnl-breathe-green" : "pnl-breathe-red"}`}
+                  className={`font-mono text-base font-bold tabular-nums ${uplSafe >= 0 ? "pnl-breathe-green" : "pnl-breathe-red"}`}
                   style={{ color: pnlColor }}
                 >
                   {`${uplSafe >= 0 ? "+" : ""}${uplSafe.toFixed(0)}$`}
                 </span>
-                <span className="font-mono text-xs tabular-nums" style={{ color: pnlColor }}>
+                <span className="font-mono text-sm tabular-nums" style={{ color: pnlColor }}>
                   {signed(roePct)}%
                 </span>
               </div>
