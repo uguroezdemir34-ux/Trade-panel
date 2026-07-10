@@ -72,8 +72,8 @@ function ScoreRingV2Impl({
   isDark,
 }: InternalProps): React.ReactElement {
   const t = useT();
-  const strokeWidth   = 6;
-  const bezelStroke   = 4.5;                                    // defined before radius (TDZ-safe)
+  const strokeWidth   = 3;
+  const bezelStroke   = 2.25;                                   // ring:bezel oranı (4:3) korunuyor — defined before radius (TDZ-safe)
   const bezelR        = size / 2 - bezelStroke / 2 - 0.5;      // outer edge = 29.5, inside viewBox
   const radius        = (size - strokeWidth) / 2 - bezelStroke - 1; // inset to clear bezel gap
   const circumference = 2 * Math.PI * radius;
