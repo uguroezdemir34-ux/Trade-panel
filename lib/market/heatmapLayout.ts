@@ -1,20 +1,24 @@
 import type { ScoreResult } from "@/lib/score/orchestrator";
 import type { Pair } from "@/lib/constants/pairs";
+import type { Tick } from "@/lib/ws/types";
 
 /**
- * ISI HARİTASI (HEATMAP/TREEMAP) LAYOUT — 24 coin evreninin skor+yön
- * özetini tek bir grid'de görselleştirmek için saf hesap.
+ * ISI HARİTASI (HEATMAP) LAYOUT — 24 coin evreninin skor+yön özetini tek
+ * bir grid'de görselleştirmek için saf hesap.
  *
- * D3/d3-hierarchy gibi bir treemap kütüphanesi eklenmedi (CLAUDE.md
- * "gereksiz bağımlılık ekleme" prensibi) — 24 sabit eleman için tam
- * rectangle-packing algoritması yerine basit bir "flex-grow ağırlıklı grid"
- * yeterli: her hücrenin `weight`'i CSS flex-grow olarak kullanılır, tarayıcı
- * satır içi orantılı boyutlandırmayı kendisi yapar. Gerçek squarified
- * treemap'e göre daha az hassas ama 24 eleman için görsel fark ihmal
- * edilebilir, bakım yükü çok daha düşük.
+ * Bölüm 2 (Bloomberg Terminal düzeni): hacme göre ilk 3 pair "large" (2×2
+ * Bloomberg-tarzı hücre, tam 3 katmanlı görünüm — isim+fiyat/skor/%chg),
+ * kalan 21 pair "normal" (kompakt PAIR+skor, %chg sadece ok/renk rozeti).
+ * Kalan hücreler önceki gibi skora göre sıralı — bu davranış zaten vardı,
+ * değişmedi.
  *
- * Saf türetme — results[pair]'den okur, skor motoruna hiç dokunmaz.
- * Geçerli sonuç yoksa null (diğer Görev'lerdeki disiplinle aynı).
+ * D3/d3-hierarchy gibi bir treemap kütüphanesi hâlâ yok (CLAUDE.md
+ * "gereksiz bağımlılık ekleme" prensibi) — CSS Grid'in kendi span/dense
+ * paketleme mekanizması yeterli (bkz. ScoreHeatmap.tsx).
+ *
+ * Saf türetme — results[pair] (scoreStore) ve tick'ler (marketStore,
+ * useMarketStream'in WS akışından — useScoreEngine'den TAMAMEN bağımsız)
+ * okunur, skor motoruna hiç dokunulmaz. Geçerli sonuç yoksa null.
  */
 
 export interface HeatmapCell {
@@ -22,10 +26,13 @@ export interface HeatmapCell {
   score: number;
   verdict: ScoreResult["verdict"];
   direction: ScoreResult["direction"];
-  /** CSS flex-grow için ağırlık — büyük skor daha büyük hücre */
-  weight: number;
   /** Theme-aware Tailwind class'ları (text + bg) */
   colorClass: string;
+  /** "large" = hacme göre ilk 3 (2×2 Bloomberg hücresi), "normal" = geri kalan */
+  size: "large" | "normal";
+  /** Sadece "large" hücrelerde gösterilir — tick yoksa null, sorun değil */
+  price: number | null;
+  chg: number | null;
 }
 
 function colorClassFor(result: ScoreResult): string {
@@ -42,23 +49,55 @@ function colorClassFor(result: ScoreResult): string {
   return "text-text-t3 bg-text-t3/10 heatmap-cell-neutral";
 }
 
+/**
+ * Skor sayısı için text-shadow glow rengi — colorClassFor() ile AYNI
+ * verdict/direction dallanmasını kullanır ama dolgu/renk class'ına hiç
+ * dokunmaz, sadece "large" hücrelerde tüketilecek ayrı bir görsel katman
+ * (bkz. ScoreHeatmap.tsx). colorClassFor()'un kendisi değiştirilmedi.
+ */
+export function glowShadowFor(
+  verdict: ScoreResult["verdict"],
+  direction: ScoreResult["direction"],
+): string | undefined {
+  if (verdict === "go" && direction === "LONG") return "0 0 10px rgba(34, 197, 94, 0.55)";
+  if (verdict === "go" && direction === "SHORT") return "0 0 10px rgba(239, 68, 68, 0.55)";
+  if (direction === "LONG") return "0 0 8px rgba(34, 197, 94, 0.35)";
+  if (direction === "SHORT") return "0 0 8px rgba(239, 68, 68, 0.35)";
+  return undefined;
+}
+
+const LARGE_CELL_COUNT = 3;
+
 export function computeHeatmapCells(
   results: Partial<Record<Pair, ScoreResult | null | undefined>>,
+  ticksByPair: Partial<Record<Pair, Tick>> = {},
 ): HeatmapCell[] | null {
   const valid = Object.entries(results).filter(
     (entry): entry is [Pair, ScoreResult] => entry[1] != null,
   );
   if (valid.length === 0) return null;
 
-  const cells = valid.map(([pair, result]) => ({
-    pair,
-    score: result.score,
-    verdict: result.verdict,
-    direction: result.direction,
-    // Min 1 — skoru 0 olan bir coin de görünür kalsın, tamamen kaybolmasın
-    weight: Math.max(1, result.score),
-    colorClass: colorClassFor(result),
-  }));
+  const topVolumePairs = new Set(
+    valid
+      .map(([pair]) => pair)
+      .filter((pair) => (ticksByPair[pair]?.vol24h ?? 0) > 0)
+      .sort((a, b) => (ticksByPair[b]?.vol24h ?? 0) - (ticksByPair[a]?.vol24h ?? 0))
+      .slice(0, LARGE_CELL_COUNT),
+  );
+
+  const cells = valid.map(([pair, result]) => {
+    const tick = ticksByPair[pair];
+    return {
+      pair,
+      score: result.score,
+      verdict: result.verdict,
+      direction: result.direction,
+      colorClass: colorClassFor(result),
+      size: (topVolumePairs.has(pair) ? "large" : "normal") as "large" | "normal",
+      price: tick?.last ?? null,
+      chg: tick?.chg ?? null,
+    };
+  });
 
   return cells.sort((a, b) => b.score - a.score);
 }
