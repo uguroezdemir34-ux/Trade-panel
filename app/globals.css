@@ -139,6 +139,21 @@
     "Noto Sans Arabic", "Noto Sans Devanagari", ui-monospace, monospace !important;
 }
 
+/*
+ * Cam efektli konteynerler (Bölüm 1, Parça B) — SADECE 2 sabit, tekrar
+ * etmeyen büyük panel için (.glass-panel class'ı taşıyan ScoreHeatmap +
+ * SqueezeRadarBanner konteynerleri). Madde 4'ten (24 GO kartına tam
+ * glassmorphism, mobil perf netleşene kadar hâlâ ertelenmiş) tamamen
+ * ayrı ve çok daha düşük riskli bir sınıf — sabit sayıda (2), grid
+ * içinde tekrarlanmayan, scroll-kritik olmayan panel.
+ */
+[data-theme="cyber-terminal"] .glass-panel {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(232, 234, 244, 0.04) !important;
+  border-color: rgba(232, 234, 244, 0.12) !important;
+}
+
 /* Soft tint backgrounds — brighter in light mode (8% of bright color is invisible on white) */
 [data-theme="light"] .bg-soft-green  { background-color: rgb(21 128 61 / 0.12); }
 [data-theme="light"] .bg-soft-red    { background-color: rgb(185 28 28 / 0.12); }

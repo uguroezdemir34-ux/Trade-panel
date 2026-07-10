@@ -7,6 +7,9 @@
  * (allResults/allTicks gibi mevcut bileşenlerin okuduğu diğer store'larla
  * aynı "tüm map'i oku, useMemo'da filtrele" deseni — bkz. goPairs/
  * marketPulseIndex). useScoreEngine'e hiç dokunmaz.
+ *
+ * "glass-panel" class'ı sadece cyber-terminal temasında aktif olur
+ * (backdrop-blur, bkz. globals.css) — light/dark'ta hiçbir etkisi yok.
  */
 
 import { useMemo } from "react";
@@ -24,7 +27,7 @@ export function SqueezeRadarBanner(): React.ReactElement | null {
 
   return (
     <div
-      className="border-border bg-bg-card/40 flex items-center gap-2 rounded-lg border px-3 py-2 font-mono text-xs"
+      className="glass-panel border-border bg-bg-card/40 flex items-center gap-2 rounded-lg border px-3 py-2 font-mono text-xs"
       title={t("karar.squeezeRadarDesc")}
     >
       <span className="text-text-t3 shrink-0 text-2xs tracking-widest uppercase">

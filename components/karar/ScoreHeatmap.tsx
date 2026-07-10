@@ -16,6 +16,9 @@
  *
  * Saf hesaplama lib/market/heatmapLayout.ts'te — bu component sadece
  * zamanlama + render. useScoreEngine/orchestrator'a hiç dokunmaz.
+ *
+ * "glass-panel" class'ı sadece cyber-terminal temasında aktif olur
+ * (backdrop-blur, bkz. globals.css) — light/dark'ta hiçbir etkisi yok.
  */
 
 import { useEffect, useState } from "react";
@@ -53,7 +56,7 @@ export function ScoreHeatmap({ onSelect }: ScoreHeatmapProps): React.ReactElemen
   if (!cells || cells.length === 0) return null;
 
   return (
-    <div className="border-border bg-bg-card/40 flex flex-wrap gap-1 rounded-lg border p-2">
+    <div className="glass-panel border-border bg-bg-card/40 flex flex-wrap gap-1 rounded-lg border p-2">
       {cells.map((cell) => (
         <button
           key={cell.pair}
