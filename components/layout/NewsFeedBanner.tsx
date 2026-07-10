@@ -55,7 +55,7 @@ export function NewsFeedBanner(): React.ReactElement | null {
   const current = items[index % items.length];
 
   return (
-    <div className="border-border bg-bg-card/60 flex items-center gap-2 border-b px-4 py-1.5 text-xs font-mono lg:px-6">
+    <div className="border-border bg-bg-card/60 flex items-start gap-2 border-b px-4 py-1.5 text-xs font-mono lg:px-6">
       <span
         className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-none ${SENTIMENT_CLASS[current.sentiment]}`}
       >
@@ -65,7 +65,7 @@ export function NewsFeedBanner(): React.ReactElement | null {
         href={current.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-text-t2 hover:text-text-t1 truncate transition-colors"
+        className="text-text-t2 hover:text-text-t1 line-clamp-2 whitespace-normal break-words transition-colors"
         title={current.title}
       >
         {current.title}
