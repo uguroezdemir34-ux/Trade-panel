@@ -10,10 +10,22 @@
  * "Balina İzleri" genişletmesi: wallDetail geçilirse (wallSizeUsd +
  * wallDistancePct dolu) duvar mesajı somut rakamlarla zenginleşir — yoksa
  * (null/eksik) genel mesaja sessizce düşer, geriye dönük uyumlu.
+ *
+ * Tooltip yönü: varsayılan olarak sağa (right-0, sola doğru açılır) — ama
+ * 3-kolonlu grid'in sol sütunundaki kartlarda (örn. BTC) bu, viewport'un
+ * sol kenarından taşırıyordu. columnIndex prop'u geçirmek page.tsx'e de
+ * dokunmayı gerektirirdi; bunun yerine açılmadan hemen önce badge'in
+ * viewport'taki konumu ölçülüp yeterli yer yoksa left-0'a (sağa doğru
+ * açılır) geçiliyor — sıfır yeni prop, sadece bu dosya içinde kalıyor.
+ * useLayoutEffect kullanıldı (useEffect değil) ki yön düzeltmesi boyanmadan
+ * önce uygulansın, yanlış konumda bir kare flicker olmasın.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { OrderBookImbalanceResult } from "@/lib/market/orderbook-imbalance";
+
+const TOOLTIP_WIDTH_PX = 192; // w-48
+const VIEWPORT_SAFETY_MARGIN_PX = 8;
 
 interface AnomalyBadgeProps {
   oiAnomaly: boolean;
@@ -50,8 +62,20 @@ export function AnomalyBadge({
   wallDetail,
 }: AnomalyBadgeProps): React.ReactElement | null {
   const [open, setOpen] = useState(false);
+  const [tooltipAnchor, setTooltipAnchor] = useState<"left" | "right">("right");
   const containerRef = useRef<HTMLSpanElement | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Açılmadan hemen önce viewport'a göre yön seç — sola yeterli yer yoksa
+  // (sol sütun kartları) left-0'a (sağa açılan) geç, aksi halde varsayılan
+  // right-0 (sola açılan) kalsın.
+  useLayoutEffect(() => {
+    if (!open || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setTooltipAnchor(
+      rect.right - TOOLTIP_WIDTH_PX - VIEWPORT_SAFETY_MARGIN_PX < 0 ? "left" : "right",
+    );
+  }, [open]);
 
   // Dışarı dokununca kapat
   useEffect(() => {
@@ -106,7 +130,10 @@ export function AnomalyBadge({
       {open && (
         <span
           onClick={(e) => e.stopPropagation()}
-          className="absolute top-4 right-0 w-48 rounded-md border border-white/10 bg-black/90 px-2 py-1.5 text-[10px] leading-snug text-white shadow-lg"
+          className={[
+            "absolute top-4 w-48 max-w-[calc(100vw-2rem)] rounded-md border border-white/10 bg-black/90 px-2 py-1.5 text-[10px] leading-snug text-white shadow-lg",
+            tooltipAnchor === "left" ? "left-0" : "right-0",
+          ].join(" ")}
         >
           {message}
         </span>
