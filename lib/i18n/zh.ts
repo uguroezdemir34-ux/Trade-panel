@@ -151,6 +151,8 @@ export const zh: Dictionary = {
     scoresNever: "Not yet computed",
     fwdTestActive: "Active — orders are simulated, no real positions",
     groupAll: "All",
+    sortLabel: "排序",
+    sortByScore: "↓ 评分",
     computing: "Computing...",
     waitingData: "Waiting for candle data...",
     sendingOrder: "Sending order...",

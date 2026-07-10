@@ -151,6 +151,8 @@ export const ko: Dictionary = {
     scoresNever: "Not yet computed",
     fwdTestActive: "Active — orders are simulated, no real positions",
     groupAll: "All",
+    sortLabel: "정렬",
+    sortByScore: "↓ 점수",
     computing: "Computing...",
     waitingData: "Waiting for candle data...",
     sendingOrder: "Sending order...",

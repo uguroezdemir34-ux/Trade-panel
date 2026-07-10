@@ -150,6 +150,8 @@ export const tr: Dictionary = {
     scoresNever: "Henüz hesaplanmadı",
     fwdTestActive: "Aktif — emirler simüle edilir, gerçek pozisyon açılmaz",
     groupAll: "Tüm",
+    sortLabel: "SIRALA",
+    sortByScore: "↓ SKOR",
     computing: "Hesaplanıyor...",
     waitingData: "Mum verisi bekleniyor...",
     sendingOrder: "Emir gönderiliyor...",

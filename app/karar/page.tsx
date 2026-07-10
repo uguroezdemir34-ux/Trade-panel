@@ -721,7 +721,7 @@ export default function KararPage() {
                   : "border-border text-text-t4 hover:text-text-t2",
               ].join(" ")}
             >
-              {sortByScore ? "↓ SKOR" : "SIRALA"}
+              {sortByScore ? t("karar.sortByScore") : t("karar.sortLabel")}
             </button>
           </div>
 

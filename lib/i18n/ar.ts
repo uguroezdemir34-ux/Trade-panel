@@ -151,6 +151,8 @@ export const ar: Dictionary = {
     scoresNever: "Not yet computed",
     fwdTestActive: "Active — orders are simulated, no real positions",
     groupAll: "All",
+    sortLabel: "ترتيب",
+    sortByScore: "↓ النقاط",
     computing: "Computing...",
     waitingData: "Waiting for candle data...",
     sendingOrder: "Sending order...",

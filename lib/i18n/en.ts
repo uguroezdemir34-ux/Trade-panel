@@ -150,6 +150,8 @@ export const en: Dictionary = {
     scoresNever: "Not yet computed",
     fwdTestActive: "Active — orders are simulated, no real positions",
     groupAll: "All",
+    sortLabel: "SORT",
+    sortByScore: "↓ SCORE",
     computing: "Computing...",
     waitingData: "Waiting for candle data...",
     sendingOrder: "Sending order...",
