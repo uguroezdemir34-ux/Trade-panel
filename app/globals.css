@@ -154,6 +154,24 @@
   border-color: rgba(232, 234, 244, 0.12) !important;
 }
 
+/*
+ * Cyber-Terminal son ayarlar — küçük, düşük riskli renk düzeltmeleri.
+ *
+ * 1) Heatmap nötr/düşük skor hücreleri (text-t3) — mobilde güneş altında
+ *    okunabilirlik için text-t2'ye yükseltildi (bir üst kontrast kademesi).
+ *    Sadece renk, layout/mantık değişmedi.
+ * 2) Header'daki dil/tema seçim kutuları (.header-control-border) —
+ *    --border sadece :root'tan miras kalıyordu (Parça A'da override
+ *    edilmedi), daha derin --bg'ye göre görece "açık/donuk" duruyordu.
+ *    Glass panel'lerin sınırıyla aynı ince/parlak tonla hizalandı.
+ */
+[data-theme="cyber-terminal"] .heatmap-cell-neutral {
+  color: rgb(var(--text-t2)) !important;
+}
+[data-theme="cyber-terminal"] .header-control-border {
+  border-color: rgba(232, 234, 244, 0.16) !important;
+}
+
 /* Soft tint backgrounds — brighter in light mode (8% of bright color is invisible on white) */
 [data-theme="light"] .bg-soft-green  { background-color: rgb(21 128 61 / 0.12); }
 [data-theme="light"] .bg-soft-red    { background-color: rgb(185 28 28 / 0.12); }

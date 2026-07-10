@@ -36,7 +36,7 @@ export function ThemeToggle(): React.ReactElement | null {
       type="button"
       onClick={() => setTheme(next)}
       aria-label={`${THEME_LABEL[theme]} — ${THEME_LABEL[next]}'a geç`}
-      className="border-border bg-bg-card hover:border-border-strong flex h-7 w-7 items-center justify-center rounded border transition-colors"
+      className="header-control-border border-border bg-bg-card hover:border-border-strong flex h-7 w-7 items-center justify-center rounded border transition-colors"
       title={THEME_LABEL[theme]}
     >
       <span className="text-sm leading-none" aria-hidden>

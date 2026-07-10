@@ -37,7 +37,9 @@ function colorClassFor(result: ScoreResult): string {
   }
   if (result.direction === "LONG") return "text-signal-green/70 bg-soft-green/50";
   if (result.direction === "SHORT") return "text-signal-red/70 bg-soft-red/50";
-  return "text-text-t3 bg-text-t3/10";
+  // "heatmap-cell-neutral" — sadece cyber-terminal temasında kontrast artırımı
+  // hedefi (bkz. globals.css), diğer temalarda ek bir etkisi yok.
+  return "text-text-t3 bg-text-t3/10 heatmap-cell-neutral";
 }
 
 export function computeHeatmapCells(

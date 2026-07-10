@@ -49,7 +49,7 @@ export function LanguageDropdown(): React.ReactElement {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="border-border bg-bg-card hover:border-border-strong flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-xs transition-colors"
+        className="header-control-border border-border bg-bg-card hover:border-border-strong flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-xs transition-colors"
         style={{ color: "rgb(var(--text-t2))" }}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -66,7 +66,7 @@ export function LanguageDropdown(): React.ReactElement {
 
       {open && (
         <div
-          className="border-border bg-bg-card absolute right-0 top-full z-50 mt-1 min-w-[160px] rounded border py-1 shadow-2xl"
+          className="header-control-border border-border bg-bg-card absolute right-0 top-full z-50 mt-1 min-w-[160px] rounded border py-1 shadow-2xl"
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}
           role="listbox"
         >
