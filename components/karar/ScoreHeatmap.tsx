@@ -86,9 +86,12 @@ export function ScoreHeatmap({ onSelect }: ScoreHeatmapProps): React.ReactElemen
             key={cell.pair}
             onClick={() => onSelect(cell.pair)}
             className={[
-              "flex flex-col items-center justify-center overflow-hidden rounded px-1.5 py-1 text-center font-mono transition-colors",
+              "flex flex-col items-center justify-center overflow-hidden rounded text-center font-mono transition-colors",
               cell.colorClass,
-              isLarge ? "col-span-2 row-span-2 gap-0.5 text-[11px]" : "text-[10px]",
+              // Padding branch'e göre koşullu — px-1.5/py-1 ve p-3 aynı base string'de
+              // birlikte durursa Tailwind'in derlenmiş sırasına göre biri sessizce
+              // diğerini ezebilir, bu yüzden ikisi asla aynı anda mevcut değil.
+              isLarge ? "col-span-2 row-span-2 gap-0.5 p-3 text-[11px]" : "px-1.5 py-1 text-[10px]",
             ].join(" ")}
           >
             {isLarge ? (
