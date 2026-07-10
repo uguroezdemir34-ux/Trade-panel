@@ -102,6 +102,43 @@
   --brand-accent: 200  76   0;   /* #c84c00 — 4.8:1 */
 }
 
+/*
+ * ── CYBER-TERMINAL — opsiyonel 3. tema (ayarlardan seçilir) ──────────────
+ * Görsel Kalite Paketi — Bölüm 1, Parça A. Kasıtlı olarak minimal: sadece
+ * --bg override edilir, geri kalan tüm renkler (text-t1..t4, signal-*,
+ * border, brand) dark temanın zaten WCAG-kalibre edilmiş değerlerinden
+ * :root'tan miras alınır — mevcut "renkler değiştirilmemeli" kısıtını
+ * ihlal etmeden, dark tema paletini bozmadan üçüncü bir opsiyonel varyant.
+ * Grid dokusu + font override'ı ayrı kurallarla aşağıda.
+ */
+[data-theme="cyber-terminal"] {
+  --bg: 11 14 20;   /* #0B0E14 — derin gece mavisi-siyah */
+}
+
+/* İnce grid dokusu — %5 opaklık, yeni asset/bağımlılık yok, saf CSS gradient */
+[data-theme="cyber-terminal"] body {
+  background-image:
+    linear-gradient(rgba(232, 234, 244, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 234, 244, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/*
+ * Font override — JetBrains Mono. Tailwind'in font-sans/font-mono utility
+ * class'ları statik (CSS değişkeni değil, doğrudan derlenmiş font-family
+ * listesi) — bu yüzden basit bir :root cascade onları override edemez,
+ * !important ile .font-mono/.font-sans'ın kendisini hedeflemek gerekiyor.
+ * Sadece bu tema altında, light/dark'a hiç dokunmuyor. CJK/Arabic/
+ * Devanagari fallback zinciri korunuyor — JetBrains Mono o glyph'leri
+ * içermiyor.
+ */
+[data-theme="cyber-terminal"] body,
+[data-theme="cyber-terminal"] .font-mono,
+[data-theme="cyber-terminal"] .font-sans {
+  font-family: "JetBrains Mono", "Noto Sans SC", "Noto Sans JP", "Noto Sans KR",
+    "Noto Sans Arabic", "Noto Sans Devanagari", ui-monospace, monospace !important;
+}
+
 /* Soft tint backgrounds — brighter in light mode (8% of bright color is invisible on white) */
 [data-theme="light"] .bg-soft-green  { background-color: rgb(21 128 61 / 0.12); }
 [data-theme="light"] .bg-soft-red    { background-color: rgb(185 28 28 / 0.12); }

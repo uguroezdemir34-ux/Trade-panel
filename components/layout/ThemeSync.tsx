@@ -9,7 +9,8 @@ export function ThemeSync(): null {
   useEffect(() => {
     const root = document.documentElement;
     root.setAttribute("data-theme", theme);
-    root.style.colorScheme = theme;
+    // color-scheme sadece "light"/"dark" tanır — cyber-terminal de dark ailesinden
+    root.style.colorScheme = theme === "light" ? "light" : "dark";
   }, [theme]);
 
   // Enable smooth transitions after initial paint to avoid FOUC

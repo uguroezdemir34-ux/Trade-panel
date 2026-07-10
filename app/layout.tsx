@@ -65,7 +65,7 @@ export default function RootLayout({
           {/* Prevent theme FOUC — reads localStorage before React hydrates */}
           <script
             dangerouslySetInnerHTML={{
-              __html: `try{var t=localStorage.getItem('ug52_theme');var v=t?JSON.parse(t):'dark';document.documentElement.setAttribute('data-theme',v);document.documentElement.style.colorScheme=v;}catch(e){}`,
+              __html: `try{var t=localStorage.getItem('ug52_theme');var v=t?JSON.parse(t):'dark';document.documentElement.setAttribute('data-theme',v);document.documentElement.style.colorScheme=(v==='light'?'light':'dark');}catch(e){}`,
             }}
           />
           {/* DEBUG: Visible error overlay for Android WebView black screen diagnosis.
@@ -83,9 +83,11 @@ export default function RootLayout({
             href="https://fonts.gstatic.com"
             crossOrigin=""
           />
-          {/* IBM Plex (Latin/Cyrillic) + Noto Sans families for CJK, Arabic, Devanagari */}
+          {/* IBM Plex (Latin/Cyrillic) + Noto Sans families for CJK, Arabic, Devanagari.
+              JetBrains Mono: opsiyonel "cyber-terminal" tema varyantı için (bkz. globals.css) —
+              light/dark temalar hâlâ IBM Plex kullanıyor, bu sadece cyber-terminal seçilince aktif olur. */}
           <link
-            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;700&display=swap"
+            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;700&display=swap"
             rel="stylesheet"
           />
         </head>

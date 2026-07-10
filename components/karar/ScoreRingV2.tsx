@@ -248,6 +248,7 @@ const ScoreRingV2Memo = memo(ScoreRingV2Impl, (prev, next) =>
 );
 
 export function ScoreRingV2(props: Props): React.ReactElement {
-  const isDark = useSettingsStore((s) => s.theme) === "dark";
+  // cyber-terminal de dark-ailesi sayılır (ring için ayrı bir varyant yok, dark stiline düşer)
+  const isDark = useSettingsStore((s) => s.theme) !== "light";
   return <ScoreRingV2Memo {...props} isDark={isDark} />;
 }

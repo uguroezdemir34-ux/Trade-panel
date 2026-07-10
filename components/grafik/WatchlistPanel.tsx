@@ -660,7 +660,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   const allScores     = useScoreStore((s) => s.results);
   const allCandles    = useCandleStore((s) => s.candles);
   const theme         = useSettingsStore((s) => s.theme);
-  const isDark        = theme === "dark";
+  const isDark        = theme !== "light"; // cyber-terminal de dark-ailesi sayılır
 
   const { pairs: watchedPairs, toggle, remove, reset, load,
           moveToTop, moveToBottom, moveUp, moveDown } = useWatchlistStore();

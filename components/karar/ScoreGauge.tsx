@@ -37,7 +37,8 @@ function arcPath(from: number, to: number, r: number): string {
 }
 
 export function ScoreGauge({ score, threshold, goThreshold }: Props): React.ReactElement {
-  const isDark = useSettingsStore((s) => s.theme) === "dark";
+  // cyber-terminal de dark-ailesi sayılır (gauge için ayrı bir varyant yok, dark stiline düşer)
+  const isDark = useSettingsStore((s) => s.theme) !== "light";
   const v = Math.max(0, Math.min(100, score));
   /* color: used for needle, hub shine, score text — threshold-based (per original logic) */
   const color = v >= threshold ? "#22c55e" : v >= 65 ? "#f59e0b" : "#ef4444";

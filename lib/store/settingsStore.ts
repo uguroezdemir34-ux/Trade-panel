@@ -40,7 +40,7 @@ export type TabId = (typeof TAB_IDS)[number];
 
 const tabIdSchema = z.enum(TAB_IDS);
 
-const themeSchema = z.enum(["dark", "light"]);
+const themeSchema = z.enum(["dark", "light", "cyber-terminal"]);
 export type Theme = z.infer<typeof themeSchema>;
 
 const exchangeSchema = z.enum(["okx", "binance", "bybit"]);
