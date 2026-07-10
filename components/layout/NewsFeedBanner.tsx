@@ -16,6 +16,12 @@
  * uyarı metni taşır (Anomali Badge'deki "otomatik sinyal değil" prensibiyle
  * aynı — burada tam genişlik banner olduğu için tap-to-show yerine kalıcı
  * metin yeterli).
+ *
+ * Sticky pozisyon: AppHeader'ın hemen altında sabit kalır (top-14 —
+ * AlarmToastContainer.tsx'teki aynı yaklaşık header-yüksekliği yaklaşımı,
+ * header'ın kendi yüksekliği env(safe-area-inset-top) yüzünden sabit
+ * değil). backdrop-blur KULLANILMADI (mobil perf kararı, bkz. CLAUDE.md
+ * §9) — bunun yerine düz opak `bg-bg`.
  */
 
 import { useEffect, useState } from "react";
@@ -55,7 +61,7 @@ export function NewsFeedBanner(): React.ReactElement | null {
   const current = items[index % items.length];
 
   return (
-    <div className="border-border bg-bg-card/60 flex items-start gap-2 border-b px-4 py-1.5 text-xs font-mono lg:px-6">
+    <div className="border-border bg-bg sticky top-14 z-40 flex items-start gap-2 border-b px-4 py-1.5 text-xs font-mono lg:px-6">
       <span
         className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] leading-none ${SENTIMENT_CLASS[current.sentiment]}`}
       >
