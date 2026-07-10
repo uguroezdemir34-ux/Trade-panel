@@ -16,6 +16,17 @@
  *
  * Sadece marketStore.prices'ı okur (zaten useMarketStream ile canlı
  * besleniyor) — yeni fetch/poller/store yok, skor motoruna hiç dokunmaz.
+ *
+ * Sticky pozisyon: NewsFeedBanner'ın (ayrı dosya, ayrı sayfa kapsamı —
+ * global layout'ta) hemen altında sabit kalır. Kendi top-offset'ini
+ * bilmiyor/hesaplamıyor — NewsFeedBanner.tsx'in bir ResizeObserver ile
+ * yazdığı `--news-banner-h` CSS custom property'sini (document.
+ * documentElement üzerinde) okuyarak dinamik olarak alır, bu sayede
+ * banner line-clamp-2 nedeniyle 1/2 satır arasında yükseklik
+ * değiştirdiğinde otomatik senkron kalır. İki dosya arasında doğrudan
+ * import/prop bağımlılığı yok — sadece CSS değişkeni üzerinden gevşek
+ * bağlı, mimari (global vs. /karar'a özel) korunuyor. backdrop-blur
+ * KULLANILMADI (mobil perf kararı, bkz. CLAUDE.md §9) — opak `bg-bg`.
  */
 
 import { PAIRS } from "@/lib/constants/pairs";
@@ -49,7 +60,10 @@ export function TickerTape(): React.ReactElement {
     });
 
   return (
-    <div className="ticker-tape-viewport border-border bg-bg-card/40 overflow-hidden border-b">
+    <div
+      className="ticker-tape-viewport border-border bg-bg sticky z-40 overflow-hidden border-b"
+      style={{ top: "var(--news-banner-h, 3.5rem)" }}
+    >
       <div className="ticker-tape-track animate-[ticker-scroll_45s_linear_infinite] flex w-max items-center gap-6 py-1.5 font-mono text-[10px] will-change-transform">
         {renderItems("a")}
         {renderItems("b")}

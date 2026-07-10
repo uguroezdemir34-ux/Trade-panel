@@ -29,7 +29,7 @@ export function AppHeader(): React.ReactElement {
 
   return (
     <header
-      className="border-border bg-bg/80 sticky top-0 z-30 border-b backdrop-blur-md"
+      className="border-border bg-bg sticky top-0 z-50 border-b"
       style={{
         paddingTop: "env(safe-area-inset-top)",
         boxShadow: "0 1px 0 0 rgba(195, 85, 35, 0.08), 0 8px 24px -12px rgba(82, 35, 135, 0.20)",
