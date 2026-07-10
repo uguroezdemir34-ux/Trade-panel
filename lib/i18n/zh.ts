@@ -284,7 +284,16 @@ volumeSection: "VOLUME",
       wallOnlySuffix: " — 价格在这个方向可能会受阻。",
       ariaLabel: "异常警告",
     },
+    filterMajors: "主流币",
+    filterAlts: "山寨币",
+    filterMeme: "Meme币",
+    aiScoreAria: "AI 评分: {score}/100",
 },
+  units: {
+    minute: "分",
+    hour: "时",
+    day: "天",
+  },
 
   watchlist: {
     toast: {

@@ -284,7 +284,16 @@ volumeSection: "VOLUME",
       wallOnlySuffix: " — कीमत इस दिशा में बढ़ने में मुश्किल महसूस कर सकती है।",
       ariaLabel: "एनोमली चेतावनी",
     },
+    filterMajors: "प्रमुख",
+    filterAlts: "ऑल्ट",
+    filterMeme: "मीम",
+    aiScoreAria: "AI स्कोर: {score}/100",
 },
+  units: {
+    minute: "मि",
+    hour: "घं",
+    day: "दि",
+  },
 
   watchlist: {
     toast: {

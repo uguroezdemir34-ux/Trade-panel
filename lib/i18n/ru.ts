@@ -254,7 +254,16 @@ volumeSection: "ОБЪЁМ",
       wallOnlySuffix: " — цене может быть трудно двигаться в этом направлении.",
       ariaLabel: "Предупреждение об аномалии",
     },
+    filterMajors: "Мейджоры",
+    filterAlts: "Альты",
+    filterMeme: "Мемы",
+    aiScoreAria: "AI Оценка: {score}/100",
 },
+  units: {
+    minute: "мин",
+    hour: "ч",
+    day: "дн",
+  },
 
   watchlist: {
     toast: {

@@ -254,7 +254,16 @@ volumeSection: "VOLUMEN",
       wallOnlySuffix: " — el precio podría tener dificultades para moverse en esta dirección.",
       ariaLabel: "Alerta de anomalía",
     },
+    filterMajors: "Majors",
+    filterAlts: "Alts",
+    filterMeme: "Meme",
+    aiScoreAria: "AI Puntuación: {score}/100",
 },
+  units: {
+    minute: "min",
+    hour: "h",
+    day: "d",
+  },
 
   watchlist: {
     toast: {

@@ -284,7 +284,16 @@ volumeSection: "VOLUME",
       wallOnlySuffix: " — 価格はこの方向に進みにくいかもしれません。",
       ariaLabel: "異常警告",
     },
+    filterMajors: "メジャー",
+    filterAlts: "アルト",
+    filterMeme: "ミーム",
+    aiScoreAria: "AI スコア: {score}/100",
 },
+  units: {
+    minute: "分",
+    hour: "時間",
+    day: "日",
+  },
 
   watchlist: {
     toast: {

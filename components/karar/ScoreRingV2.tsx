@@ -1,6 +1,7 @@
 "use client";
 import { memo } from "react";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   score: number;
@@ -70,6 +71,7 @@ function ScoreRingV2Impl({
   id = "ring2",
   isDark,
 }: InternalProps): React.ReactElement {
+  const t = useT();
   const strokeWidth   = 6;
   const bezelStroke   = 4.5;                                    // defined before radius (TDZ-safe)
   const bezelR        = size / 2 - bezelStroke / 2 - 0.5;      // outer edge = 29.5, inside viewBox
@@ -99,7 +101,7 @@ function ScoreRingV2Impl({
       height={size}
       viewBox={`0 0 ${size} ${size}`}
       className="shrink-0 block"
-      aria-label={`AI Score: ${score}`}
+      aria-label={t("karar.aiScoreAria", { score })}
     >
       <defs>
         <linearGradient

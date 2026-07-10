@@ -254,7 +254,16 @@ volumeSection: "VOLUME",
       wallOnlySuffix: " — le prix pourrait avoir du mal à évoluer dans ce sens.",
       ariaLabel: "Alerte anomalie",
     },
+    filterMajors: "Majors",
+    filterAlts: "Alts",
+    filterMeme: "Meme",
+    aiScoreAria: "AI Score : {score}/100",
 },
+  units: {
+    minute: "min",
+    hour: "h",
+    day: "j",
+  },
 
   watchlist: {
     toast: {

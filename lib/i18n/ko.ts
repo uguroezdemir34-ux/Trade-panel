@@ -284,7 +284,16 @@ volumeSection: "VOLUME",
       wallOnlySuffix: " — 가격이 이 방향으로 움직이기 어려울 수 있습니다.",
       ariaLabel: "이상 징후 경고",
     },
+    filterMajors: "메이저",
+    filterAlts: "알트",
+    filterMeme: "밈",
+    aiScoreAria: "AI 점수: {score}/100",
 },
+  units: {
+    minute: "분",
+    hour: "시간",
+    day: "일",
+  },
 
   watchlist: {
     toast: {

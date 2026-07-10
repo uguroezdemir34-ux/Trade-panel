@@ -255,7 +255,16 @@ export const tr: Dictionary = {
       wallOnlySuffix: " — fiyat bu yönde zorlanabilir.",
       ariaLabel: "Anomali uyarısı",
     },
+    filterMajors: "Majorler",
+    filterAlts: "Altlar",
+    filterMeme: "Meme",
+    aiScoreAria: "AI Skoru: {score}/100",
 },
+  units: {
+    minute: "dk",
+    hour: "sa",
+    day: "g",
+  },
   watchlist: {
     toast: {
       added: "⭐ {pair} takibe alındı",

@@ -11,6 +11,7 @@
  */
 
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useT } from "@/lib/i18n/context";
 
 interface Props {
   score: number;
@@ -38,6 +39,7 @@ function arcPath(from: number, to: number, r: number): string {
 
 export function ScoreGauge({ score, threshold, goThreshold }: Props): React.ReactElement {
   // cyber-terminal de dark-ailesi sayılır (gauge için ayrı bir varyant yok, dark stiline düşer)
+  const t = useT();
   const isDark = useSettingsStore((s) => s.theme) !== "light";
   const v = Math.max(0, Math.min(100, score));
   /* color: used for needle, hub shine, score text — threshold-based (per original logic) */
@@ -91,7 +93,7 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
     <svg
       viewBox="0 0 220 218"
       className="w-full select-none"
-      aria-label={`Skor: ${v}/100`}
+      aria-label={t("karar.aiScoreAria", { score: v })}
     >
       <defs>
         {/* Bezel ring: dark=silver/gunmetal, light=gold/bronze */}

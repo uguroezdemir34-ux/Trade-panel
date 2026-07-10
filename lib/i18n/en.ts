@@ -255,7 +255,16 @@ export const en: Dictionary = {
       wallOnlySuffix: " — price may struggle to move this way.",
       ariaLabel: "Anomaly warning",
     },
+    filterMajors: "Majors",
+    filterAlts: "Alts",
+    filterMeme: "Meme",
+    aiScoreAria: "AI Score: {score}/100",
 },
+  units: {
+    minute: "m",
+    hour: "h",
+    day: "d",
+  },
   watchlist: {
     toast: {
       added: "⭐ {pair} added to watchlist",

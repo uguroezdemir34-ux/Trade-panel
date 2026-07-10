@@ -284,7 +284,16 @@ volumeSection: "VOLUME",
       wallOnlySuffix: " — قد يواجه السعر صعوبة في التحرك بهذا الاتجاه.",
       ariaLabel: "تحذير من شذوذ",
     },
+    filterMajors: "العملات الرئيسية",
+    filterAlts: "العملات البديلة",
+    filterMeme: "ميم",
+    aiScoreAria: "AI النقاط: {score}/100",
 },
+  units: {
+    minute: "د",
+    hour: "س",
+    day: "ي",
+  },
 
   watchlist: {
     toast: {

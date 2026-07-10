@@ -663,9 +663,9 @@ export default function KararPage() {
             {(["all", "majors", "alts", "meme", "go", "act", "watch"] as PairGroup[]).map((g) => {
               const label =
                 g === "all" ? t("karar.groupAll") :
-                g === "majors" ? "Majors" :
-                g === "alts" ? "Alts" :
-                g === "meme" ? "Meme" :
+                g === "majors" ? t("karar.filterMajors") :
+                g === "alts" ? t("karar.filterAlts") :
+                g === "meme" ? t("karar.filterMeme") :
                 g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
                 g === "act" ? `ACT${actionablePairs.length > 0 ? ` (${actionablePairs.length})` : ""}` :
                 `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
@@ -1072,7 +1072,7 @@ export default function KararPage() {
                         {`${activePosition.upl >= 0 ? "+" : ""}${activePosition.upl.toFixed(0)}$`}
                       </span>
                       {activeTrade && (
-                        <span className="text-text-t4 shrink-0">{holdingStr(activeTrade.openedAt)}</span>
+                        <span className="text-text-t4 shrink-0">{holdingStr(activeTrade.openedAt, t)}</span>
                       )}
                       <span className="text-text-t4 ml-auto shrink-0">→</span>
                     </Link>
@@ -1716,11 +1716,11 @@ function fmtPrice(price: number): string {
   return "$" + price.toPrecision(4);
 }
 
-function holdingStr(openedAt: number): string {
+function holdingStr(openedAt: number, t: ReturnType<typeof useT>): string {
   const m = Math.floor((Date.now() - openedAt) / 60_000);
-  if (m < 60) return `${m}dk`;
+  if (m < 60) return `${m}${t("units.minute")}`;
   const h = Math.floor(m / 60);
-  return h < 24 ? `${h}sa` : `${Math.floor(h / 24)}g`;
+  return h < 24 ? `${h}${t("units.hour")}` : `${Math.floor(h / 24)}${t("units.day")}`;
 }
 
 function fmtPx(px: number): string {
