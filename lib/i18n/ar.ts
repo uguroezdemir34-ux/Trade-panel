@@ -274,6 +274,16 @@ volumeSection: "VOLUME",
     holdExitWaitNoSignal: "Wait / No Clear Signal",
     squeezeRadarLabel: "Squeeze Radar",
     squeezeRadarDesc: "Coins showing volatility compression (ATR percentile) — potential pre-breakout",
+    anomaly: {
+      oiClause: "انخفاض مفاجئ في العقود المفتوحة — قد يكون كبار المتداولين يخرجون",
+      oiClauseShort: "انخفاض مفاجئ في العقود المفتوحة",
+      suffix: " ليست إشارة تلقائية، فقط أمر يستحق المراقبة عن كثب.",
+      wallClauseDetailed: "يوجد جدار أوامر بحجم {size} في الاتجاه المعاكس للإشارة، على بعد {pct}% من السعر",
+      wallClauseGeneric: "يوجد تراكم قوي للأوامر في الاتجاه المعاكس للإشارة",
+      combineWord: " و ",
+      wallOnlySuffix: " — قد يواجه السعر صعوبة في التحرك بهذا الاتجاه.",
+      ariaLabel: "تحذير من شذوذ",
+    },
 },
 
   watchlist: {

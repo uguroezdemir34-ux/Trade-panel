@@ -244,6 +244,16 @@ volumeSection: "VOLUMEN",
     holdExitWaitNoSignal: "Wait / No Clear Signal",
     squeezeRadarLabel: "Squeeze Radar",
     squeezeRadarDesc: "Coins showing volatility compression (ATR percentile) — potential pre-breakout",
+    anomaly: {
+      oiClause: "caída repentina en el interés abierto — los grandes jugadores podrían estar saliendo",
+      oiClauseShort: "caída repentina en el interés abierto",
+      suffix: " No es una señal automática, solo algo a vigilar de cerca.",
+      wallClauseDetailed: "hay un muro de órdenes de {size} en contra de la dirección de la señal, a {pct}% del precio",
+      wallClauseGeneric: "hay una fuerte acumulación de órdenes en contra de la dirección de la señal",
+      combineWord: " Y ",
+      wallOnlySuffix: " — el precio podría tener dificultades para moverse en esta dirección.",
+      ariaLabel: "Alerta de anomalía",
+    },
 },
 
   watchlist: {

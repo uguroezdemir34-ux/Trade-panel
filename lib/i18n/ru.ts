@@ -244,6 +244,16 @@ volumeSection: "ОБЪЁМ",
     holdExitWaitNoSignal: "Wait / No Clear Signal",
     squeezeRadarLabel: "Squeeze Radar",
     squeezeRadarDesc: "Coins showing volatility compression (ATR percentile) — potential pre-breakout",
+    anomaly: {
+      oiClause: "резкое падение открытого интереса — крупные игроки могут выходить из позиций",
+      oiClauseShort: "резкое падение открытого интереса",
+      suffix: " Это не автоматический сигнал, а лишь повод для внимательного наблюдения.",
+      wallClauseDetailed: "против направления сигнала стоит стена ордеров на {size}, в {pct}% от цены",
+      wallClauseGeneric: "против направления сигнала наблюдается сильное скопление ордеров",
+      combineWord: " И ",
+      wallOnlySuffix: " — цене может быть трудно двигаться в этом направлении.",
+      ariaLabel: "Предупреждение об аномалии",
+    },
 },
 
   watchlist: {

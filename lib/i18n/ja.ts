@@ -274,6 +274,16 @@ volumeSection: "VOLUME",
     holdExitWaitNoSignal: "Wait / No Clear Signal",
     squeezeRadarLabel: "Squeeze Radar",
     squeezeRadarDesc: "Coins showing volatility compression (ATR percentile) — potential pre-breakout",
+    anomaly: {
+      oiClause: "建玉の急減 — 大口が手仕舞いしている可能性",
+      oiClauseShort: "建玉の急減",
+      suffix: " 自動シグナルではありません、注意深く見守ることをおすすめします。",
+      wallClauseDetailed: "シグナル方向の逆側に{size}規模の板の壁があり、価格から{pct}%離れています",
+      wallClauseGeneric: "シグナル方向の逆側に強い注文の集積があります",
+      combineWord: " かつ ",
+      wallOnlySuffix: " — 価格はこの方向に進みにくいかもしれません。",
+      ariaLabel: "異常警告",
+    },
 },
 
   watchlist: {

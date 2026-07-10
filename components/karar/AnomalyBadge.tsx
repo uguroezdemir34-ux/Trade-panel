@@ -23,6 +23,8 @@
 
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { OrderBookImbalanceResult } from "@/lib/market/orderbook-imbalance";
+import { useT, useLocale } from "@/lib/i18n/context";
+import type { Locale } from "@/lib/i18n/types";
 
 const TOOLTIP_WIDTH_PX = 192; // w-48
 const VIEWPORT_SAFETY_MARGIN_PX = 8;
@@ -36,24 +38,26 @@ interface AnomalyBadgeProps {
 
 const AUTO_CLOSE_MS = 4500;
 
-const OI_CLAUSE = "açık pozisyonlarda ani düşüş — büyük oyuncular çıkış yapıyor olabilir";
-const OI_CLAUSE_SHORT = "açık pozisyonlarda ani düşüş";
-const MSG_SUFFIX = " Otomatik bir sinyal değil, sadece dikkatli izlemeni öneririz.";
+type TFunc = (path: string, params?: Record<string, string | number>) => string;
 
 function formatWallSize(usd: number): string {
   return usd >= 1_000_000 ? `$${(usd / 1_000_000).toFixed(1)}M` : `$${(usd / 1_000).toFixed(0)}K`;
 }
 
 /** Duvar detayı doluysa somut rakamlı, yoksa genel duvar cümleciği (küçük harfle başlar, birleştirilebilir). */
-function buildWallClause(detail: OrderBookImbalanceResult | null | undefined): string {
+function buildWallClause(t: TFunc, detail: OrderBookImbalanceResult | null | undefined): string {
   if (detail?.wallSizeUsd != null && detail?.wallDistancePct != null) {
-    return `sinyal yönünün tersinde ${formatWallSize(detail.wallSizeUsd)} büyüklüğünde bir emir duvarı var, fiyatın %${detail.wallDistancePct.toFixed(1)} uzağında`;
+    return t("karar.anomaly.wallClauseDetailed", {
+      size: formatWallSize(detail.wallSizeUsd),
+      pct: detail.wallDistancePct.toFixed(1),
+    });
   }
-  return "sinyal yönünün tersinde güçlü bir emir birikmesi var";
+  return t("karar.anomaly.wallClauseGeneric");
 }
 
-function capitalize(s: string): string {
-  return s.charAt(0).toLocaleUpperCase("tr") + s.slice(1);
+/** Türkçe'nin noktalı/noktasız İ kuralı diğer dillerde yanlış büyütme yapmasın diye aktif locale parametre olarak alınır. */
+function capitalize(s: string, locale: Locale): string {
+  return s.charAt(0).toLocaleUpperCase(locale) + s.slice(1);
 }
 
 export function AnomalyBadge({
@@ -61,6 +65,8 @@ export function AnomalyBadge({
   wallAnomaly,
   wallDetail,
 }: AnomalyBadgeProps): React.ReactElement | null {
+  const t = useT();
+  const locale = useLocale();
   const [open, setOpen] = useState(false);
   const [tooltipAnchor, setTooltipAnchor] = useState<"left" | "right">("right");
   const containerRef = useRef<HTMLSpanElement | null>(null);
@@ -98,14 +104,18 @@ export function AnomalyBadge({
 
   if (!oiAnomaly && !wallAnomaly) return null;
 
+  const suffix = t("karar.anomaly.suffix");
   let message: string;
   if (oiAnomaly && wallAnomaly) {
     // Kısa çekirdek cümlecikler — iki dolgulu açıklama üst üste binmesin diye
-    message = `${capitalize(OI_CLAUSE_SHORT)} VE ${buildWallClause(wallDetail)}.${MSG_SUFFIX}`;
+    const oiShort = capitalize(t("karar.anomaly.oiClauseShort"), locale);
+    const combine = t("karar.anomaly.combineWord");
+    message = `${oiShort}${combine}${buildWallClause(t, wallDetail)}.${suffix}`;
   } else if (oiAnomaly) {
-    message = `${capitalize(OI_CLAUSE)}.${MSG_SUFFIX}`;
+    message = `${capitalize(t("karar.anomaly.oiClause"), locale)}.${suffix}`;
   } else {
-    message = `${capitalize(buildWallClause(wallDetail))} — fiyat bu yönde zorlanabilir.${MSG_SUFFIX}`;
+    const wallClause = capitalize(buildWallClause(t, wallDetail), locale);
+    message = `${wallClause}${t("karar.anomaly.wallOnlySuffix")}${suffix}`;
   }
 
   function handleTap(e: React.MouseEvent): void {
@@ -123,7 +133,7 @@ export function AnomalyBadge({
         onClick={handleTap}
         className="block text-[10px] leading-none cursor-pointer"
         style={{ filter: "drop-shadow(0 0 2px rgba(0,0,0,0.6))" }}
-        aria-label="Anomali uyarısı"
+        aria-label={t("karar.anomaly.ariaLabel")}
       >
         ⚠️
       </span>

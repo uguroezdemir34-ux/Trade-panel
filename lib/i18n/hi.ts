@@ -274,6 +274,16 @@ volumeSection: "VOLUME",
     holdExitWaitNoSignal: "Wait / No Clear Signal",
     squeezeRadarLabel: "Squeeze Radar",
     squeezeRadarDesc: "Coins showing volatility compression (ATR percentile) — potential pre-breakout",
+    anomaly: {
+      oiClause: "ओपन इंटरेस्ट में अचानक गिरावट — बड़े खिलाड़ी बाहर निकल सकते हैं",
+      oiClauseShort: "ओपन इंटरेस्ट में अचानक गिरावट",
+      suffix: " यह ऑटोमेटिक सिग्नल नहीं है, बस ध्यान से देखने लायक है।",
+      wallClauseDetailed: "सिग्नल दिशा के विपरीत {size} आकार की ऑर्डर वॉल है, कीमत से {pct}% दूर",
+      wallClauseGeneric: "सिग्नल दिशा के विपरीत भारी ऑर्डर जमाव है",
+      combineWord: " और ",
+      wallOnlySuffix: " — कीमत इस दिशा में बढ़ने में मुश्किल महसूस कर सकती है।",
+      ariaLabel: "एनोमली चेतावनी",
+    },
 },
 
   watchlist: {

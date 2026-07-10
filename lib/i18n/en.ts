@@ -245,6 +245,16 @@ export const en: Dictionary = {
     holdExitWaitNoSignal: "Wait / No Clear Signal",
     squeezeRadarLabel: "Squeeze Radar",
     squeezeRadarDesc: "Coins showing volatility compression (ATR percentile) — potential pre-breakout",
+    anomaly: {
+      oiClause: "sudden drop in open interest — large players may be exiting",
+      oiClauseShort: "sudden drop in open interest",
+      suffix: " Not an automated signal, just something worth watching closely.",
+      wallClauseDetailed: "there's a {size} order wall against the signal direction, {pct}% away from price",
+      wallClauseGeneric: "there's heavy order accumulation against the signal direction",
+      combineWord: " AND ",
+      wallOnlySuffix: " — price may struggle to move this way.",
+      ariaLabel: "Anomaly warning",
+    },
 },
   watchlist: {
     toast: {

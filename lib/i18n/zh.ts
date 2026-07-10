@@ -274,6 +274,16 @@ volumeSection: "VOLUME",
     holdExitWaitNoSignal: "Wait / No Clear Signal",
     squeezeRadarLabel: "Squeeze Radar",
     squeezeRadarDesc: "Coins showing volatility compression (ATR percentile) — potential pre-breakout",
+    anomaly: {
+      oiClause: "未平仓合约骤降 — 大户可能正在离场",
+      oiClauseShort: "未平仓合约骤降",
+      suffix: " 这不是自动信号，仅供密切关注。",
+      wallClauseDetailed: "在信号方向的反方向有一个{size}的挂单墙，距离现价{pct}%",
+      wallClauseGeneric: "在信号方向的反方向有大量挂单堆积",
+      combineWord: " 以及 ",
+      wallOnlySuffix: " — 价格在这个方向可能会受阻。",
+      ariaLabel: "异常警告",
+    },
 },
 
   watchlist: {

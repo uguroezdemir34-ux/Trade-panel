@@ -274,6 +274,16 @@ volumeSection: "VOLUME",
     holdExitWaitNoSignal: "Wait / No Clear Signal",
     squeezeRadarLabel: "Squeeze Radar",
     squeezeRadarDesc: "Coins showing volatility compression (ATR percentile) — potential pre-breakout",
+    anomaly: {
+      oiClause: "미결제약정 급감 — 대형 트레이더가 이탈하고 있을 수 있음",
+      oiClauseShort: "미결제약정 급감",
+      suffix: " 자동 시그널이 아니며, 주의 깊게 지켜보시길 권장합니다.",
+      wallClauseDetailed: "시그널 방향의 반대편에 {size} 규모의 주문벽이 있으며, 가격에서 {pct}% 떨어져 있습니다",
+      wallClauseGeneric: "시그널 방향의 반대편에 강한 주문 집중이 있습니다",
+      combineWord: " 그리고 ",
+      wallOnlySuffix: " — 가격이 이 방향으로 움직이기 어려울 수 있습니다.",
+      ariaLabel: "이상 징후 경고",
+    },
 },
 
   watchlist: {

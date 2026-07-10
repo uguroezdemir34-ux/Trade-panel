@@ -245,6 +245,16 @@ export const tr: Dictionary = {
     holdExitWaitNoSignal: "Bekle / Net Sinyal Yok",
     squeezeRadarLabel: "Sıkışma Radarı",
     squeezeRadarDesc: "Volatilite sıkışması gösteren coinler (ATR persentili) — potansiyel breakout öncesi",
+    anomaly: {
+      oiClause: "açık pozisyonlarda ani düşüş — büyük oyuncular çıkış yapıyor olabilir",
+      oiClauseShort: "açık pozisyonlarda ani düşüş",
+      suffix: " Otomatik bir sinyal değil, sadece dikkatli izlemeni öneririz.",
+      wallClauseDetailed: "sinyal yönünün tersinde {size} büyüklüğünde bir emir duvarı var, fiyatın %{pct} uzağında",
+      wallClauseGeneric: "sinyal yönünün tersinde güçlü bir emir birikmesi var",
+      combineWord: " VE ",
+      wallOnlySuffix: " — fiyat bu yönde zorlanabilir.",
+      ariaLabel: "Anomali uyarısı",
+    },
 },
   watchlist: {
     toast: {
