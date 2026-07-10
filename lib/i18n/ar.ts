@@ -288,6 +288,11 @@ volumeSection: "VOLUME",
     filterAlts: "العملات البديلة",
     filterMeme: "ميم",
     aiScoreAria: "AI النقاط: {score}/100",
+    oiDiv: {
+      confirm: "✓ تأكيد",
+      diverge: "⚠ تباعد",
+      neutral: "○ محايد",
+    },
 },
   units: {
     minute: "د",

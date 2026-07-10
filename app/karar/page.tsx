@@ -1260,9 +1260,9 @@ export default function KararPage() {
                     : oiDivergence === "diverge" ? "text-signal-down"
                     : "text-text-t4"
                   }`}>
-                    {oiDivergence === "confirm" ? "✓ ONAY"
-                    : oiDivergence === "diverge" ? "⚠ DIVERJANS"
-                    : "○ NÖTR"}
+                    {oiDivergence === "confirm" ? t("karar.oiDiv.confirm")
+                    : oiDivergence === "diverge" ? t("karar.oiDiv.diverge")
+                    : t("karar.oiDiv.neutral")}
                   </span>
                 </div>
               )}

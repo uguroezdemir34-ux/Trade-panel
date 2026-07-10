@@ -288,6 +288,11 @@ volumeSection: "VOLUME",
     filterAlts: "ऑल्ट",
     filterMeme: "मीम",
     aiScoreAria: "AI स्कोर: {score}/100",
+    oiDiv: {
+      confirm: "✓ पुष्टि",
+      diverge: "⚠ विचलन",
+      neutral: "○ तटस्थ",
+    },
 },
   units: {
     minute: "मि",

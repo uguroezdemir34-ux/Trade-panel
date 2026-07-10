@@ -288,6 +288,11 @@ volumeSection: "VOLUME",
     filterAlts: "アルト",
     filterMeme: "ミーム",
     aiScoreAria: "AI スコア: {score}/100",
+    oiDiv: {
+      confirm: "✓ 確認",
+      diverge: "⚠ ダイバージェンス",
+      neutral: "○ 中立",
+    },
 },
   units: {
     minute: "分",

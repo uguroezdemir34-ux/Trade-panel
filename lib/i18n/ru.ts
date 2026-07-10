@@ -258,6 +258,11 @@ volumeSection: "ОБЪЁМ",
     filterAlts: "Альты",
     filterMeme: "Мемы",
     aiScoreAria: "AI Оценка: {score}/100",
+    oiDiv: {
+      confirm: "✓ Подтверждено",
+      diverge: "⚠ Дивергенция",
+      neutral: "○ Нейтрально",
+    },
 },
   units: {
     minute: "мин",

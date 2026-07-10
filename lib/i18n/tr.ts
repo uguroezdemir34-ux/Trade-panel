@@ -259,6 +259,11 @@ export const tr: Dictionary = {
     filterAlts: "Altlar",
     filterMeme: "Meme",
     aiScoreAria: "AI Skoru: {score}/100",
+    oiDiv: {
+      confirm: "✓ ONAY",
+      diverge: "⚠ DIVERJANS",
+      neutral: "○ NÖTR",
+    },
 },
   units: {
     minute: "dk",

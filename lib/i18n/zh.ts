@@ -288,6 +288,11 @@ volumeSection: "VOLUME",
     filterAlts: "山寨币",
     filterMeme: "Meme币",
     aiScoreAria: "AI 评分: {score}/100",
+    oiDiv: {
+      confirm: "✓ 确认",
+      diverge: "⚠ 背离",
+      neutral: "○ 中性",
+    },
 },
   units: {
     minute: "分",

@@ -258,6 +258,11 @@ volumeSection: "VOLUME",
     filterAlts: "Alts",
     filterMeme: "Meme",
     aiScoreAria: "AI Score : {score}/100",
+    oiDiv: {
+      confirm: "✓ Confirmé",
+      diverge: "⚠ Divergence",
+      neutral: "○ Neutre",
+    },
 },
   units: {
     minute: "min",

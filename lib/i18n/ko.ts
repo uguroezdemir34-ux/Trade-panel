@@ -288,6 +288,11 @@ volumeSection: "VOLUME",
     filterAlts: "알트",
     filterMeme: "밈",
     aiScoreAria: "AI 점수: {score}/100",
+    oiDiv: {
+      confirm: "✓ 확인",
+      diverge: "⚠ 다이버전스",
+      neutral: "○ 중립",
+    },
 },
   units: {
     minute: "분",
