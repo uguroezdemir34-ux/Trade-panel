@@ -922,32 +922,33 @@ export default function KararPage() {
                       })()}
                     </div>
 
-                    {/* Hold/Exit Guide — sadece results[p] + scoreHistory[p]'den türetilir, skor motoruna dokunmaz */}
-                    {(() => {
-                      const guide = computeHoldExitGuide(pr, snaps);
-                      if (!guide) return null;
-                      const gc =
-                        guide === "max_hold" ? "text-signal-green bg-soft-green"
-                        : guide === "quick_profit" ? "text-signal-amber bg-soft-amber"
-                        : guide === "early_exit_warning" ? "text-signal-red bg-soft-red"
-                        : "text-text-t3 bg-text-t3/10";
-                      return (
-                        <div className="flex justify-center -mt-0.5 mb-0.5">
+                    {/* Hold/Exit Guide + WAIT badge alanı — ikisi de opsiyonel render olduğu
+                        için sabit min-h ile sarmalandı, kart yüksekliği badge var/yok
+                        fark etmeksizin aynı kalsın diye (komşu kartlarla Y-ekseni hizası
+                        için — bkz. fiyat/hacim satırının komşu kartlarla aynı satırda
+                        kalması). Skor motoruna, renk/glow'a dokunulmadı — sadece bu
+                        alanın yükseklik rezervasyonu. */}
+                    <div className="flex flex-col items-center justify-center gap-0.5 min-h-7 -mt-0.5 mb-0.5">
+                      {(() => {
+                        const guide = computeHoldExitGuide(pr, snaps);
+                        if (!guide) return null;
+                        const gc =
+                          guide === "max_hold" ? "text-signal-green bg-soft-green"
+                          : guide === "quick_profit" ? "text-signal-amber bg-soft-amber"
+                          : guide === "early_exit_warning" ? "text-signal-red bg-soft-red"
+                          : "text-text-t3 bg-text-t3/10";
+                        return (
                           <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded leading-none ${gc}`}>
                             {t(HOLD_EXIT_LABEL_I18N_KEY[guide])}
                           </span>
-                        </div>
-                      );
-                    })()}
-
-                    {/* WAIT badge */}
-                    {v === "wait" && score !== undefined && (
-                      <div className="flex justify-center -mt-0.5">
+                        );
+                      })()}
+                      {v === "wait" && score !== undefined && (
                         <span translate="no" className="text-[8px] font-mono text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
                           {`Wait ${dirArrow}${score}`}
                         </span>
-                      </div>
-                    )}
+                      )}
+                    </div>
 
                     {/* MTF mini trend satırı: 1H / 4H / 1D */}
                     {mtfResults[p]?.trends && (
