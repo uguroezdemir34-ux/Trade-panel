@@ -1,12 +1,28 @@
 "use client";
 
 /**
- * SQUEEZE RADAR BANNER — volatilite sıkışması gösteren coinlerin listesi.
+ * SQUEEZE RADAR BANNER — volatilite sıkışması gösteren coinlerin "Badge
+ * Matrix" görünümü. scoreStore'a hiç dokunmaz, sadece candleStore'daki 1h
+ * mumlardan türetir (allResults/allTicks gibi mevcut bileşenlerin okuduğu
+ * diğer store'larla aynı "tüm map'i oku, useMemo'da filtrele" deseni —
+ * bkz. goPairs/marketPulseIndex). useScoreEngine'e hiç dokunmaz.
  *
- * scoreStore'a hiç dokunmaz, sadece candleStore'daki 1h mumlardan türetir
- * (allResults/allTicks gibi mevcut bileşenlerin okuduğu diğer store'larla
- * aynı "tüm map'i oku, useMemo'da filtrele" deseni — bkz. goPairs/
- * marketPulseIndex). useScoreEngine'e hiç dokunmaz.
+ * Balina/Anomali glow: her pair için computeOiCollapseAnomaly() +
+ * computeOrderBookWallAnomaly() (lib/score/anomalyDetector.ts, DEĞİŞTİRİLMEDİ)
+ * çağrılır — scoreStore/macroStore/orderBookStore'dan İMPERATİF olarak
+ * (getState(), reactive subscription DEĞİL) okunur, ScoreHeatmap.tsx'teki
+ * ile aynı desen: bu store'lara yeni bir subscription eklemek component'i
+ * gereksiz sıklıkta yeniden render ederdi, tetikleyici hâlâ SADECE
+ * candleStore (squeezeRadar'ın zaten var olan cadence'i).
+ *
+ * Tema notu: Bu projede light/dark geçişi Tailwind'in `dark:` varyantıyla
+ * DEĞİL, `[data-theme]` + CSS değişkenleriyle yapılıyor (Tailwind'in
+ * `dark:` varyantı sadece OS `prefers-color-scheme`'e bakar, uygulamanın
+ * kendi tema seçiciyle senkron değildir — bu proje genelinde daha önce
+ * tespit edilip düzeltilmiş bir desen, bkz. CLAUDE.md §9 Cyber-Terminal
+ * notu). Bu yüzden badge arka planı `dark:` yerine mevcut theme-aware
+ * token'larla (`bg-bg-card2`, `border-border`) yapıldı — light/dark/
+ * cyber-terminal'in hepsinde doğru otomatik geçiş sağlıyor.
  *
  * "glass-panel" class'ı sadece cyber-terminal temasında aktif olur
  * (backdrop-blur, bkz. globals.css) — light/dark'ta hiçbir etkisi yok.
@@ -14,14 +30,39 @@
 
 import { useMemo } from "react";
 import { useCandleStore } from "@/lib/store/candleStore";
+import { useScoreStore } from "@/lib/store/scoreStore";
+import { useMacroStore } from "@/lib/store/macroStore";
+import { useOrderBookStore } from "@/lib/store/orderBookStore";
 import { useT } from "@/lib/i18n/context";
-import { computeSqueezeRadar } from "@/lib/market/squeezeRadar";
+import { computeSqueezeRadar, type SqueezeRadarEntry } from "@/lib/market/squeezeRadar";
+import { computeOiCollapseAnomaly, computeOrderBookWallAnomaly } from "@/lib/score/anomalyDetector";
+
+interface SqueezeBadgeEntry extends SqueezeRadarEntry {
+  isAnomaly: boolean;
+}
 
 export function SqueezeRadarBanner(): React.ReactElement | null {
   const t = useT();
   const allCandles = useCandleStore((s) => s.candles);
 
-  const entries = useMemo(() => computeSqueezeRadar(allCandles), [allCandles]);
+  const entries = useMemo<SqueezeBadgeEntry[]>(() => {
+    const list = computeSqueezeRadar(allCandles);
+    if (list.length === 0) return [];
+
+    // İmperatif okuma — bu store'lara subscribe olmuyoruz, tetikleyici
+    // hâlâ sadece allCandles (mevcut squeeze radar cadence'i korunuyor).
+    const results = useScoreStore.getState().results;
+    const oiVelocity = useMacroStore.getState().oiVelocity;
+    const imbalance = useOrderBookStore.getState().imbalance;
+
+    return list.map((e) => {
+      const result = results[e.pair];
+      const isAnomaly =
+        computeOiCollapseAnomaly(result, oiVelocity[e.pair] ?? null) ||
+        computeOrderBookWallAnomaly(result, imbalance[e.pair] ?? null);
+      return { ...e, isAnomaly };
+    });
+  }, [allCandles]);
 
   if (entries.length === 0) return null;
 
@@ -33,11 +74,19 @@ export function SqueezeRadarBanner(): React.ReactElement | null {
       <span className="text-text-t3 shrink-0 text-2xs tracking-widest uppercase">
         {t("karar.squeezeRadarLabel")}
       </span>
-      <div className="flex flex-wrap gap-x-3 gap-y-1">
+      <div className="flex flex-wrap gap-1.5">
         {entries.map((e) => (
-          <span key={e.pair} className="text-text-t2">
-            <span className="font-bold">{e.pair}</span>{" "}
-            <span className="text-text-t4">P{e.percentile}</span>
+          <span
+            key={e.pair}
+            className={[
+              "bg-bg-card2 inline-flex items-baseline gap-1 rounded-md border px-2 py-1",
+              e.isAnomaly
+                ? "border-purple-500/50 shadow-[0_0_8px_rgba(168,85,247,0.35)]"
+                : "border-border",
+            ].join(" ")}
+          >
+            <span className="text-text-t1 text-xs font-semibold">{e.pair}</span>
+            <span className="text-text-t3 text-[10px] opacity-70">P{e.percentile}</span>
           </span>
         ))}
       </div>
