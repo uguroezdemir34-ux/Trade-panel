@@ -59,10 +59,10 @@ export function glowShadowFor(
   verdict: ScoreResult["verdict"],
   direction: ScoreResult["direction"],
 ): string | undefined {
-  if (verdict === "go" && direction === "LONG") return "0 0 10px rgba(34, 197, 94, 0.55)";
-  if (verdict === "go" && direction === "SHORT") return "0 0 10px rgba(239, 68, 68, 0.55)";
-  if (direction === "LONG") return "0 0 8px rgba(34, 197, 94, 0.35)";
-  if (direction === "SHORT") return "0 0 8px rgba(239, 68, 68, 0.35)";
+  if (verdict === "go" && direction === "LONG") return "0 0 10px rgba(56, 137, 97, 0.55)";
+  if (verdict === "go" && direction === "SHORT") return "0 0 10px rgba(199, 96, 105, 0.55)";
+  if (direction === "LONG") return "0 0 8px rgba(56, 137, 97, 0.35)";
+  if (direction === "SHORT") return "0 0 8px rgba(199, 96, 105, 0.35)";
   return undefined;
 }
 

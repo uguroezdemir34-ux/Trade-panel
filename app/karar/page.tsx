@@ -815,10 +815,10 @@ export default function KararPage() {
                       // strong/medium=yeşil, weak=sarı renk ayrımıyla tutarlı hale
                       // getirildi (önceden weak de yeşil glow alıyordu, ring'iyle uyumsuzdu).
                       boxShadow: goStrength === "strong"
-                        ? "0 0 12px 2px rgba(74,222,128,0.35)"
+                        ? "0 0 12px 2px rgba(103,193,148,0.35)"
                         : goStrength === "medium"
-                        ? "0 0 10px 1px rgba(34,197,94,0.22)"
-                        : "0 0 8px 1px rgba(234,179,8,0.20)",
+                        ? "0 0 10px 1px rgba(56,137,97,0.22)"
+                        : "0 0 8px 1px rgba(188,142,78,0.20)",
                       willChange: "box-shadow",
                     } : undefined}
                     className={[
@@ -1199,7 +1199,7 @@ export default function KararPage() {
                       <div className="text-[8px] font-mono text-text-t4 tracking-widest uppercase mb-0.5 leading-none">GO</div>
                       <div
                         className={`text-[14px] font-mono font-bold tabular-nums leading-tight ${goPairs.length > 0 ? "text-green-400" : "text-text-t4"}`}
-                        style={goPairs.length > 0 ? { textShadow: "0 0 10px rgba(74,222,128,0.45)" } : undefined}
+                        style={goPairs.length > 0 ? { textShadow: "0 0 10px rgba(103,193,148,0.45)" } : undefined}
                       >
                         {goPairs.length}
                         <span className="text-[8px] font-mono text-text-t4 font-normal tabular-nums">/{PAIRS.length}</span>
