@@ -17,10 +17,17 @@
  * cycle 2x ertelenir. Sabit setInterval yerine kendini yeniden zamanlayan
  * setTimeout kullanılıyor çünkü gecikme dinamik (backoff'a göre değişiyor) —
  * setInterval bunu desteklemez. Agresif değil: taban frekans zaten 5dk.
+ *
+ * Piyasa saatleri (FAZ 4): lib/score/macroScore.ts'teki isUSMarketOpen()
+ * (salt okunur import — o dosyaya hiç dokunulmadı) her cycle başında
+ * kontrol edilir. ABD borsası kapalıyken (hafta sonu/tatil) fetch tamamen
+ * atlanır — Finnhub'a gereksiz istek gitmez, backoff sayacı da etkilenmez
+ * (kapalı piyasa bir hata değil).
  */
 
 import { useEffect, useRef } from "react";
 import { useEquityIndexStore, type EquityIndexSymbol } from "@/lib/store/equityIndexStore";
+import { isUSMarketOpen } from "@/lib/score/macroScore";
 
 const POLL_INTERVAL_MS = 5 * 60_000; // 5 dakika
 const MAX_CONSECUTIVE_FAILURES = 3;
@@ -50,6 +57,9 @@ export function useEquityIndexPoller(delayMs = 0): void {
 
   useEffect(() => {
     async function poll(): Promise<void> {
+      // ABD borsası kapalıyken (hafta sonu/tatil) fetch'i tamamen atla —
+      // hata değil, backoff sayacını etkilemez (FAZ 4).
+      if (!isUSMarketOpen(new Date()).open) return;
       try {
         const res = await fetch("/api/macro/equity-index");
         if (!res.ok) {

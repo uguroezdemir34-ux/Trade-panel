@@ -34,6 +34,7 @@
  * KULLANILMADI (mobil perf kararı, bkz. CLAUDE.md §9) — opak `bg-bg`.
  */
 
+import { memo } from "react";
 import { PAIRS } from "@/lib/constants/pairs";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useEquityIndexStore, type EquityIndexSnapshot } from "@/lib/store/equityIndexStore";
@@ -48,7 +49,7 @@ const EQUITY_INDEX_LABELS: { key: "spy" | "qqq" | "uup"; label: string }[] = [
   { key: "uup", label: "DXY" },
 ];
 
-export function TickerTape(): React.ReactElement {
+function TickerTapeImpl(): React.ReactElement {
   const prices = useMarketStore((s) => s.prices);
   const spy = useEquityIndexStore((s) => s.spy);
   const qqq = useEquityIndexStore((s) => s.qqq);
@@ -128,3 +129,10 @@ export function TickerTape(): React.ReactElement {
     </div>
   );
 }
+
+// Prop almıyor — memo, ilgisiz kardeş state değişikliklerinden (KararPage'in
+// kendisi her WS tick'inde re-render oluyor) kaynaklanan gereksiz
+// re-render'ları önler. TickerTape kendi store aboneliklerinde değiştiğinde
+// (fiyat/equity index tick'i) hâlâ normal şekilde render olur — memo sadece
+// parent'tan gelen alakasız tetiklemeleri filtreler.
+export const TickerTape = memo(TickerTapeImpl);
