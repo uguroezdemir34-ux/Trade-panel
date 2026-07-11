@@ -10,7 +10,9 @@ import { useT } from "@/lib/i18n/context";
 import type { ScoreSubScores, ScoreReasons } from "@/lib/score/orchestrator";
 
 const CATEGORIES: Array<{
-  key: keyof ScoreSubScores;
+  // macroBreakdown eklendiğinden beri ScoreSubScores'un tamamı sayısal değil
+  // (bkz. lib/score/orchestrator.ts) — bar grafiği sadece sayısal alanları listeler.
+  key: Exclude<keyof ScoreSubScores, "macroBreakdown">;
   labelKey: string;
   max: number;
 }> = [

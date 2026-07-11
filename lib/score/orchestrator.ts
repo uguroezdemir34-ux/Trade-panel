@@ -23,13 +23,13 @@ import {
   scoreBb,
   scoreVwap,
   scoreFunding,
-  scoreMacro,
   scoreSweepBonus,
   scoreRegimeBonus,
   type SweepInput,
   type VwapInput,
   type Regime,
 } from "./scorers";
+import { calculateMacroScore, type MacroScoreResult } from "./macroScore";
 
 // Diğer modüllerin (forward test vs.) kullanabilmesi için re-export
 export type { Direction } from "./direction";
@@ -118,6 +118,14 @@ export interface ScoreInput {
 
   // Macro
   fg: number;
+  /**
+   * S&P500/NASDAQ/DXY proxy (SPY/QQQ/UUP) günlük değişim % — equityIndexStore'dan.
+   * null/undefined → calculateMacroScore ilgili leg'i nötr (maxPts*0.5) sayar
+   * (backtest/signalEngine gibi bu veriyi sağlamayan caller'lar için de geçerli).
+   */
+  sp500ChangePct?: number | null;
+  nasdaqChangePct?: number | null;
+  dxyChangePct?: number | null;
 
   // 4H mum hareket bilgisi (volBreakout için)
   last4hMovePct: number | null;
@@ -210,7 +218,7 @@ export const DEFAULT_SCORER_WEIGHTS: ScorerWeights = {
 };
 
 const BASE_MAX: ScorerWeights = {
-  trend: 25, adx: 15, rsi: 10, vol: 15, bb: 10, vwap: 10, funding: 8, macro: 7,
+  trend: 25, adx: 15, rsi: 10, vol: 15, bb: 10, vwap: 10, funding: 8, macro: 8,
 };
 
 export type Verdict = "go" | "wait" | "no";
@@ -223,7 +231,20 @@ export interface ScoreSubScores {
   bb: number;
   vwap: number;
   funding: number;
+  /** Toplam MACRO puanı (F&G + equity + DXY) — geriye dönük uyumlu, tek sayı. */
   macro: number;
+  /**
+   * MACRO'nun alt kırılımı (F&G + ABD borsaları proxy + DXY, bkz. macroScore.ts).
+   * undefined → eski davranış (composeScoreInput equity/dxy veri sağlamıyor,
+   * örn. backtest/signalEngine) — macro yine de dolu, sadece kırılım yok.
+   */
+  macroBreakdown?: {
+    fgScore: number;
+    equityScore: number;
+    dxyScore: number;
+    marketOpen: boolean;
+    halfDay: boolean;
+  };
 }
 
 export interface ScoreReasons {
@@ -234,7 +255,13 @@ export interface ScoreReasons {
   bb: string;
   vwap: string;
   funding: string;
+  /** Tam formatlı MACRO açıklaması — geriye dönük uyumlu, hâlâ tek string (bkz. ScoreBreakdown.tsx). */
   macro: string;
+  /** macro string'inin arkasındaki ham bayraklar — özel UI dallanması isteyen tüketiciler için. */
+  macroDetail?: {
+    marketOpen: boolean;
+    halfDay: boolean;
+  };
   sweep?: string;
   regime?: string;
   regimeRelax?: string;
@@ -287,6 +314,38 @@ export interface ScoreResult {
   overextFlags: number;
   /** Gölge kapılar: tetiklendi ama threshold/score'a ETKİSİ YOK — sadece gözlem */
   triggeredShadowGates: string[];
+}
+
+function formatSignedPct(pct: number | null): string {
+  if (pct === null) return "—";
+  return `${pct >= 0 ? "+" : ""}${pct.toFixed(1)}%`;
+}
+
+/**
+ * MACRO satırının alt açıklama metni — calculateMacroScore() sonucundan
+ * (marketOpen/halfDay) 3 dallı format üretir. sp500ChangePct/dxyChangePct
+ * ham (negatif çevrilmemiş) değerler — sadece görüntüleme amaçlı, skor
+ * hesabına girmez (o hesap calculateMacroScore içinde zaten bitti).
+ */
+function buildMacroReasonText(
+  fg: number,
+  sp500ChangePct: number | null,
+  dxyChangePct: number | null,
+  macro: MacroScoreResult,
+): string {
+  if (!macro.marketOpen) {
+    return "ℹ️ ABD piyasası kapalı — sadece F&G etkili (equity/DXY nötr)";
+  }
+  if (macro.halfDay) {
+    return "⚠️ Yarım gün — equity/DXY etkisi %50 azaltıldı";
+  }
+  const fgLabel =
+    fg >= 30 && fg <= 60 ? "healthy" :
+    fg < 20 ? "extreme fear" :
+    fg > 80 ? "extreme greed" :
+    fg >= 20 && fg < 30 ? "fear" :
+    fg > 60 && fg <= 80 ? "greed" : "neutral";
+  return `F&G ${fg} (${fgLabel}) · S&P ${formatSignedPct(sp500ChangePct)} · DXY ${formatSignedPct(dxyChangePct)}`;
 }
 
 // ═══════════════════════════════════════════════════════════════════
@@ -370,7 +429,14 @@ export function computeScore(input: ScoreInput): ScoreResult {
   const bbResult = scoreBb(bbPct, direction);
   const vwapResult = scoreVwap(vwap, px, direction);
   const fundingResult = scoreFunding(fundingRate, direction);
-  const macroResult = scoreMacro(fg, direction);
+  const macroResult = calculateMacroScore({
+    fearGreedIndex: fg,
+    sp500ChangePct: input.sp500ChangePct ?? null,
+    nasdaqChangePct: input.nasdaqChangePct ?? null,
+    dxyChangePct: input.dxyChangePct ?? null,
+    direction,
+    now: new Date(now),
+  });
 
   const sub: ScoreSubScores = {
     trend: trendResult.score,
@@ -381,6 +447,13 @@ export function computeScore(input: ScoreInput): ScoreResult {
     vwap: vwapResult.score,
     funding: fundingResult.score,
     macro: macroResult.score,
+    macroBreakdown: {
+      fgScore: macroResult.breakdown.fgScore,
+      equityScore: macroResult.breakdown.equityScore,
+      dxyScore: macroResult.breakdown.dxyScore,
+      marketOpen: macroResult.marketOpen,
+      halfDay: macroResult.halfDay,
+    },
   };
 
   // Adaptive regime-based weights composed with user-configured weights.
@@ -439,7 +512,13 @@ export function computeScore(input: ScoreInput): ScoreResult {
     bb: bbResult.reason,
     vwap: vwapResult.reason,
     funding: fundingResult.reason,
-    macro: macroResult.reason,
+    macro: buildMacroReasonText(
+      fg,
+      input.sp500ChangePct ?? null,
+      input.dxyChangePct ?? null,
+      macroResult,
+    ),
+    macroDetail: { marketOpen: macroResult.marketOpen, halfDay: macroResult.halfDay },
   };
   if (sweepRes.reason) reasons.sweep = sweepRes.reason;
   if (regimeRes.reason) reasons.regime = regimeRes.reason;

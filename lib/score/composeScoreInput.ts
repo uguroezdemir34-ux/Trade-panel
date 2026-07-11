@@ -37,6 +37,10 @@ export interface ComposeInput {
   candles1d?: readonly OkxCandle[];
   /** Macro: F&G değeri */
   fg: number;
+  /** S&P500/NASDAQ/DXY proxy (SPY/QQQ/UUP) günlük değişim % — equityIndexStore'dan, opsiyonel */
+  sp500ChangePct?: number | null;
+  nasdaqChangePct?: number | null;
+  dxyChangePct?: number | null;
   /** State: tüm risk store değerleri */
   eventSkipUntil: number | null;
   btcCooldownUntil: number | null;
@@ -194,6 +198,9 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     srModifier,
     sweep15m,
     fg,
+    sp500ChangePct: input.sp500ChangePct ?? null,
+    nasdaqChangePct: input.nasdaqChangePct ?? null,
+    dxyChangePct: input.dxyChangePct ?? null,
     last4hMovePct,
     timeQuality,
     eventSkipUntil,

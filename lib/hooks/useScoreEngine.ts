@@ -30,6 +30,7 @@ import { PAIRS } from "@/lib/constants/pairs";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useMacroStore } from "@/lib/store/macroStore";
+import { useEquityIndexStore } from "@/lib/store/equityIndexStore";
 import { useRiskStore } from "@/lib/store/riskStore";
 import { useAccountStore } from "@/lib/store/accountStore";
 import { usePositionStore } from "@/lib/store/positionStore";
@@ -98,6 +99,7 @@ export function useScoreEngine(): void {
     // Snapshot — subscription yok, re-render tetiklemiyor
     const marketStore = useMarketStore.getState();
     const macroStore = useMacroStore.getState();
+    const equityIndexStore = useEquityIndexStore.getState();
     const riskStore = useRiskStore.getState();
     const accountStore = useAccountStore.getState();
     const positionStore = usePositionStore.getState();
@@ -197,6 +199,9 @@ export function useScoreEngine(): void {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         candles1d: candles1d as any,
         fg,
+        sp500ChangePct: equityIndexStore.spy?.changePct ?? null,
+        nasdaqChangePct: equityIndexStore.qqq?.changePct ?? null,
+        dxyChangePct: equityIndexStore.uup?.changePct ?? null,
         eventSkipUntil: null,
         btcCooldownUntil: riskStore.btcCooldownUntil || null,
         btcCooldownReason: riskStore.btcCooldownReason,
