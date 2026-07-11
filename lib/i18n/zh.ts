@@ -288,6 +288,7 @@ volumeSection: "VOLUME",
     filterAlts: "山寨币",
     filterMeme: "Meme币",
     aiScoreAria: "AI 评分: {score}/100",
+    usMarketsLabel: "美股市场",
     oiDiv: {
       confirm: "✓ 确认",
       diverge: "⚠ 背离",

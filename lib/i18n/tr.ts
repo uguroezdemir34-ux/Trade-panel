@@ -259,6 +259,7 @@ export const tr: Dictionary = {
     filterAlts: "Altlar",
     filterMeme: "Meme",
     aiScoreAria: "AI Skoru: {score}/100",
+    usMarketsLabel: "ABD PİYASALARI",
     oiDiv: {
       confirm: "✓ ONAY",
       diverge: "⚠ DIVERJANS",

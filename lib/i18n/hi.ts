@@ -288,6 +288,7 @@ volumeSection: "VOLUME",
     filterAlts: "ऑल्ट",
     filterMeme: "मीम",
     aiScoreAria: "AI स्कोर: {score}/100",
+    usMarketsLabel: "अमेरिकी बाज़ार",
     oiDiv: {
       confirm: "✓ पुष्टि",
       diverge: "⚠ विचलन",

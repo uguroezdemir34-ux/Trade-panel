@@ -258,6 +258,7 @@ volumeSection: "VOLUMEN",
     filterAlts: "Alts",
     filterMeme: "Meme",
     aiScoreAria: "AI-Score: {score}/100",
+    usMarketsLabel: "US-MÄRKTE",
     oiDiv: {
       confirm: "✓ Bestätigt",
       diverge: "⚠ Divergenz",

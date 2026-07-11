@@ -258,6 +258,7 @@ volumeSection: "ОБЪЁМ",
     filterAlts: "Альты",
     filterMeme: "Мемы",
     aiScoreAria: "AI Оценка: {score}/100",
+    usMarketsLabel: "РЫНКИ США",
     oiDiv: {
       confirm: "✓ Подтверждено",
       diverge: "⚠ Дивергенция",

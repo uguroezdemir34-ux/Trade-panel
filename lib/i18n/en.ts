@@ -259,6 +259,7 @@ export const en: Dictionary = {
     filterAlts: "Alts",
     filterMeme: "Meme",
     aiScoreAria: "AI Score: {score}/100",
+    usMarketsLabel: "US MARKETS",
     oiDiv: {
       confirm: "✓ CONFIRM",
       diverge: "⚠ DIVERGE",

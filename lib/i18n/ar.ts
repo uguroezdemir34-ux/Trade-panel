@@ -288,6 +288,7 @@ volumeSection: "VOLUME",
     filterAlts: "العملات البديلة",
     filterMeme: "ميم",
     aiScoreAria: "AI النقاط: {score}/100",
+    usMarketsLabel: "الأسواق الأمريكية",
     oiDiv: {
       confirm: "✓ تأكيد",
       diverge: "⚠ تباعد",

@@ -288,6 +288,7 @@ volumeSection: "VOLUME",
     filterAlts: "アルト",
     filterMeme: "ミーム",
     aiScoreAria: "AI スコア: {score}/100",
+    usMarketsLabel: "米国市場",
     oiDiv: {
       confirm: "✓ 確認",
       diverge: "⚠ ダイバージェンス",

@@ -37,7 +37,7 @@
 import { PAIRS } from "@/lib/constants/pairs";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useEquityIndexStore, type EquityIndexSnapshot } from "@/lib/store/equityIndexStore";
-import { useLocale } from "@/lib/i18n/context";
+import { useT, useLocale } from "@/lib/i18n/context";
 import { formatTickPrice, formatPercent } from "@/lib/i18n/format";
 
 // SPY/QQQ/UUP teknik proxy sembolleri — kullanıcıya gerçek endeks adlarıyla
@@ -54,12 +54,14 @@ export function TickerTape(): React.ReactElement {
   const qqq = useEquityIndexStore((s) => s.qqq);
   const uup = useEquityIndexStore((s) => s.uup);
   const locale = useLocale();
+  const t = useT();
 
   const equitySnapshots: Record<"spy" | "qqq" | "uup", EquityIndexSnapshot | null> = {
     spy,
     qqq,
     uup,
   };
+  const hasAnyEquityIndex = spy !== null || qqq !== null || uup !== null;
 
   const renderItems = (keyPrefix: string) => (
     <>
@@ -82,6 +84,14 @@ export function TickerTape(): React.ReactElement {
           </span>
         );
       })}
+      {hasAnyEquityIndex && (
+        <span
+          key={`${keyPrefix}-us-markets-label`}
+          className="border-border flex shrink-0 items-center border-l pl-3 text-text-t3 text-[9px] tracking-wide"
+        >
+          {t("karar.usMarketsLabel")}
+        </span>
+      )}
       {EQUITY_INDEX_LABELS.map(({ key, label }) => {
         const snap = equitySnapshots[key];
         // Poller henüz ilk cycle'ı tamamlamadıysa / key yoksa / Finnhub

@@ -258,6 +258,7 @@ volumeSection: "VOLUME",
     filterAlts: "Alts",
     filterMeme: "Meme",
     aiScoreAria: "AI Pontuação: {score}/100",
+    usMarketsLabel: "MERCADOS DOS EUA",
     oiDiv: {
       confirm: "✓ Confirmado",
       diverge: "⚠ Divergência",

@@ -288,6 +288,7 @@ volumeSection: "VOLUME",
     filterAlts: "알트",
     filterMeme: "밈",
     aiScoreAria: "AI 점수: {score}/100",
+    usMarketsLabel: "미국 증시",
     oiDiv: {
       confirm: "✓ 확인",
       diverge: "⚠ 다이버전스",
