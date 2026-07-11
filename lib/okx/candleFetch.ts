@@ -67,14 +67,23 @@ export async function runBatched(
   concurrency: number,
   staggerMs = 0,
 ): Promise<void> {
-  const queue = [...tasks];
-  async function worker(index: number): Promise<void> {
-    if (staggerMs > 0 && index > 0)
-      await new Promise<void>((r) => setTimeout(r, index * staggerMs));
-    let task = queue.shift();
-    while (task) {
-      await task();
-      task = queue.shift();
+  // task index'iyle birlikte kuyruğa alınıyor — pair/tf burada bilinmiyor
+  // (task opaque bir closure), ama en azından kuyruk pozisyonu loglanabilsin.
+  const queue = tasks.map((task, index) => ({ task, index }));
+  async function worker(workerIndex: number): Promise<void> {
+    if (staggerMs > 0 && workerIndex > 0)
+      await new Promise<void>((r) => setTimeout(r, workerIndex * staggerMs));
+    let item = queue.shift();
+    while (item) {
+      try {
+        await item.task();
+      } catch (err) {
+        // task() zaten kendi try/catch'ine sahipse (fetchCandles, saveCache
+        // vb.) bu no-op'tur — beklenmedik bir throw'a karşı savunma:
+        // worker kalıcı olarak durmasın, kuyruğa devam etsin (FAZ 3).
+        console.warn(`[runBatched] task #${item.index} threw, kuyruğa devam ediliyor`, err);
+      }
+      item = queue.shift();
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, tasks.length) }, (_, i) => worker(i)));

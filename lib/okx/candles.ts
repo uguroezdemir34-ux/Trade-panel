@@ -119,6 +119,20 @@ export type FetchFn = (url: string) => Promise<{
   json: () => Promise<unknown>;
 }>;
 
+/** fetchCandles varsayılan (mocksuz) yolda kullanılır — askıda kalan bir
+ *  istek runBatched worker'ını sonsuza dek kilitlemesin diye (bkz. FAZ 3). */
+const CANDLE_FETCH_TIMEOUT_MS = 8_000;
+
+async function fetchWithTimeout(url: string): Promise<{ ok: boolean; json: () => Promise<unknown> }> {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), CANDLE_FETCH_TIMEOUT_MS);
+  try {
+    return await globalThis.fetch(url, { signal: ctrl.signal });
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
 /**
  * Mum verilerini çek.
  *
@@ -133,12 +147,14 @@ export async function fetchCandles(
   limit: number = 200,
   fetchFn?: FetchFn,
 ): Promise<Candle[] | null> {
-  const fn = fetchFn ?? (globalThis.fetch as unknown as FetchFn);
   const instId = instIdFor(pair);
   const bar = barFor(tf);
   const url = `/api/okx/api/v5/market/candles?instId=${encodeURIComponent(instId)}&bar=${bar}&limit=${Math.min(300, limit)}`;
   try {
-    const res = await fn(url);
+    // fetchFn verilmişse (test mock'u) aynen kullan, yoksa 8sn timeout'lu
+    // gerçek fetch — timeout tetiklenirse fetch() reddeder, aşağıdaki
+    // catch zaten null dönüyor, davranış değişmiyor (sadece asılı kalmıyor).
+    const res = fetchFn ? await fetchFn(url) : await fetchWithTimeout(url);
     if (!res.ok) return null;
     const raw = await res.json();
     if (!raw || typeof raw !== "object") return null;
