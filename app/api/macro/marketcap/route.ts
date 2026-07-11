@@ -25,12 +25,6 @@ const COINGECKO_IDS: Record<string, string> = {
   PENDLE: "pendle",
   OP:     "optimism",
   WIF:    "dogwifcoin",
-  HYPE:   "hyperliquid",
-  ONDO:   "ondo-finance",
-  TIA:    "celestia",
-  JUP:    "jupiter",
-  ENA:    "ethena",
-  SEI:    "sei",
 };
 
 const ID_TO_PAIR: Record<string, string> = Object.fromEntries(

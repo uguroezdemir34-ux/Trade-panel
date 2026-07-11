@@ -28,13 +28,6 @@ const PAIR_TO_INST: Record<Pair, string> = {
   PENDLE: "PENDLE-USDT-SWAP",
   OP:     "OP-USDT-SWAP",
   WIF:    "WIF-USDT-SWAP",
-  PEPE:   "PEPE-USDT-SWAP",
-  HYPE:   "HYPE-USDT-SWAP",
-  ONDO:   "ONDO-USDT-SWAP",
-  TIA:    "TIA-USDT-SWAP",
-  JUP:    "JUP-USDT-SWAP",
-  ENA:    "ENA-USDT-SWAP",
-  SEI:    "SEI-USDT-SWAP",
 };
 
 /**

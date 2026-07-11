@@ -50,7 +50,7 @@ const EMPTY_SCORE_SNAPS: number[] = [];
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
   majors: ["BTC", "ETH", "BNB", "XRP", "SOL", "APT"],
-  alts:   ["ADA", "AVAX", "LINK", "NEAR", "SUI", "TAO", "PENDLE", "OP", "HYPE", "ONDO", "TIA", "JUP", "ENA", "SEI"],
+  alts:   ["ADA", "AVAX", "LINK", "NEAR", "SUI", "TAO", "PENDLE", "OP"],
   meme:   ["DOGE", "SHIB", "WIF"],
 };
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";

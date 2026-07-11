@@ -16,13 +16,6 @@ export const PAIRS = [
   "PENDLE", // Pendle — DeFi yield
   "OP",   // Optimism — L2
   "WIF",  // Dogwifhat — meme/Solana
-  "PEPE", // Pepe — meme/Ethereum
-  "HYPE", // Hyperliquid — perp DEX L1
-  "ONDO", // Ondo Finance — RWA/DeFi
-  "TIA",  // Celestia — modular DA layer
-  "JUP",  // Jupiter — Solana DEX aggregator
-  "ENA",  // Ethena — synthetic dollar protocol
-  "SEI",  // Sei — high-perf L1
 ] as const;
 
 export type Pair = (typeof PAIRS)[number];

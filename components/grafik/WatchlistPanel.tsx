@@ -13,16 +13,14 @@ import { useT } from "@/lib/i18n/context";
 import { Sparkline } from "@/components/grafik/Sparkline";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 
-/* CoinMarketCap IDs — official logos. HYPE/ONDO/TIA/JUP/ENA/SEI kasıtlı
-   eksik — CMC ID'leri henüz doğrulanmadı (bkz. CLAUDE.md backlog notu);
-   CoinLogo bileşeni eksik girişte otomatik ikinci CDN'e, o da olmazsa
-   harf rozetine düşüyor (crash yok, sadece logo eksik görünür). */
+/* CoinMarketCap IDs — official logos. CoinLogo bileşeni eksik girişte
+   otomatik ikinci CDN'e, o da olmazsa harf rozetine düşüyor (crash yok,
+   sadece logo eksik görünür). */
 const CMC_IDS: Record<string, number> = {
   BTC: 1,       ETH: 1027,    XRP: 52,      SOL: 5426,    BNB: 1839,
   ADA: 2010,    AVAX: 5805,   LINK: 1975,
   DOGE: 74,     SHIB: 5994,   SUI: 20947,   NEAR: 6535,
   APT: 21794,   TAO: 22974,   PENDLE: 21451, OP: 11840,   WIF: 29047,
-  PEPE: 24478,
 };
 const CDN_OVERRIDES: Record<string, string> = {};
 /* Trust Wallet asset overrides — used when CMC ID is wrong/unavailable */
@@ -36,17 +34,13 @@ interface Props {
   onPairChange: (pair: Pair) => void;
 }
 
-/* ── Coin renk paleti. HYPE/ONDO/TIA/JUP/ENA/SEI renkleri marka kılavuzuyla
-   doğrulanmadı, yaklaşık değerler — tamamen kozmetik, düşük risk. ── */
+/* ── Coin renk paleti — tamamen kozmetik. ── */
 const PAIR_COLORS: Record<string, string> = {
   BTC:   "#f7931a", ETH:  "#627eea", XRP:  "#00aae4", SOL:  "#9945ff",
   BNB:   "#f3ba2f", ADA:  "#0033ad", AVAX: "#e84142",
   LINK:  "#2a5ada", DOGE: "#c2a633", SHIB: "#ff4200",
   SUI:   "#4da2ff", NEAR: "#00c08b", APT:  "#4285f4",
   TAO:   "#00c4b4", PENDLE: "#8fbe00", OP:  "#ff0420", WIF:  "#a855f7",
-  PEPE:  "#00b050",
-  HYPE:  "#2dd4bf", ONDO: "#1e40af", TIA:  "#7b2bf9",
-  JUP:   "#fbbf24", ENA:  "#f43f5e", SEI:  "#dc2626",
 };
 function pairColor(p: string): string { return PAIR_COLORS[p] ?? "#6366f1"; }
 
@@ -57,9 +51,6 @@ const COIN_NAMES: Record<string, string> = {
   LINK: "Chainlink",   DOGE: "Dogecoin",    SHIB: "Shiba Inu",
   SUI: "Sui",          NEAR: "NEAR Protocol",  APT: "Aptos",
   TAO: "Bittensor",    PENDLE: "Pendle",        OP: "Optimism",      WIF: "dogwifhat",
-  PEPE: "Pepe",
-  HYPE: "Hyperliquid", ONDO: "Ondo",           TIA: "Celestia",
-  JUP: "Jupiter",      ENA: "Ethena",          SEI: "Sei",
 };
 function coinName(p: string): string { return COIN_NAMES[p] ?? p; }
 

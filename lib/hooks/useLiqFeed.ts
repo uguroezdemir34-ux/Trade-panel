@@ -37,8 +37,6 @@ const OKX_CONTRACT_SIZE: Partial<Record<Pair, number>> = {
   PENDLE: 1,
   OP: 1,
   WIF: 1,
-  // HYPE/ONDO/TIA/JUP/ENA/SEI: ctVal henüz doğrulanmadı, `?? 1` fallback
-  // kullanılıyor (bkz. CLAUDE.md backlog notu) — takip diff'inde tamamlanacak.
 };
 
 // ── Symbol → Pair maps ───────────────────────────────────────────────────────
@@ -48,7 +46,6 @@ const BINANCE_PAIR: Record<string, Pair> = {
   LINKUSDT: "LINK", DOGEUSDT: "DOGE",
   "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR",
   APTUSDT: "APT", TAOUSDT: "TAO", PENDLEUSDT: "PENDLE", OPUSDT: "OP", WIFUSDT: "WIF",
-  HYPEUSDT: "HYPE", ONDOUSDT: "ONDO", TIAUSDT: "TIA", JUPUSDT: "JUP", ENAUSDT: "ENA", SEIUSDT: "SEI",
 };
 
 const BYBIT_PAIR: Record<string, Pair> = {
@@ -57,7 +54,6 @@ const BYBIT_PAIR: Record<string, Pair> = {
   LINKUSDT: "LINK", DOGEUSDT: "DOGE",
   "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR",
   APTUSDT: "APT", TAOUSDT: "TAO", PENDLEUSDT: "PENDLE", OPUSDT: "OP", WIFUSDT: "WIF",
-  HYPEUSDT: "HYPE", ONDOUSDT: "ONDO", TIAUSDT: "TIA", JUPUSDT: "JUP", ENAUSDT: "ENA", SEIUSDT: "SEI",
 };
 
 // Binance / Bybit "1000X" symbols: reported size is in 1000 units
