@@ -32,11 +32,11 @@
   --surface-s2: 25 30 44;   /* İkincil yüzey */
   --surface-s3: 34 40 58;   /* Üçüncü yüzey */
 
-  /* Signals — vibrant on dark */
-  --signal-green:  34 197  94;   /* #22c55e */
-  --signal-red:   239  68  68;   /* #ef4444 */
-  --signal-amber: 245 158  11;   /* #f59e0b */
-  --signal-blue:  100 160 255;   /* Daha parlak mavi */
+  /* Signals — mat/kurumsal (desature edilmiş, bkz. CLAUDE.md renk sadeleştirme turu) */
+  --signal-green:   56 137  97;   /* #388961 */
+  --signal-red:    199  96 105;   /* #c76069 — 4.94:1, AA duzeltmesi */
+  --signal-amber:  166 117  48;   /* #a67530 */
+  --signal-blue:    78 129 188;   /* #4e81bc */
   --signal-up:     34 197  94;
   --signal-down:  239  68  68;
 
@@ -82,11 +82,11 @@
   --surface-s2: 222 224 242;
   --surface-s3: 208 211 234;
 
-  /* Signals — darkened for WCAG AA on white */
-  --signal-green:  20 130  60;   /* #14823c — 4.8:1 */
-  --signal-red:   188  28  28;   /* #bc1c1c — 6.2:1 */
-  --signal-amber: 178  82   8;   /* #b25208 — 4.6:1 */
-  --signal-blue:   28  80 220;   /* #1c50dc — 6.3:1 */
+  /* Signals — mat/kurumsal (desature edilmiş, bkz. CLAUDE.md renk sadeleştirme turu) */
+  --signal-green:   40  93  66;   /* #285d42 — 7.68:1 */
+  --signal-red:    130  53  60;   /* #82353c — 8.32:1 */
+  --signal-amber:  122  84  41;   /* #7a5429 — 6.71:1 */
+  --signal-blue:    59  99 145;   /* #3b6391 — 6.21:1 */
   --signal-up:     20 130  60;
   --signal-down:  188  28  28;
 
