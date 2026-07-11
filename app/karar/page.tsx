@@ -950,23 +950,29 @@ export default function KararPage() {
                       )}
                     </div>
 
-                    {/* MTF mini trend satırı: 1H / 4H / 1D */}
-                    {mtfResults[p]?.trends && (
-                      <div className="flex justify-center gap-2.5 mt-1 border-t border-border/30 pt-1">
-                        {mtfResults[p]!.trends.map((t) => (
-                          <span key={t.tf} className="flex flex-col items-center" style={{ gap: "1px" }}>
-                            <span className="text-2xs font-mono uppercase tracking-wider text-text-t2/70 leading-none">{t.tf}</span>
-                            <span className={`text-[10px] font-mono leading-none ${
-                              t.direction === "up"   ? "text-[#22c55e]"
-                              : t.direction === "down" ? "text-[#ef4444]/80"
-                              : "text-text-t2/50"
-                            }`}>
-                              {t.direction === "up" ? "▲" : t.direction === "down" ? "▼" : "─"}
+                    {/* MTF mini trend satırı: 1H / 4H / 1D — badge wrapper'dan (bir önceki
+                        tur, satır 931) bağımsız, ayrı bir ikinci min-h rezervasyonu. Yeni
+                        dış wrapper her zaman render olur (min-h-6), içindeki koşullu <div>
+                        (border-t + içerik) DEĞİŞMEDİ — satır yokken sadece boş alan kalsın,
+                        yapay bir border çizgisi belirmesin diye border-t hâlâ koşullu. */}
+                    <div className="min-h-6">
+                      {mtfResults[p]?.trends && (
+                        <div className="flex justify-center gap-2.5 mt-1 border-t border-border/30 pt-1">
+                          {mtfResults[p]!.trends.map((t) => (
+                            <span key={t.tf} className="flex flex-col items-center" style={{ gap: "1px" }}>
+                              <span className="text-2xs font-mono uppercase tracking-wider text-text-t2/70 leading-none">{t.tf}</span>
+                              <span className={`text-[10px] font-mono leading-none ${
+                                t.direction === "up"   ? "text-[#22c55e]"
+                                : t.direction === "down" ? "text-[#ef4444]/80"
+                                : "text-text-t2/50"
+                              }`}>
+                                {t.direction === "up" ? "▲" : t.direction === "down" ? "▼" : "─"}
+                              </span>
                             </span>
-                          </span>
-                        ))}
-                      </div>
-                    )}
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Alt: fiyat + market cap */}
                     <div className="flex items-center justify-between mt-1 gap-1">
