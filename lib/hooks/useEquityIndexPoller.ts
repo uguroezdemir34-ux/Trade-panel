@@ -1,0 +1,104 @@
+"use client";
+
+/**
+ * EQUITY INDEX POLLER — S&P500/Nasdaq/DXY proxy'leri (SPY/QQQ/UUP) periyodik güncelleme.
+ *
+ * /api/macro/equity-index çağırır (server-side Finnhub proxy — key client'a
+ * hiç sızmaz, bkz. o dosyanın header'ı). 5dk cadence — useNewsPoller'dan
+ * (20dk) daha sık ama useOrderBookPoller'dan (3dk) daha seyrek, "yavaş
+ * değişen bağlam" verisi sınıfına uygun.
+ *
+ * SAVUNMACI: her index (spy/qqq/uup) diğerinden bağımsız — biri eksik/bozuksa
+ * sadece o atlanır, diğerleri son bilinen değerinde güncellenir. Route zaten
+ * hiç throw etmez, ama fetch/JSON hatası burada da ayrıca yutulur.
+ *
+ * Ardışık hata backoff: MAX_CONSECUTIVE_FAILURES cycle üst üste hiçbir index
+ * güncellenemezse (route erişilemiyor / key yok / Finnhub down) bir sonraki
+ * cycle 2x ertelenir. Sabit setInterval yerine kendini yeniden zamanlayan
+ * setTimeout kullanılıyor çünkü gecikme dinamik (backoff'a göre değişiyor) —
+ * setInterval bunu desteklemez. Agresif değil: taban frekans zaten 5dk.
+ */
+
+import { useEffect, useRef } from "react";
+import { useEquityIndexStore, type EquityIndexSymbol } from "@/lib/store/equityIndexStore";
+
+const POLL_INTERVAL_MS = 5 * 60_000; // 5 dakika
+const MAX_CONSECUTIVE_FAILURES = 3;
+const BACKOFF_MULTIPLIER = 2;
+
+const SYMBOL_KEYS: { symbol: string; key: EquityIndexSymbol }[] = [
+  { symbol: "SPY", key: "spy" },
+  { symbol: "QQQ", key: "qqq" },
+  { symbol: "UUP", key: "uup" },
+];
+
+interface IndexQuote {
+  price: number;
+  changePct: number | null;
+}
+
+interface EquityIndexResponse {
+  available?: boolean;
+  indices?: Partial<Record<string, IndexQuote | null>>;
+}
+
+export function useEquityIndexPoller(delayMs = 0): void {
+  const setIndex = useEquityIndexStore((s) => s.setIndex);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const consecutiveFailuresRef = useRef(0);
+
+  useEffect(() => {
+    async function poll(): Promise<void> {
+      try {
+        const res = await fetch("/api/macro/equity-index");
+        if (!res.ok) {
+          consecutiveFailuresRef.current += 1;
+          return;
+        }
+        const raw = (await res.json()) as EquityIndexResponse;
+        if (!raw.available || !raw.indices) {
+          consecutiveFailuresRef.current += 1;
+          return;
+        }
+
+        let anyUpdated = false;
+        const now = Date.now();
+        for (const { symbol, key } of SYMBOL_KEYS) {
+          const q = raw.indices[symbol];
+          if (q && typeof q.price === "number" && isFinite(q.price) && q.price > 0) {
+            setIndex(key, {
+              price: q.price,
+              changePct: typeof q.changePct === "number" && isFinite(q.changePct) ? q.changePct : null,
+              updatedAt: now,
+            });
+            anyUpdated = true;
+          }
+          // eksik/bozuk index → sessizce atla, o key son bilinen değerinde kalır
+        }
+        consecutiveFailuresRef.current = anyUpdated ? 0 : consecutiveFailuresRef.current + 1;
+      } catch {
+        consecutiveFailuresRef.current += 1;
+      }
+    }
+
+    function scheduleNext(): void {
+      const backoff =
+        consecutiveFailuresRef.current >= MAX_CONSECUTIVE_FAILURES ? BACKOFF_MULTIPLIER : 1;
+      timerRef.current = setTimeout(() => {
+        void poll().then(scheduleNext);
+      }, POLL_INTERVAL_MS * backoff);
+    }
+
+    startTimerRef.current = setTimeout(() => {
+      void poll().then(scheduleNext);
+    }, delayMs);
+
+    return () => {
+      if (startTimerRef.current) clearTimeout(startTimerRef.current);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  // delayMs is a mount-time constant, safe to omit from deps
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [setIndex]);
+}

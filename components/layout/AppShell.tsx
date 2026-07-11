@@ -41,6 +41,7 @@ import { useBalancePoller } from "@/lib/hooks/useBalancePoller";
 import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
 import { useOrderBookPoller } from "@/lib/hooks/useOrderBookPoller";
 import { useNewsPoller } from "@/lib/hooks/useNewsPoller";
+import { useEquityIndexPoller } from "@/lib/hooks/useEquityIndexPoller";
 import { NewsFeedBanner } from "./NewsFeedBanner";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
@@ -121,6 +122,7 @@ export function AppShell({
   useMacroPoller(3_000);    // t+3s — en yavaş değişen veri, en son
   useOrderBookPoller(4_000); // t+4s — Anomali Işığı Faz 2 (order book duvarı), 3dk cadence
   useNewsPoller(5_000);      // t+5s — Haber Akışı (RSS+Finnhub haber sentiment), 20dk cadence
+  useEquityIndexPoller(6_000); // t+6s — S&P/Nasdaq/DXY proxy (SPY/QQQ/UUP), 5dk cadence, veri katmanı (UI henüz yok)
   // Günlük P&L takip → drawdown protokol tier güncelle (güvenlik kritik)
   useDailyPnlTracker();
   // Order flow trade feed → tradeFeedStore (CVD/VPIN/SMC için)
