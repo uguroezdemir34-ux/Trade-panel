@@ -916,7 +916,7 @@ export default function KararPage() {
                             translate="no"
                             className={`ml-1 font-mono text-[7px] tabular-nums leading-none opacity-70 ${dc}`}
                           >
-                            ~{v.actualMin}dk {sign}{Math.round(v.delta)}
+                            ~{v.actualMin}{t("units.minute")} {sign}{Math.round(v.delta)}
                           </span>
                         );
                       })()}
