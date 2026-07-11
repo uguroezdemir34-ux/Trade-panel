@@ -9,6 +9,14 @@
  *   Sonuç render sırasında senkron hesaplanır, ek render tetiklenmez.
  *
  * VPIN: tradeFeedStore'da kalıcı — her fresh trade batch'i seenIds dedup korumasıyla incremental ingest edilir.
+ *
+ * livePrice throttle (FAZ 2a): marketStore.prices[pair].last WS tick'inde
+ * saniyenin altında değişiyor, ama bu pipeline'ın kendisi (CVD/VPIN/SMC +
+ * likidasyon kümeleme) her tick'te yeniden hesaplanacak kadar hassas
+ * olmasını gerektirmiyor — fiyat zaten LIVE_PRICE_THROTTLE_MS penceresi
+ * içinde anlamlı ölçüde kaymıyor. useThrottledValue trailing-edge olduğu
+ * için gerçek bir fiyat değişikliği asla bu pencereden fazla gecikmez —
+ * sadece ara tick'ler atlanıyor, üretilen sonuç YANLIŞ/eski kalmıyor.
  */
 
 import { useMemo } from "react";
@@ -19,6 +27,9 @@ import { useTradeFeedStore, selectFeed } from "@/lib/store/tradeFeedStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useLiqFeedStore } from "@/lib/store/liqFeedStore";
+import { useThrottledValue } from "./useThrottledValue";
+
+const LIVE_PRICE_THROTTLE_MS = 500;
 
 const EMPTY_TRADES: readonly import("@/lib/orderflow/types").Trade[] = [];
 const EMPTY_LIQ_EVENTS: import("@/lib/store/liqFeedStore").LiqEvent[] = [];
@@ -42,7 +53,8 @@ export function useFlowIntelligence(
   const vpinState = feed?.vpinState;
   const candles1hRaw = useCandleStore((s) => s.candles[`${pair}_1h`]);
   const candles1h = candles1hRaw ?? EMPTY_CANDLES;
-  const livePrice = useMarketStore((s) => s.prices[pair]?.last ?? null);
+  const livePriceRaw = useMarketStore((s) => s.prices[pair]?.last ?? null);
+  const livePrice = useThrottledValue(livePriceRaw, LIVE_PRICE_THROTTLE_MS);
   const liqEvents = useLiqFeedStore((s) => s.events[pair] ?? EMPTY_LIQ_EVENTS);
 
   return useMemo(() => {

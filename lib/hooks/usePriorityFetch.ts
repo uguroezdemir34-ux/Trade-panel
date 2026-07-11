@@ -85,16 +85,10 @@ export function usePriorityFetch(
             // TTL guard: 2 dakikadan yeni veri varsa network fetch'i atla
             const lastFetched = useCandleStore.getState().lastFetchedAt[`${pair}_${tf}` as `${Pair}_${Timeframe}`];
             if (lastFetched && Date.now() - lastFetched < STALE_CACHE_MAX_AGE) {
-              // [QX PERF] teşhis — production'a gitmeyecek
-              console.log(`[QX PERF] pFetch:${pair}/${tf} TTL_HIT age=${Math.round((Date.now() - lastFetched) / 1000)}s`);
               anySuccess = true;
               return;
             }
-            // [QX PERF] teşhis — production'a gitmeyecek
-            console.log(`[QX PERF] pFetch:${pair}/${tf} FETCH…`);
-            const fetchT0 = performance.now();
             const candles = await fetchWithRetry(pair, tf, limit);
-            console.log(`[QX PERF] pFetch:${pair}/${tf} ${candles ? "OK" : "FAIL"} +${Math.round(performance.now() - fetchT0)}ms`);
             if (candles) {
               setCandles(pair, tf, candles, Date.now());
               saveCache(pair, tf, candles);

@@ -43,6 +43,9 @@ function activeBorderClass(s: number | undefined): string {
    5dk gibi daha kısa bir pencere sahte hassasiyet verir, o yüzden desteklenmiyor. */
 const MOMENTUM_WINDOW_MIN = 15;
 const DELTA_BADGE_WINDOW_MIN = 30;
+/** Geçmişi olmayan pariteler için paylaşılan sabit referans — her render'da yeni [] literal'i
+ *  ScoreRingV2'nin `prev.snaps === next.snaps` memo karşılaştırıcısını kırıyordu (FAZ 2a). */
+const EMPTY_SCORE_SNAPS: number[] = [];
 
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
@@ -112,15 +115,6 @@ export default function KararPage() {
   const [staleFailed, setStaleFailed] = useState(false);
 
   useEffect(() => { setIsStale(false); setStaleFailed(false); }, [activePair]);
-
-  // [QX PERF] teşhis — production'a gitmeyecek
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const w = window as { __qx_nav_ts?: number };
-    const navTs = w.__qx_nav_ts;
-    const mountDelta = navTs ? Math.round(performance.now() - navTs) : null;
-    console.log(`[QX PERF] karar:mount ${mountDelta != null ? `+${mountDelta}ms` : "(cold)"}`);
-  }, []);
 
   usePriorityFetch(
     activePair,
@@ -290,6 +284,12 @@ export default function KararPage() {
       }, 700);
     }
     btcPrevScoreRef.current = btcScoreForPulse;
+    return () => {
+      if (btcPulseTimerRef.current) {
+        clearTimeout(btcPulseTimerRef.current);
+        btcPulseTimerRef.current = null;
+      }
+    };
   }, [btcScoreForPulse]);
 
   const goPairs = useMemo(
@@ -878,7 +878,7 @@ export default function KararPage() {
                         <ScoreRingV2
                           score={score}
                           goThreshold={pr.goThreshold}
-                          snaps={snapScoresByPair[p] ?? []}
+                          snaps={snapScoresByPair[p] ?? EMPTY_SCORE_SNAPS}
                           size={52}
                           id={p}
                         />
