@@ -59,17 +59,37 @@ function yieldToEventLoop(): Promise<void> {
   });
 }
 
+// Skip-retry fast path throttle (modül seviyesi — candleStore equality fn'i
+// bir hook değil, useRef kullanamıyor). Kalıcı skip'te kalan pariteler
+// (örn. candle verisi hiç gelmeyen pair'ler) yüzünden fast path'in
+// candleStore'un HER güncellemesinde (WS canlı mum tick'leri dahil) motoru
+// tetiklemesini önler — throttle penceresi dolmadıysa normal candle
+// ts/confirm karşılaştırmasına düşülür, gerçek bir değişiklik yine yakalanır.
+let _lastSkipRecheckAt = 0;
+const SKIP_RECHECK_THROTTLE_MS = 3_000;
+
 export function useScoreEngine(): void {
   // Trigger: only when 15m/1h/4h last candle timestamps/confirm flags change.
   // Prevents score recomputation on 1d-only polls or identity-equal updates.
   const candles = useCandleStore(
     (s) => s.candles,
     (prev, next) => {
-      // Fast path: any pair never scored → trigger immediately so the
-      // initial "waiting" screen clears as soon as candles arrive.
-      // null = skipped sentinel (insufficient candles), NOT undefined.
+      // Fast path: any pair never scored OR skipped → trigger immediately so
+      // insufficient-data pairs get re-evaluated every cycle instead of
+      // waiting for their next candle ts/confirm change (which may be up to
+      // 60 minutes away for 1h bars). undefined = never scored, null =
+      // skipped (composeScoreInput returned null) — both should retry.
       const { results } = useScoreStore.getState();
-      if (PAIRS.some((p) => results[p] === undefined)) return false;
+      if (PAIRS.some((p) => results[p] === undefined || results[p] === null)) {
+        const now = Date.now();
+        if (now - _lastSkipRecheckAt >= SKIP_RECHECK_THROTTLE_MS) {
+          _lastSkipRecheckAt = now;
+          return false;
+        }
+        // Throttled — kalıcı skip'te kalan pair(ler) yüzünden burada spin
+        // etmek yerine aşağıdaki normal candle ts/confirm karşılaştırmasına
+        // düş, gerçek bir veri değişikliği yine yakalanır.
+      }
 
       for (const pair of PAIRS) {
         for (const tf of ["15m", "1h", "4h"] as const) {
