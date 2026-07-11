@@ -14,8 +14,13 @@
  * translateX(-50%) ile döner) — bu, tek bir kopyanın genişliği kadar
  * kaydıktan sonra başa sarma illüzyonu yaratır (sonsuz döngü hissi).
  *
- * Sadece marketStore.prices'ı okur (zaten useMarketStream ile canlı
- * besleniyor) — yeni fetch/poller/store yok, skor motoruna hiç dokunmaz.
+ * marketStore.prices'ı (zaten useMarketStream ile canlı besleniyor) ve
+ * equityIndexStore'u (SPY/QQQ/UUP → "S&P 500"/"NASDAQ"/"DXY" olarak
+ * gösterilir, useEquityIndexPoller AppShell'de ayrıca besliyor) okur —
+ * bu dosya kendi fetch/poller'ını yapmaz, salt tüketici. Snapshot null'sa
+ * (poller ilk cycle'ı bitirmedi / key yok / Finnhub hatası) o üç öğe
+ * tamamen render edilmez, kripto şeridini etkilemez. Pair tipine hiç
+ * girmez, skor motoruna hiç dokunmaz.
  *
  * Sticky pozisyon: NewsFeedBanner'ın (ayrı dosya, ayrı sayfa kapsamı —
  * global layout'ta) hemen altında sabit kalır. Kendi top-offset'ini
@@ -31,33 +36,75 @@
 
 import { PAIRS } from "@/lib/constants/pairs";
 import { useMarketStore } from "@/lib/store/marketStore";
+import { useEquityIndexStore, type EquityIndexSnapshot } from "@/lib/store/equityIndexStore";
 import { useLocale } from "@/lib/i18n/context";
 import { formatTickPrice, formatPercent } from "@/lib/i18n/format";
 
+// SPY/QQQ/UUP teknik proxy sembolleri — kullanıcıya gerçek endeks adlarıyla
+// gösterilir (ETF proxy olduğu iç detay, bkz. equityIndexStore.ts header'ı).
+const EQUITY_INDEX_LABELS: { key: "spy" | "qqq" | "uup"; label: string }[] = [
+  { key: "spy", label: "S&P 500" },
+  { key: "qqq", label: "NASDAQ" },
+  { key: "uup", label: "DXY" },
+];
+
 export function TickerTape(): React.ReactElement {
   const prices = useMarketStore((s) => s.prices);
+  const spy = useEquityIndexStore((s) => s.spy);
+  const qqq = useEquityIndexStore((s) => s.qqq);
+  const uup = useEquityIndexStore((s) => s.uup);
   const locale = useLocale();
 
-  const renderItems = (keyPrefix: string) =>
-    PAIRS.map((pair) => {
-      const tick = prices[pair];
-      const chg = tick?.chg ?? null;
-      const chgColor =
-        chg === null ? "text-text-t4" : chg >= 0 ? "text-signal-up" : "text-signal-down";
-      const arrow = chg === null ? "" : chg >= 0 ? "▲" : "▼";
+  const equitySnapshots: Record<"spy" | "qqq" | "uup", EquityIndexSnapshot | null> = {
+    spy,
+    qqq,
+    uup,
+  };
 
-      return (
-        <span key={`${keyPrefix}-${pair}`} className="flex shrink-0 items-center gap-1.5">
-          <span className="text-text-t2 font-bold">{pair}</span>
-          <span className="text-text-t1">
-            {tick?.last ? formatTickPrice(tick.last, locale) : "—"}
+  const renderItems = (keyPrefix: string) => (
+    <>
+      {PAIRS.map((pair) => {
+        const tick = prices[pair];
+        const chg = tick?.chg ?? null;
+        const chgColor =
+          chg === null ? "text-text-t4" : chg >= 0 ? "text-signal-up" : "text-signal-down";
+        const arrow = chg === null ? "" : chg >= 0 ? "▲" : "▼";
+
+        return (
+          <span key={`${keyPrefix}-${pair}`} className="flex shrink-0 items-center gap-1.5">
+            <span className="text-text-t2 font-bold">{pair}</span>
+            <span className="text-text-t1">
+              {tick?.last ? formatTickPrice(tick.last, locale) : "—"}
+            </span>
+            <span className={chgColor}>
+              {chg === null ? "—" : `${arrow} ${formatPercent(Math.abs(chg), locale)}`}
+            </span>
           </span>
-          <span className={chgColor}>
-            {chg === null ? "—" : `${arrow} ${formatPercent(Math.abs(chg), locale)}`}
+        );
+      })}
+      {EQUITY_INDEX_LABELS.map(({ key, label }) => {
+        const snap = equitySnapshots[key];
+        // Poller henüz ilk cycle'ı tamamlamadıysa / key yoksa / Finnhub
+        // hatasıysa snap null olur — bu durumda öğe tamamen render edilmez,
+        // kripto şeridini hiç etkilemez (bkz. görev kısıtı).
+        if (!snap) return null;
+        const chg = snap.changePct;
+        const chgColor =
+          chg === null ? "text-text-t4" : chg >= 0 ? "text-signal-up" : "text-signal-down";
+        const arrow = chg === null ? "" : chg >= 0 ? "▲" : "▼";
+
+        return (
+          <span key={`${keyPrefix}-${key}`} className="flex shrink-0 items-center gap-1.5">
+            <span className="text-text-t2 font-bold">{label}</span>
+            <span className="text-text-t1">{formatTickPrice(snap.price, locale)}</span>
+            <span className={chgColor}>
+              {chg === null ? "—" : `${arrow} ${formatPercent(Math.abs(chg), locale)}`}
+            </span>
           </span>
-        </span>
-      );
-    });
+        );
+      })}
+    </>
+  );
 
   return (
     <div
