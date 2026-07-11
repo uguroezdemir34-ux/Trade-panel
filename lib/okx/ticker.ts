@@ -23,11 +23,6 @@ const PAIR_TO_INST: Record<Pair, string> = {
   SHIB:   "SHIB-USDT-SWAP",
   SUI:    "SUI-USDT-SWAP",
   NEAR:   "NEAR-USDT-SWAP",
-  APT:    "APT-USDT-SWAP",
-  TAO:    "TAO-USDT-SWAP",
-  PENDLE: "PENDLE-USDT-SWAP",
-  OP:     "OP-USDT-SWAP",
-  WIF:    "WIF-USDT-SWAP",
 };
 
 /**

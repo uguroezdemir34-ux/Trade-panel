@@ -20,14 +20,10 @@ const CMC_IDS: Record<string, number> = {
   BTC: 1,       ETH: 1027,    XRP: 52,      SOL: 5426,    BNB: 1839,
   ADA: 2010,    AVAX: 5805,   LINK: 1975,
   DOGE: 74,     SHIB: 5994,   SUI: 20947,   NEAR: 6535,
-  APT: 21794,   TAO: 22974,   PENDLE: 21451, OP: 11840,   WIF: 29047,
 };
 const CDN_OVERRIDES: Record<string, string> = {};
 /* Trust Wallet asset overrides — used when CMC ID is wrong/unavailable */
-const LOGO_OVERRIDES: Record<string, string> = {
-  PENDLE: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x808507121b80c02388fad14726482e061b8da827/logo.png",
-  WIF:    "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm/logo.png",
-};
+const LOGO_OVERRIDES: Record<string, string> = {};
 
 interface Props {
   activePair: Pair;
@@ -39,8 +35,7 @@ const PAIR_COLORS: Record<string, string> = {
   BTC:   "#f7931a", ETH:  "#627eea", XRP:  "#00aae4", SOL:  "#9945ff",
   BNB:   "#f3ba2f", ADA:  "#0033ad", AVAX: "#e84142",
   LINK:  "#2a5ada", DOGE: "#c2a633", SHIB: "#ff4200",
-  SUI:   "#4da2ff", NEAR: "#00c08b", APT:  "#4285f4",
-  TAO:   "#00c4b4", PENDLE: "#8fbe00", OP:  "#ff0420", WIF:  "#a855f7",
+  SUI:   "#4da2ff", NEAR: "#00c08b",
 };
 function pairColor(p: string): string { return PAIR_COLORS[p] ?? "#6366f1"; }
 
@@ -49,8 +44,7 @@ const COIN_NAMES: Record<string, string> = {
   BTC: "Bitcoin",      ETH: "Ethereum",       XRP: "XRP",          SOL: "Solana",
   BNB: "BNB Chain",    ADA: "Cardano",         AVAX: "Avalanche",
   LINK: "Chainlink",   DOGE: "Dogecoin",    SHIB: "Shiba Inu",
-  SUI: "Sui",          NEAR: "NEAR Protocol",  APT: "Aptos",
-  TAO: "Bittensor",    PENDLE: "Pendle",        OP: "Optimism",      WIF: "dogwifhat",
+  SUI: "Sui",          NEAR: "NEAR Protocol",
 };
 function coinName(p: string): string { return COIN_NAMES[p] ?? p; }
 

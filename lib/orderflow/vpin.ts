@@ -119,13 +119,7 @@ export const ETH_VPIN_CONFIG: VpinConfig = {
   windowSize: 50,
 };
 
-const ALT_VPIN_CONFIGS: Partial<Record<Pair, VpinConfig>> = {
-  APT:    { bucketSizeUsd:   300_000, windowSize: 50 },
-  TAO:    { bucketSizeUsd: 1_000_000, windowSize: 50 },
-  PENDLE: { bucketSizeUsd:   100_000, windowSize: 50 },
-  OP:     { bucketSizeUsd:   250_000, windowSize: 50 },
-  WIF:    { bucketSizeUsd:   100_000, windowSize: 50 },
-};
+const ALT_VPIN_CONFIGS: Partial<Record<Pair, VpinConfig>> = {};
 
 export function getDefaultConfig(pair: Pair): VpinConfig {
   if (pair === "ETH") return ETH_VPIN_CONFIG;

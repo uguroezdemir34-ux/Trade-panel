@@ -20,11 +20,6 @@ const COINGECKO_IDS: Record<string, string> = {
   SHIB:   "shiba-inu",
   SUI:    "sui",
   NEAR:   "near",
-  APT:    "aptos",
-  TAO:    "bittensor",
-  PENDLE: "pendle",
-  OP:     "optimism",
-  WIF:    "dogwifcoin",
 };
 
 const ID_TO_PAIR: Record<string, string> = Object.fromEntries(

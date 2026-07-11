@@ -49,9 +49,9 @@ const EMPTY_SCORE_SNAPS: number[] = [];
 
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
-  majors: ["BTC", "ETH", "BNB", "XRP", "SOL", "APT"],
-  alts:   ["ADA", "AVAX", "LINK", "NEAR", "SUI", "TAO", "PENDLE", "OP"],
-  meme:   ["DOGE", "SHIB", "WIF"],
+  majors: ["BTC", "ETH", "BNB", "XRP", "SOL"],
+  alts:   ["ADA", "AVAX", "LINK", "NEAR", "SUI"],
+  meme:   ["DOGE", "SHIB"],
 };
 type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
