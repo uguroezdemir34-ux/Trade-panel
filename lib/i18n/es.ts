@@ -241,7 +241,7 @@ volumeSection: "VOLUMEN",
     holdExitMaxHold: "Hold Max",
     holdExitQuickProfit: "Take Quick Profit",
     holdExitEarlyExitWarning: "Early Exit Warning",
-    holdExitWaitNoSignal: "Wait / No Clear Signal",
+    holdExitWaitNoSignal: "Esperar / Sin señal clara",
     squeezeRadarLabel: "Squeeze Radar",
     squeezeRadarDesc: "Coins showing volatility compression (ATR percentile) — potential pre-breakout",
     anomaly: {
