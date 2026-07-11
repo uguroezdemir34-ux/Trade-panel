@@ -49,7 +49,7 @@ function buildWallClause(t: TFunc, detail: OrderBookImbalanceResult | null | und
   if (detail?.wallSizeUsd != null && detail?.wallDistancePct != null) {
     return t("karar.anomaly.wallClauseDetailed", {
       size: formatWallSize(detail.wallSizeUsd),
-      pct: detail.wallDistancePct.toFixed(1),
+      pct: detail.wallDistancePct.toFixed(3),
     });
   }
   return t("karar.anomaly.wallClauseGeneric");
