@@ -7,15 +7,10 @@ import { SUPPORTED_LOCALES } from "./types";
 import { en } from "./en";
 import { tr } from "./tr";
 import { de } from "./de";
-import { fr } from "./fr";
-import { es } from "./es";
-import { pt } from "./pt";
 import { zh } from "./zh";
 import { ja } from "./ja";
 import { ko } from "./ko";
 import { ru } from "./ru";
-import { ar } from "./ar";
-import { hi } from "./hi";
 
 export { SUPPORTED_LOCALES };
 
@@ -23,15 +18,10 @@ export const DICTIONARIES: Record<Locale, Dictionary> = {
   en,
   tr,
   de,
-  fr,
-  es,
-  pt,
   zh,
   ja,
   ko,
   ru,
-  ar,
-  hi,
 };
 
 /**

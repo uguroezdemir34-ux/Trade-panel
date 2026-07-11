@@ -8,15 +8,10 @@ const LOCALE_META: Record<Locale, { flag: string; label: string; native: string 
   en: { flag: "🇬🇧", label: "EN", native: "English" },
   tr: { flag: "🇹🇷", label: "TR", native: "Türkçe" },
   de: { flag: "🇩🇪", label: "DE", native: "Deutsch" },
-  fr: { flag: "🇫🇷", label: "FR", native: "Français" },
-  es: { flag: "🇪🇸", label: "ES", native: "Español" },
-  pt: { flag: "🇧🇷", label: "PT", native: "Português" },
   zh: { flag: "🇨🇳", label: "ZH", native: "中文" },
   ja: { flag: "🇯🇵", label: "JA", native: "日本語" },
   ko: { flag: "🇰🇷", label: "KO", native: "한국어" },
   ru: { flag: "🇷🇺", label: "RU", native: "Русский" },
-  ar: { flag: "🇸🇦", label: "AR", native: "العربية" },
-  hi: { flag: "🇮🇳", label: "HI", native: "हिन्दी" },
 };
 
 export function LanguageDropdown(): React.ReactElement {

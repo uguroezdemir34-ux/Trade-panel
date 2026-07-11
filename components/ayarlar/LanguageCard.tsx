@@ -3,7 +3,7 @@
 /**
  * LANGUAGE CARD — Arayüz dili seçici.
  *
- * 12 dil arasında geçiş. Seçim localStorage'a persist edilir.
+ * 7 dil arasında geçiş. Seçim localStorage'a persist edilir.
  */
 
 import { useT, useI18n } from "@/lib/i18n/context";
@@ -14,15 +14,10 @@ const LOCALE_META: Record<Locale, { label: string; flag: string }> = {
   en: { label: "English",    flag: "🇬🇧" },
   tr: { label: "Türkçe",     flag: "🇹🇷" },
   de: { label: "Deutsch",    flag: "🇩🇪" },
-  fr: { label: "Français",   flag: "🇫🇷" },
-  es: { label: "Español",    flag: "🇪🇸" },
-  pt: { label: "Português",  flag: "🇧🇷" },
   zh: { label: "中文",        flag: "🇨🇳" },
   ja: { label: "日本語",      flag: "🇯🇵" },
   ko: { label: "한국어",      flag: "🇰🇷" },
   ru: { label: "Русский",    flag: "🇷🇺" },
-  ar: { label: "العربية",    flag: "🇸🇦" },
-  hi: { label: "हिन्दी",      flag: "🇮🇳" },
 };
 
 export function LanguageCard(): React.ReactElement {
