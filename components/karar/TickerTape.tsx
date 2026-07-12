@@ -14,13 +14,14 @@
  * translateX(-50%) ile döner) — bu, tek bir kopyanın genişliği kadar
  * kaydıktan sonra başa sarma illüzyonu yaratır (sonsuz döngü hissi).
  *
- * marketStore.prices'ı (zaten useMarketStream ile canlı besleniyor) ve
- * equityIndexStore'u (SPY/QQQ/UUP → "S&P 500"/"NASDAQ"/"DXY" olarak
- * gösterilir, useEquityIndexPoller AppShell'de ayrıca besliyor) okur —
- * bu dosya kendi fetch/poller'ını yapmaz, salt tüketici. Snapshot null'sa
- * (poller ilk cycle'ı bitirmedi / key yok / Finnhub hatası) o üç öğe
- * tamamen render edilmez, kripto şeridini etkilemez. Pair tipine hiç
- * girmez, skor motoruna hiç dokunmaz.
+ * marketStore.prices'ı (zaten useMarketStream ile canlı besleniyor),
+ * equityIndexStore'u (SPY/QQQ/UUP/DIA → "S&P 500"/"NASDAQ"/"DXY"/"DOW"
+ * olarak gösterilir, useEquityIndexPoller AppShell'de ayrıca besliyor) ve
+ * macroStore'u (usdtD/usdtDChange24h → "USDT.D", useMacroPoller besliyor)
+ * okur — bu dosya kendi fetch/poller'ını yapmaz, salt tüketici. Snapshot
+ * null'sa (poller ilk cycle'ı bitirmedi / key yok / Finnhub hatası / henüz
+ * dominance fetch edilmedi) o öğe tamamen render edilmez, kripto şeridini
+ * etkilemez. Pair tipine hiç girmez, skor motoruna hiç dokunmaz.
  *
  * Sticky pozisyon: NewsFeedBanner'ın (ayrı dosya, ayrı sayfa kapsamı —
  * global layout'ta) hemen altında sabit kalır. Kendi top-offset'ini
@@ -38,15 +39,17 @@ import { memo } from "react";
 import { PAIRS } from "@/lib/constants/pairs";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useEquityIndexStore, type EquityIndexSnapshot } from "@/lib/store/equityIndexStore";
+import { useMacroStore } from "@/lib/store/macroStore";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { formatTickPrice, formatPercent } from "@/lib/i18n/format";
 
-// SPY/QQQ/UUP teknik proxy sembolleri — kullanıcıya gerçek endeks adlarıyla
+// SPY/QQQ/UUP/DIA teknik proxy sembolleri — kullanıcıya gerçek endeks adlarıyla
 // gösterilir (ETF proxy olduğu iç detay, bkz. equityIndexStore.ts header'ı).
-const EQUITY_INDEX_LABELS: { key: "spy" | "qqq" | "uup"; label: string }[] = [
+const EQUITY_INDEX_LABELS: { key: "spy" | "qqq" | "uup" | "dow"; label: string }[] = [
   { key: "spy", label: "S&P 500" },
   { key: "qqq", label: "NASDAQ" },
   { key: "uup", label: "DXY" },
+  { key: "dow", label: "DOW" },
 ];
 
 function TickerTapeImpl(): React.ReactElement {
@@ -54,15 +57,19 @@ function TickerTapeImpl(): React.ReactElement {
   const spy = useEquityIndexStore((s) => s.spy);
   const qqq = useEquityIndexStore((s) => s.qqq);
   const uup = useEquityIndexStore((s) => s.uup);
+  const dow = useEquityIndexStore((s) => s.dow);
+  const usdtD = useMacroStore((s) => s.usdtD);
+  const usdtDChange24h = useMacroStore((s) => s.usdtDChange24h);
   const locale = useLocale();
   const t = useT();
 
-  const equitySnapshots: Record<"spy" | "qqq" | "uup", EquityIndexSnapshot | null> = {
+  const equitySnapshots: Record<"spy" | "qqq" | "uup" | "dow", EquityIndexSnapshot | null> = {
     spy,
     qqq,
     uup,
+    dow,
   };
-  const hasAnyEquityIndex = spy !== null || qqq !== null || uup !== null;
+  const hasAnyEquityIndex = spy !== null || qqq !== null || uup !== null || dow !== null;
 
   const renderItems = (keyPrefix: string) => (
     <>
@@ -85,6 +92,21 @@ function TickerTapeImpl(): React.ReactElement {
           </span>
         );
       })}
+      {usdtD !== null && (() => {
+        const chg = usdtDChange24h;
+        const chgColor =
+          chg === null ? "text-text-t4" : chg >= 0 ? "text-signal-up" : "text-signal-down";
+        const arrow = chg === null ? "" : chg >= 0 ? "▲" : "▼";
+        return (
+          <span key={`${keyPrefix}-usdtd`} className="flex shrink-0 items-center gap-1.5">
+            <span className="text-text-t2 font-bold">USDT.D</span>
+            <span className="text-text-t1">{formatPercent(usdtD, locale)}</span>
+            <span className={chgColor}>
+              {chg === null ? "—" : `${arrow} ${formatPercent(Math.abs(chg), locale)}`}
+            </span>
+          </span>
+        );
+      })()}
       {hasAnyEquityIndex && (
         <span
           key={`${keyPrefix}-us-markets-label`}

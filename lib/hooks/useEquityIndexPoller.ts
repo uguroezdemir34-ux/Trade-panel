@@ -8,7 +8,7 @@
  * (20dk) daha sık ama useOrderBookPoller'dan (3dk) daha seyrek, "yavaş
  * değişen bağlam" verisi sınıfına uygun.
  *
- * SAVUNMACI: her index (spy/qqq/uup) diğerinden bağımsız — biri eksik/bozuksa
+ * SAVUNMACI: her index (spy/qqq/uup/dow) diğerinden bağımsız — biri eksik/bozuksa
  * sadece o atlanır, diğerleri son bilinen değerinde güncellenir. Route zaten
  * hiç throw etmez, ama fetch/JSON hatası burada da ayrıca yutulur.
  *

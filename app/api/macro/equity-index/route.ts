@@ -1,15 +1,17 @@
 /**
  * /api/macro/equity-index — Finnhub quote proxy (SPY/QQQ/UUP/DIA → S&P500/Nasdaq/DXY/Dow proxy).
  *
- * Ticker genişletmesi 1. aşama (veri katmanı, TickerTape.tsx'e henüz bağlı
- * değil). Aynı FINNHUB_API_KEY'i kullanır (app/api/news/route.ts ile
+ * equityIndexStore üzerinden hem skor motoruna (composeScoreInput →
+ * ScoreInput.sp500ChangePct/nasdaqChangePct/dxyChangePct/dowChangePct) hem
+ * TickerTape.tsx'e (SPY/QQQ/UUP/DIA → "S&P 500"/"NASDAQ"/"DXY"/"DOW" satırları)
+ * bağlı. Aynı FINNHUB_API_KEY'i kullanır (app/api/news/route.ts ile
  * paylaşılan) ama sadece sunucu tarafında okunur — client'a hiç sızmaz
  * (aksi halde token tarayıcı network tab'ında görünür olurdu).
  *
  * Key yoksa `available: false` döner, throw etmez — useEquityIndexPoller
  * bunu sessizce "devre dışı" olarak yorumlar (bkz. o dosyanın header'ı).
  *
- * SPY/QQQ/UUP sırayla (paralel değil) çekilir — Finnhub free tier rate
+ * SPY/QQQ/UUP/DIA sırayla (paralel değil) çekilir — Finnhub free tier rate
  * limitine (~60 çağrı/dk) karşı gereksiz burst yaratmamak için. Her sembol
  * kendi try/catch'i içinde izole — biri başarısız olursa diğerlerini
  * etkilemez, o sembol için null döner.
