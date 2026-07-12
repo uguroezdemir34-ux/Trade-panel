@@ -9,6 +9,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import type { PriceAlarm } from "@/lib/store/priceAlarmStore";
 import { useMarketStore } from "@/lib/store/marketStore";
@@ -22,6 +23,7 @@ interface Toast {
 export function AlarmToastContainer(): React.ReactElement | null {
   const alarms = usePriceAlarmStore((s) => s.alarms);
   const prices = useMarketStore((s) => s.prices);
+  const pathname = usePathname();
   const seenRef = useRef<Set<string>>(new Set());
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -40,8 +42,12 @@ export function AlarmToastContainer(): React.ReactElement | null {
 
   if (toasts.length === 0) return null;
 
+  // /grafik'te header (ve onun sabit 56px yüksekliği) gizli — toast'lar
+  // viewport tepesine küçük bir güvenli boşlukla yapışsın.
+  const topClass = pathname === "/grafik" ? "top-2" : "top-14";
+
   return (
-    <div className="fixed top-14 right-3 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none">
+    <div className={`fixed ${topClass} right-3 z-50 flex flex-col gap-2 max-w-xs w-full pointer-events-none`}>
       {toasts.map(({ alarm }) => {
         const currentPrice = prices[alarm.pair]?.last;
         return (

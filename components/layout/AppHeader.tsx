@@ -24,6 +24,11 @@ export function AppHeader(): React.ReactElement {
   const t = useT();
   const pathname = usePathname();
 
+  // /grafik dikey alan kazanımı — chart sayfasında header tamamen gizlenir.
+  // WatchlistPanel'in sticky offset'i buna göre ayrıca sabitlendi (o bileşen
+  // sadece /grafik'te kullanıldığı için route kontrolüne gerek kalmadı).
+  if (pathname === "/grafik") return null;
+
   const openUpl = positions.reduce((sum, p) => sum + p.upl, 0);
   const openCount = positions.length;
 

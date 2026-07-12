@@ -923,10 +923,14 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   );
 }
 
-/* ── WatchlistPanel (masaüstü yan panel) ── */
+/* ── WatchlistPanel (masaüstü yan panel) ──
+ * sticky top-0: bu bileşen sadece /grafik'te render ediliyor, o sayfada
+ * AppHeader route guard'ı ile tamamen gizlendiği için 56px header offset'i
+ * artık gerekmiyor (bkz. AppHeader.tsx). Başka bir sayfada kullanılırsa bu
+ * satır ayrıca gözden geçirilmeli. */
 export function WatchlistPanel({ activePair, onPairChange }: Props): React.ReactElement {
   return (
-    <div className="hidden md:flex flex-col border border-border bg-bg-card rounded-lg overflow-hidden select-none w-[290px] shrink-0 sticky top-[56px] max-h-[calc(100vh-72px)]">
+    <div className="hidden md:flex flex-col border border-border bg-bg-card rounded-lg overflow-hidden select-none w-[290px] shrink-0 sticky top-0 max-h-[calc(100vh-16px)]">
       <WatchlistContent activePair={activePair} onPairChange={onPairChange} />
     </div>
   );

@@ -39,6 +39,7 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useNewsStore } from "@/lib/store/newsStore";
 import { useT } from "@/lib/i18n/context";
 import type { NewsSentiment } from "@/lib/news/types";
@@ -60,6 +61,7 @@ const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
 export function NewsFeedBanner(): React.ReactElement | null {
   const items = useNewsStore((s) => s.items);
   const t = useT();
+  const pathname = usePathname();
   const [index, setIndex] = useState(0);
   const bannerRef = useRef<HTMLDivElement>(null);
 
@@ -86,7 +88,8 @@ export function NewsFeedBanner(): React.ReactElement | null {
     return () => ro.disconnect();
   }, [items.length]);
 
-  if (items.length === 0) return null;
+  // /grafik dikey alan kazanımı — chart sayfasında header'la birlikte gizlenir.
+  if (pathname === "/grafik" || items.length === 0) return null;
 
   const current = items[index % items.length];
 

@@ -203,6 +203,26 @@ export default function GrafikPage() {
   const [secCandles, setSecCandles]     = useState<Candle[]>([]);
   const [secLoading, setSecLoading]     = useState(false);
 
+  // Ana chart yüksekliği — /grafik'te header+haber bandı artık gizli olduğu
+  // için kazanılan dikey alanı chart'a veriyoruz. PriceChart.tsx'in kendisi
+  // sadece genişliği ResizeObserver ile takip ediyor (yükseklik sabit bir
+  // number prop) — bu yüzden hesaplamayı burada, çağıran tarafta yapıp
+  // mevcut height prop'una geçiriyoruz, PriceChart.tsx'e dokunmuyoruz.
+  // CHROME_PX yaklaşık bir değer (back butonu satırı + ChartControls +
+  // ChartLegend + BottomNav/safe-area toplamı) — kesin piksel-mükemmel
+  // değil, gerekirse görsel test sonrası ayarlanabilir.
+  const [primaryChartHeight, setPrimaryChartHeight] = useState(480);
+  useEffect(() => {
+    const CHROME_PX = 300;
+    const MIN_HEIGHT_PX = 320;
+    function computeHeight() {
+      setPrimaryChartHeight(Math.max(MIN_HEIGHT_PX, window.innerHeight - CHROME_PX));
+    }
+    computeHeight();
+    window.addEventListener("resize", computeHeight);
+    return () => window.removeEventListener("resize", computeHeight);
+  }, []);
+
   // Load persisted settings on mount
   useEffect(() => {
     try {
@@ -516,7 +536,7 @@ export default function GrafikPage() {
           )}
           <PriceChart
               series={series}
-              height={showSplit ? 360 : 480}
+              height={showSplit ? 360 : primaryChartHeight}
               theme={theme}
               onChartClick={handlePriceClick}
               resetKey={`${pair}_${timeframe}`}
@@ -604,9 +624,12 @@ export default function GrafikPage() {
             }}
           />
         ) : (
-          <div className="flex flex-col gap-2 px-3 py-3">
-            {/* Geri butonu + pair adı */}
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-2 px-0 py-3">
+            {/* Geri butonu + pair adı — kendi px-3'ünü taşıyor, parent'ın
+                px-0 olması sadece chartSection'ın (kendi iç padding'i olan
+                PositionOverlayBar/ChartControls) tam genişlik almasını
+                sağlıyor, bu satırı etkilemiyor. */}
+            <div className="flex items-center gap-3 px-3">
               <button
                 onClick={() => { setMobileView("list"); window.history.back(); }}
                 className="flex items-center gap-1.5 rounded border border-border px-2.5 py-1.5 font-mono text-xs text-text-t3 hover:text-text-t1 hover:border-text-t2 transition-colors"
