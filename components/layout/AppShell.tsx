@@ -44,6 +44,7 @@ import { useNewsPoller } from "@/lib/hooks/useNewsPoller";
 import { useEquityIndexPoller } from "@/lib/hooks/useEquityIndexPoller";
 import { NewsFeedBanner } from "./NewsFeedBanner";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
+import { useWeeklyMonthlyPnlTracker } from "@/lib/hooks/useWeeklyMonthlyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
 import { useSignalFirehose } from "@/lib/hooks/useSignalFirehose";
 import { usePriceAlarms } from "@/lib/hooks/usePriceAlarms";
@@ -125,6 +126,8 @@ export function AppShell({
   useEquityIndexPoller(6_000); // t+6s — S&P/Nasdaq/DXY proxy (SPY/QQQ/UUP), 5dk cadence, veri katmanı (UI henüz yok)
   // Günlük P&L takip → drawdown protokol tier güncelle (güvenlik kritik)
   useDailyPnlTracker();
+  // Haftalık/aylık kümülatif P&L takip (UTC hafta/ay sınırı) → Portfolyo sayfası kartları
+  useWeeklyMonthlyPnlTracker();
   // Order flow trade feed → tradeFeedStore (CVD/VPIN/SMC için)
   useTradeFeed();
   // Telegram sinyal firehose — verdict go geçişlerini izler
