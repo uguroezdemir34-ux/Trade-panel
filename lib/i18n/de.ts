@@ -218,7 +218,7 @@ export const de: Dictionary = {
     stalePriceAtSignal: "Price data was unavailable at signal time",
     shortcutsTitle: "⌨ Tastenkürzel",
     shortcutsCloseHint: "ESC oder ? zum Schließen drücken",
-    shortcutSelectPair: "Paar auswählen (BTC=1, ETH=2, XRP=3 ...)",
+    shortcutSelectPair: "Paar auswählen (BTC=1, ETH=2, SOL=3, BNB=4, LINK=5, AVAX=6, NEAR=7, SUI=8)",
     shortcutPrevNext: "Vorheriges / nächstes Paar in aktiver Liste",
     shortcutNextGo: "Zum nächsten GO-Paar springen",
     shortcutToggleHelp: "Diese Hilfe öffnen / schließen",

@@ -5,14 +5,10 @@ export type PairCategory = "L1" | "DeFi" | "Meme" | "Infra";
 export const PAIR_CATEGORY: Partial<Record<Pair, PairCategory>> = {
   BTC:    "L1",
   ETH:    "L1",
-  XRP:    "L1",
   SOL:    "L1",
-  ADA:    "L1",
   AVAX:   "L1",
   NEAR:   "L1",
   SUI:    "L1",
   LINK:   "DeFi",
-  DOGE:   "Meme",
-  SHIB:   "Meme",
   BNB:    "Infra",
 };

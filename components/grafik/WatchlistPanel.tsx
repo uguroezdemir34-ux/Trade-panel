@@ -17,9 +17,9 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
    otomatik ikinci CDN'e, o da olmazsa harf rozetine düşüyor (crash yok,
    sadece logo eksik görünür). */
 const CMC_IDS: Record<string, number> = {
-  BTC: 1,       ETH: 1027,    XRP: 52,      SOL: 5426,    BNB: 1839,
-  ADA: 2010,    AVAX: 5805,   LINK: 1975,
-  DOGE: 74,     SHIB: 5994,   SUI: 20947,   NEAR: 6535,
+  BTC: 1,       ETH: 1027,    SOL: 5426,    BNB: 1839,
+  AVAX: 5805,   LINK: 1975,
+  SUI: 20947,   NEAR: 6535,
 };
 const CDN_OVERRIDES: Record<string, string> = {};
 /* Trust Wallet asset overrides — used when CMC ID is wrong/unavailable */
@@ -32,18 +32,18 @@ interface Props {
 
 /* ── Coin renk paleti — tamamen kozmetik. ── */
 const PAIR_COLORS: Record<string, string> = {
-  BTC:   "#f7931a", ETH:  "#627eea", XRP:  "#00aae4", SOL:  "#9945ff",
-  BNB:   "#f3ba2f", ADA:  "#0033ad", AVAX: "#e84142",
-  LINK:  "#2a5ada", DOGE: "#c2a633", SHIB: "#ff4200",
+  BTC:   "#f7931a", ETH:  "#627eea", SOL:  "#9945ff",
+  BNB:   "#f3ba2f", AVAX: "#e84142",
+  LINK:  "#2a5ada",
   SUI:   "#4da2ff", NEAR: "#00c08b",
 };
 function pairColor(p: string): string { return PAIR_COLORS[p] ?? "#6366f1"; }
 
 /* ── Coin tam adları ── */
 const COIN_NAMES: Record<string, string> = {
-  BTC: "Bitcoin",      ETH: "Ethereum",       XRP: "XRP",          SOL: "Solana",
-  BNB: "BNB Chain",    ADA: "Cardano",         AVAX: "Avalanche",
-  LINK: "Chainlink",   DOGE: "Dogecoin",    SHIB: "Shiba Inu",
+  BTC: "Bitcoin",      ETH: "Ethereum",       SOL: "Solana",
+  BNB: "BNB Chain",    AVAX: "Avalanche",
+  LINK: "Chainlink",
   SUI: "Sui",          NEAR: "NEAR Protocol",
 };
 function coinName(p: string): string { return COIN_NAMES[p] ?? p; }

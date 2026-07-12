@@ -1,16 +1,12 @@
 export const PAIRS = [
   "BTC",  // Bitcoin — market anchor
   "ETH",  // Ethereum — DeFi anchor
-  "XRP",  // Ripple — global liquidity
   "SOL",  // Solana — high-vol technicals
   "BNB",  // Binance Coin — exchange locomotive
-  "ADA",  // Cardano — long-term trend
-  "AVAX", // Avalanche — cycle patterns
   "LINK", // Chainlink — AI/data aligned
-  "DOGE", // Dogecoin — momentum spikes
-  "SHIB", // Shiba Inu — whale flows
-  "SUI",  // Sui — emerging breakouts
+  "AVAX", // Avalanche — cycle patterns
   "NEAR", // Near Protocol — AI-aligned
+  "SUI",  // Sui — emerging breakouts
 ] as const;
 
 export type Pair = (typeof PAIRS)[number];

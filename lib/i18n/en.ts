@@ -219,7 +219,7 @@ export const en: Dictionary = {
     stalePriceAtSignal: "Price data was unavailable at signal time",
     shortcutsTitle: "⌨ Keyboard Shortcuts",
     shortcutsCloseHint: "Press ESC or ? to close",
-    shortcutSelectPair: "Select pair (BTC=1, ETH=2, XRP=3 ...)",
+    shortcutSelectPair: "Select pair (BTC=1, ETH=2, SOL=3, BNB=4, LINK=5, AVAX=6, NEAR=7, SUI=8)",
     shortcutPrevNext: "Previous / next pair in active list",
     shortcutNextGo: "Jump to next GO pair",
     shortcutToggleHelp: "Open / close this help screen",

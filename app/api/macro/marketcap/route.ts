@@ -10,14 +10,10 @@ import { NextResponse } from "next/server";
 const COINGECKO_IDS: Record<string, string> = {
   BTC:    "bitcoin",
   ETH:    "ethereum",
-  XRP:    "ripple",
   SOL:    "solana",
   BNB:    "binancecoin",
-  ADA:    "cardano",
   AVAX:   "avalanche-2",
   LINK:   "chainlink",
-  DOGE:   "dogecoin",
-  SHIB:   "shiba-inu",
   SUI:    "sui",
   NEAR:   "near",
 };

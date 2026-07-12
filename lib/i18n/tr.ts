@@ -219,7 +219,7 @@ export const tr: Dictionary = {
     stalePriceAtSignal: "Sinyal anında fiyat verisi eksikti",
     shortcutsTitle: "⌨ Klavye Kısayolları",
     shortcutsCloseHint: "ESC veya ? ile kapat",
-    shortcutSelectPair: "Parite seç (BTC=1, ETH=2, XRP=3 ...)",
+    shortcutSelectPair: "Parite seç (BTC=1, ETH=2, SOL=3, BNB=4, LINK=5, AVAX=6, NEAR=7, SUI=8)",
     shortcutPrevNext: "Aktif listede önceki / sonraki parite",
     shortcutNextGo: "Sıradaki GO pariteye atla",
     shortcutToggleHelp: "Bu yardım ekranını aç / kapat",

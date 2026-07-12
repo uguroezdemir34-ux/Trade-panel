@@ -238,7 +238,7 @@ export const ja: Dictionary = {
     // TODO: translate
     shortcutsCloseHint: "Press ESC or ? to close",
     // TODO: translate
-    shortcutSelectPair: "Select pair (BTC=1, ETH=2, XRP=3 ...)",
+    shortcutSelectPair: "Select pair (BTC=1, ETH=2, SOL=3, BNB=4, LINK=5, AVAX=6, NEAR=7, SUI=8)",
     // TODO: translate
     shortcutPrevNext: "Previous / next pair in active list",
     // TODO: translate

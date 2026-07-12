@@ -49,11 +49,10 @@ const EMPTY_SCORE_SNAPS: number[] = [];
 
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
-  majors: ["BTC", "ETH", "BNB", "XRP", "SOL"],
-  alts:   ["ADA", "AVAX", "LINK", "NEAR", "SUI"],
-  meme:   ["DOGE", "SHIB"],
+  majors: ["BTC", "ETH", "BNB", "SOL"],
+  alts:   ["AVAX", "LINK", "NEAR", "SUI"],
 };
-type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
+type PairGroup = "all" | "majors" | "alts" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
 import { PAIR_CATEGORY } from "@/lib/constants/pairMeta";
@@ -660,12 +659,11 @@ export default function KararPage() {
 
           {/* Pair group filter */}
           <div className="flex flex-wrap gap-1">
-            {(["all", "majors", "alts", "meme", "go", "act", "watch"] as PairGroup[]).map((g) => {
+            {(["all", "majors", "alts", "go", "act", "watch"] as PairGroup[]).map((g) => {
               const label =
                 g === "all" ? t("karar.groupAll") :
                 g === "majors" ? t("karar.filterMajors") :
                 g === "alts" ? t("karar.filterAlts") :
-                g === "meme" ? t("karar.filterMeme") :
                 g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
                 g === "act" ? `ACT${actionablePairs.length > 0 ? ` (${actionablePairs.length})` : ""}` :
                 `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
@@ -725,10 +723,10 @@ export default function KararPage() {
             </button>
           </div>
 
-          {/* Pair grid — v2: 3 kolon, kapsül slider kartları */}
-          <div className="grid grid-cols-3 gap-1">
+          {/* Pair grid — v2: mobilde 2 kolon (daha geniş kart), lg: sidebar'da 3 kolon, kapsül slider kartları */}
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5 lg:gap-1">
             {pairGroup === "watch" && watchlistPairs.length === 0 ? (
-              <div className="col-span-3 flex flex-col items-center justify-center py-10 gap-1.5">
+              <div className="col-span-2 lg:col-span-3 flex flex-col items-center justify-center py-10 gap-1.5">
                 <span className="font-mono text-[28px] text-text-t4/30 leading-none">☆</span>
                 <p className="font-mono text-[11px] text-text-t3 text-center">Takip listen boş</p>
                 <p className="font-mono text-[10px] text-text-t4 text-center px-6">kartlardaki ☆ ile pair ekle</p>
@@ -822,7 +820,7 @@ export default function KararPage() {
                       willChange: "box-shadow",
                     } : undefined}
                     className={[
-                      "w-full text-left rounded-lg border p-1.5 font-mono transition-colors card-depth",
+                      "w-full text-left rounded-lg border p-2 lg:p-1.5 font-mono transition-colors card-depth",
                       isActive
                         ? `${activeBorderClass(score)} bg-surface-s2 text-text-t1`
                         : goStrength === "strong"
@@ -855,7 +853,7 @@ export default function KararPage() {
                           {isWatched ? "★" : "☆"}
                         </button>
                         <CoinIcon pair={p as Pair} size={18} />
-                        <span className="text-[11px] font-bold text-text-t1 leading-none">{p}</span>
+                        <span className="text-[12px] lg:text-[11px] font-bold text-text-t1 leading-none">{p}</span>
                         {PAIR_CATEGORY[p] && (
                           <span className="text-[7px] font-mono text-sky-400/80 shrink-0 leading-none">
                             {PAIR_CATEGORY[p]}
