@@ -196,9 +196,9 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         borderColor: tc.border,
         rightOffset: 20,
         fixLeftEdge: true,
-        fixRightEdge: true,
+        fixRightEdge: false,
       },
-      rightPriceScale: { borderColor: tc.border },
+      rightPriceScale: { borderColor: tc.border, autoScale: true },
       handleScroll: { vertTouchDrag: false },
       crosshair: { mode: 1 },
     });
@@ -964,6 +964,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     }
     if (!didFitRef.current && series.candles.length > 0) {
       chart.timeScale().fitContent();
+      chart.timeScale().scrollToRealTime();
       didFitRef.current = true;
     }
   }, [series, resetKey]);
