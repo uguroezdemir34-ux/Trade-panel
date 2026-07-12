@@ -537,409 +537,45 @@ export default function KararPage() {
     <div className="flex flex-col gap-2 sm:gap-3">
       <TickerTape />
 
-      <ScoreHeatmap onSelect={setActivePair} />
-
-      <SqueezeRadarBanner />
-
-      <PositionAccordion />
-
-      <MissedSignalsBanner />
-
-      <WalletSummaryBar />
-
-      <StreakBanner />
-
-      <SessionStatsBar />
-
-      <SignalAccuracyCard />
-
-      {/* Header row: MarketPulseWidget + keyboard shortcut */}
-      <div className="flex items-center justify-between -mt-1">
-        {showMarketPulse && marketPulseIndex !== null && (
-          <MarketPulseWidget value={marketPulseIndex} onClose={handleCloseMarketPulse} />
-        )}
-        <div className={showMarketPulse && marketPulseIndex !== null ? "" : "ml-auto"}>
-          <button
-            onClick={() => setShowShortcuts(true)}
-            className="font-mono text-2xs text-text-t4 hover:text-text-t2 transition-colors border border-border/40 rounded px-2 py-0.5"
-            title={t("karar.keyboardShortcutHint")}
-          >
-            ⌨ ?
-          </button>
-        </div>
+      {/* Klavye kısayolları */}
+      <div className="flex items-center justify-end -mt-1">
+        <button
+          onClick={() => setShowShortcuts(true)}
+          className="font-mono text-2xs text-text-t4 hover:text-text-t2 transition-colors border border-border/40 rounded px-2 py-0.5"
+          title={t("karar.keyboardShortcutHint")}
+        >
+          ⌨ ?
+        </button>
       </div>
 
-      {/* Desktop 2-column layout */}
+      {/* Orta bölüm — 2 sütun */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
 
-        {/* LEFT SIDEBAR — pair selection */}
+        {/* SOL SÜTUN — hesap & risk */}
         <div className="flex flex-col gap-3 lg:w-72 lg:shrink-0 order-2 lg:order-1">
-          {/* Score freshness */}
-          <div className="flex items-center justify-between">
-            <span translate="no" className="text-text-t4 font-mono text-2xs tracking-wider">
-              {latestScoreTime !== null
-                ? `${t("karar.scoresUpdated")} · ${scoreAge(latestScoreTime)} ${t("karar.scoresAgo")}`
-                : t("karar.scoresNever")}
-            </span>
-            {computing && (
-              <span className="text-brand font-mono text-2xs animate-pulse">⟳</span>
-            )}
-          </div>
+          <WalletSummaryBar />
 
-          {/* Pair grid */}
-          <div className="flex flex-col gap-2">
+          {showMarketPulse && marketPulseIndex !== null && (
+            <MarketPulseWidget value={marketPulseIndex} onClose={handleCloseMarketPulse} />
+          )}
 
-          {/* Pair group filter */}
-          <div className="flex flex-wrap gap-1">
-            {(["all", "majors", "alts", "go", "act", "watch"] as PairGroup[]).map((g) => {
-              const label =
-                g === "all" ? t("karar.groupAll") :
-                g === "majors" ? t("karar.filterMajors") :
-                g === "alts" ? t("karar.filterAlts") :
-                g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
-                g === "act" ? `ACT${actionablePairs.length > 0 ? ` (${actionablePairs.length})` : ""}` :
-                `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
-              const isActive = pairGroup === g;
-              const isGo = g === "go";
-              const isAct = g === "act";
-              const isWatch = g === "watch";
-              return (
-                <button
-                  key={g}
-                  onClick={() => {
-                    setPairGroup(g);
-                    const target =
-                      g === "go" ? goPairs :
-                      g === "act" ? actionablePairs :
-                      g === "watch" ? watchlistPairs :
-                      PAIR_GROUPS[g] ?? PAIRS;
-                    if (target.length > 0 && !target.includes(activePair)) {
-                      setActivePair(target[0] as Pair);
-                    }
-                  }}
-                  className={[
-                    "px-2.5 py-1 rounded font-mono text-2xs font-medium transition-colors",
-                    isActive
-                      ? isGo || isAct
-                        ? "bg-green-500/20 text-green-400"
-                        : isWatch
-                        ? "bg-amber-500/20 text-amber-400"
-                        : "bg-surface-s2 text-text-t1"
-                      : isGo && goPairs.length > 0
-                      ? "text-green-400/70 hover:text-green-400"
-                      : isAct && actionablePairs.length > 0
-                      ? "text-green-400/70 hover:text-green-400"
-                      : isWatch && watchlistPairs.length > 0
-                      ? "text-amber-400/70 hover:text-amber-400"
-                      : "text-text-t4 hover:text-text-t2",
-                  ].join(" ")}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+          <PositionAccordion />
 
-          {/* Pair grid header — skor sıralaması toggle */}
-          <div className="flex items-center justify-end">
-            <button
-              onClick={() => setSortByScore((s) => !s)}
-              className={[
-                "px-2 py-0.5 rounded font-mono text-2xs border transition-colors",
-                sortByScore
-                  ? "bg-brand/20 border-brand text-brand"
-                  : "border-border text-text-t4 hover:text-text-t2",
-              ].join(" ")}
-            >
-              {sortByScore ? t("karar.sortByScore") : t("karar.sortLabel")}
-            </button>
-          </div>
+          <ScoreHeatmap onSelect={setActivePair} />
 
-          {/* Pair grid — v2: mobilde 2 kolon (daha geniş kart), lg: sidebar'da 3 kolon, kapsül slider kartları */}
-          <div className="grid grid-cols-3 gap-1.5 lg:gap-1">
-            {pairGroup === "watch" && watchlistPairs.length === 0 ? (
-              <div className="col-span-3 flex flex-col items-center justify-center py-10 gap-1.5">
-                <span className="font-mono text-[28px] text-text-t4/30 leading-none">☆</span>
-                <p className="font-mono text-[11px] text-text-t3 text-center">Takip listen boş</p>
-                <p className="font-mono text-[10px] text-text-t4 text-center px-6">kartlardaki ☆ ile pair ekle</p>
-              </div>
-            ) : displayPairs.map((p) => {
-              const pr = allResults[p];
-              const v = pr?.verdict;
-              const score = pr?.score;
-              const dir = pr?.direction;
-              const isActive = activePair === p;
+          <MissedSignalsBanner />
 
+          <StreakBanner />
 
-              const goGap = v === "go" && score !== undefined && pr?.effectiveThreshold !== undefined
-                ? score - pr.effectiveThreshold
-                : -1;
-              const goStrength: "strong" | "medium" | "weak" | null =
-                goGap >= 15 ? "strong"
-                : goGap >= 8  ? "medium"
-                : goGap >= 0  ? "weak"
-                : null;
+          <SessionStatsBar />
 
-              const goRingClass =
-                goStrength === "strong" ? "ring-green-400/90"
-                : goStrength === "medium" ? "ring-green-400/60"
-                : goStrength === "weak"   ? "ring-yellow-400/70"
-                : "";
-              const goPingClass =
-                goStrength === "strong" ? "bg-green-300"
-                : goStrength === "medium" ? "bg-green-400"
-                : "bg-yellow-400";
-              const goBgClass =
-                goStrength === "strong" ? "bg-green-500/10"
-                : goStrength === "medium" ? "bg-green-500/5"
-                : "bg-yellow-500/5";
-
-              const dirArrow = dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
-
-              const pairChg = allTicks[p]?.chg ?? null;
-              const chgColor =
-                pairChg === null ? "text-text-t4"
-                : pairChg > 0 ? "text-signal-up"
-                : pairChg < 0 ? "text-signal-down"
-                : "text-text-t4";
-
-              const snaps = (scoreHistory[p] ?? []).filter(
-                (s) => typeof s.score === "number" && isFinite(s.score),
-              );
-              const momentum = pairMomentum[p];
-              const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
-              const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
-
-              const isWatched = watchlistPairs.includes(p);
-
-              // Anomali Işığı — FAZ 1 (OI-çöküş) + FAZ 2 (order book duvarı):
-              // sadece mevcut results[p] + macroStore.oiVelocity[p] +
-              // orderBookStore.imbalance[p]'den okur, yeni fetch yok.
-              const oiCollapseAnomaly = computeOiCollapseAnomaly(pr, allOiVelocity[p] ?? null);
-              const orderBookWallAnomaly = computeOrderBookWallAnomaly(pr, allOrderBookImbalance[p] ?? null);
-
-              return (
-                <div key={p} className="relative group">
-                  <AnomalyBadge
-                    oiAnomaly={oiCollapseAnomaly}
-                    wallAnomaly={orderBookWallAnomaly}
-                    wallDetail={allOrderBookImbalance[p] ?? null}
-                  />
-                  {goStrength && !isActive && (
-                    <>
-                      <div className={`absolute inset-0 rounded-lg ring-1 ${goRingClass} animate-pulse pointer-events-none`} />
-                      <span className="absolute top-0.5 left-0.5 flex h-2 w-2 pointer-events-none z-10">
-                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${goPingClass} opacity-60`} />
-                        <span className={`relative inline-flex rounded-full h-2 w-2 ${goPingClass}`} />
-                      </span>
-                    </>
-                  )}
-                  {p === "BTC" && btcPulseActive && (
-                    <span className="absolute inset-0 rounded-lg ring-1 ring-white/25 animate-[ping_600ms_ease-out_1] pointer-events-none z-20" aria-hidden />
-                  )}
-
-                  <button
-                    onClick={() => setActivePair(p as Pair)}
-                    style={v === "go" ? {
-                      // 3 kademeli glow — goRingClass/goPingClass'ın zaten kullandığı
-                      // strong/medium=yeşil, weak=sarı renk ayrımıyla tutarlı hale
-                      // getirildi (önceden weak de yeşil glow alıyordu, ring'iyle uyumsuzdu).
-                      boxShadow: goStrength === "strong"
-                        ? "0 0 12px 2px rgba(103,193,148,0.35)"
-                        : goStrength === "medium"
-                        ? "0 0 10px 1px rgba(56,137,97,0.22)"
-                        : "0 0 8px 1px rgba(188,142,78,0.20)",
-                      willChange: "box-shadow",
-                    } : undefined}
-                    className={[
-                      "w-full text-left rounded-lg border p-2 lg:p-1.5 font-mono transition-colors card-depth",
-                      isActive
-                        ? `${activeBorderClass(score)} bg-surface-s2 text-text-t1`
-                        : goStrength === "strong"
-                        ? `border-green-400/50 ${goBgClass} text-text-t3 hover:text-text-t2`
-                        : goStrength
-                        ? `border-green-500/25 ${goBgClass} text-text-t3 hover:text-text-t2`
-                        : v === "wait"
-                        ? "border-amber-400/20 bg-bg-card text-text-t3 hover:text-text-t2"
-                        : "border-border/30 bg-bg-card text-text-t3 hover:text-text-t2",
-                    ].join(" ")}
-                  >
-                    {/* Satır 1: watchlist chip + pair adı + 24h% rozeti */}
-                    <div className="flex items-center justify-between gap-0.5 mb-0.5">
-                      <div className="flex items-center gap-0.5 min-w-0">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isWatched) {
-                              watchlistToggle(p as Pair);
-                              toast(t("watchlist.toast.removed", { pair: p }));
-                            } else {
-                              watchlistToggle(p as Pair);
-                              toast(t("watchlist.toast.added", { pair: p }));
-                            }
-                          }}
-                          className={`shrink-0 px-0.5 py-2 leading-none font-mono text-[9px] transition-colors ${
-                            isWatched ? "text-amber-400" : "text-text-t4/50"
-                          }`}
-                        >
-                          {isWatched ? "★" : "☆"}
-                        </button>
-                        <CoinIcon pair={p as Pair} size={18} />
-                        <span className="text-[12px] lg:text-[11px] font-bold text-text-t1 leading-none">{p}</span>
-                        {PAIR_CATEGORY[p] && (
-                          <span className="text-[7px] font-mono text-sky-400/80 shrink-0 leading-none">
-                            {PAIR_CATEGORY[p]}
-                          </span>
-                        )}
-                        {alarmedPairs.has(p) && (
-                          <span className="h-1 w-1 rounded-full bg-amber-400 shrink-0" />
-                        )}
-                      </div>
-                      {pairChg !== null && (
-                        <span translate="no" className={`text-[8px] tabular-nums px-0.5 py-px rounded-sm bg-surface-s2 leading-tight shrink-0 ${chgColor}`}>
-                          {`${pairChg >= 0 ? "+" : ""}${pairChg.toFixed(1)}%`}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* ScoreRingV2 — tüm paritelerde */}
-                    <div className="flex justify-center py-0.5">
-                      {score !== undefined && pr?.goThreshold !== undefined ? (
-                        <ScoreRingV2
-                          score={score}
-                          goThreshold={pr.goThreshold}
-                          snaps={snapScoresByPair[p] ?? EMPTY_SCORE_SNAPS}
-                          size={52}
-                          id={p}
-                        />
-                      ) : (
-                        <div className="h-[64px] flex items-center justify-center">
-                          <span className="text-text-t4 font-mono text-lg">·</span>
-                        </div>
-                      )}
-                      {showMom && (
-                        <span className={`text-[8px] leading-none ml-px ${momColor}`}>
-                          {(momentum ?? 0) > 0 ? "▲" : "▼"}
-                        </span>
-                      )}
-                      {/* Delta badge — 30dk zaman-penceresi. TEMP DEBUG: veri yoksa "–" (boş bırakma yerine),
-                          "veri yok" ile "hiç render edilmedi" ayrımı netleşsin diye — iş bitince eski haline dönecek. */}
-                      {(() => {
-                        const v = computeScoreVelocity(snaps, DELTA_BADGE_WINDOW_MIN);
-                        if (!v || v.actualMin === 0) {
-                          return (
-                            <span
-                              translate="no"
-                              className="ml-1 font-mono text-[7px] tabular-nums leading-none opacity-40 text-text-t4"
-                            >
-                              –
-                            </span>
-                          );
-                        }
-                        const sign = v.delta > 0 ? "+" : "";
-                        const dc =
-                          v.delta > 0 ? "text-green-400"
-                          : v.delta < 0 ? "text-red-400"
-                          : "text-text-t4";
-                        return (
-                          <span
-                            translate="no"
-                            className={`ml-1 font-mono text-[7px] tabular-nums leading-none opacity-70 ${dc}`}
-                          >
-                            ~{v.actualMin}{t("units.minute")} {sign}{Math.round(v.delta)}
-                          </span>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Hold/Exit Guide + WAIT badge alanı — ikisi de opsiyonel render olduğu
-                        için sabit min-h ile sarmalandı, kart yüksekliği badge var/yok
-                        fark etmeksizin aynı kalsın diye (komşu kartlarla Y-ekseni hizası
-                        için — bkz. fiyat/hacim satırının komşu kartlarla aynı satırda
-                        kalması). Skor motoruna, renk/glow'a dokunulmadı — sadece bu
-                        alanın yükseklik rezervasyonu. */}
-                    <div className="flex flex-col items-center justify-center gap-0.5 min-h-7 -mt-0.5 mb-0.5">
-                      {(() => {
-                        const guide = computeHoldExitGuide(pr, snaps);
-                        if (!guide) return null;
-                        const gc =
-                          guide === "max_hold" ? "text-signal-green bg-soft-green"
-                          : guide === "quick_profit" ? "text-signal-amber bg-soft-amber"
-                          : guide === "early_exit_warning" ? "text-signal-red bg-soft-red"
-                          : "text-text-t3 bg-text-t3/10";
-                        return (
-                          <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded leading-none ${gc}`}>
-                            {t(HOLD_EXIT_LABEL_I18N_KEY[guide])}
-                          </span>
-                        );
-                      })()}
-                      {v === "wait" && score !== undefined && (
-                        <span translate="no" className="text-[8px] font-mono text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
-                          {`Wait ${dirArrow}${score}`}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* MTF mini trend satırı: 1H / 4H / 1D — badge wrapper'dan (bir önceki
-                        tur, satır 931) bağımsız, ayrı bir ikinci min-h rezervasyonu. Yeni
-                        dış wrapper her zaman render olur (min-h-6), içindeki koşullu <div>
-                        (border-t + içerik) DEĞİŞMEDİ — satır yokken sadece boş alan kalsın,
-                        yapay bir border çizgisi belirmesin diye border-t hâlâ koşullu. */}
-                    <div className="min-h-6">
-                      {mtfResults[p]?.trends && (
-                        <div className="flex justify-center gap-2.5 mt-1 border-t border-border/30 pt-1">
-                          {mtfResults[p]!.trends.map((t) => (
-                            <span key={t.tf} className="flex flex-col items-center" style={{ gap: "1px" }}>
-                              <span className="text-2xs font-mono uppercase tracking-wider text-text-t2/70 leading-none">{t.tf}</span>
-                              <span className={`text-[10px] font-mono leading-none ${
-                                t.direction === "up"   ? "text-[#22c55e]"
-                                : t.direction === "down" ? "text-[#ef4444]/80"
-                                : "text-text-t2/50"
-                              }`}>
-                                {t.direction === "up" ? "▲" : t.direction === "down" ? "▼" : "─"}
-                              </span>
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Alt: fiyat + market cap */}
-                    <div className="flex items-center justify-between mt-1 gap-1">
-                      <div className="flex items-center gap-1 min-w-0">
-                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
-                          v === "go"    ? "bg-green-400"
-                          : v === "wait"  ? "bg-amber-400"
-                          : "bg-red-400/50"
-                        }`} />
-                        {allTicks[p]?.last !== undefined && (
-                          <span translate="no" className="text-[11px] font-semibold tabular-nums text-text-t1 leading-none tracking-tight">
-                            {formatTickPrice(allTicks[p]!.last, locale)}
-                          </span>
-                        )}
-                      </div>
-                      {marketCap[p] !== undefined && (
-                        <span translate="no" className="text-[8px] tabular-nums text-text-t4 leading-none shrink-0">
-                          ${fmtCompact(marketCap[p]!)}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-
-                  {pairNotes[p as Pair] && (
-                    <span className="absolute bottom-2 right-1 h-1 w-1 rounded-full bg-blue-400/80 pointer-events-none" />
-                  )}
-                </div>
-              );
-            })}
-
-
-          </div>
-          </div>{/* end pair grid wrapper */}
+          <SignalAccuracyCard />
         </div>
 
-        {/* RIGHT MAIN — active pair details */}
+        {/* SAĞ SÜTUN — sinyal detay */}
         <div className="flex flex-col gap-3 lg:flex-1 lg:min-w-0 order-1 lg:order-2">
+          <SqueezeRadarBanner onSelect={setActivePair} />
+
           {!result && (
             <div className="bg-surface-s1 rounded-lg p-6 text-center font-mono text-sm text-text-t3">
               {computing ? t("karar.computing") : t("karar.waitingData")}
@@ -1377,6 +1013,370 @@ export default function KararPage() {
           )}
         </div>
       </div>
+
+      {/* Alt bölüm — 9'lu 3x3 coin grid matrisi */}
+          {/* Score freshness */}
+          <div className="flex items-center justify-between">
+            <span translate="no" className="text-text-t4 font-mono text-2xs tracking-wider">
+              {latestScoreTime !== null
+                ? `${t("karar.scoresUpdated")} · ${scoreAge(latestScoreTime)} ${t("karar.scoresAgo")}`
+                : t("karar.scoresNever")}
+            </span>
+            {computing && (
+              <span className="text-brand font-mono text-2xs animate-pulse">⟳</span>
+            )}
+          </div>
+
+          {/* Pair grid */}
+          <div className="flex flex-col gap-2">
+
+          {/* Pair group filter */}
+          <div className="flex flex-wrap gap-1">
+            {(["all", "majors", "alts", "go", "act", "watch"] as PairGroup[]).map((g) => {
+              const label =
+                g === "all" ? t("karar.groupAll") :
+                g === "majors" ? t("karar.filterMajors") :
+                g === "alts" ? t("karar.filterAlts") :
+                g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
+                g === "act" ? `ACT${actionablePairs.length > 0 ? ` (${actionablePairs.length})` : ""}` :
+                `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
+              const isActive = pairGroup === g;
+              const isGo = g === "go";
+              const isAct = g === "act";
+              const isWatch = g === "watch";
+              return (
+                <button
+                  key={g}
+                  onClick={() => {
+                    setPairGroup(g);
+                    const target =
+                      g === "go" ? goPairs :
+                      g === "act" ? actionablePairs :
+                      g === "watch" ? watchlistPairs :
+                      PAIR_GROUPS[g] ?? PAIRS;
+                    if (target.length > 0 && !target.includes(activePair)) {
+                      setActivePair(target[0] as Pair);
+                    }
+                  }}
+                  className={[
+                    "px-2.5 py-1 rounded font-mono text-2xs font-medium transition-colors",
+                    isActive
+                      ? isGo || isAct
+                        ? "bg-green-500/20 text-green-400"
+                        : isWatch
+                        ? "bg-amber-500/20 text-amber-400"
+                        : "bg-surface-s2 text-text-t1"
+                      : isGo && goPairs.length > 0
+                      ? "text-green-400/70 hover:text-green-400"
+                      : isAct && actionablePairs.length > 0
+                      ? "text-green-400/70 hover:text-green-400"
+                      : isWatch && watchlistPairs.length > 0
+                      ? "text-amber-400/70 hover:text-amber-400"
+                      : "text-text-t4 hover:text-text-t2",
+                  ].join(" ")}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Pair grid header — skor sıralaması toggle */}
+          <div className="flex items-center justify-end">
+            <button
+              onClick={() => setSortByScore((s) => !s)}
+              className={[
+                "px-2 py-0.5 rounded font-mono text-2xs border transition-colors",
+                sortByScore
+                  ? "bg-brand/20 border-brand text-brand"
+                  : "border-border text-text-t4 hover:text-text-t2",
+              ].join(" ")}
+            >
+              {sortByScore ? t("karar.sortByScore") : t("karar.sortLabel")}
+            </button>
+          </div>
+
+          {/* Pair grid — v2: mobilde 2 kolon (daha geniş kart), lg: sidebar'da 3 kolon, kapsül slider kartları */}
+          <div className="grid grid-cols-3 gap-1.5 lg:gap-1">
+            {pairGroup === "watch" && watchlistPairs.length === 0 ? (
+              <div className="col-span-3 flex flex-col items-center justify-center py-10 gap-1.5">
+                <span className="font-mono text-[28px] text-text-t4/30 leading-none">☆</span>
+                <p className="font-mono text-[11px] text-text-t3 text-center">Takip listen boş</p>
+                <p className="font-mono text-[10px] text-text-t4 text-center px-6">kartlardaki ☆ ile pair ekle</p>
+              </div>
+            ) : displayPairs.map((p) => {
+              const pr = allResults[p];
+              const v = pr?.verdict;
+              const score = pr?.score;
+              const dir = pr?.direction;
+              const isActive = activePair === p;
+
+
+              const goGap = v === "go" && score !== undefined && pr?.effectiveThreshold !== undefined
+                ? score - pr.effectiveThreshold
+                : -1;
+              const goStrength: "strong" | "medium" | "weak" | null =
+                goGap >= 15 ? "strong"
+                : goGap >= 8  ? "medium"
+                : goGap >= 0  ? "weak"
+                : null;
+
+              const goRingClass =
+                goStrength === "strong" ? "ring-green-400/90"
+                : goStrength === "medium" ? "ring-green-400/60"
+                : goStrength === "weak"   ? "ring-yellow-400/70"
+                : "";
+              const goPingClass =
+                goStrength === "strong" ? "bg-green-300"
+                : goStrength === "medium" ? "bg-green-400"
+                : "bg-yellow-400";
+              const goBgClass =
+                goStrength === "strong" ? "bg-green-500/10"
+                : goStrength === "medium" ? "bg-green-500/5"
+                : "bg-yellow-500/5";
+
+              const dirArrow = dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
+
+              const pairChg = allTicks[p]?.chg ?? null;
+              const chgColor =
+                pairChg === null ? "text-text-t4"
+                : pairChg > 0 ? "text-signal-up"
+                : pairChg < 0 ? "text-signal-down"
+                : "text-text-t4";
+
+              const snaps = (scoreHistory[p] ?? []).filter(
+                (s) => typeof s.score === "number" && isFinite(s.score),
+              );
+              const momentum = pairMomentum[p];
+              const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
+              const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
+
+              const isWatched = watchlistPairs.includes(p);
+
+              // Anomali Işığı — FAZ 1 (OI-çöküş) + FAZ 2 (order book duvarı):
+              // sadece mevcut results[p] + macroStore.oiVelocity[p] +
+              // orderBookStore.imbalance[p]'den okur, yeni fetch yok.
+              const oiCollapseAnomaly = computeOiCollapseAnomaly(pr, allOiVelocity[p] ?? null);
+              const orderBookWallAnomaly = computeOrderBookWallAnomaly(pr, allOrderBookImbalance[p] ?? null);
+
+              return (
+                <div key={p} className="relative group">
+                  <AnomalyBadge
+                    oiAnomaly={oiCollapseAnomaly}
+                    wallAnomaly={orderBookWallAnomaly}
+                    wallDetail={allOrderBookImbalance[p] ?? null}
+                  />
+                  {goStrength && !isActive && (
+                    <>
+                      <div className={`absolute inset-0 rounded-lg ring-1 ${goRingClass} animate-pulse pointer-events-none`} />
+                      <span className="absolute top-0.5 left-0.5 flex h-2 w-2 pointer-events-none z-10">
+                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${goPingClass} opacity-60`} />
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${goPingClass}`} />
+                      </span>
+                    </>
+                  )}
+                  {p === "BTC" && btcPulseActive && (
+                    <span className="absolute inset-0 rounded-lg ring-1 ring-white/25 animate-[ping_600ms_ease-out_1] pointer-events-none z-20" aria-hidden />
+                  )}
+
+                  <button
+                    onClick={() => setActivePair(p as Pair)}
+                    style={v === "go" ? {
+                      // 3 kademeli glow — goRingClass/goPingClass'ın zaten kullandığı
+                      // strong/medium=yeşil, weak=sarı renk ayrımıyla tutarlı hale
+                      // getirildi (önceden weak de yeşil glow alıyordu, ring'iyle uyumsuzdu).
+                      boxShadow: goStrength === "strong"
+                        ? "0 0 12px 2px rgba(103,193,148,0.35)"
+                        : goStrength === "medium"
+                        ? "0 0 10px 1px rgba(56,137,97,0.22)"
+                        : "0 0 8px 1px rgba(188,142,78,0.20)",
+                      willChange: "box-shadow",
+                    } : undefined}
+                    className={[
+                      "w-full text-left rounded-lg border p-2 lg:p-1.5 font-mono transition-colors card-depth",
+                      isActive
+                        ? `${activeBorderClass(score)} bg-surface-s2 text-text-t1`
+                        : goStrength === "strong"
+                        ? `border-green-400/50 ${goBgClass} text-text-t3 hover:text-text-t2`
+                        : goStrength
+                        ? `border-green-500/25 ${goBgClass} text-text-t3 hover:text-text-t2`
+                        : v === "wait"
+                        ? "border-amber-400/20 bg-bg-card text-text-t3 hover:text-text-t2"
+                        : "border-border/30 bg-bg-card text-text-t3 hover:text-text-t2",
+                    ].join(" ")}
+                  >
+                    {/* Satır 1: watchlist chip + pair adı + 24h% rozeti */}
+                    <div className="flex items-center justify-between gap-0.5 mb-0.5">
+                      <div className="flex items-center gap-0.5 min-w-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isWatched) {
+                              watchlistToggle(p as Pair);
+                              toast(t("watchlist.toast.removed", { pair: p }));
+                            } else {
+                              watchlistToggle(p as Pair);
+                              toast(t("watchlist.toast.added", { pair: p }));
+                            }
+                          }}
+                          className={`shrink-0 px-0.5 py-2 leading-none font-mono text-[9px] transition-colors ${
+                            isWatched ? "text-amber-400" : "text-text-t4/50"
+                          }`}
+                        >
+                          {isWatched ? "★" : "☆"}
+                        </button>
+                        <CoinIcon pair={p as Pair} size={18} />
+                        <span className="text-[12px] lg:text-[11px] font-bold text-text-t1 leading-none">{p}</span>
+                        {PAIR_CATEGORY[p] && (
+                          <span className="text-[7px] font-mono text-sky-400/80 shrink-0 leading-none">
+                            {PAIR_CATEGORY[p]}
+                          </span>
+                        )}
+                        {alarmedPairs.has(p) && (
+                          <span className="h-1 w-1 rounded-full bg-amber-400 shrink-0" />
+                        )}
+                      </div>
+                      {pairChg !== null && (
+                        <span translate="no" className={`text-[8px] tabular-nums px-0.5 py-px rounded-sm bg-surface-s2 leading-tight shrink-0 ${chgColor}`}>
+                          {`${pairChg >= 0 ? "+" : ""}${pairChg.toFixed(1)}%`}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* ScoreRingV2 — tüm paritelerde */}
+                    <div className="flex justify-center py-0.5">
+                      {score !== undefined && pr?.goThreshold !== undefined ? (
+                        <ScoreRingV2
+                          score={score}
+                          goThreshold={pr.goThreshold}
+                          snaps={snapScoresByPair[p] ?? EMPTY_SCORE_SNAPS}
+                          size={52}
+                          id={p}
+                        />
+                      ) : (
+                        <div className="h-[64px] flex items-center justify-center">
+                          <span className="text-text-t4 font-mono text-lg">·</span>
+                        </div>
+                      )}
+                      {showMom && (
+                        <span className={`text-[8px] leading-none ml-px ${momColor}`}>
+                          {(momentum ?? 0) > 0 ? "▲" : "▼"}
+                        </span>
+                      )}
+                      {/* Delta badge — 30dk zaman-penceresi. TEMP DEBUG: veri yoksa "–" (boş bırakma yerine),
+                          "veri yok" ile "hiç render edilmedi" ayrımı netleşsin diye — iş bitince eski haline dönecek. */}
+                      {(() => {
+                        const v = computeScoreVelocity(snaps, DELTA_BADGE_WINDOW_MIN);
+                        if (!v || v.actualMin === 0) {
+                          return (
+                            <span
+                              translate="no"
+                              className="ml-1 font-mono text-[7px] tabular-nums leading-none opacity-40 text-text-t4"
+                            >
+                              –
+                            </span>
+                          );
+                        }
+                        const sign = v.delta > 0 ? "+" : "";
+                        const dc =
+                          v.delta > 0 ? "text-green-400"
+                          : v.delta < 0 ? "text-red-400"
+                          : "text-text-t4";
+                        return (
+                          <span
+                            translate="no"
+                            className={`ml-1 font-mono text-[7px] tabular-nums leading-none opacity-70 ${dc}`}
+                          >
+                            ~{v.actualMin}{t("units.minute")} {sign}{Math.round(v.delta)}
+                          </span>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Hold/Exit Guide + WAIT badge alanı — ikisi de opsiyonel render olduğu
+                        için sabit min-h ile sarmalandı, kart yüksekliği badge var/yok
+                        fark etmeksizin aynı kalsın diye (komşu kartlarla Y-ekseni hizası
+                        için — bkz. fiyat/hacim satırının komşu kartlarla aynı satırda
+                        kalması). Skor motoruna, renk/glow'a dokunulmadı — sadece bu
+                        alanın yükseklik rezervasyonu. */}
+                    <div className="flex flex-col items-center justify-center gap-0.5 min-h-7 -mt-0.5 mb-0.5">
+                      {(() => {
+                        const guide = computeHoldExitGuide(pr, snaps);
+                        if (!guide) return null;
+                        const gc =
+                          guide === "max_hold" ? "text-signal-green bg-soft-green"
+                          : guide === "quick_profit" ? "text-signal-amber bg-soft-amber"
+                          : guide === "early_exit_warning" ? "text-signal-red bg-soft-red"
+                          : "text-text-t3 bg-text-t3/10";
+                        return (
+                          <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded leading-none ${gc}`}>
+                            {t(HOLD_EXIT_LABEL_I18N_KEY[guide])}
+                          </span>
+                        );
+                      })()}
+                      {v === "wait" && score !== undefined && (
+                        <span translate="no" className="text-[8px] font-mono text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
+                          {`Wait ${dirArrow}${score}`}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* MTF mini trend satırı: 1H / 4H / 1D — badge wrapper'dan (bir önceki
+                        tur, satır 931) bağımsız, ayrı bir ikinci min-h rezervasyonu. Yeni
+                        dış wrapper her zaman render olur (min-h-6), içindeki koşullu <div>
+                        (border-t + içerik) DEĞİŞMEDİ — satır yokken sadece boş alan kalsın,
+                        yapay bir border çizgisi belirmesin diye border-t hâlâ koşullu. */}
+                    <div className="min-h-6">
+                      {mtfResults[p]?.trends && (
+                        <div className="flex justify-center gap-2.5 mt-1 border-t border-border/30 pt-1">
+                          {mtfResults[p]!.trends.map((t) => (
+                            <span key={t.tf} className="flex flex-col items-center" style={{ gap: "1px" }}>
+                              <span className="text-2xs font-mono uppercase tracking-wider text-text-t2/70 leading-none">{t.tf}</span>
+                              <span className={`text-[10px] font-mono leading-none ${
+                                t.direction === "up"   ? "text-[#22c55e]"
+                                : t.direction === "down" ? "text-[#ef4444]/80"
+                                : "text-text-t2/50"
+                              }`}>
+                                {t.direction === "up" ? "▲" : t.direction === "down" ? "▼" : "─"}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Alt: fiyat + market cap */}
+                    <div className="flex items-center justify-between mt-1 gap-1">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                          v === "go"    ? "bg-green-400"
+                          : v === "wait"  ? "bg-amber-400"
+                          : "bg-red-400/50"
+                        }`} />
+                        {allTicks[p]?.last !== undefined && (
+                          <span translate="no" className="text-[11px] font-semibold tabular-nums text-text-t1 leading-none tracking-tight">
+                            {formatTickPrice(allTicks[p]!.last, locale)}
+                          </span>
+                        )}
+                      </div>
+                      {marketCap[p] !== undefined && (
+                        <span translate="no" className="text-[8px] tabular-nums text-text-t4 leading-none shrink-0">
+                          ${fmtCompact(marketCap[p]!)}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+
+                  {pairNotes[p as Pair] && (
+                    <span className="absolute bottom-2 right-1 h-1 w-1 rounded-full bg-blue-400/80 pointer-events-none" />
+                  )}
+                </div>
+              );
+            })}
+
+
+          </div>
+          </div>{/* end pair grid wrapper */}
 
       {showShortcuts && (
         <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />

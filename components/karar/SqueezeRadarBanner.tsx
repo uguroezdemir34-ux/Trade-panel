@@ -7,6 +7,11 @@
  * diğer store'larla aynı "tüm map'i oku, useMemo'da filtrele" deseni —
  * bkz. goPairs/marketPulseIndex). useScoreEngine'e hiç dokunmaz.
  *
+ * onSelect (opsiyonel): rozete tıklanınca çağrılır — sıkışma/anomali tespit
+ * mantığına dokunmaz, sadece ScoreHeatmap/pair-grid kartlarındaki
+ * onSelect={setActivePair} deseniyle aynı şekilde coin seçimini dışarı
+ * bildirir. Verilmezse rozetler tıklanabilir kalır ama hiçbir şey olmaz.
+ *
  * Balina/Anomali glow: her pair için computeOiCollapseAnomaly() +
  * computeOrderBookWallAnomaly() (lib/score/anomalyDetector.ts, DEĞİŞTİRİLMEDİ)
  * çağrılır — scoreStore/macroStore/orderBookStore'dan İMPERATİF olarak
@@ -36,12 +41,18 @@ import { useOrderBookStore } from "@/lib/store/orderBookStore";
 import { useT } from "@/lib/i18n/context";
 import { computeSqueezeRadar, type SqueezeRadarEntry } from "@/lib/market/squeezeRadar";
 import { computeOiCollapseAnomaly, computeOrderBookWallAnomaly } from "@/lib/score/anomalyDetector";
+import type { Pair } from "@/lib/constants/pairs";
 
 interface SqueezeBadgeEntry extends SqueezeRadarEntry {
   isAnomaly: boolean;
 }
 
-export function SqueezeRadarBanner(): React.ReactElement | null {
+/** onSelect verilmezse rozetler eskisi gibi salt-okunur kalır (opsiyonel, geriye dönük uyumlu). */
+export function SqueezeRadarBanner({
+  onSelect,
+}: {
+  onSelect?: (pair: Pair) => void;
+} = {}): React.ReactElement | null {
   const t = useT();
   const allCandles = useCandleStore((s) => s.candles);
 
@@ -76,10 +87,13 @@ export function SqueezeRadarBanner(): React.ReactElement | null {
       </span>
       <div className="flex flex-wrap gap-1.5">
         {entries.map((e) => (
-          <span
+          <button
             key={e.pair}
+            type="button"
+            onClick={() => onSelect?.(e.pair)}
             className={[
-              "bg-bg-card2 inline-flex items-baseline gap-1 rounded-md border px-2 py-1",
+              "bg-bg-card2 inline-flex items-baseline gap-1 rounded-md border px-2 py-1 transition-colors",
+              onSelect ? "cursor-pointer hover:border-brand/60" : "",
               e.isAnomaly
                 ? "border-purple-500/50 shadow-[0_0_8px_rgba(168,85,247,0.35)]"
                 : "border-border",
@@ -87,7 +101,7 @@ export function SqueezeRadarBanner(): React.ReactElement | null {
           >
             <span className="text-text-t1 text-xs font-semibold">{e.pair}</span>
             <span className="text-text-t3 text-[10px] opacity-70">P{e.percentile}</span>
-          </span>
+          </button>
         ))}
       </div>
     </div>
