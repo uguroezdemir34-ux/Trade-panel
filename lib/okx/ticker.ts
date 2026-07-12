@@ -19,6 +19,7 @@ const PAIR_TO_INST: Record<Pair, string> = {
   LINK:   "LINK-USDT-SWAP",
   SUI:    "SUI-USDT-SWAP",
   NEAR:   "NEAR-USDT-SWAP",
+  XRP:    "XRP-USDT-SWAP",
 };
 
 /**

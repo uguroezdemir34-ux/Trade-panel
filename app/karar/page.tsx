@@ -48,7 +48,7 @@ const EMPTY_SCORE_SNAPS: number[] = [];
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
   majors: ["BTC", "ETH", "BNB", "SOL"],
-  alts:   ["AVAX", "LINK", "NEAR", "SUI"],
+  alts:   ["AVAX", "LINK", "NEAR", "SUI", "XRP"],
 };
 type PairGroup = "all" | "majors" | "alts" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
@@ -656,9 +656,9 @@ export default function KararPage() {
           </div>
 
           {/* Pair grid — v2: mobilde 2 kolon (daha geniş kart), lg: sidebar'da 3 kolon, kapsül slider kartları */}
-          <div className="grid grid-cols-2 lg:grid-cols-3 gap-1.5 lg:gap-1">
+          <div className="grid grid-cols-3 gap-1.5 lg:gap-1">
             {pairGroup === "watch" && watchlistPairs.length === 0 ? (
-              <div className="col-span-2 lg:col-span-3 flex flex-col items-center justify-center py-10 gap-1.5">
+              <div className="col-span-3 flex flex-col items-center justify-center py-10 gap-1.5">
                 <span className="font-mono text-[28px] text-text-t4/30 leading-none">☆</span>
                 <p className="font-mono text-[11px] text-text-t3 text-center">Takip listen boş</p>
                 <p className="font-mono text-[10px] text-text-t4 text-center px-6">kartlardaki ☆ ile pair ekle</p>

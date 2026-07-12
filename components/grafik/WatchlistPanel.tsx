@@ -20,6 +20,7 @@ const CMC_IDS: Record<string, number> = {
   BTC: 1,       ETH: 1027,    SOL: 5426,    BNB: 1839,
   AVAX: 5805,   LINK: 1975,
   SUI: 20947,   NEAR: 6535,
+  XRP: 52,
 };
 const CDN_OVERRIDES: Record<string, string> = {};
 /* Trust Wallet asset overrides — used when CMC ID is wrong/unavailable */
@@ -36,6 +37,7 @@ const PAIR_COLORS: Record<string, string> = {
   BNB:   "#f3ba2f", AVAX: "#e84142",
   LINK:  "#2a5ada",
   SUI:   "#4da2ff", NEAR: "#00c08b",
+  XRP:   "#23292f",
 };
 function pairColor(p: string): string { return PAIR_COLORS[p] ?? "#6366f1"; }
 
@@ -45,6 +47,7 @@ const COIN_NAMES: Record<string, string> = {
   BNB: "BNB Chain",    AVAX: "Avalanche",
   LINK: "Chainlink",
   SUI: "Sui",          NEAR: "NEAR Protocol",
+  XRP: "XRP",
 };
 function coinName(p: string): string { return COIN_NAMES[p] ?? p; }
 

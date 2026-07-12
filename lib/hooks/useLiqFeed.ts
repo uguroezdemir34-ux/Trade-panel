@@ -36,6 +36,7 @@ const BINANCE_PAIR: Record<string, Pair> = {
   BNBUSDT: "BNB", AVAXUSDT: "AVAX",
   LINKUSDT: "LINK",
   SUIUSDT: "SUI", NEARUSDT: "NEAR",
+  XRPUSDT: "XRP",
 };
 
 const BYBIT_PAIR: Record<string, Pair> = {
@@ -43,6 +44,7 @@ const BYBIT_PAIR: Record<string, Pair> = {
   BNBUSDT: "BNB", AVAXUSDT: "AVAX",
   LINKUSDT: "LINK",
   SUIUSDT: "SUI", NEARUSDT: "NEAR",
+  XRPUSDT: "XRP",
 };
 
 // Binance / Bybit "1000X" symbols: reported size is in 1000 units

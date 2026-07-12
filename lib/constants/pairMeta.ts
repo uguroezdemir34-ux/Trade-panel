@@ -11,4 +11,5 @@ export const PAIR_CATEGORY: Partial<Record<Pair, PairCategory>> = {
   SUI:    "L1",
   LINK:   "DeFi",
   BNB:    "Infra",
+  XRP:    "L1",
 };

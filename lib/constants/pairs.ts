@@ -4,9 +4,10 @@ export const PAIRS = [
   "SOL",  // Solana — high-vol technicals
   "BNB",  // Binance Coin — exchange locomotive
   "LINK", // Chainlink — AI/data aligned
+  "SUI",  // Sui — emerging breakouts
   "AVAX", // Avalanche — cycle patterns
   "NEAR", // Near Protocol — AI-aligned
-  "SUI",  // Sui — emerging breakouts
+  "XRP",  // Ripple — high liquidity, cross-border
 ] as const;
 
 export type Pair = (typeof PAIRS)[number];
