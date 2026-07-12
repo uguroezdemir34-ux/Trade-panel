@@ -1,8 +1,11 @@
 /**
- * ORDER BOOK POLLER — top-5 derinlik periyodik güncelleme (Anomali Işığı Faz 2).
+ * ORDER BOOK POLLER — top-20 derinlik periyodik güncelleme (Anomali Işığı Faz 2).
  *
  * - Tüm PAIRS için `fetchOrderBook` çağırır, `computeOrderBookImbalance` ile
  *   türetir, orderBookStore'a yazar.
+ * - Derinlik 5→20: top-5 neredeyse her zaman best bid/ask'ın kendisini
+ *   "duvar" seçiyordu (mesafe ~0), tooltip hep "0.000%" gösteriyordu.
+ *   Rate limit istek SAYISINA bağlı (sz'ye değil), maliyet ihmal edilebilir.
  * - 3 dakika cadence — OI/funding'den (5dk) daha sık ama candle'dan (dakikalar)
  *   çok daha seyrek; macro veri gibi "yavaş değişen" sınıfta.
  * - runBatched(MAX_CONCURRENT=3, staggerMs=250) — useCandlePoller ile aynı
@@ -32,7 +35,7 @@ export function useOrderBookPoller(delayMs = 0): void {
   useEffect(() => {
     async function pollAll(): Promise<void> {
       const tasks = PAIRS.map((pair) => async () => {
-        const snap = await fetchOrderBook(pair, 5);
+        const snap = await fetchOrderBook(pair, 20);
         const result = computeOrderBookImbalance(snap);
         if (result) setImbalance(pair, result);
       });

@@ -1,8 +1,13 @@
 /**
- * ORDER BOOK IMBALANCE — top-5 derinlikten tek taraflı "duvar" tespiti.
+ * ORDER BOOK IMBALANCE — fetch edilen derinlikten tek taraflı "duvar" tespiti.
  *
  * bid/ask taraflarının USD derinliğini toplar, oranını hesaplar. Bir taraf
  * diğerinden WALL_RATIO_THRESHOLD kat ağırsa "duvar" (wallSide) işaretlenir.
+ *
+ * wallDistancePct MIN_WALL_DISTANCE_PCT'in altındaysa (duvar best bid/ask'a
+ * yapışıksa — mid-price'a mesafesi anlamsız derecede küçükse) wallPrice/
+ * wallSizeUsd/wallDistancePct null'a çekilir; wallSide/ratio etkilenmez,
+ * caller'daki mevcut null-guard genel mesaja düşer (bkz. AnomalyBadge.tsx).
  *
  * Saf fonksiyon — I/O yok. lib/market/oi-velocity.ts ile aynı desen.
  */
@@ -31,6 +36,10 @@ export interface OrderBookImbalanceResult {
 }
 
 const WALL_RATIO_THRESHOLD = 3;
+/** Duvarın mid-price'a en az bu kadar (%) uzak olması gerekir, yoksa
+ *  best bid/ask'a yapışık bir seviye "duvar" sayılıp anlamsız ~0 mesafe
+ *  gösterilir (bkz. dosya başı yorumu). */
+const MIN_WALL_DISTANCE_PCT = 0.05;
 
 function depthUsd(levels: readonly OrderBookLevel[]): number {
   return levels.reduce((sum, l) => sum + l.price * l.size, 0);
@@ -68,9 +77,12 @@ export function computeOrderBookImbalance(
     const bestAsk = snap.asks[0]?.price;
     if (wallLevel && bestBid && bestAsk) {
       const midPrice = (bestBid + bestAsk) / 2;
-      wallPrice = wallLevel.price;
-      wallSizeUsd = wallLevel.price * wallLevel.size;
-      wallDistancePct = midPrice > 0 ? Math.abs(((wallPrice - midPrice) / midPrice) * 100) : null;
+      const distancePct = midPrice > 0 ? Math.abs(((wallLevel.price - midPrice) / midPrice) * 100) : null;
+      if (distancePct !== null && distancePct >= MIN_WALL_DISTANCE_PCT) {
+        wallPrice = wallLevel.price;
+        wallSizeUsd = wallLevel.price * wallLevel.size;
+        wallDistancePct = distancePct;
+      }
     }
   }
 
