@@ -92,7 +92,7 @@ export function ChartControls({
       </div>
 
       {/* Row 2 — Overlays + Tools */}
-      <div className="flex items-center gap-1 px-3 py-2">
+      <div className="flex items-center gap-1 px-4 py-2">
         {/* Left: no overflow — absolute dropdown not clipped */}
         <IndicatorDropdown
           showEma20={showEma20}
@@ -111,8 +111,11 @@ export function ChartControls({
           onToggleTrades={onToggleTrades}
           label={t("grafik.indicators")}
         />
-        {/* Center: scrollable toggles only — overflow confined here */}
-        <div className="flex flex-nowrap items-center gap-1 flex-1 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+        {/* Center: scrollable toggles only — overflow confined here.
+            min-w-0: flex item'ın içerik-tabanlı min-genişliği flex-1'i ezip
+            Row 2'yi taşırmasın diye (SPLIT butonunun kesilmesi/⚙ ile
+            çakışması semptomu). */}
+        <div className="flex flex-nowrap items-center gap-2 flex-1 min-w-0 overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           <Toggle active={showVolume} onClick={onToggleVolume} accent="#6366f1">
             {t("grafik.showVolume")}
           </Toggle>
