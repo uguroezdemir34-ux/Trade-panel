@@ -6,7 +6,7 @@
  * Import only from Next.js route handlers (never from "use client").
  */
 
-import { dbUpsert, isDbConfigured } from "./server";
+import { dbSelect, dbUpsert, isDbConfigured } from "./server";
 import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
 
 const TABLE = "go_signals";
@@ -105,4 +105,31 @@ export async function insertGoSignal(input: GoSignalInput): Promise<void> {
     return;
   }
   await dbUpsert(TABLE, toRow(input));
+}
+
+export interface GoSignalCandidateRow {
+  direction: string;
+  signalTs: number;
+}
+
+/**
+ * Fetch recent GO signals for a pair since a given timestamp (both directions).
+ * Used by the position-adoption flow (app/api/go-signals) to check whether a
+ * newly-detected live position followed a recent panel signal — direction is
+ * NOT filtered here so the caller can also detect a contradicting signal
+ * (opposite direction), not just a matching one.
+ *
+ * If Supabase is not configured: returns an empty array (no throw) — the
+ * caller treats "no candidates" the same as "not configured".
+ */
+export async function getRecentGoSignals(
+  pair: string,
+  sinceMs: number,
+): Promise<GoSignalCandidateRow[]> {
+  if (!isDbConfigured()) return [];
+  const rows = await dbSelect<GoSignalRow>(
+    TABLE,
+    `pair=eq.${encodeURIComponent(pair)}&signal_ts=gte.${sinceMs}&order=signal_ts.desc&limit=10`,
+  );
+  return rows.map((r) => ({ direction: r.direction, signalTs: r.signal_ts }));
 }
