@@ -222,6 +222,8 @@ export function useScoreEngine(): void {
         sp500ChangePct: equityIndexStore.spy?.changePct ?? null,
         nasdaqChangePct: equityIndexStore.qqq?.changePct ?? null,
         dxyChangePct: equityIndexStore.uup?.changePct ?? null,
+        dowChangePct: equityIndexStore.dow?.changePct ?? null,
+        usdtDChangePct: macroStore.usdtDChange24h ?? null,
         eventSkipUntil: null,
         btcCooldownUntil: riskStore.btcCooldownUntil || null,
         btcCooldownReason: riskStore.btcCooldownReason,

@@ -1,5 +1,5 @@
 /**
- * /api/macro/equity-index — Finnhub quote proxy (SPY/QQQ/UUP → S&P500/Nasdaq/DXY proxy).
+ * /api/macro/equity-index — Finnhub quote proxy (SPY/QQQ/UUP/DIA → S&P500/Nasdaq/DXY/Dow proxy).
  *
  * Ticker genişletmesi 1. aşama (veri katmanı, TickerTape.tsx'e henüz bağlı
  * değil). Aynı FINNHUB_API_KEY'i kullanır (app/api/news/route.ts ile
@@ -20,7 +20,7 @@
 
 import { NextResponse } from "next/server";
 
-const SYMBOLS = ["SPY", "QQQ", "UUP"] as const;
+const SYMBOLS = ["SPY", "QQQ", "UUP", "DIA"] as const;
 type IndexSymbol = (typeof SYMBOLS)[number];
 
 const CACHE_TTL_MS = 4 * 60_000;

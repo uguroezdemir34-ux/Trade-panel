@@ -89,6 +89,7 @@ export const zh: Dictionary = {
     sweep: "扫盘",
     volBreakout: "成交量突破",
     drawdownGate: "回撤门槛",
+    macroGate: "宏观门槛",
     adaptiveCut: "自适应削减",
     lockRamp: "锁定斜坡",
     pullback: "回调",

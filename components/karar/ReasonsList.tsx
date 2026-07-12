@@ -20,6 +20,7 @@ const META_FIELDS: Array<{
   { key: "atrRegime", labelKey: "reasons.atrRegime", icon: "📊" },
   { key: "volBreakout", labelKey: "reasons.volBreakout", icon: "💥" },
   { key: "drawdownGate", labelKey: "reasons.drawdownGate", icon: "🛑" },
+  { key: "macroGate", labelKey: "reasons.macroGate", icon: "🌍" },
   { key: "adaptiveCut", labelKey: "reasons.adaptiveCut", icon: "✂️" },
   { key: "lockRamp", labelKey: "reasons.lockRamp", icon: "⏱" },
   { key: "pullback", labelKey: "reasons.pullback", icon: "🔄" },

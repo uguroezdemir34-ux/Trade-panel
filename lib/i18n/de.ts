@@ -89,6 +89,7 @@ export const de: Dictionary = {
     sweep: "Sweep",
     volBreakout: "Volumen-Ausbruch",
     drawdownGate: "Drawdown-Gate",
+    macroGate: "Makro-Gate",
     adaptiveCut: "Adaptiver Schnitt",
     lockRamp: "Sperr-Rampe",
     pullback: "Pullback",

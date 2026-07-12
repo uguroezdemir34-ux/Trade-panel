@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * EQUITY INDEX POLLER — S&P500/Nasdaq/DXY proxy'leri (SPY/QQQ/UUP) periyodik güncelleme.
+ * EQUITY INDEX POLLER — S&P500/Nasdaq/DXY/Dow proxy'leri (SPY/QQQ/UUP/DIA) periyodik güncelleme.
  *
  * /api/macro/equity-index çağırır (server-side Finnhub proxy — key client'a
  * hiç sızmaz, bkz. o dosyanın header'ı). 5dk cadence — useNewsPoller'dan
@@ -37,6 +37,7 @@ const SYMBOL_KEYS: { symbol: string; key: EquityIndexSymbol }[] = [
   { symbol: "SPY", key: "spy" },
   { symbol: "QQQ", key: "qqq" },
   { symbol: "UUP", key: "uup" },
+  { symbol: "DIA", key: "dow" },
 ];
 
 interface IndexQuote {

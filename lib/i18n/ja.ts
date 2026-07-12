@@ -89,6 +89,7 @@ export const ja: Dictionary = {
     sweep: "スイープ",
     volBreakout: "出来高ブレイクアウト",
     drawdownGate: "ドローダウンゲート",
+    macroGate: "マクロゲート",
     adaptiveCut: "アダプティブカット",
     lockRamp: "ロックランプ",
     pullback: "プルバック",

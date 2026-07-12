@@ -89,6 +89,7 @@ export const tr: Dictionary = {
     sweep: "Sweep",
     volBreakout: "Hacim kırılımı",
     drawdownGate: "Drawdown kapısı",
+    macroGate: "Makro kapısı",
     adaptiveCut: "Adaptif kesim",
     lockRamp: "Kilit rampa",
     pullback: "Geri çekilme",

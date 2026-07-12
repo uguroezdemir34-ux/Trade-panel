@@ -109,6 +109,7 @@ interface MacroStoreState {
   ethD: number | null;
   btcDChange24h: number | null;
   ethDChange24h: number | null;
+  usdtDChange24h: number | null;
   dominance: DominanceInfo | null;
   domFetchedAt: number;
   domLoading: boolean;
@@ -166,6 +167,7 @@ const initialState = {
   ethD: null,
   btcDChange24h: null,
   ethDChange24h: null,
+  usdtDChange24h: null,
   dominance: null,
   domFetchedAt: 0,
   domLoading: false,
@@ -231,6 +233,7 @@ export const useMacroStore = create<MacroStoreState>((set, get) => {
         ethD: r.ethD,
         btcDChange24h: r.btcDChange24h,
         ethDChange24h: r.ethDChange24h,
+        usdtDChange24h: r.usdtDChange24h,
         dominance: info,
         domFetchedAt: now,
         domLoading: false,

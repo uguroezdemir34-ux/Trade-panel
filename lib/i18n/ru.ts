@@ -89,6 +89,7 @@ export const ru: Dictionary = {
     sweep: "Sweep",
     volBreakout: "Прорыв объёма",
     drawdownGate: "Ворота просадки",
+    macroGate: "Макро-ворота",
     adaptiveCut: "Адаптивный срез",
     lockRamp: "Рампа блокировки",
     pullback: "Откат",

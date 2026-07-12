@@ -90,6 +90,8 @@ export interface DominanceResult {
   btcDChange24h: number | null;
   /** 24h change in ETH dominance (percentage points). null if no baseline yet. */
   ethDChange24h: number | null;
+  /** 24h change in USDT dominance (percentage points). null if no baseline yet. */
+  usdtDChange24h: number | null;
   fetchedAt: number;
   source: "api" | "cache" | "fallback";
 }

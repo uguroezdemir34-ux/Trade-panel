@@ -89,6 +89,7 @@ export const en: Dictionary = {
     sweep: "Sweep",
     volBreakout: "Vol breakout",
     drawdownGate: "Drawdown gate",
+    macroGate: "Macro gate",
     adaptiveCut: "Adaptive cut",
     lockRamp: "Lock ramp",
     pullback: "Pullback",

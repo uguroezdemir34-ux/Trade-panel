@@ -446,3 +446,100 @@ export function checkAtrRegime(input: AtrRegimeInput): {
     reason: `⚪ ATR %${p} — normal regime`,
   };
 }
+
+export interface MacroAlignmentGateInput {
+  /** DXY (UUP proxy) günlük değişim %, HAM (ters çevrilmemiş) — pozitif = dolar güçleniyor */
+  dxyChangePct: number | null;
+  /** USDT dominance günlük değişimi, yüzde puan — pozitif = stabile kaçış artıyor */
+  usdtDChangePct: number | null;
+  sp500ChangePct: number | null;
+  nasdaqChangePct: number | null;
+  dowChangePct: number | null;
+}
+
+const DXY_SHARP_THRESHOLD_PCT = 2.0;
+const USDT_D_SHARP_THRESHOLD_PP = 0.3;
+const ALIGNMENT_THRESHOLD_PCT = 0.3;
+
+const BARRIER_ADJ = 10;
+const ALIGNMENT_NEGATIVE_ADJ = 6;
+const ALIGNMENT_POSITIVE_ADJ = -5;
+
+/**
+ * MACRO ALIGNMENT GATE — DXY/USDT.D sert risk-off hareketi VEYA üç ABD
+ * endeksinin (S&P/NASDAQ/DOW) hizalı hareketi → goThreshold modifier.
+ *
+ * checkAtrRegime() ile aynı desen: tek işaretli adj, bu fonksiyon kendi
+ * clamp'ini yapmaz. orchestrator.ts:~692 (drawdownGate'den hemen sonra)
+ * entegre edilmiştir: goThreshold = Math.max(70, Math.min(96, goThreshold
+ * + macroGate.adj)) — taban atrReg'in kullandığı 60 değil, 70 (dışarıdan
+ * gelen makro sinyal için daha muhafazakar, kararlaştırılan güvenlik tabanı).
+ *
+ * İki bağımsız mekanizma TEK adj'de birleşiyor (additive):
+ *   - Baraj: DXY >= +2.0% GÜNLÜK YÜKSELİŞ (dolar güçlenmesi, düşüş DEĞİL —
+ *     "sert yükseliş" kasıtlı olarak tek yönlü) VEYA USDT.D >= +0.3 puan/gün
+ *     → adj += 10 (goThreshold yükselir, sinyal zorlaşır)
+ *   - Hizalanma: S&P + NASDAQ + DOW üçü de aynı yönde ±%0.3 eşiğini aşarsa
+ *     → hepsi yukarı: adj += -5 (goThreshold düşer, kolaylaşır — 70 tabanı
+ *       altına asla inmez); hepsi aşağı: adj += +6 (zorlaşır)
+ *
+ * Girdilerden HERHANGİ biri null ise (örn. usdtDChangePct cold-start
+ * nedeniyle) gate TAMAMEN devre dışı kalır — adj: 0, kısmi veriyle
+ * karar vermeye çalışmaz, hata fırlatmaz.
+ */
+export function checkMacroAlignmentGate(input: MacroAlignmentGateInput): {
+  adj: number;
+  reason: string | null;
+} {
+  const { dxyChangePct, usdtDChangePct, sp500ChangePct, nasdaqChangePct, dowChangePct } = input;
+
+  if (
+    dxyChangePct === null ||
+    usdtDChangePct === null ||
+    sp500ChangePct === null ||
+    nasdaqChangePct === null ||
+    dowChangePct === null
+  ) {
+    return { adj: 0, reason: null };
+  }
+
+  let adj = 0;
+  const reasons: string[] = [];
+
+  const dxySharp = dxyChangePct >= DXY_SHARP_THRESHOLD_PCT;
+  const usdtSharp = usdtDChangePct >= USDT_D_SHARP_THRESHOLD_PP;
+  if (dxySharp || usdtSharp) {
+    adj += BARRIER_ADJ;
+    if (dxySharp && usdtSharp) {
+      reasons.push(
+        `🔴 DXY +${dxyChangePct.toFixed(1)}% + USDT.D +${usdtDChangePct.toFixed(1)}pp — risk-off baraj (threshold +${BARRIER_ADJ})`,
+      );
+    } else if (dxySharp) {
+      reasons.push(`🔴 DXY +${dxyChangePct.toFixed(1)}% sert yükseliş — risk-off baraj (threshold +${BARRIER_ADJ})`);
+    } else {
+      reasons.push(`🔴 USDT.D +${usdtDChangePct.toFixed(1)}pp sert yükseliş — risk-off baraj (threshold +${BARRIER_ADJ})`);
+    }
+  }
+
+  const allUp =
+    sp500ChangePct > ALIGNMENT_THRESHOLD_PCT &&
+    nasdaqChangePct > ALIGNMENT_THRESHOLD_PCT &&
+    dowChangePct > ALIGNMENT_THRESHOLD_PCT;
+  const allDown =
+    sp500ChangePct < -ALIGNMENT_THRESHOLD_PCT &&
+    nasdaqChangePct < -ALIGNMENT_THRESHOLD_PCT &&
+    dowChangePct < -ALIGNMENT_THRESHOLD_PCT;
+
+  if (allUp) {
+    adj += ALIGNMENT_POSITIVE_ADJ;
+    reasons.push(`🟢 S&P/NASDAQ/DOW hizalı yükseliş — risk-on bonus (threshold ${ALIGNMENT_POSITIVE_ADJ})`);
+  } else if (allDown) {
+    adj += ALIGNMENT_NEGATIVE_ADJ;
+    reasons.push(`🔴 S&P/NASDAQ/DOW hizalı düşüş — risk-off ceza (threshold +${ALIGNMENT_NEGATIVE_ADJ})`);
+  }
+
+  return {
+    adj,
+    reason: reasons.length > 0 ? reasons.join(" · ") : null,
+  };
+}

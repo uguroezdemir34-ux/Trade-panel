@@ -41,6 +41,10 @@ export interface ComposeInput {
   sp500ChangePct?: number | null;
   nasdaqChangePct?: number | null;
   dxyChangePct?: number | null;
+  /** Dow Jones proxy (DIA) günlük değişim % — equityIndexStore'dan, opsiyonel */
+  dowChangePct?: number | null;
+  /** USDT dominance günlük değişimi (yüzde puan) — macroStore'dan, opsiyonel */
+  usdtDChangePct?: number | null;
   /** State: tüm risk store değerleri */
   eventSkipUntil: number | null;
   btcCooldownUntil: number | null;
@@ -201,6 +205,8 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     sp500ChangePct: input.sp500ChangePct ?? null,
     nasdaqChangePct: input.nasdaqChangePct ?? null,
     dxyChangePct: input.dxyChangePct ?? null,
+    dowChangePct: input.dowChangePct ?? null,
+    usdtDChangePct: input.usdtDChangePct ?? null,
     last4hMovePct,
     timeQuality,
     eventSkipUntil,

@@ -89,6 +89,7 @@ export const ko: Dictionary = {
     sweep: "스윕",
     volBreakout: "거래량 돌파",
     drawdownGate: "드로다운 게이트",
+    macroGate: "매크로 게이트",
     adaptiveCut: "적응형 컷",
     lockRamp: "잠금 램프",
     pullback: "풀백",

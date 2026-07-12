@@ -54,6 +54,7 @@ import {
   checkCorrelationCluster,
   checkAtrRegime,
   checkDailyTrendOpposite,
+  checkMacroAlignmentGate,
 } from "./blocks";
 import { getBucketStats, type Trade } from "@/lib/bucket/stats";
 import {
@@ -126,6 +127,14 @@ export interface ScoreInput {
   sp500ChangePct?: number | null;
   nasdaqChangePct?: number | null;
   dxyChangePct?: number | null;
+  /**
+   * Dow Jones proxy (DIA) günlük değişim % — equityIndexStore'dan.
+   * USDT dominance günlük değişimi (yüzde puan) — macroStore.usdtDChange24h'tan,
+   * best-effort (server cold-start'ta null olabilir).
+   * İkisi de şu an sadece TAŞINIYOR — computeScore() henüz okumuyor (E4/E5).
+   */
+  dowChangePct?: number | null;
+  usdtDChangePct?: number | null;
 
   // 4H mum hareket bilgisi (volBreakout için)
   last4hMovePct: number | null;
@@ -274,6 +283,7 @@ export interface ScoreReasons {
   atrRatioGate?: string;
   pocBlock?: string;
   drawdownGate?: string;
+  macroGate?: string;
   adaptiveCut?: string;
   softBlock?: string;
   lockRamp?: string;
@@ -679,6 +689,23 @@ export function computeScore(input: ScoreInput): ScoreResult {
     const oldThreshold = goThreshold;
     goThreshold = Math.min(96, drawdownProtocol.minScore);
     reasons.drawdownGate = `${drawdownProtocol.label} ${drawdownProtocol.reason} → threshold ${oldThreshold}→${goThreshold}`;
+  }
+
+  // Macro alignment gate — DXY/USDT.D sert risk-off barajı + S&P/NASDAQ/DOW
+  // hizalanma çarpanı (E1-E5 paketi). checkAtrRegime ile aynı desen, ama
+  // taban 60 değil 70 — dışarıdan gelen makro sinyal için daha muhafazakar
+  // (kararlaştırılan güvenlik tavanı).
+  const macroGate = checkMacroAlignmentGate({
+    dxyChangePct: input.dxyChangePct ?? null,
+    usdtDChangePct: input.usdtDChangePct ?? null,
+    sp500ChangePct: input.sp500ChangePct ?? null,
+    nasdaqChangePct: input.nasdaqChangePct ?? null,
+    dowChangePct: input.dowChangePct ?? null,
+  });
+  if (macroGate.adj !== 0) {
+    const oldThreshold = goThreshold;
+    goThreshold = Math.max(70, Math.min(96, goThreshold + macroGate.adj));
+    reasons.macroGate = `${macroGate.reason} → threshold ${oldThreshold}→${goThreshold}`;
   }
 
   // ── Gölge kapı tetiklenme logu ──
