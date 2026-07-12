@@ -40,7 +40,6 @@ function toSnapshot(r: TradeRecord): TradeSnapshot {
     leverage: 1,
     stopPrice: 0,
     riskAmountUsd: 0,
-    isPaper: r.isPaper ?? false,
     entryContext: {
       score: r.score ?? 0,
       verdict: "go",

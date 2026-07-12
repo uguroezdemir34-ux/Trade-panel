@@ -18,7 +18,6 @@ interface TradeRow {
   pair: string;
   direction: string;
   status: string;
-  is_paper: boolean;
   opened_at: number;
   closed_at: number | null;
   pnl_usd: number | null;
@@ -35,7 +34,6 @@ function toRow(userId: string, t: TradeSnapshot): TradeRow {
     pair: t.pair,
     direction: t.direction,
     status: t.status,
-    is_paper: t.isPaper,
     opened_at: t.openedAt,
     closed_at: t.exit?.closedAt ?? null,
     pnl_usd: t.exit?.pnlUsd ?? null,

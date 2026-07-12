@@ -7,8 +7,6 @@ import { useScoreStore } from "@/lib/store/scoreStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useAccountStore } from "@/lib/store/accountStore";
-import { useSettingsStore } from "@/lib/store/settingsStore";
-import { useRiskStore } from "@/lib/store/riskStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useMacroStore } from "@/lib/store/macroStore";
@@ -62,7 +60,6 @@ import { ReasonsList } from "@/components/karar/ReasonsList";
 import { DirectionBadge } from "@/components/karar/DirectionBadge";
 import { FlowAlignmentRow } from "@/components/karar/FlowAlignmentRow";
 import { PositionSizer } from "@/components/karar/PositionSizer";
-import { TradeConfirmModal } from "@/components/karar/TradeConfirmModal";
 import { computePositionSize } from "@/lib/sizer/position";
 import { atr } from "@/lib/indicators/atr";
 import { adx } from "@/lib/indicators/adx";
@@ -135,9 +132,6 @@ export default function KararPage() {
       import("eruda").then((eruda) => eruda.default.init());
     }
   }, []);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [execError, setExecError] = useState<string | null>(null);
   const [showTrend, setShowTrend] = useState(false);
   const [showHacim, setShowHacim] = useState(false);
   const [showMomentum, setShowMomentum] = useState(false);
@@ -166,12 +160,8 @@ export default function KararPage() {
   const balanceTotal = useAccountStore((s) => s.balanceTotal);
   const balanceFree = useAccountStore((s) => s.balanceFree);
   const drawdownProtocol = useAccountStore((s) => s.drawdownProtocol);
-  const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
-  const logEvent = useRiskStore((s) => s.logEvent);
   const trades = useTradesStore((s) => s.trades);
-  const openPending = useTradesStore((s) => s.openPending);
   const openPositions = usePositionStore((s) => s.positions);
-  const funding = useMacroStore((s) => s.funding);
   const allOiVelocity = useMacroStore((s) => s.oiVelocity);
   const allOrderBookImbalance = useOrderBookStore((s) => s.imbalance);
   const fgValue = useMacroStore((s) => s.fgValue);
@@ -543,52 +533,6 @@ export default function KararPage() {
     });
   }, [result, livePrice, atrValue, adxValue, swingLevels, activePair, balanceTotal, balanceFree, drawdownProtocol]);
 
-  async function handleConfirm(_marginMode: "cross" | "isolated" = "cross") {
-    if (!sizerResult || !result || !livePrice) return;
-    if (result.direction !== "LONG" && result.direction !== "SHORT") return;
-
-    setIsExecuting(true);
-    setExecError(null);
-
-    const fundingResult = funding[activePair] ?? null;
-
-    if (forwardTestMode) {
-      openPending({
-        pair: activePair,
-        direction: result.direction,
-        entryPrice: livePrice,
-        qty: sizerResult.qty,
-        leverage: sizerResult.leverage,
-        stopPrice: sizerResult.stop.stopPrice,
-        takeProfit1: sizerResult.tp.tp1Price,
-        takeProfit2: sizerResult.tp.tp2Price,
-        riskAmountUsd: sizerResult.risk.riskUsd,
-        isPaper: true,
-        entryContext: {
-          score: result.score,
-          verdict: result.verdict,
-          fgValue: fgValue ?? undefined,
-          fundingRate: fundingResult?.fundingRate ?? undefined,
-          drawdownTier: drawdownProtocol.tier,
-        },
-      });
-      logEvent("trade_open", {
-        pair: activePair,
-        direction: result.direction,
-        score: result.score,
-        decision: "go",
-        source: "manual",
-        reason: "forward_test",
-      });
-      setShowConfirm(false);
-      setIsExecuting(false);
-      return;
-    }
-
-    setExecError(t("karar.execForwardTestRequired"));
-    setIsExecuting(false);
-  }
-
   return (
     <div className="flex flex-col gap-2 sm:gap-3">
       <TickerTape />
@@ -596,18 +540,6 @@ export default function KararPage() {
       <ScoreHeatmap onSelect={setActivePair} />
 
       <SqueezeRadarBanner />
-
-      {/* Forward Test Mode banner */}
-      {forwardTestMode && (
-        <div className="flex items-center gap-2 rounded-lg border border-signal-green/30 bg-signal-green/8 px-3 py-2">
-          <span className="font-mono text-xs font-bold tracking-widest text-signal-green">
-            FWD TEST
-          </span>
-          <span className="text-text-t2 font-mono text-xs">
-            {t("karar.fwdTestActive")}
-          </span>
-        </div>
-      )}
 
       <PositionAccordion />
 
@@ -1440,41 +1372,11 @@ export default function KararPage() {
                 </AccordionSection>
               </div>
 
-              {sizerResult && (
-                <PositionSizer
-                  result={sizerResult}
-                  onTrade={() => {
-                    setExecError(null);
-                    setShowConfirm(true);
-                  }}
-                />
-              )}
-
-              {execError && (
-                <div className="bg-soft-red text-signal-red rounded-lg p-3 font-mono text-xs">
-                  {execError}
-                </div>
-              )}
+              {sizerResult && <PositionSizer result={sizerResult} />}
             </>
           )}
         </div>
       </div>
-
-      {showConfirm && sizerResult && (
-        <TradeConfirmModal
-          result={sizerResult}
-          onClose={() => setShowConfirm(false)}
-          onConfirm={handleConfirm}
-        />
-      )}
-
-      {isExecuting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-bg-card rounded-lg p-6 font-mono text-sm text-text-t1">
-            {t("karar.sendingOrder")}
-          </div>
-        </div>
-      )}
 
       {showShortcuts && (
         <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />

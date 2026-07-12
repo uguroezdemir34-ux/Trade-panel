@@ -9,7 +9,6 @@ export const ja: Dictionary = {
     name: "QUANTIX",
     tagline: "先進AIトレーディングシステム",
     demo: "DEMO",
-    forwardTest: "計測",
     openPositions: "open positions",
     dailyPnlTitle: "Today's realized P&L",
     closeFailed: "Close failed",
@@ -112,9 +111,6 @@ export const ja: Dictionary = {
     bucket: "レベル",
     drawdown: "ドローダウン",
     rr: "R:R",
-    longOpen: "▶ ロングポジション開設",
-    shortOpen: "▶ ショートポジション開設",
-    blocked: "🔒 トレードブロック中",
   },
 
   confirm: {
@@ -149,13 +145,11 @@ export const ja: Dictionary = {
     scoresUpdated: "Scores updated",
     scoresAgo: "ago",
     scoresNever: "Not yet computed",
-    fwdTestActive: "Active — orders are simulated, no real positions",
     groupAll: "All",
     sortLabel: "並べ替え",
     sortByScore: "↓ スコア",
     computing: "Computing...",
     waitingData: "Waiting for candle data...",
-    sendingOrder: "Sending order...",
     watchAdd: "Add to watchlist",
     watchRemove: "Remove from watchlist",
     unknownError: "Unknown error",
@@ -254,7 +248,6 @@ export const ja: Dictionary = {
     // TODO: translate
 volumeSection: "VOLUME",
     // TODO: translate
-    execForwardTestRequired: "Activate Forward Test Mode — order placement disabled.",
     // TODO: translate
     keyboardShortcutHint: "Keyboard shortcuts (? key)",
     goStatsSignals: "Signals",
@@ -340,10 +333,6 @@ volumeSection: "VOLUME",
     demoMode: {
       label: "デモモード",
       description: "OKXデモ取引エンドポイントに接続。実際の資金なし。",
-    },
-    forwardTestMode: {
-      label: "フォワードテストモード",
-      description: "取引せずにシグナルを記録。純粋な計測。",
     },
     wsUrl: {
       label: "WebSocket URL",
@@ -836,7 +825,6 @@ volumeSection: "VOLUME",
     streak: { title: "Streak", winStreak: "WIN STREAK", lossStreak: "LOSS STREAK", bestWin: "Best Win", worstLoss: "Worst Loss", last10: "← last 10", hint5plus: "5+ consecutive losses — stop trading today.", hint3plus: "3+ consecutive losses — consider a break.", },
     equityCurve: { title: "Equity Curve", noData: "No closed trades yet", },
     weeklySummary: { title: "Weekly Performance", noData: "No weekly data", },
-    ftComparison: { title: "Forward Test vs Live", badge: "FWD TEST", tradesLabel: "trades", winPct: "WR%", avgPnl: "Avg $", total: "Total", wins: "Wins", deltaLabel: "FT − Live delta", deltaWR: "WR%:", deltaAvg: "Avg:", pp: "pp", },
     topTrades: { winners: "Best Trades", losers: "Worst Trades", },
     holdingTime: { title: "Holding Time", all: "All", winners: "Winners", losers: "Losers", wlRatio: "W/L Ratio", },
     entryQuality: { title: "Entry Quality by Score", wins: "Wins", losses: "Losses", },
@@ -1109,7 +1097,6 @@ toolCursor: "Cursor",
 
   trades: {
     empty: "まだトレードがありません",
-    paper: "ペーパー",
     status: {
       pending: "保留中",
       open: "オープン",

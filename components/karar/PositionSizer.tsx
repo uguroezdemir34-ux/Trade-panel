@@ -13,10 +13,8 @@ import type { PositionSizerResult } from "@/lib/sizer/types";
 
 export function PositionSizer({
   result,
-  onTrade,
 }: {
   result: PositionSizerResult;
-  onTrade: () => void;
 }): React.ReactElement {
   const t = useT();
   const locale = useLocale();
@@ -138,22 +136,6 @@ export function PositionSizer({
           {result.warnMessage}
         </div>
       )}
-
-      {/* Trade butonu */}
-      <button
-        type="button"
-        onClick={onTrade}
-        disabled={result.warnLevel === "blocked"}
-        className={`mt-4 w-full rounded-md py-3 font-mono text-sm font-bold tracking-widest transition-colors ${
-          result.warnLevel === "blocked"
-            ? "bg-border text-text-t4 cursor-not-allowed"
-            : `${isLong ? "bg-signal-green" : "bg-signal-red"} text-bg hover:opacity-90`
-        }`}
-      >
-        {result.warnLevel === "blocked"
-          ? t("sizer.blocked")
-          : t(isLong ? "sizer.longOpen" : "sizer.shortOpen")}
-      </button>
     </div>
   );
 }

@@ -119,9 +119,6 @@ export interface TradeSnapshot {
   /** Risk amount USDT (SL'e kadar olası kayıp) — R-multiple için */
   riskAmountUsd: number;
 
-  // Forward test mi gerçek mi
-  isPaper: boolean;
-
   // Context (entry anında yakalandı)
   entryContext: EntryContext;
 
@@ -147,7 +144,6 @@ export interface OpenTradeInput {
   takeProfit1?: number;
   takeProfit2?: number;
   riskAmountUsd: number;
-  isPaper: boolean;
   entryContext: EntryContext;
   /** Trade kaynağı — belirtilmezse "manual" sayılır */
   source?: "manual" | "bot";

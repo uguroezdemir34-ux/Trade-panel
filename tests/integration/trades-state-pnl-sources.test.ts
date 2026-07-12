@@ -49,7 +49,6 @@ function makeOpenInput(overrides: Partial<OpenTradeInput> = {}): OpenTradeInput 
     leverage: 10,
     stopPrice: 49000,
     riskAmountUsd: 100,
-    isPaper: false,
     entryContext: { score: 82, verdict: "go" },
     now: NOW,
     ...overrides,
@@ -82,7 +81,6 @@ describe("createPendingTrade()", () => {
     expect(t.leverage).toBe(10);
     expect(t.stopPrice).toBe(49000);
     expect(t.riskAmountUsd).toBe(100);
-    expect(t.isPaper).toBe(false);
   });
 
   it("now override çalışır", () => {
@@ -347,7 +345,6 @@ function makeEntry(overrides: Partial<DisciplineEntry> = {}): DisciplineEntry {
     pnl: 150,
     pnlPct: 0.02,
     score: 82,
-    isPaper: false,
     ...overrides,
   } as DisciplineEntry;
 }
@@ -361,7 +358,6 @@ describe("entryToTradeRecord()", () => {
     expect(r!.pnlUsd).toBe(150);
     expect(r!.pnlPct).toBe(0.02);
     expect(r!.score).toBe(82);
-    expect(r!.isPaper).toBe(false);
   });
 
   it("type !== trade_close → null", () => {

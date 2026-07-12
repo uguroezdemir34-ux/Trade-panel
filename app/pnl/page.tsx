@@ -11,7 +11,6 @@ import { PnlCalendar } from "@/components/pnl/PnlCalendar";
 import { EquityCurve } from "@/components/pnl/EquityCurve";
 import { WeeklySummary } from "@/components/pnl/WeeklySummary";
 import { ParameterAudit } from "@/components/pnl/ParameterAudit";
-import { FtComparison } from "@/components/pnl/FtComparison";
 import { MonthlyBreakdown } from "@/components/pnl/MonthlyBreakdown";
 import { PnlDistribution } from "@/components/pnl/PnlDistribution";
 import { TopTradesCard } from "@/components/pnl/TopTradesCard";
@@ -39,7 +38,6 @@ import { computeMonthlyAggregates } from "@/lib/pnl/monthly";
 import { computeCalibrationStats } from "@/lib/pnl/calibration";
 import type { TradeRecord } from "@/lib/pnl/types";
 
-type TradeFilter = "all" | "live" | "paper";
 type DateRange = "7d" | "30d" | "90d" | "all";
 
 const DATE_RANGES: DateRange[] = ["7d", "30d", "90d", "all"];
@@ -55,7 +53,6 @@ function PnlPageInner() {
   const snapshots = useTradesStore((s) => s.trades);
   const archivedSnapshots = useTradesStore((s) => s.archivedTrades);
   const getArchivedTrades = useTradesStore((s) => s.getArchivedTrades);
-  const [filter, setFilter] = useState<TradeFilter>("all");
   const [dateRange, setDateRange] = useState<DateRange>("all");
   const [pairFilter, setPairFilter] = useState<string>("ALL");
 
@@ -89,26 +86,18 @@ function PnlPageInner() {
           score: t.entryContext.score,
           closeReason: t.exit!.reason,
           rMultiple: t.exit!.rMultiple,
-          isPaper: t.isPaper,
         })),
     [snapshots],
-  );
-
-  const hasPaperTrades = useMemo(
-    () => allTrades.some((t) => t.isPaper === true),
-    [allTrades],
   );
 
   const trades: TradeRecord[] = useMemo(() => {
     const cutoff = dateRange !== "all" ? Date.now() - DATE_RANGE_MS[dateRange] : 0;
     return allTrades.filter((tr) => {
-      if (filter === "live" && tr.isPaper) return false;
-      if (filter === "paper" && !tr.isPaper) return false;
       if (dateRange !== "all" && tr.closedAt < cutoff) return false;
       if (pairFilter !== "ALL" && tr.pair !== pairFilter) return false;
       return true;
     });
-  }, [allTrades, filter, dateRange, pairFilter]);
+  }, [allTrades, dateRange, pairFilter]);
 
   const stats = useMemo(() => computePnlStats(trades), [trades]);
   const equityPoints = useMemo(() => computeEquityCurve(trades), [trades]);
@@ -139,14 +128,12 @@ function PnlPageInner() {
     const cutoff = dateRange !== "all" ? Date.now() - DATE_RANGE_MS[dateRange] : 0;
     const csvSnaps = [...snapshots, ...archivedSnapshots].filter((t) => {
       if (t.status !== "closed" || !t.exit) return false;
-      if (filter === "live" && t.isPaper) return false;
-      if (filter === "paper" && !t.isPaper) return false;
       if (dateRange !== "all" && t.exit.closedAt < cutoff) return false;
       if (pairFilter !== "ALL" && t.pair !== pairFilter) return false;
       return true;
     });
     if (csvSnaps.length === 0) return;
-    const header = "closedAt,openedAt,pair,direction,pnlUsd,pnlPct,rMultiple,score,closeReason,isPaper,notes";
+    const header = "closedAt,openedAt,pair,direction,pnlUsd,pnlPct,rMultiple,score,closeReason,notes";
     const rows = csvSnaps.map((t) => {
       const notesCsv = t.notes ? `"${t.notes.replace(/"/g, '""')}"` : "";
       return [
@@ -159,7 +146,6 @@ function PnlPageInner() {
         t.exit!.rMultiple !== undefined ? t.exit!.rMultiple.toFixed(4) : "",
         t.entryContext.score.toString(),
         t.exit!.reason,
-        t.isPaper ? "true" : "false",
         notesCsv,
       ].join(",");
     });
@@ -168,7 +154,7 @@ function PnlPageInner() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `pnl_${filter}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `pnl_${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -206,25 +192,6 @@ function PnlPageInner() {
           ))}
         </select>
 
-        {/* Paper/Live filter */}
-        {hasPaperTrades && (
-          <div className="flex gap-1">
-            {(["all", "live", "paper"] as TradeFilter[]).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`rounded px-2.5 py-1 font-mono text-xs tracking-wider transition-colors ${
-                  filter === f
-                    ? "bg-surface-s2 text-text-t1"
-                    : "text-text-t3 hover:text-text-t2"
-                }`}
-              >
-                {f === "paper" ? "FWD" : f.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        )}
-
         {trades.length > 0 && (
           <button
             onClick={downloadCsv}
@@ -247,11 +214,7 @@ function PnlPageInner() {
 
       {trades.length > 0 && (
         <>
-          {/* Insights + FT Comparison */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <TradeInsightsCard trades={trades} />
-            <FtComparison trades={allTrades} />
-          </div>
+          <TradeInsightsCard trades={trades} />
 
           {/* Equity + Weekly */}
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">

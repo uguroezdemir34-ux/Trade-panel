@@ -51,7 +51,6 @@ export function createPendingTrade(input: OpenTradeInput): TradeSnapshot {
     takeProfit1: input.takeProfit1,
     takeProfit2: input.takeProfit2,
     riskAmountUsd: input.riskAmountUsd,
-    isPaper: input.isPaper,
     entryContext: { ...input.entryContext },
   };
 }

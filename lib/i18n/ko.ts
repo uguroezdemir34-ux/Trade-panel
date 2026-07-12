@@ -9,7 +9,6 @@ export const ko: Dictionary = {
     name: "QUANTIX",
     tagline: "고급 AI 트레이딩 시스템",
     demo: "DEMO",
-    forwardTest: "측정",
     openPositions: "open positions",
     dailyPnlTitle: "Today's realized P&L",
     closeFailed: "Close failed",
@@ -112,9 +111,6 @@ export const ko: Dictionary = {
     bucket: "버킷",
     drawdown: "드로다운",
     rr: "R:R",
-    longOpen: "▶ 롱 포지션 개설",
-    shortOpen: "▶ 숏 포지션 개설",
-    blocked: "🔒 거래 차단됨",
   },
 
   confirm: {
@@ -149,13 +145,11 @@ export const ko: Dictionary = {
     scoresUpdated: "Scores updated",
     scoresAgo: "ago",
     scoresNever: "Not yet computed",
-    fwdTestActive: "Active — orders are simulated, no real positions",
     groupAll: "All",
     sortLabel: "정렬",
     sortByScore: "↓ 점수",
     computing: "Computing...",
     waitingData: "Waiting for candle data...",
-    sendingOrder: "Sending order...",
     watchAdd: "Add to watchlist",
     watchRemove: "Remove from watchlist",
     unknownError: "Unknown error",
@@ -254,7 +248,6 @@ export const ko: Dictionary = {
     // TODO: translate
 volumeSection: "VOLUME",
     // TODO: translate
-    execForwardTestRequired: "Activate Forward Test Mode — order placement disabled.",
     // TODO: translate
     keyboardShortcutHint: "Keyboard shortcuts (? key)",
     goStatsSignals: "Signals",
@@ -340,10 +333,6 @@ volumeSection: "VOLUME",
     demoMode: {
       label: "데모 모드",
       description: "OKX 데모 거래 엔드포인트에 연결합니다. 실제 자금 없음.",
-    },
-    forwardTestMode: {
-      label: "포워드 테스트 모드",
-      description: "거래 없이 신호를 기록합니다. 순수 측정.",
     },
     wsUrl: {
       label: "WebSocket URL",
@@ -836,7 +825,6 @@ volumeSection: "VOLUME",
     streak: { title: "Streak", winStreak: "WIN STREAK", lossStreak: "LOSS STREAK", bestWin: "Best Win", worstLoss: "Worst Loss", last10: "← last 10", hint5plus: "5+ consecutive losses — stop trading today.", hint3plus: "3+ consecutive losses — consider a break.", },
     equityCurve: { title: "Equity Curve", noData: "No closed trades yet", },
     weeklySummary: { title: "Weekly Performance", noData: "No weekly data", },
-    ftComparison: { title: "Forward Test vs Live", badge: "FWD TEST", tradesLabel: "trades", winPct: "WR%", avgPnl: "Avg $", total: "Total", wins: "Wins", deltaLabel: "FT − Live delta", deltaWR: "WR%:", deltaAvg: "Avg:", pp: "pp", },
     topTrades: { winners: "Best Trades", losers: "Worst Trades", },
     holdingTime: { title: "Holding Time", all: "All", winners: "Winners", losers: "Losers", wlRatio: "W/L Ratio", },
     entryQuality: { title: "Entry Quality by Score", wins: "Wins", losses: "Losses", },
@@ -1109,7 +1097,6 @@ toolCursor: "Cursor",
 
   trades: {
     empty: "아직 거래 없음",
-    paper: "페이퍼",
     status: {
       pending: "대기 중",
       open: "오픈",

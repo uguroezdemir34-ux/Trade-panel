@@ -152,7 +152,7 @@ function buildSeries(
         position: t.direction === "LONG" ? "belowBar" as const : "aboveBar" as const,
         color: t.direction === "LONG" ? "#22c55e" : "#ef4444",
         shape: t.direction === "LONG" ? "arrowUp" as const : "arrowDown" as const,
-        text: `${t.direction} ${t.isPaper ? "(P)" : ""}`,
+        text: t.direction,
       }));
   }
 
@@ -314,7 +314,7 @@ export default function GrafikPage() {
       // tradesStore: yalnızca eksik seviye değerleri için backup
       // Açıklık kararına karışmıyor; livePos guard geçtikten sonra okunuyor
       const appTrade = trades.find(
-        (t) => !t.isPaper && t.status === "open" && t.pair === pair && t.direction === dir
+        (t) => t.status === "open" && t.pair === pair && t.direction === dir
       );
 
       // SL: OKX algo order birincil; null ise app-side stopPrice değeri

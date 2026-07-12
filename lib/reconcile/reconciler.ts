@@ -4,8 +4,6 @@
  * Matching priority:
  *   1. Primary:   trade.orderId === okxOrder.ordId
  *   2. Secondary: same pair + direction + |openedAt - createdAtMs| < 10 min + similar sz
- *
- * Only real trades (isPaper === false) are reconciled.
  */
 
 import type { TradeSnapshot } from "@/lib/trades/types";
@@ -49,19 +47,18 @@ export function reconcile(
   trades: TradeSnapshot[],
   okxOrders: OkxClosedOrder[],
 ): ReconcileResult {
-  const realTrades = trades.filter((t) => !t.isPaper);
   const matched: ReconcileMatch[] = [];
   const matchedOrdIds = new Set<string>();
 
   for (const okx of okxOrders) {
     // 1. Primary match: orderId
-    let trade = realTrades.find(
+    let trade = trades.find(
       (t) => t.orderId != null && t.orderId === okx.ordId,
     );
 
     // 2. Secondary match: pair + direction + time proximity
     if (!trade && okx.pair != null && okx.direction != null) {
-      trade = realTrades.find(
+      trade = trades.find(
         (t) =>
           t.orderId == null &&
           t.pair === okx.pair &&

@@ -9,7 +9,6 @@ export const tr: Dictionary = {
     name: "QUANTIX",
     tagline: "Gelişmiş Yapay Zeka Ticaret Sistemi",
     demo: "DEMO",
-    forwardTest: "ÖLÇÜM",
     openPositions: "açık pozisyon",
     dailyPnlTitle: "Bugünkü gerçekleşmiş P&L",
     closeFailed: "Kapatma başarısız",
@@ -112,9 +111,6 @@ export const tr: Dictionary = {
     bucket: "Seviye",
     drawdown: "Drawdown",
     rr: "R:R",
-    longOpen: "▶ LONG POZİSYON AÇ",
-    shortOpen: "▶ SHORT POZİSYON AÇ",
-    blocked: "🔒 İŞLEM ENGELLENDİ",
   },
 
   confirm: {
@@ -148,13 +144,11 @@ export const tr: Dictionary = {
     scoresUpdated: "Skorlar güncellendi",
     scoresAgo: "önce",
     scoresNever: "Henüz hesaplanmadı",
-    fwdTestActive: "Aktif — emirler simüle edilir, gerçek pozisyon açılmaz",
     groupAll: "Tüm",
     sortLabel: "SIRALA",
     sortByScore: "↓ SKOR",
     computing: "Hesaplanıyor...",
     waitingData: "Mum verisi bekleniyor...",
-    sendingOrder: "Emir gönderiliyor...",
     watchAdd: "İzlemeye ekle",
     watchRemove: "İzlemeden çıkar",
     unknownError: "Bilinmeyen hata",
@@ -227,7 +221,6 @@ export const tr: Dictionary = {
     goSignalEmptyNote: "Henüz GO sinyali yok — sistem çalıştıkça otomatik dolar.",
     scoreFilterAll: "Hepsi",
     volumeSection: "HACİM",
-    execForwardTestRequired: "Forward Test Modunu etkinleştirin — emir gönderme devre dışı.",
     keyboardShortcutHint: "Klavye kısayolları (? tuşu)",
     goStatsSignals: "Sinyal",
     goStatsTraded: "İşlem",
@@ -304,10 +297,6 @@ export const tr: Dictionary = {
     demoMode: {
       label: "Demo Modu",
       description: "OKX demo ticaret uç noktasına bağlan. Gerçek para yok.",
-    },
-    forwardTestMode: {
-      label: "İleri Test Modu",
-      description: "İşlem yapmadan sinyalleri kaydet. Saf ölçüm.",
     },
     wsUrl: {
       label: "WebSocket URL",
@@ -884,19 +873,6 @@ export const tr: Dictionary = {
       title: "Haftalık Performans",
       noData: "Haftalık veri yok",
     },
-    ftComparison: {
-      title: "Ölçüm Testi vs Gerçek",
-      badge: "ÖLÇÜM",
-      tradesLabel: "işlem",
-      winPct: "K%",
-      avgPnl: "Ort $",
-      total: "Toplam",
-      wins: "Kazançlar",
-      deltaLabel: "ÖT − Gerçek farkı",
-      deltaWR: "K%:",
-      deltaAvg: "Ort:",
-      pp: "pp",
-    },
     topTrades: {
       winners: "En İyi İşlemler",
       losers: "En Kötü İşlemler",
@@ -1232,7 +1208,6 @@ export const tr: Dictionary = {
 
   trades: {
     empty: "Henüz işlem yok",
-    paper: "Kağıt",
     status: {
       pending: "Beklemede",
       open: "Açık",

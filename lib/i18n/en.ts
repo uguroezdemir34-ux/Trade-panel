@@ -9,7 +9,6 @@ export const en: Dictionary = {
     name: "QUANTIX",
     tagline: "Advanced AI Trading Systems",
     demo: "DEMO",
-    forwardTest: "MEASURE",
     openPositions: "open positions",
     dailyPnlTitle: "Today's realized P&L",
     closeFailed: "Close failed",
@@ -112,9 +111,6 @@ export const en: Dictionary = {
     bucket: "Bucket",
     drawdown: "Drawdown",
     rr: "R:R",
-    longOpen: "▶ OPEN LONG POSITION",
-    shortOpen: "▶ OPEN SHORT POSITION",
-    blocked: "🔒 TRADE BLOCKED",
   },
 
   confirm: {
@@ -148,13 +144,11 @@ export const en: Dictionary = {
     scoresUpdated: "Scores updated",
     scoresAgo: "ago",
     scoresNever: "Not yet computed",
-    fwdTestActive: "Active — orders are simulated, no real positions",
     groupAll: "All",
     sortLabel: "SORT",
     sortByScore: "↓ SCORE",
     computing: "Computing...",
     waitingData: "Waiting for candle data...",
-    sendingOrder: "Sending order...",
     watchAdd: "Add to watchlist",
     watchRemove: "Remove from watchlist",
     unknownError: "Unknown error",
@@ -227,7 +221,6 @@ export const en: Dictionary = {
     goSignalEmptyNote: "No GO signals yet — fills automatically as the system runs.",
     scoreFilterAll: "All",
     volumeSection: "VOLUME",
-    execForwardTestRequired: "Activate Forward Test Mode — order placement disabled.",
     keyboardShortcutHint: "Keyboard shortcuts (? key)",
     goStatsSignals: "Signals",
     goStatsTraded: "Traded",
@@ -304,10 +297,6 @@ export const en: Dictionary = {
     demoMode: {
       label: "Demo Mode",
       description: "Connect to OKX demo trading endpoint. No real funds.",
-    },
-    forwardTestMode: {
-      label: "Forward Test Mode",
-      description: "Log signals without trading. Pure measurement.",
     },
     wsUrl: {
       label: "WebSocket URL",
@@ -884,19 +873,6 @@ export const en: Dictionary = {
       title: "Weekly Performance",
       noData: "No weekly data",
     },
-    ftComparison: {
-      title: "Forward Test vs Live",
-      badge: "FWD TEST",
-      tradesLabel: "trades",
-      winPct: "WR%",
-      avgPnl: "Avg $",
-      total: "Total",
-      wins: "Wins",
-      deltaLabel: "FT − Live delta",
-      deltaWR: "WR%:",
-      deltaAvg: "Avg:",
-      pp: "pp",
-    },
     topTrades: {
       winners: "Best Trades",
       losers: "Worst Trades",
@@ -1232,7 +1208,6 @@ export const en: Dictionary = {
 
   trades: {
     empty: "No trades yet",
-    paper: "Paper",
     status: {
       pending: "Pending",
       open: "Open",

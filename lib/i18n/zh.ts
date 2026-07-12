@@ -9,7 +9,6 @@ export const zh: Dictionary = {
     name: "QUANTIX",
     tagline: "先进人工智能交易系统",
     demo: "DEMO",
-    forwardTest: "测量",
     openPositions: "open positions",
     dailyPnlTitle: "Today's realized P&L",
     closeFailed: "Close failed",
@@ -112,9 +111,6 @@ export const zh: Dictionary = {
     bucket: "层级",
     drawdown: "回撤",
     rr: "R:R",
-    longOpen: "▶ 开多头仓位",
-    shortOpen: "▶ 开空头仓位",
-    blocked: "🔒 交易已阻断",
   },
 
   confirm: {
@@ -149,13 +145,11 @@ export const zh: Dictionary = {
     scoresUpdated: "Scores updated",
     scoresAgo: "ago",
     scoresNever: "Not yet computed",
-    fwdTestActive: "Active — orders are simulated, no real positions",
     groupAll: "All",
     sortLabel: "排序",
     sortByScore: "↓ 评分",
     computing: "Computing...",
     waitingData: "Waiting for candle data...",
-    sendingOrder: "Sending order...",
     watchAdd: "Add to watchlist",
     watchRemove: "Remove from watchlist",
     unknownError: "Unknown error",
@@ -254,7 +248,6 @@ export const zh: Dictionary = {
     // TODO: translate
 volumeSection: "VOLUME",
     // TODO: translate
-    execForwardTestRequired: "Activate Forward Test Mode — order placement disabled.",
     // TODO: translate
     keyboardShortcutHint: "Keyboard shortcuts (? key)",
     goStatsSignals: "Signals",
@@ -340,10 +333,6 @@ volumeSection: "VOLUME",
     demoMode: {
       label: "演示模式",
       description: "连接到OKX模拟交易端点。无真实资金。",
-    },
-    forwardTestMode: {
-      label: "前向测试模式",
-      description: "记录信号但不交易。纯粹测量。",
     },
     wsUrl: {
       label: "WebSocket URL",
@@ -836,7 +825,6 @@ volumeSection: "VOLUME",
     streak: { title: "Streak", winStreak: "WIN STREAK", lossStreak: "LOSS STREAK", bestWin: "Best Win", worstLoss: "Worst Loss", last10: "← last 10", hint5plus: "5+ consecutive losses — stop trading today.", hint3plus: "3+ consecutive losses — consider a break.", },
     equityCurve: { title: "Equity Curve", noData: "No closed trades yet", },
     weeklySummary: { title: "Weekly Performance", noData: "No weekly data", },
-    ftComparison: { title: "Forward Test vs Live", badge: "FWD TEST", tradesLabel: "trades", winPct: "WR%", avgPnl: "Avg $", total: "Total", wins: "Wins", deltaLabel: "FT − Live delta", deltaWR: "WR%:", deltaAvg: "Avg:", pp: "pp", },
     topTrades: { winners: "Best Trades", losers: "Worst Trades", },
     holdingTime: { title: "Holding Time", all: "All", winners: "Winners", losers: "Losers", wlRatio: "W/L Ratio", },
     entryQuality: { title: "Entry Quality by Score", wins: "Wins", losses: "Losses", },
@@ -1109,7 +1097,6 @@ toolCursor: "Cursor",
 
   trades: {
     empty: "暂无交易",
-    paper: "模拟",
     status: {
       pending: "待处理",
       open: "开仓",

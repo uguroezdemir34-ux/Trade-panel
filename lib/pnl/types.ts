@@ -31,8 +31,6 @@ export interface TradeRecord {
   closeReason?: "tp1" | "tp2" | "sl" | "manual" | "trail";
   /** R-multiple — pnlUsd / riskAmountUsd (computed at close) */
   rMultiple?: number;
-  /** Forward test (kağıt) mı, gerçek mi? */
-  isPaper?: boolean;
 }
 
 // ═══════════════ DAILY AGGREGATE ═══════════════

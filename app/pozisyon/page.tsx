@@ -7,7 +7,6 @@ import { PositionEmptyState } from "@/components/pozisyon/PositionEmptyState";
 import { TradeTimelineCard } from "@/components/pozisyon/TradeTimelineCard";
 import { PortfolioSummaryBanner } from "@/components/pozisyon/PortfolioSummaryBanner";
 import { AccountSummaryBar } from "@/components/pozisyon/AccountSummaryBar";
-import { PaperPositionsCard } from "@/components/pozisyon/PaperPositionsCard";
 import { useT } from "@/lib/i18n/context";
 
 export default function PozisyonPage() {
@@ -28,9 +27,6 @@ export default function PozisyonPage() {
         <span className="font-bold tracking-widest mr-2">{t("settings.signalModeLabel")}</span>
         {t("settings.signalModeManageExchange")}
       </div>
-
-      {/* Paper (forward test) açık pozisyonlar */}
-      <PaperPositionsCard />
 
       {positions.length === 0 ? (
         <PositionEmptyState />

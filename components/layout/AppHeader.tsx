@@ -18,7 +18,6 @@ import { TABS } from "@/lib/nav/tabs";
 export function AppHeader(): React.ReactElement {
   const hydrated = useHydrated();
   const demoMode = useSettingsStore((s) => s.demoMode);
-  const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
   const dailyPnlPct = useAccountStore((s) => s.dailyPnlPct);
   const positions = usePositionStore((s) => s.positions);
   const t = useT();
@@ -109,11 +108,6 @@ export function AppHeader(): React.ReactElement {
               {demoMode && (
                 <span className="bg-soft-blue text-signal-blue rounded px-2 py-0.5 font-mono text-2xs tracking-wider">
                   {t("app.demo")}
-                </span>
-              )}
-              {forwardTestMode && (
-                <span className="bg-soft-amber text-signal-amber rounded px-2 py-0.5 font-mono text-2xs tracking-wider">
-                  {t("app.forwardTest")}
                 </span>
               )}
             </>

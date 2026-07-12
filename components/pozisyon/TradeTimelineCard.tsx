@@ -111,7 +111,7 @@ function TimelineItem({
             >
               {trade.direction}
             </span>
-            <StatusBadge status={trade.status} isPaper={trade.isPaper} t={t} />
+            <StatusBadge status={trade.status} t={t} />
             {trade.source === "bot" && (
               <span className="font-mono text-[8px] font-bold text-brand/70 border border-brand/30 rounded px-1 py-px tracking-widest">
                 BOT
@@ -202,11 +202,9 @@ function TimelineItem({
 
 function StatusBadge({
   status,
-  isPaper,
   t,
 }: {
   status: TradeSnapshot["status"];
-  isPaper: boolean;
   t: (k: string, params?: Record<string, string | number>) => string;
 }) {
   const colorClass =
@@ -223,11 +221,6 @@ function StatusBadge({
       >
         {t(`trades.status.${status}`)}
       </span>
-      {isPaper && (
-        <span className="bg-soft-blue text-signal-blue rounded px-1 py-0.5 font-mono text-2xs tracking-widest uppercase">
-          {t("trades.paper")}
-        </span>
-      )}
     </div>
   );
 }
