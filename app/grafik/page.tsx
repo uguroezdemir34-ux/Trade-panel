@@ -604,7 +604,7 @@ export default function GrafikPage() {
             }}
           />
         ) : (
-          <div className="flex flex-col gap-3 px-3 py-3">
+          <div className="flex flex-col gap-2 px-3 py-3">
             {/* Geri butonu + pair adı */}
             <div className="flex items-center gap-3">
               <button
@@ -624,7 +624,7 @@ export default function GrafikPage() {
       {/* ── Masaüstü: yan yana layout ── */}
       <div className="hidden md:flex gap-3 items-start">
         <WatchlistPanel activePair={pair} onPairChange={setPair} />
-        <div className="flex-1 min-w-0 flex flex-col gap-3">
+        <div className="flex-1 min-w-0 flex flex-col gap-2">
           {chartSection}
         </div>
       </div>

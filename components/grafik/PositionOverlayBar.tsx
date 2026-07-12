@@ -29,6 +29,7 @@ export function PositionOverlayBar({ pair }: Props): React.ReactElement | null {
     <div
       className={[
         "flex items-center gap-2 rounded border px-3 py-1.5 font-mono text-xs",
+        "w-full overflow-x-auto [&::-webkit-scrollbar]:hidden [scrollbar-width:none]",
         isLong
           ? "border-signal-green/30 bg-signal-green/5"
           : "border-signal-red/30 bg-signal-red/5",
