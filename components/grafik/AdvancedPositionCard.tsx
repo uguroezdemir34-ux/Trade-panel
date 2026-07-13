@@ -2,6 +2,21 @@
 
 /**
  * ADVANCED POSITION CARD — War Room overlay'inin B bileşeni.
+ * "HUD / Car Mode" — PnL büyük ve merkezi odak noktası, Entry/Liq/Size
+ * dashboard grid'i, dolgulu LONG/SHORT kapsülü. Proje genelinde kullanılan
+ * signal-green/signal-red token'ları yerine standart Tailwind emerald/red
+ * paleti kullanılıyor (bilinçli, sadece bu HUD component'i için — görev
+ * kararı, tailwind.config.ts'teki `extend.colors` varsayılan paleti
+ * kaldırmıyor, sadece üzerine ekliyor, bu yüzden emerald/red sınıfları
+ * doğrudan kullanılabilir).
+ *
+ * Genişlik kasıtlı olarak SABİT DEĞİL (orijinal tasarımda da yoktu) —
+ * grid hücreleri text-lg değerlere göre doğal olarak genişliyor. Bu,
+ * app/grafik/page.tsx'teki wrapper'ın (`absolute top-2 right-16`, sadece
+ * `right` set, `left` yok) sağ kenarını SABİT tutması sayesinde güvenli:
+ * kart genişledikçe SOLA doğru büyüyor, sağ kenarı (fiyat eksenine en
+ * yakın nokta) her zaman aynı 64px payda kalıyor — bkz. page.tsx'teki
+ * yorum ve bu görevin raporundaki CSS kutu-modeli açıklaması.
  *
  * Grafiğin sağ üst köşesine absolute yerleşen, salt-okunur portföy kartı.
  * PositionOverlayBar ile aynı veri kaynağını (positionStore + marketStore +
@@ -36,43 +51,68 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
   const upl = computeLiveUpl(position, livePrice);
   const roe = computeRoe(position, livePrice);
   const isLong = position.direction === "LONG";
-  const uplColor = upl >= 0 ? "text-signal-green" : "text-signal-red";
-  const dirColor = isLong ? "border-signal-green/40 bg-signal-green/5" : "border-signal-red/40 bg-signal-red/5";
+  const isProfit = upl >= 0;
 
   return (
-    <div
-      className={`pointer-events-auto flex flex-col gap-1 rounded-lg border px-3 py-2 font-mono text-2xs backdrop-blur-sm bg-bg-card/90 shadow-lg ${dirColor}`}
-    >
-      <div className="flex items-center gap-1.5">
-        <span className={`font-bold uppercase tracking-widest text-[10px] ${isLong ? "text-signal-green" : "text-signal-red"}`}>
-          {isLong ? "▲ LONG" : "▼ SHORT"}
-        </span>
-        <span className="text-text-t4">·</span>
-        <span className="text-text-t3">{position.leverage}×</span>
-      </div>
-
+    <div className="pointer-events-auto flex flex-col gap-2 rounded-lg border border-border/60 bg-bg-card/95 px-3 py-3 font-mono shadow-lg backdrop-blur-sm">
+      {/* Yön kapsülü + kaldıraç */}
       <div className="flex items-center justify-between gap-3">
-        <span className="text-text-t3">Entry</span>
-        <span className="tabular-nums text-text-t1">{formatPrice(position.entryPx, locale)}</span>
-      </div>
-
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-text-t3">PnL</span>
-        <span className={`tabular-nums font-bold ${uplColor}`}>
-          {formatPrice(upl, locale, true)} ({formatPercent(roe, locale, true)})
+        <span
+          className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-bold text-white ${
+            isLong ? "bg-emerald-500" : "bg-red-500"
+          }`}
+        >
+          {isLong ? "LONG" : "SHORT"}
         </span>
+        <span className="whitespace-nowrap text-xs text-text-t3">{position.leverage}×</span>
       </div>
 
-      {position.liqPx !== null && (
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-text-t3">Liq</span>
-          <span className="tabular-nums text-signal-red">{formatPrice(position.liqPx, locale)}</span>
+      {/* PnL — HUD odak noktası */}
+      <div
+        className={`rounded-lg px-3 py-2 text-center ${
+          isProfit ? "bg-emerald-500/10" : "bg-red-500/10"
+        }`}
+      >
+        <div
+          className={`whitespace-nowrap text-4xl font-black leading-none tabular-nums ${
+            isProfit ? "text-emerald-400" : "text-red-500"
+          }`}
+        >
+          {formatPrice(upl, locale, true)}
         </div>
-      )}
+        <div
+          className={`mt-1 whitespace-nowrap text-sm font-bold tabular-nums ${
+            isProfit ? "text-emerald-400" : "text-red-500"
+          }`}
+        >
+          {formatPercent(roe, locale, true)}
+        </div>
+      </div>
 
-      <div className="flex items-center justify-between gap-3">
-        <span className="text-text-t3">Size</span>
-        <span className="tabular-nums text-text-t4">{position.size} {position.pair}</span>
+      {/* Entry / Liq / Size — dashboard grid */}
+      <div className="grid grid-cols-3 gap-1.5">
+        <div className="rounded border border-border/50 bg-surface-s2 px-1.5 py-1.5 text-center">
+          <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Entry</div>
+          <div className="whitespace-nowrap text-lg font-bold tabular-nums text-white">
+            {formatPrice(position.entryPx, locale)}
+          </div>
+        </div>
+
+        {position.liqPx !== null && (
+          <div className="rounded border border-red-500/50 bg-red-500/5 px-1.5 py-1.5 text-center">
+            <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-red-400">Liq</div>
+            <div className="whitespace-nowrap text-lg font-bold tabular-nums text-red-400">
+              {formatPrice(position.liqPx, locale)}
+            </div>
+          </div>
+        )}
+
+        <div className="rounded border border-border/50 bg-surface-s2 px-1.5 py-1.5 text-center">
+          <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Size</div>
+          <div className="whitespace-nowrap text-lg font-bold tabular-nums text-white">
+            {position.size}
+          </div>
+        </div>
       </div>
     </div>
   );
