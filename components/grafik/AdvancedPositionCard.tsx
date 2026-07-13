@@ -54,7 +54,7 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
   const isProfit = upl >= 0;
 
   return (
-    <div className="pointer-events-auto flex flex-col gap-2 rounded-lg border border-border/60 bg-bg-card/95 px-3 py-3 font-mono shadow-lg backdrop-blur-sm">
+    <div className="pointer-events-auto flex flex-col gap-1.5 rounded-lg border border-border/60 bg-bg-card/60 px-3 py-2.5 font-mono shadow-lg backdrop-blur-sm">
       {/* Yön kapsülü + kaldıraç */}
       <div className="flex items-center justify-between gap-3">
         <span
@@ -67,14 +67,15 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
         <span className="whitespace-nowrap text-xs text-text-t3">{position.leverage}×</span>
       </div>
 
-      {/* PnL — HUD odak noktası */}
+      {/* PnL — HUD odak noktası (text-4xl → text-2xl: kart artık grafiğin
+          kendisini daha az eziyor, bkz. görev raporu) */}
       <div
-        className={`rounded-lg px-3 py-2 text-center ${
+        className={`rounded-lg px-3 py-1.5 text-center ${
           isProfit ? "bg-emerald-500/10" : "bg-red-500/10"
         }`}
       >
         <div
-          className={`whitespace-nowrap text-4xl font-black leading-none tabular-nums ${
+          className={`whitespace-nowrap text-2xl font-black leading-none tabular-nums ${
             isProfit ? "text-emerald-400" : "text-red-500"
           }`}
         >
@@ -91,7 +92,7 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
 
       {/* Entry / Liq / Size — dashboard grid */}
       <div className="grid grid-cols-3 gap-1.5">
-        <div className="rounded border border-border/50 bg-surface-s2 px-1.5 py-1.5 text-center">
+        <div className="rounded border border-border/50 bg-surface-s2 px-1.5 py-1 text-center">
           <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Entry</div>
           <div className="whitespace-nowrap text-lg font-bold tabular-nums text-white">
             {formatPrice(position.entryPx, locale)}
@@ -99,7 +100,7 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
         </div>
 
         {position.liqPx !== null && (
-          <div className="rounded border border-red-500/50 bg-red-500/5 px-1.5 py-1.5 text-center">
+          <div className="rounded border border-red-500/50 bg-red-500/5 px-1.5 py-1 text-center">
             <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-red-400">Liq</div>
             <div className="whitespace-nowrap text-lg font-bold tabular-nums text-red-400">
               {formatPrice(position.liqPx, locale)}
@@ -107,7 +108,7 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
           </div>
         )}
 
-        <div className="rounded border border-border/50 bg-surface-s2 px-1.5 py-1.5 text-center">
+        <div className="rounded border border-border/50 bg-surface-s2 px-1.5 py-1 text-center">
           <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Size</div>
           <div className="whitespace-nowrap text-lg font-bold tabular-nums text-white">
             {position.size}

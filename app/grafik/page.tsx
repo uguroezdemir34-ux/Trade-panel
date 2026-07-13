@@ -582,10 +582,10 @@ export default function GrafikPage() {
               // kapsayacak güvenli bir sabit tampon kullanıldı.
               // NOT (HUD yeniden tasarımı sonrası): bu div'de sadece `right` set
               // (left YOK, width YOK) — CSS auto-width kutusu sağ kenardan
-              // sabitlenip SOLA doğru büyür. AdvancedPositionCard genişlese bile
-              // (HUD/Car Mode: text-lg grid + text-4xl PnL) sağ kenar hep bu
-              // 64px'te sabit kalır, fiyat eksenine olan mesafe değişmez —
-              // bu yüzden right-16 değerine dokunulmadı (bkz. görev raporu).
+              // sabitlenip SOLA doğru büyür. AdvancedPositionCard genişlese/
+              // küçülse bile sağ kenar hep bu 64px'te sabit kalır, fiyat
+              // eksenine olan mesafe değişmez — bu yüzden right-16 değerine
+              // dokunulmadı (bkz. görev raporu).
               <div className="absolute top-2 right-16 pointer-events-none">
                 <AdvancedPositionCard pair={pair} />
               </div>
