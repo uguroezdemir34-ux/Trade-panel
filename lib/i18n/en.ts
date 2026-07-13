@@ -635,6 +635,7 @@ export const en: Dictionary = {
     distanceToSl: "to SL",
     rMultiple: "R MULTIPLE",
     duration: "DURATION",
+    goToChart: "Go to chart",
     noSlSet: "no SL",
     noTpSet: "no TP",
     liqPrice: "LIQ",
@@ -1123,6 +1124,7 @@ export const en: Dictionary = {
   grafik: {
     trades: "Trades",
     title: "📈 Chart",
+    warRoomClose: "Close focus view",
     subtitle: "Price chart · EMA overlays · Trade markers",
     loading: "Loading chart...",
     error: "Failed to load chart data",

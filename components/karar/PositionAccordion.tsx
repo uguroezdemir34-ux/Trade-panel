@@ -2,8 +2,10 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
+import { useFocusStore } from "@/lib/store/focusStore";
 import { useT } from "@/lib/i18n/context";
 import type { Pair } from "@/lib/constants/pairs";
 
@@ -94,7 +96,9 @@ function QxScoreBadge({ pair, posDir }: { pair: Pair; posDir: "LONG" | "SHORT" |
 // ─── PositionAccordion ────────────────────────────────────────────────────────
 export function PositionAccordion(): React.ReactElement | null {
   const t = useT();
+  const router = useRouter();
   const openPositions = usePositionStore((s) => s.positions);
+  const setFocus = useFocusStore((s) => s.setFocus);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   if (openPositions.length === 0) return null;
@@ -179,6 +183,28 @@ export function PositionAccordion(): React.ReactElement | null {
                   {signed(roePct)}%
                 </span>
               </div>
+
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFocus(pos.pair as Pair);
+                  router.push("/grafik");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key !== "Enter" && e.key !== " ") return;
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setFocus(pos.pair as Pair);
+                  router.push("/grafik");
+                }}
+                className="font-mono text-2xs text-text-t4 hover:text-text-t1 ml-1 shrink-0 px-1 py-0.5 rounded transition-colors"
+                title={t("position.goToChart")}
+                aria-label={t("position.goToChart")}
+              >
+                →Chart
+              </span>
 
               <span
                 className="font-mono text-base text-text-t4 ml-1 shrink-0 transition-transform duration-200"

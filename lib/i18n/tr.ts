@@ -635,6 +635,7 @@ export const tr: Dictionary = {
     distanceToSl: "SL'ye",
     rMultiple: "R ÇARPANI",
     duration: "SÜRE",
+    goToChart: "Grafiğe git",
     noSlSet: "SL yok",
     noTpSet: "TP yok",
     liqPrice: "LIQ",
@@ -1123,6 +1124,7 @@ export const tr: Dictionary = {
   grafik: {
     trades: "İşlemler",
     title: "📈 Grafik",
+    warRoomClose: "Odak görünümünü kapat",
     subtitle: "Fiyat grafiği · EMA katmanları · İşlem işaretleri",
     loading: "Grafik yükleniyor...",
     error: "Grafik verisi yüklenemedi",

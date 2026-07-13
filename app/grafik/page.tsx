@@ -1,17 +1,21 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useFocusStore } from "@/lib/store/focusStore";
 import { useT } from "@/lib/i18n/context";
 import { ChartControls, type ChartClickMode } from "@/components/grafik/ChartControls";
 import { ChartLegend } from "@/components/grafik/ChartLegend";
 import { PositionOverlayBar } from "@/components/grafik/PositionOverlayBar";
 import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
+import { MarketRibbon } from "@/components/grafik/MarketRibbon";
+import { AdvancedPositionCard } from "@/components/grafik/AdvancedPositionCard";
+import { GuardianPanel } from "@/components/grafik/GuardianPanel";
 import { emaSeries } from "@/lib/indicators/ema";
 import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
@@ -178,10 +182,16 @@ function buildSeries(
 export default function GrafikPage() {
   const t = useT();
   const theme           = useSettingsStore((s) => s.theme);
-  const [pair, setPair]           = useState<Pair>("BTC");
+  const isOverlayActive = useFocusStore((s) => s.isOverlayActive);
+  const clearFocus       = useFocusStore((s) => s.clearFocus);
+  // War Room: /karar'dan "→ Chart" ile geldiyse yerel pair state'i focusStore'dan başlat.
+  const [pair, setPair]           = useState<Pair>(() => useFocusStore.getState().activeFocusPair ?? "BTC");
+  const focusActiveAtMountRef      = useRef(useFocusStore.getState().isOverlayActive);
   usePriorityFetch(pair);
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
-  const [mobileView, setMobileView] = useState<"list" | "chart">("list");
+  const [mobileView, setMobileView] = useState<"list" | "chart">(() =>
+    useFocusStore.getState().isOverlayActive ? "chart" : "list",
+  );
   const [showEma20, setShowEma20]   = useState(true);
   const [showEma50, setShowEma50]   = useState(true);
   const [showEma200, setShowEma200] = useState(true);
@@ -229,7 +239,8 @@ export default function GrafikPage() {
       const raw = localStorage.getItem(CHART_STORAGE_KEY);
       if (!raw) return;
       const s = JSON.parse(raw) as Record<string, unknown>;
-      if (typeof s.pair === "string" && (PAIRS as readonly string[]).includes(s.pair)) setPair(s.pair as Pair);
+      // War Room odağı aktifse localStorage'daki eski pair onu ezmesin.
+      if (!focusActiveAtMountRef.current && typeof s.pair === "string" && (PAIRS as readonly string[]).includes(s.pair)) setPair(s.pair as Pair);
       if (typeof s.tf === "string" && VALID_TF.has(s.tf)) setTimeframe(s.tf as Timeframe);
       const o = s.o as Record<string, boolean> | undefined;
       if (o) {
@@ -400,6 +411,24 @@ export default function GrafikPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const chartSection = useMemo(() => (
     <>
+      {/* War Room overlay — /karar'dan "→ Chart" ile odaklanıldığında (A + C + D) */}
+      {isOverlayActive && (
+        <div className="flex items-center gap-2">
+          <div className="flex-1 min-w-0">
+            <MarketRibbon />
+          </div>
+          <button
+            onClick={() => clearFocus()}
+            className="shrink-0 rounded border border-border px-2 py-1.5 font-mono text-xs text-text-t3 hover:text-text-t1 hover:border-text-t2 transition-colors"
+            title={t("grafik.warRoomClose")}
+            aria-label={t("grafik.warRoomClose")}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {isOverlayActive && <GuardianPanel pair={pair} />}
+
       <ChartControls
         timeframe={timeframe}
         showEma20={showEma20}
@@ -534,14 +563,21 @@ export default function GrafikPage() {
               </span>
             </div>
           )}
-          <PriceChart
-              series={series}
-              height={showSplit ? 360 : primaryChartHeight}
-              theme={theme}
-              onChartClick={handlePriceClick}
-              resetKey={`${pair}_${timeframe}`}
-              currentPrice={livePrice ?? undefined}
-            />
+          <div className="relative">
+            <PriceChart
+                series={series}
+                height={showSplit ? 360 : primaryChartHeight}
+                theme={theme}
+                onChartClick={handlePriceClick}
+                resetKey={`${pair}_${timeframe}`}
+                currentPrice={livePrice ?? undefined}
+              />
+            {isOverlayActive && (
+              <div className="absolute top-2 right-2 pointer-events-none">
+                <AdvancedPositionCard pair={pair} />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Secondary chart (split view) */}
@@ -607,6 +643,7 @@ export default function GrafikPage() {
     showRsi, showMacd, showBb, showVwap, showSr, showSplit, showFlow,
     clickMode, drawnLines, capturedPrice, secLoading, secSeries, series,
     pair, secPair, secTf, theme, t, handleSetClickMode, handlePriceClick,
+    isOverlayActive, clearFocus,
   ]);
 
   return (
