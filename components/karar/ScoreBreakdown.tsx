@@ -17,12 +17,12 @@ const CATEGORIES: Array<{
   max: number;
 }> = [
   { key: "trend", labelKey: "score.categories.trend", max: 25 },
-  { key: "adx", labelKey: "score.categories.adx", max: 12 },
-  { key: "rsi", labelKey: "score.categories.rsi", max: 12 },
-  { key: "vol", labelKey: "score.categories.vol", max: 8 },
-  { key: "bb", labelKey: "score.categories.bb", max: 8 },
+  { key: "adx", labelKey: "score.categories.adx", max: 15 },
+  { key: "rsi", labelKey: "score.categories.rsi", max: 10 },
+  { key: "vol", labelKey: "score.categories.vol", max: 15 },
+  { key: "bb", labelKey: "score.categories.bb", max: 10 },
   { key: "vwap", labelKey: "score.categories.vwap", max: 10 },
-  { key: "funding", labelKey: "score.categories.funding", max: 5 },
+  { key: "funding", labelKey: "score.categories.funding", max: 8 },
   { key: "macro", labelKey: "score.categories.macro", max: 8 },
 ];
 
