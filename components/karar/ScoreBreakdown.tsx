@@ -66,7 +66,7 @@ export function ScoreBreakdown({
                 />
               </div>
               <div className="text-text-t1 w-10 text-right font-mono text-xs tabular-nums">
-                {val}
+                {Math.round(val)}
                 <span className="text-text-t4">/{cat.max}</span>
               </div>
             </div>
