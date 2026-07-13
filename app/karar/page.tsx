@@ -42,6 +42,23 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   alts:   ["AVAX", "LINK", "NEAR", "SUI", "XRP"],
 };
 type PairGroup = "all" | "majors" | "alts" | "go" | "watch" | "act";
+
+/** Market Regime rozeti (Faz 3) — TrendRegimeLabel/AtrRegime enum'larını çevrilebilir i18n key'lerine eşler. */
+const TREND_REGIME_LABEL_KEY: Record<TrendRegimeLabel, string> = {
+  trending_strong: "karar.regimeTrendStrong",
+  trending_weak: "karar.regimeTrendWeak",
+  ranging_meanrev: "karar.regimeTrendRangingMR",
+  ranging: "karar.regimeTrendRanging",
+  transitioning: "karar.regimeTrendTransition",
+  mixed: "karar.regimeTrendMixed",
+  unknown: "karar.regimeTrendUnknown",
+};
+const VOL_REGIME_LABEL_KEY: Record<AtrRegime, string> = {
+  compression: "karar.regimeVolCompression",
+  normal: "karar.regimeVolNormal",
+  expansion: "karar.regimeVolExpansion",
+  extreme_expansion: "karar.regimeVolExtreme",
+};
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
 import { getScoreColor } from "@/lib/ui/scoreColor";
@@ -56,6 +73,13 @@ import { PositionSizer } from "@/components/karar/PositionSizer";
 import { computePositionSize } from "@/lib/sizer/position";
 import { atr } from "@/lib/indicators/atr";
 import { adx } from "@/lib/indicators/adx";
+import { bb } from "@/lib/indicators/bb";
+import {
+  classifyTrendRegime,
+  classifyVolRegime,
+  type TrendRegimeLabel,
+} from "@/lib/market/regimeCombiner";
+import type { AtrRegime } from "@/lib/indicators/atr-percentile";
 import { ema } from "@/lib/indicators/ema";
 import { rsi as rsiIndicator } from "@/lib/indicators/rsi";
 import { toIndicatorCandle } from "@/lib/okx/candles";
@@ -457,6 +481,30 @@ export default function KararPage() {
     } catch { return null; }
   }, [candles1h]);
 
+  // Market Regime rozeti (Faz 3) — lib/market/regimeCombiner.ts, lib/score/*'a dokunmaz.
+  const bbPctValue = useMemo(() => {
+    try {
+      return bb(candles1h.map((c) => c.close), { period: 20 })?.pct ?? null;
+    } catch { return null; }
+  }, [candles1h]);
+
+  const trendRegimeLabel = useMemo(
+    () =>
+      classifyTrendRegime({
+        adx: adxValue,
+        dirConfidence: result?.dirConfidence ?? 0,
+        counterTrend: result?.counterTrend ?? false,
+        bbPct: bbPctValue,
+        direction: result?.direction ?? "NEUTRAL",
+      }),
+    [adxValue, bbPctValue, result?.dirConfidence, result?.counterTrend, result?.direction],
+  );
+
+  const volRegimeResult = useMemo(
+    () => classifyVolRegime(candles1h),
+    [candles1h],
+  );
+
   const rsiValue = useMemo(() => {
     try {
       if (candles1h.length < 15) return null;
@@ -676,6 +724,13 @@ export default function KararPage() {
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-emerald-500/25 bg-emerald-500/8 font-mono text-[9px] text-emerald-400/70 tracking-wide select-none">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shrink-0" />
                       {t("karar.signalBarClose")}
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/25 bg-brand/8 font-mono text-[9px] text-brand/70 tracking-wide select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand/60 shrink-0" />
+                      {t("karar.regimeBadge", {
+                        trend: t(TREND_REGIME_LABEL_KEY[trendRegimeLabel]),
+                        vol: volRegimeResult ? t(VOL_REGIME_LABEL_KEY[volRegimeResult.label]) : "—",
+                      })}
                     </span>
                     {sizerResult && (
                       <>

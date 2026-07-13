@@ -99,8 +99,12 @@ export function SqueezeRadarBanner({
                 : "border-border",
             ].join(" ")}
           >
+            <span className="text-text-t4 text-[9px] opacity-60">#{e.priorityRank}</span>
             <span className="text-text-t1 text-xs font-semibold">{e.pair}</span>
             <span className="text-text-t3 text-[10px] opacity-70">P{e.percentile}</span>
+            <span className="text-text-t3 text-[10px] opacity-70" title={t("karar.squeezeEstimatedMove")}>
+              ±{e.estimatedMovePct.toFixed(1)}%
+            </span>
           </button>
         ))}
       </div>

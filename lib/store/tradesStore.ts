@@ -37,6 +37,9 @@ import {
   MAX_ARCHIVE_SIZE,
   ARCHIVE_STORAGE_KEY,
 } from "@/lib/trades/pruner";
+import { computeTradeMae, candlesCoverRange } from "@/lib/trades/mae";
+import { useCandleStore } from "./candleStore";
+import type { Timeframe } from "@/lib/okx/candles";
 
 const MAX_TRADES = 500;
 const STORAGE_KEY = "trade_snapshots";
@@ -51,6 +54,9 @@ const exitInfoSchema = z.object({
   pnlPct: z.number(),
   holdingSec: z.number(),
   rMultiple: z.number().optional(),
+  maePrice: z.number().optional(),
+  maeUsd: z.number().optional(),
+  maePct: z.number().optional(),
 });
 
 const entryContextSchema = z.object({
@@ -99,6 +105,45 @@ function parseTradesLenient(raw: unknown): TradeSnapshot[] {
     if (r.success) out.push(r.data as TradeSnapshot);
   }
   return out;
+}
+
+// ═══════════════ MAE ENRICHMENT ═══════════════
+
+/**
+ * En hassastan en kabaya doğru dener — ilk kapsayan timeframe kullanılır.
+ * candleStore cache derinliği sınırlıdır (bkz. lib/trades/mae.ts), bu
+ * yüzden uzun süre açık kalan trade'ler için sadece kaba (4h/1d)
+ * çözünürlük mevcut olabilir, hiç kapsanmıyorsa MAE hiç hesaplanmaz.
+ */
+const MAE_TIMEFRAME_PRIORITY: readonly Timeframe[] = ["15m", "1h", "4h", "1d"];
+
+/**
+ * Kapanmış bir trade'i, mevcut candleStore cache'inden retroaktif MAE ile
+ * zenginleştirir. Cache [openedAt, closedAt] aralığını kapsamıyorsa (hiçbir
+ * timeframe'de) trade değişmeden döner — tahmini/uydurma değer üretilmez.
+ * lib/score/*'a hiç dokunmaz, saf lib/trades/lib/store kapsamında.
+ */
+function enrichWithMae(trade: TradeSnapshot): TradeSnapshot {
+  if (trade.status !== "closed" || !trade.exit) return trade;
+
+  const allCandles = useCandleStore.getState().candles;
+  for (const tf of MAE_TIMEFRAME_PRIORITY) {
+    const candles = allCandles[`${trade.pair}_${tf}`];
+    if (!candles || !candlesCoverRange(candles, trade.openedAt, trade.exit.closedAt)) continue;
+
+    const mae = computeTradeMae(
+      candles,
+      trade.openedAt,
+      trade.exit.closedAt,
+      trade.entryPrice,
+      trade.qty,
+      trade.direction,
+    );
+    if (!mae) continue;
+
+    return { ...trade, exit: { ...trade.exit, ...mae } };
+  }
+  return trade;
 }
 
 // ═══════════════ STORE ═══════════════
@@ -207,7 +252,7 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
     const next = current.map((t) => {
       if (t.id !== input.id) return t;
       if (t.status === "closed") return t; // idempotent
-      return closeTrade(t, input);
+      return enrichWithMae(closeTrade(t, input));
     });
     saveToStorage(STORAGE_KEY, next);
     set({ trades: next });
@@ -229,12 +274,12 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
       const hit = detectTpSlHit(t, high, low);
       if (!hit) return t;
       changed = true;
-      return closeTrade(t, {
+      return enrichWithMae(closeTrade(t, {
         id: t.id,
         exitPrice: hit.price,
         reason: hit.reason,
         now,
-      });
+      }));
     });
     if (changed) {
       saveToStorage(STORAGE_KEY, next);

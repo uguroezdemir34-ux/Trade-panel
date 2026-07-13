@@ -25,6 +25,15 @@ export interface SqueezeRadarEntry {
   percentile: number;
   /** current ATR / son 20 bar ortalaması */
   atrRatio: number;
+  /**
+   * Yön belirtmeden ölçülen volatilite büyüklüğü — ham ATR'nin (current)
+   * son mumun kapanış fiyatına oranı, yüzde olarak. "Probability %" DEĞİL
+   * (bunun için hiçbir backtest/istatistiksel temel yok, bilinçli olarak
+   * eklenmedi) — bu gerçek, ölçülen bir değer, tahmin değil.
+   */
+  estimatedMovePct: number;
+  /** Zaten percentile'a göre sıralı listedeki sıra (1 = en sıkı sıkışma). */
+  priorityRank: number;
 }
 
 /**
@@ -38,13 +47,24 @@ export function computeSqueezeRadar(
 
   for (const pair of PAIRS) {
     const candles = candles1h[`${pair}_1h`];
-    if (!candles) continue;
+    if (!candles || candles.length === 0) continue;
 
     const result = atrPercentile(candles.map(toIndicatorCandle));
     if (!result || result.regime !== "compression") continue;
 
-    out.push({ pair, percentile: result.percentile, atrRatio: result.atrRatio });
+    const lastClose = candles[candles.length - 1].close;
+    const estimatedMovePct = lastClose > 0 ? (result.current / lastClose) * 100 : 0;
+
+    out.push({
+      pair,
+      percentile: result.percentile,
+      atrRatio: result.atrRatio,
+      estimatedMovePct,
+      priorityRank: 0, // sort sonrası aşağıda dolduruluyor
+    });
   }
 
-  return out.sort((a, b) => a.percentile - b.percentile);
+  return out
+    .sort((a, b) => a.percentile - b.percentile)
+    .map((entry, i) => ({ ...entry, priorityRank: i + 1 }));
 }

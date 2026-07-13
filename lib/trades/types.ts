@@ -79,6 +79,15 @@ export interface ExitInfo {
   holdingSec: number;
   /** R multiple — (pnl / risk_amount) */
   rMultiple?: number;
+  /**
+   * MAE (Maximum Adverse Excursion) — trade açıkken yaşanan en kötü fiyat
+   * (lib/trades/mae.ts). Close-time retroaktif hesaplanır; candleStore
+   * cache'i [openedAt, closedAt] aralığını kapsamıyorsa üçü de undefined
+   * kalır (tahmini/uydurma değer üretilmez).
+   */
+  maePrice?: number;
+  maeUsd?: number;
+  maePct?: number;
 }
 
 // ═══════════════ TRADE SNAPSHOT ═══════════════
