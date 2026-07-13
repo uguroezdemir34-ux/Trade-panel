@@ -57,6 +57,9 @@ export const tr: Dictionary = {
     short: "SHORT",
     neutral: "NÖTR",
     alignment: "uyum",
+    confidenceLow: "Düşük",
+    confidenceMedium: "Orta",
+    confidenceHigh: "Yüksek",
   },
 
   score: {
@@ -184,6 +187,9 @@ export const tr: Dictionary = {
     streakBannerLossDesc: "{n} ardışık kayıp — boyutu küçültmeyi veya durmayı düşün",
     fundingLabel: "Funding",
     fundingIn: "kalan",
+    flowSmartMoney: "Akıllı Para (VPIN)",
+    flowFundingBias: "Funding Eğilimi",
+    flowLiquidity: "Likidite",
     alarmToastAbove: "ÜSTÜNDE",
     alarmToastBelow: "ALTINDA",
     alarmToastTarget: "Hedef",
@@ -193,6 +199,8 @@ export const tr: Dictionary = {
       profilePullback: "Profil: Geri Çekilme (Otomatik)",
     profileTrend: "Profil: Trend Modu (Otomatik)",
     signalBarClose: "Sinyal: Bar Kapanış Onaylı",
+    rrLabel: "R:R",
+    expectedMoveLabel: "Hareket",
     trendStrong: "güçlü trend",
     trendMedium: "orta trend",
     trendWeak: "zayıf trend",
@@ -610,6 +618,10 @@ export const tr: Dictionary = {
     takeProfit: "TP",
     tp: "KAR AL",
     sl: "ZARAR DURDUR",
+    distanceToTp: "TP'ye",
+    distanceToSl: "SL'ye",
+    rMultiple: "R ÇARPANI",
+    duration: "SÜRE",
     noSlSet: "SL yok",
     noTpSet: "TP yok",
     liqPrice: "LIQ",
@@ -646,6 +658,17 @@ export const tr: Dictionary = {
       insufficientBalance: "Yetersiz bakiye veya parametre hatası",
       alreadyClosed: "Pozisyon zaten kapatılmış",
     },
+  },
+
+  performance: {
+    title: "PERFORMANS",
+    insufficientData: "Yetersiz veri — henüz kapanmış işlem yok",
+    last30Note: "son 30 işlem",
+    tradeCountNote: "{n} işlem",
+    winRate: "KAZANMA ORANI",
+    profitFactor: "KÂR FAKTÖRÜ",
+    sharpe: "SHARPE",
+    avgR: "ORT R",
   },
 
   risk: {

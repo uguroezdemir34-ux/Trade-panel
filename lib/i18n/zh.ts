@@ -57,6 +57,9 @@ export const zh: Dictionary = {
     short: "SHORT",
     neutral: "中性",
     alignment: "aligned",
+    confidenceLow: "Low",
+    confidenceMedium: "Medium",
+    confidenceHigh: "High",
   },
 
   score: {
@@ -184,6 +187,9 @@ export const zh: Dictionary = {
     streakBannerLoss: "LOSS STREAK",
     streakBannerLossDesc: "{n} consecutive losses — consider reducing size or pausing",
     fundingLabel: "Funding",
+    flowSmartMoney: "Smart Money (VPIN)",
+    flowFundingBias: "Funding Bias",
+    flowLiquidity: "Liquidity",
     fundingIn: "remaining",
     alarmToastAbove: "ABOVE",
     alarmToastBelow: "BELOW",
@@ -195,6 +201,8 @@ export const zh: Dictionary = {
     profileTrend: "Profile: Trend Mode (Auto)",
     // TODO: translate
     signalBarClose: "Signal: Bar Close Confirmed",
+    rrLabel: "R:R",
+    expectedMoveLabel: "Move",
     // TODO: translate
     trendStrong: "strong trend",
     // TODO: translate
@@ -634,6 +642,10 @@ volumeSection: "VOLUME",
     takeProfit: "止盈",
     tp: "Take Profit",
     sl: "Stop Loss",
+    distanceToTp: "to TP",
+    distanceToSl: "to SL",
+    rMultiple: "R MULTIPLE",
+    duration: "DURATION",
     noSlSet: "无止损",
     noTpSet: "无止盈",
     liqPrice: "强平价",
@@ -672,6 +684,17 @@ volumeSection: "VOLUME",
     updateSlTp: "Update",
     cancelEdit: "Cancel",
 },
+
+  performance: {
+    title: "PERFORMANCE",
+    insufficientData: "Insufficient data — no closed trades yet",
+    last30Note: "last 30 trades",
+    tradeCountNote: "{n} trades",
+    winRate: "WIN RATE",
+    profitFactor: "PROFIT FACTOR",
+    sharpe: "SHARPE",
+    avgR: "AVG R",
+  },
 
   risk: {
     title: "🛡️ 风险与纪律",

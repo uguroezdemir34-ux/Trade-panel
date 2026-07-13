@@ -16,6 +16,7 @@ const COINGECKO_IDS: Record<string, string> = {
   LINK:   "chainlink",
   SUI:    "sui",
   NEAR:   "near",
+  XRP:    "ripple",
 };
 
 const ID_TO_PAIR: Record<string, string> = Object.fromEntries(

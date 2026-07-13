@@ -13,6 +13,7 @@
  */
 
 import type { OrderBookSnapshot, OrderBookLevel } from "@/lib/okx/orderbook";
+import type { Pair } from "@/lib/constants/pairs";
 
 export type WallSide = "bid" | "ask" | "neutral";
 
@@ -96,4 +97,43 @@ export function computeOrderBookImbalance(
     wallDistancePct,
     ts: snap.ts,
   };
+}
+
+// ─── Likidite sınıflandırması (Thin/Normal/Thick) ───────────────────────
+
+export type LiquidityTier = "thin" | "normal" | "thick";
+
+/**
+ * FALLBACK baseline derinlik (top-5 bid+ask toplamı, USD).
+ *
+ * Pair başına rolling-average/tarihsel baseline hesaplayan bir mekanizma
+ * YOK — orderBookStore.ts sadece en son snapshot'ı tutuyor, geçmiş
+ * biriktirmiyor (doğrulandı). Bu yüzden burada sabit, kaba mertebe
+ * varsayımları kullanılıyor — gerçek veriyle kalibre edilmedi. İleride
+ * VPIN'in bucket-window deseni model alınarak gerçek rolling-average'a
+ * geçirilebilir.
+ */
+const FALLBACK_BASELINE_USD: Partial<Record<Pair, number>> = {
+  BTC: 3_000_000,
+  ETH: 1_500_000,
+  SOL: 500_000,
+  BNB: 400_000,
+  XRP: 300_000,
+  LINK: 200_000,
+  AVAX: 200_000,
+  SUI: 150_000,
+  NEAR: 150_000,
+};
+
+const DEFAULT_BASELINE_USD = 150_000;
+
+const THIN_RATIO = 0.4;
+const THICK_RATIO = 1.5;
+
+/** @param totalDepthUsd bidDepthUsd + askDepthUsd (top-5, USD) */
+export function classifyLiquidity(pair: Pair, totalDepthUsd: number): LiquidityTier {
+  const baseline = FALLBACK_BASELINE_USD[pair] ?? DEFAULT_BASELINE_USD;
+  if (totalDepthUsd < baseline * THIN_RATIO) return "thin";
+  if (totalDepthUsd > baseline * THICK_RATIO) return "thick";
+  return "normal";
 }

@@ -97,6 +97,7 @@ import { CoinIcon } from "@/components/karar/CoinIcon";
 import { ScoreRingV2 } from "@/components/karar/ScoreRingV2";
 import { MarketPulseWidget } from "@/components/karar/MarketPulseWidget";
 import { SignalAccuracyCard } from "@/components/karar/SignalAccuracyCard";
+import { PerformancePanel } from "@/components/karar/PerformancePanel";
 import { MissedSignalsBanner } from "@/components/karar/MissedSignalsBanner";
 import { PositionAccordion } from "@/components/karar/PositionAccordion";
 import { TickerTape } from "@/components/karar/TickerTape";
@@ -570,6 +571,8 @@ export default function KararPage() {
           <SessionStatsBar />
 
           <SignalAccuracyCard />
+
+          <PerformancePanel />
         </div>
 
         {/* SAĞ SÜTUN — sinyal detay */}
@@ -674,6 +677,16 @@ export default function KararPage() {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shrink-0" />
                       {t("karar.signalBarClose")}
                     </span>
+                    {sizerResult && (
+                      <>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-border/40 bg-surface-s2 font-mono text-[9px] text-text-t2 tracking-wide select-none tabular-nums">
+                          {t("karar.rrLabel")} {sizerResult.rr1.toFixed(2)} / {sizerResult.rr2.toFixed(2)}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-border/40 bg-surface-s2 font-mono text-[9px] text-text-t2 tracking-wide select-none tabular-nums">
+                          {t("karar.expectedMoveLabel")} {sizerResult.tp1Pct.toFixed(1)}% / {sizerResult.tp2Pct.toFixed(1)}%
+                        </span>
+                      </>
+                    )}
                   </div>
 
                 </div>

@@ -57,6 +57,9 @@ export const en: Dictionary = {
     short: "SHORT",
     neutral: "NEUTRAL",
     alignment: "aligned",
+    confidenceLow: "Low",
+    confidenceMedium: "Medium",
+    confidenceHigh: "High",
   },
 
   score: {
@@ -184,6 +187,9 @@ export const en: Dictionary = {
     streakBannerLossDesc: "{n} consecutive losses — consider reducing size or pausing",
     fundingLabel: "Funding",
     fundingIn: "remaining",
+    flowSmartMoney: "Smart Money (VPIN)",
+    flowFundingBias: "Funding Bias",
+    flowLiquidity: "Liquidity",
     alarmToastAbove: "ABOVE",
     alarmToastBelow: "BELOW",
     alarmToastTarget: "Target",
@@ -193,6 +199,8 @@ export const en: Dictionary = {
       profilePullback: "Profile: Pullback (Auto)",
     profileTrend: "Profile: Trend Mode (Auto)",
     signalBarClose: "Signal: Bar Close Confirmed",
+    rrLabel: "R:R",
+    expectedMoveLabel: "Move",
     trendStrong: "strong trend",
     trendMedium: "medium trend",
     trendWeak: "weak trend",
@@ -610,6 +618,10 @@ export const en: Dictionary = {
     takeProfit: "TP",
     tp: "Take Profit",
     sl: "Stop Loss",
+    distanceToTp: "to TP",
+    distanceToSl: "to SL",
+    rMultiple: "R MULTIPLE",
+    duration: "DURATION",
     noSlSet: "no SL",
     noTpSet: "no TP",
     liqPrice: "LIQ",
@@ -646,6 +658,17 @@ export const en: Dictionary = {
       insufficientBalance: "Insufficient balance or parameter error",
       alreadyClosed: "Position already closed",
     },
+  },
+
+  performance: {
+    title: "PERFORMANCE",
+    insufficientData: "Insufficient data — no closed trades yet",
+    last30Note: "last 30 trades",
+    tradeCountNote: "{n} trades",
+    winRate: "WIN RATE",
+    profitFactor: "PROFIT FACTOR",
+    sharpe: "SHARPE",
+    avgR: "AVG R",
   },
 
   risk: {

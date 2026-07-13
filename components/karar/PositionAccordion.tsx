@@ -24,6 +24,28 @@ function safe(n: number): number { return isFinite(n) ? n : 0; }
 function safeDiv(a: number, b: number): number {
   return b !== 0 && isFinite(b) ? safe(a / b) : 0;
 }
+function fmtDuration(openedAtMs: number, nowMs: number): string {
+  const diffMin = Math.max(0, Math.floor((nowMs - openedAtMs) / 60_000));
+  const days = Math.floor(diffMin / 1440);
+  const hours = Math.floor((diffMin % 1440) / 60);
+  const mins = diffMin % 60;
+  if (days > 0) return `${days}g ${hours}s`;
+  if (hours > 0) return `${hours}s ${mins}d`;
+  return `${mins}d`;
+}
+/** R Multiple: mevcut kâr/zararın giriş-stop mesafesine oranı. SL yoksa null. */
+function computeRMultiple(
+  entryPx: number,
+  markPx: number,
+  slTriggerPx: number | null,
+  direction: "LONG" | "SHORT" | "NEUTRAL",
+): number | null {
+  if (slTriggerPx === null || entryPx <= 0) return null;
+  const riskDistance = Math.abs(entryPx - slTriggerPx);
+  if (riskDistance <= 0) return null;
+  const gainDistance = direction === "SHORT" ? entryPx - markPx : markPx - entryPx;
+  return gainDistance / riskDistance;
+}
 
 // ─── Color tokens ─────────────────────────────────────────────────────────────
 const EMERALD = "#10b981";
@@ -243,6 +265,11 @@ export function PositionAccordion(): React.ReactElement | null {
                         <div className="font-mono text-2xs tabular-nums text-text-t4">
                           {signed(safeDiv(pos.tpTriggerPx - pos.entryPx, pos.entryPx) * 100)}%
                         </div>
+                        {pos.markPx > 0 && (
+                          <div className="font-mono text-2xs tabular-nums text-text-t3" title={t("position.distanceToTp")}>
+                            {signed(safeDiv(pos.tpTriggerPx - pos.markPx, pos.markPx) * 100)}% ({t("position.distanceToTp")})
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div className="font-mono text-xs text-text-t3">—</div>
@@ -260,10 +287,41 @@ export function PositionAccordion(): React.ReactElement | null {
                         <div className="font-mono text-2xs tabular-nums text-text-t4">
                           {signed(safeDiv(pos.slTriggerPx - pos.entryPx, pos.entryPx) * 100)}%
                         </div>
+                        {pos.markPx > 0 && (
+                          <div className="font-mono text-2xs tabular-nums text-text-t3" title={t("position.distanceToSl")}>
+                            {signed(safeDiv(pos.slTriggerPx - pos.markPx, pos.markPx) * 100)}% ({t("position.distanceToSl")})
+                          </div>
+                        )}
                       </>
                     ) : (
                       <div className="font-mono text-xs text-text-t3">—</div>
                     )}
+                  </div>
+                  <div /> {/* 3. kolon boş — simetri */}
+
+                  {/* Satır 4: R Multiple / Süre */}
+                  <div>
+                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                      {t("position.rMultiple")}
+                    </div>
+                    {(() => {
+                      const r = computeRMultiple(pos.entryPx, pos.markPx, pos.slTriggerPx, pos.direction);
+                      return r === null ? (
+                        <div className="font-mono text-xs text-text-t3">—</div>
+                      ) : (
+                        <div className="font-mono text-xs font-semibold tabular-nums" style={{ color: r >= 0 ? EMERALD : CRIMSON }}>
+                          {signed(r)}R
+                        </div>
+                      );
+                    })()}
+                  </div>
+                  <div>
+                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                      {t("position.duration")}
+                    </div>
+                    <div className="font-mono text-xs text-text-t1 tabular-nums">
+                      {pos.cTime > 0 ? fmtDuration(pos.cTime, Date.now()) : "—"}
+                    </div>
                   </div>
                   <div /> {/* 3. kolon boş — simetri */}
 
