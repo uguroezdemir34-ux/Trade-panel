@@ -16,6 +16,7 @@ import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
 import { MarketRibbon } from "@/components/grafik/MarketRibbon";
 import { AdvancedPositionCard } from "@/components/grafik/AdvancedPositionCard";
 import { GuardianPanel } from "@/components/grafik/GuardianPanel";
+import { ActivePairMiniCard } from "@/components/grafik/ActivePairMiniCard";
 import { emaSeries } from "@/lib/indicators/ema";
 import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
@@ -428,6 +429,15 @@ export default function GrafikPage() {
         </div>
       )}
       {isOverlayActive && <GuardianPanel pair={pair} />}
+      {isOverlayActive && (
+        // BTC + ETH + aktif parite — aktif parite BTC/ETH ise tekrar
+        // gösterilmesin diye Set ile dedupe edilir, sıra korunur.
+        <div className="flex gap-2 overflow-x-auto py-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+          {Array.from(new Set<Pair>(["BTC", "ETH", pair])).map((p) => (
+            <ActivePairMiniCard key={p} pair={p} />
+          ))}
+        </div>
+      )}
 
       <ChartControls
         timeframe={timeframe}
@@ -586,7 +596,14 @@ export default function GrafikPage() {
               // küçülse bile sağ kenar hep bu 64px'te sabit kalır, fiyat
               // eksenine olan mesafe değişmez — bu yüzden right-16 değerine
               // dokunulmadı (bkz. görev raporu).
-              <div className="absolute top-2 right-16 pointer-events-none">
+              // max-w-[85%]: BİLEREK CARD'IN KENDİSİNE değil, bu wrapper'a
+              // eklendi. Wrapper'ın containing block'u bu `.relative` div
+              // (gerçek/definite genişlik — chart genişliği), yüzde burada
+              // güvenle çözülüyor. Aynı yüzdeyi doğrudan AdvancedPositionCard'ın
+              // kök className'ine eklemek CSS açısından döngüsel/tanımsız
+              // olurdu (kartın parent'ı zaten shrink-to-fit, genişliği kendi
+              // içeriğine bağlı) — bkz. görev raporu.
+              <div className="absolute top-2 right-16 max-w-[85%] pointer-events-none">
                 <AdvancedPositionCard pair={pair} />
               </div>
             )}
