@@ -13,10 +13,10 @@ import { ChartControls, type ChartClickMode } from "@/components/grafik/ChartCon
 import { ChartLegend } from "@/components/grafik/ChartLegend";
 import { PositionOverlayBar } from "@/components/grafik/PositionOverlayBar";
 import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
-import { MarketRibbon } from "@/components/grafik/MarketRibbon";
 import { AdvancedPositionCard } from "@/components/grafik/AdvancedPositionCard";
 import { GuardianPanel } from "@/components/grafik/GuardianPanel";
 import { ActivePairMiniCard } from "@/components/grafik/ActivePairMiniCard";
+import { EquityMiniCard } from "@/components/grafik/EquityMiniCard";
 import { emaSeries } from "@/lib/indicators/ema";
 import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
@@ -412,12 +412,15 @@ export default function GrafikPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const chartSection = useMemo(() => (
     <>
-      {/* War Room overlay — /karar'dan "→ Chart" ile odaklanıldığında (A + C + D) */}
+      {/* War Room overlay — /karar'dan "→ Chart" ile odaklanıldığında (C + D).
+          NOT: MarketRibbon.tsx artık bu sayfada render edilmiyor — dosya
+          SİLİNMEDİ (başka bir yerde yeniden kullanılabilir diye durur),
+          BTC/ETH/DXY/EQUITY bilgisi aşağıdaki 4'lü mini kart şeridine
+          taşındı (EQUITY artık ayrı bir kart, DXY item'ı düşürüldü —
+          ActivePairMiniCard/EquityMiniCard'ın hiçbirinde DXY yok, sadece
+          MarketRibbon'da vardı). */}
       {isOverlayActive && (
-        <div className="flex items-center gap-2">
-          <div className="flex-1 min-w-0">
-            <MarketRibbon />
-          </div>
+        <div className="flex items-center justify-end">
           <button
             onClick={() => clearFocus()}
             className="shrink-0 rounded border border-border px-2 py-1.5 font-mono text-xs text-text-t3 hover:text-text-t1 hover:border-text-t2 transition-colors"
@@ -430,12 +433,13 @@ export default function GrafikPage() {
       )}
       {isOverlayActive && <GuardianPanel pair={pair} />}
       {isOverlayActive && (
-        // BTC + ETH + aktif parite — aktif parite BTC/ETH ise tekrar
-        // gösterilmesin diye Set ile dedupe edilir, sıra korunur.
+        // BTC + ETH + aktif parite (dedupe'lı, ScoreRingV2+MTF ile) + EQUITY
+        // (4. kart, ScoreRingV2 gerektirmez — ayrı, basit bir component).
         <div className="flex gap-2 overflow-x-auto py-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           {Array.from(new Set<Pair>(["BTC", "ETH", pair])).map((p) => (
             <ActivePairMiniCard key={p} pair={p} />
           ))}
+          <EquityMiniCard />
         </div>
       )}
 
