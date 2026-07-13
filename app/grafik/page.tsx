@@ -573,7 +573,14 @@ export default function GrafikPage() {
                 currentPrice={livePrice ?? undefined}
               />
             {isOverlayActive && (
-              <div className="absolute top-2 right-2 pointer-events-none">
+              // right-16 (64px): lightweight-charts sağ fiyat eksenini otomatik
+              // genişlikte çiziyor (borderVisible/minimumWidth override edilmemiş,
+              // bkz. PriceChart.tsx:201 rightPriceScale), gerçek piksel genişliği
+              // runtime'da DOM'dan ölçülüyor — burada sandbox'tan ölçülemedi, 9
+              // paritenin (lib/constants/pairs.ts) en uzun ondalıklı fiyat
+              // gösterimini (örn. SUI'nin $0.7178 gibi 4 ondalıklı hali)
+              // kapsayacak güvenli bir sabit tampon kullanıldı.
+              <div className="absolute top-2 right-16 pointer-events-none">
                 <AdvancedPositionCard pair={pair} />
               </div>
             )}
