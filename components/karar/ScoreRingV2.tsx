@@ -2,6 +2,7 @@
 import { memo } from "react";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useT } from "@/lib/i18n/context";
+import { getScoreColor } from "@/lib/ui/scoreColor";
 
 interface Props {
   score: number;
@@ -28,14 +29,6 @@ function blendColor(base: string, tint: string, t: number): string {
   const g = Math.round(bg + (tg - bg) * t);
   const b = Math.round(bb + (tb - bb) * t);
   return `#${r.toString(16).padStart(2, "0")}${g.toString(16).padStart(2, "0")}${b.toString(16).padStart(2, "0")}`;
-}
-
-function bandColors(score: number): [string, string, string, boolean] {
-  if (score >= 80) return ["#D4AF37", "#F0CC55", "#D4AF37", false]; // gold
-  if (score >= 60) return ["#3F9C93", "#5CBAB0", "#3F9C93", false]; // sapphire
-  if (score >= 40) return ["#C08A3E", "#DCA65A", "#C08A3E", false]; // bronze
-  if (score >= 30) return ["#C4607E", "#E08AA8", "#C4607E", true];  // wine  (glow boost)
-  return ["#D44E65", "#F0708A", "#D44E65", true];                   // crimson (glow boost)
 }
 
 function buildSparkPath(snaps: number[], cx: number, cy: number, innerR: number): string {
@@ -78,7 +71,8 @@ function ScoreRingV2Impl({
   const radius        = (size - strokeWidth) / 2 - bezelStroke - 1; // inset to clear bezel gap
   const circumference = 2 * Math.PI * radius;
   const offset        = circumference - (Math.min(Math.max(score, 0), 100) / 100) * circumference;
-  const [gradFrom, gradTo, glowColor, glowBoost] = bandColors(score);
+  const { color: gradFrom, lightColor: gradTo, glowBoost } = getScoreColor(score);
+  const glowColor = gradFrom;
   const gradientId    = `sgv2-${id}`;
   const bezelGradId   = `sgv2-bezel-${id}`;
   const faceGradId    = `sgv2-face-${id}`;

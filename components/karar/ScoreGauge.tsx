@@ -12,6 +12,7 @@
 
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useT } from "@/lib/i18n/context";
+import { getScoreColor } from "@/lib/ui/scoreColor";
 
 interface Props {
   score: number;
@@ -42,8 +43,8 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
   const t = useT();
   const isDark = useSettingsStore((s) => s.theme) !== "light";
   const v = Math.max(0, Math.min(100, score));
-  /* color: used for needle, hub shine, score text — threshold-based (per original logic) */
-  const color = v >= threshold ? "#22c55e" : v >= 65 ? "#f59e0b" : "#ef4444";
+  /* color: used for needle, hub shine, score text — 5-bant merkezi skor rengi (lib/ui/scoreColor.ts) */
+  const color = getScoreColor(v).color;
   /* progressColor: used only for progress arc — must match 2-zone layout (goThreshold boundary) */
   const progressColor = v >= goThreshold ? "#22c55e" : "#ef4444";
 

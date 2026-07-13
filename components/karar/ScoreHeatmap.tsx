@@ -35,6 +35,7 @@ import { useMarketStore } from "@/lib/store/marketStore";
 import { useLocale } from "@/lib/i18n/context";
 import { formatTickPrice, formatPercent } from "@/lib/i18n/format";
 import { computeHeatmapCells, glowShadowFor, type HeatmapCell } from "@/lib/market/heatmapLayout";
+import { getScoreColor } from "@/lib/ui/scoreColor";
 import type { Pair } from "@/lib/constants/pairs";
 
 function scheduleIdle(cb: () => void): void {
@@ -80,6 +81,9 @@ export function ScoreHeatmap({ onSelect }: ScoreHeatmapProps): React.ReactElemen
         const chgArrow = cell.chg === null ? null : chgUp ? "▲" : "▼";
         // Glow sadece "large" hücrelerde — colorClassFor() değişmedi, bu ayrı bir görsel katman
         const glow = isLarge ? glowShadowFor(cell.verdict, cell.direction) : undefined;
+        // Skor rakamının rengi — merkezi 5-bant sistem. Kart arkaplanı (cell.colorClass,
+        // verdict+direction bazlı) DEĞİŞMEDİ, sadece bu rakamın text rengi override ediliyor.
+        const scoreTextClass = getScoreColor(cell.score).textClass;
 
         return (
           <button
@@ -107,7 +111,7 @@ export function ScoreHeatmap({ onSelect }: ScoreHeatmapProps): React.ReactElemen
                 </div>
 
                 {/* Orta — skor, text-shadow glow */}
-                <div className="text-lg font-bold leading-none" style={glow ? { textShadow: glow } : undefined}>
+                <div className={`text-lg font-bold leading-none ${scoreTextClass}`} style={glow ? { textShadow: glow } : undefined}>
                   {cell.score}
                 </div>
 
@@ -123,7 +127,7 @@ export function ScoreHeatmap({ onSelect }: ScoreHeatmapProps): React.ReactElemen
               <>
                 {/* Normal hücre — sadece isim + skor + küçük yön oku, taşma riskine karşı sade */}
                 <div className="w-full truncate font-bold">{cell.pair}</div>
-                <div className="text-[9px] leading-none opacity-80">{cell.score}</div>
+                <div className={`text-[9px] leading-none opacity-80 ${scoreTextClass}`}>{cell.score}</div>
                 {chgArrow && (
                   <span className={`text-[8px] leading-none ${chgColor}`} aria-label="24h change">
                     {chgArrow}

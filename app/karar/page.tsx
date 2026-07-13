@@ -28,15 +28,6 @@ function fmtCompact(v: number): string {
   return v.toFixed(0);
 }
 
-function activeBorderClass(s: number | undefined): string {
-  if (s === undefined) return "border-white/20";
-  if (s >= 80) return "border-teal-400/60";
-  if (s >= 60) return "border-blue-400/60";
-  if (s >= 40) return "border-amber-400/60";
-  if (s >= 30) return "border-purple-400/60";
-  return "border-red-400/40";
-}
-
 /* Skor hızı pencereleri — snapshot cadence'i ~15dk (candle kapanışına bağlı) olduğu için
    5dk gibi daha kısa bir pencere sahte hassasiyet verir, o yüzden desteklenmiyor. */
 const MOMENTUM_WINDOW_MIN = 15;
@@ -53,6 +44,7 @@ const PAIR_GROUPS: Record<string, readonly Pair[]> = {
 type PairGroup = "all" | "majors" | "alts" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
+import { getScoreColor } from "@/lib/ui/scoreColor";
 import { PAIR_CATEGORY } from "@/lib/constants/pairMeta";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
 import { BlocksList } from "@/components/karar/BlocksList";
@@ -1208,7 +1200,7 @@ export default function KararPage() {
                     className={[
                       "w-full text-left rounded-lg border p-2 lg:p-1.5 font-mono transition-colors card-depth",
                       isActive
-                        ? `${activeBorderClass(score)} bg-surface-s2 text-text-t1`
+                        ? `${score !== undefined ? getScoreColor(score).borderClass : "border-white/20"} bg-surface-s2 text-text-t1`
                         : goStrength === "strong"
                         ? `border-green-400/50 ${goBgClass} text-text-t3 hover:text-text-t2`
                         : goStrength
