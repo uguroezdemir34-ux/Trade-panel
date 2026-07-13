@@ -26,6 +26,7 @@ import { AppHeader } from "./AppHeader";
 import { BottomNav } from "./BottomNav";
 import { SplashScreen } from "./SplashScreen";
 import { ThemeSync } from "./ThemeSync";
+import { DevicePerfSync } from "./DevicePerfSync";
 import { AlarmToastContainer } from "./AlarmToastContainer";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useAccountStore } from "@/lib/store/accountStore";
@@ -199,6 +200,7 @@ export function AppShell({
   return (
     <div className="bg-bg text-text-t1 min-h-screen">
       <ThemeSync />
+      <DevicePerfSync />
       <DisclaimerModal />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />

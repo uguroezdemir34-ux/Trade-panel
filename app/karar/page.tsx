@@ -45,6 +45,7 @@ type PairGroup = "all" | "majors" | "alts" | "go" | "watch" | "act";
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
 import { getScoreColor } from "@/lib/ui/scoreColor";
+import { computeSqueezeRadar } from "@/lib/market/squeezeRadar";
 import { PAIR_CATEGORY } from "@/lib/constants/pairMeta";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
 import { BlocksList } from "@/components/karar/BlocksList";
@@ -192,6 +193,13 @@ export default function KararPage() {
       }
       return true;
     },
+  );
+
+  // Squeeze rozeti (Faz 2) — SqueezeRadarBanner'la aynı saf fonksiyon, aynı
+  // allCandlesForMtf subscription'ı üzerinden (yeni store subscription yok).
+  const squeezePairs = useMemo(
+    () => new Set(computeSqueezeRadar(allCandlesForMtf).map((e) => e.pair)),
+    [allCandlesForMtf],
   );
 
   const mtfResults = useMemo(() => {
@@ -1102,7 +1110,7 @@ export default function KararPage() {
           </div>
 
           {/* Pair grid — v2: mobilde 2 kolon (daha geniş kart), lg: sidebar'da 3 kolon, kapsül slider kartları */}
-          <div className="grid grid-cols-3 gap-1.5 lg:gap-1">
+          <div className="grid grid-cols-3 gap-2 lg:gap-1.5">
             {pairGroup === "watch" && watchlistPairs.length === 0 ? (
               <div className="col-span-3 flex flex-col items-center justify-center py-10 gap-1.5">
                 <span className="font-mono text-[28px] text-text-t4/30 leading-none">☆</span>
@@ -1158,6 +1166,12 @@ export default function KararPage() {
 
               const isWatched = watchlistPairs.includes(p);
 
+              // İkon rozetleri (Faz 2) — mevcut sub kategorilerinden, yeni hesaplama yok.
+              // BASE_MAX (orchestrator.ts) ile orantı: trend/25, adx/15.
+              const trendHigh = pr?.sub?.trend !== undefined && pr.sub.trend / 25 >= 0.7;
+              const adxStrong = pr?.sub?.adx !== undefined && pr.sub.adx / 15 >= 0.7;
+              const inSqueeze = squeezePairs.has(p as Pair);
+
               // Anomali Işığı — FAZ 1 (OI-çöküş) + FAZ 2 (order book duvarı):
               // sadece mevcut results[p] + macroStore.oiVelocity[p] +
               // orderBookStore.imbalance[p]'den okur, yeni fetch yok.
@@ -1198,7 +1212,7 @@ export default function KararPage() {
                       willChange: "box-shadow",
                     } : undefined}
                     className={[
-                      "w-full text-left rounded-lg border p-2 lg:p-1.5 font-mono transition-colors card-depth",
+                      "w-full text-left rounded-lg border p-2.5 lg:p-2 font-mono transition-colors card-depth glass-panel",
                       isActive
                         ? `${score !== undefined ? getScoreColor(score).borderClass : "border-white/20"} bg-surface-s2 text-text-t1`
                         : goStrength === "strong"
@@ -1247,6 +1261,15 @@ export default function KararPage() {
                         </span>
                       )}
                     </div>
+
+                    {/* İkon rozetleri (Faz 2) — sadece koşul sağlanınca render edilir */}
+                    {(trendHigh || adxStrong || inSqueeze) && (
+                      <div className="flex items-center justify-center gap-1 leading-none" aria-hidden>
+                        {trendHigh && <span className="text-[9px]" title="Trend">📊</span>}
+                        {adxStrong && <span className="text-[9px]" title="Momentum">⚡</span>}
+                        {inSqueeze && <span className="text-[9px]" title="Squeeze">🔥</span>}
+                      </div>
+                    )}
 
                     {/* ScoreRingV2 — tüm paritelerde */}
                     <div className="flex justify-center py-0.5">
