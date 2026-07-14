@@ -62,9 +62,13 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
     theme === "light"
       ? "border-slate-300 shadow-md"
       : "border-border/60 shadow-lg";
+  // bg-bg-card/60 (şeffaf) kart arkasındaki chart/mumları görünür bırakıp
+  // okunabilirliği düşürüyordu — light'ta tam opak (bg-white), dark'ta
+  // neredeyse opak (95%) yapıldı.
+  const cardBg = theme === "light" ? "bg-white" : "bg-bg-card/95";
 
   return (
-    <div className={`pointer-events-auto flex flex-col gap-1.5 rounded-lg border ${cardBorderShadow} bg-bg-card/60 px-3 py-2.5 font-mono backdrop-blur-sm`}>
+    <div className={`pointer-events-auto flex flex-col gap-1.5 rounded-lg border ${cardBorderShadow} ${cardBg} px-3 py-2.5 font-mono`}>
       {/* Yön kapsülü + kaldıraç */}
       <div className="flex items-center justify-between gap-3">
         <span
@@ -78,9 +82,12 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
       </div>
 
       {/* PnL — HUD odak noktası (text-4xl → text-2xl: kart artık grafiğin
-          kendisini daha az eziyor, bkz. görev raporu) */}
+          kendisini daha az eziyor, bkz. görev raporu). mb-2: altındaki
+          Entry/Liq/Size grid'iyle arada temiz bir boşluk olsun diye
+          (parent'ın gap-1.5'i tüm satırlara uniform uygulanıyordu, bu
+          spesifik ara için ek boşluk gerekiyordu). */}
       <div
-        className={`rounded-lg px-3 py-1.5 text-center ${
+        className={`mb-2 rounded-lg px-3 py-1.5 text-center ${
           isProfit ? "bg-emerald-500/10" : "bg-red-500/10"
         }`}
       >
@@ -129,8 +136,11 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
 
         <div className={`rounded border ${theme === "light" ? "border-slate-300" : "border-border/50"} bg-surface-s2 px-1.5 py-1 text-center`}>
           <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Size</div>
+          {/* Birim: PositionOverlayBar.tsx:65'teki AYNI kaynak (position.pair,
+              Position tipinin kendi alanı) — yeni bir pair.split()/replace()
+              parse mantığı YAZILMADI, tek bir birim türetme noktası korundu. */}
           <div className="whitespace-nowrap text-lg font-bold tabular-nums text-text-t1">
-            {position.size}
+            {position.size} {position.pair}
           </div>
         </div>
       </div>
