@@ -68,14 +68,21 @@ const COLOR_SIGNAL   = "#f59e0b";
 const COLOR_LIVE     = "#3b82f6";
 
 /**
- * Hex → rgba(...) çevirici — price-line'ların axis label kutusunu
- * yarı-şeffaf yapmak için. lightweight-charts'ın createPriceLine()
- * çağrısındaki `color` SADECE çizginin kendisini (mumların üzerinden
- * geçen yatay hat) etkiler — fiyat ekseni üzerindeki dolgun renkli
- * etiket kutusu AYRI bir opsiyon: `axisLabelColor`. İkisi de aynı
- * yarı-şeffaf rgba ile besleniyor ki hem çizgi hem kutu mumları
- * kapatmasın (bkz. ekran görüntüsü — "LIVE"/"OKX Entry" kutuları
- * opak/solid olduğu için mumları tamamen örtüyordu).
+ * Hex → rgba(...) çevirici — price-line'ların ÇİZGİSİNİ (mumların
+ * üzerinden geçen yatay hat) yarı-şeffaf yapmak için kullanılıyor.
+ *
+ * NOT (araştırma sonucu): fiyat ekseni üzerindeki dolgun renkli etiket
+ * kutusunu (ekran görüntüsündeki "LIVE"/"OKX Entry" kutuları) ayrı bir
+ * axisLabelColor/axisLabelTextColor opsiyonuyla düzeltmeye çalışıldı —
+ * deploy sonrası görsel doğrulamada HİÇBİR etkisi olmadığı görüldü,
+ * geri alındı. Kurulu lightweight-charts sürümünün (package.json'da
+ * ^4.2.3) gerçek PriceLineOptions API'si bu sandbox'ta doğrulanamadı
+ * (node_modules yok; tradingview.github.io, unpkg.com, cdn.jsdelivr.net,
+ * raw.githubusercontent.com, registry.npmjs.org — 5 farklı kaynak
+ * denendi, hepsi proxy politikası tarafından 403 ile reddedildi).
+ * TEKNİK KISIT: eksen etiket kutusunun rengini kontrol eden gerçek API
+ * şu an bilinmiyor — bu iş yalnızca gerçek node_modules'e erişimi olan
+ * bir ortamda (kütüphanenin kendi .d.ts dosyası okunarak) çözülebilir.
  */
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace("#", "");
@@ -684,11 +691,12 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
             price: currentPrice,
             color: hexToRgba(COLOR_LIVE, 0.75), lineWidth: 1, lineStyle: 3,
             axisLabelVisible: true, title: t("grafik.livePriceLabel"),
-            // axisLabelColor: eksen üzerindeki "LIVE" kutusu — color'dan
-            // AYRI bir opsiyon, o kutuyu etkilemez (bkz. hexToRgba yorumu).
-            // Yarı-şeffaf olmadan ekran görüntüsündeki gibi mumları kapatıyordu.
-            axisLabelColor: hexToRgba(COLOR_LIVE, 0.55),
-            axisLabelTextColor: "#ffffff",
+            // axisLabelColor/axisLabelTextColor DENENDİ, deploy'da görsel
+            // etkisi olmadığı doğrulandı (kütüphane bu alanları tanımıyor
+            // gibi görünüyor — kurulu lightweight-charts sürümünde
+            // erişilebilir bir kaynaktan doğrulanamadı, geri alındı).
+            // TEKNİK KISIT: fiyat ekseni üzerindeki etiket kutusunun
+            // arkaplan/metin rengini kontrol eden gerçek API şu an bilinmiyor.
           });
         } catch { /* ignore */ }
       }
@@ -961,11 +969,10 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           // mumların üzerinden geçen hat daha az baskın olsun diye.
           lineStyle: 2,
           axisLabelVisible: true,
-          // Fiyat ekseni etiket kutusu — createPriceLine'ın color'ı BU
-          // kutuyu ETKİLEMEZ, ayrı axisLabelColor gerekiyor (bkz. dosya
-          // başındaki hexToRgba yorumu). Yarı-şeffaf ki mumlar arkadan görünsün.
-          axisLabelColor: hexToRgba(hex, 0.55),
-          axisLabelTextColor: "#ffffff",
+          // axisLabelColor/axisLabelTextColor DENENDİ, deploy'da görsel
+          // etkisi olmadığı doğrulandı — geri alındı (bkz. LIVE line'daki
+          // aynı not). TEKNİK KISIT: fiyat ekseni etiket kutusunun
+          // arkaplan/metin rengini kontrol eden gerçek API şu an bilinmiyor.
           title: tl.label ?? TITLES[tl.kind] ?? tl.kind,
         });
         tradeLinesRef.current.push(line);
