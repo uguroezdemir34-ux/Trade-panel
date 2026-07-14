@@ -914,7 +914,7 @@ volumeSection: "VOLUMEN",
     },
     mtf: {
       title: "MULTI-TIMEFRAME-TREND",
-      tf: { "1h": "1H", "4h": "4H", "1d": "1T" },
+      tf: { "15m": "15M", "1h": "1H", "4h": "4H", "1d": "1T" },
       cls: {
         strong_up: "Starker Aufwärtstrend",
         up: "Aufwärtstrend",

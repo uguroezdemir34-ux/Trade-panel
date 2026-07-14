@@ -1073,7 +1073,7 @@ export const en: Dictionary = {
     },
     mtf: {
       title: "MULTI-TIMEFRAME TREND",
-      tf: { "1h": "1H", "4h": "4H", "1d": "1D" },
+      tf: { "15m": "15M", "1h": "1H", "4h": "4H", "1d": "1D" },
       cls: {
         strong_up: "Strong uptrend",
         up: "Uptrend",

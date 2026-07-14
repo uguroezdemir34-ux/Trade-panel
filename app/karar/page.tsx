@@ -11,8 +11,8 @@ import { useTradesStore } from "@/lib/store/tradesStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { computeOiDivergence } from "@/lib/market/oi-divergence";
-import { computeMtfTrend } from "@/lib/market/mtfTrend";
-import type { MtfTrendResult } from "@/lib/market/mtfTrend";
+import { computeDisplayTrends } from "@/lib/market/mtfTrend";
+import type { TimeframeTrend } from "@/lib/market/mtfTrend";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
 import { useT, useLocale } from "@/lib/i18n/context";
@@ -198,12 +198,12 @@ export default function KararPage() {
     return out;
   }, [scoreHistory]);
 
-  // MTF trend data for the pair grid — smart equality so only 1h/4h/1d candle closes trigger recompute
+  // MTF trend data for the pair grid — smart equality so only 15m/1h/4h/1d candle closes trigger recompute
   const allCandlesForMtf = useCandleStore(
     (s) => s.candles,
     (prev, next) => {
       for (const pair of PAIRS) {
-        for (const tf of ["1h", "4h", "1d"] as const) {
+        for (const tf of ["15m", "1h", "4h", "1d"] as const) {
           const key = `${pair}_${tf}` as const;
           const p = prev[key];
           const n = next[key];
@@ -226,15 +226,21 @@ export default function KararPage() {
     [allCandlesForMtf],
   );
 
-  const mtfResults = useMemo(() => {
-    const out: Partial<Record<Pair, MtfTrendResult>> = {};
+  // Görüntüleme amaçlı 4-TF (15m/1h/4h/1d) dizisi — computeMtfTrend()'in
+  // KENDİSİ burada hiç ÇAĞRILMIYOR/DEĞİŞTİRİLMİYOR; score engine'in KENDİ,
+  // ayrı 3-TF (1h/4h/1d) çağrısı (lib/hooks/useScoreEngine.ts:247) bu
+  // memo'dan bağımsız, hiç etkilenmiyor — bkz. lib/market/mtfTrend.ts'teki
+  // computeDisplayTrends() yorum bloğu.
+  const mtfDisplayTrends = useMemo(() => {
+    const out: Partial<Record<Pair, TimeframeTrend[]>> = {};
     for (const pair of PAIRS) {
+      const c15m = allCandlesForMtf[`${pair}_15m`] ?? EMPTY_CANDLES;
       const c1h = allCandlesForMtf[`${pair}_1h`] ?? EMPTY_CANDLES;
       const c4h = allCandlesForMtf[`${pair}_4h`] ?? EMPTY_CANDLES;
       const c1d = allCandlesForMtf[`${pair}_1d`] ?? EMPTY_CANDLES;
       if (c1h.length >= 20) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        out[pair] = computeMtfTrend(pair, c1h as any, c4h as any, c1d as any);
+        out[pair] = computeDisplayTrends(c15m as any, c1h as any, c4h as any, c1d as any);
       }
     }
     return out;
@@ -1404,15 +1410,17 @@ export default function KararPage() {
                       )}
                     </div>
 
-                    {/* MTF mini trend satırı: 1H / 4H / 1D — badge wrapper'dan (bir önceki
-                        tur, satır 931) bağımsız, ayrı bir ikinci min-h rezervasyonu. Yeni
-                        dış wrapper her zaman render olur (min-h-6), içindeki koşullu <div>
-                        (border-t + içerik) DEĞİŞMEDİ — satır yokken sadece boş alan kalsın,
-                        yapay bir border çizgisi belirmesin diye border-t hâlâ koşullu. */}
+                    {/* MTF mini trend satırı: 15M / 1H / 4H / 1D — badge wrapper'dan (bir
+                        önceki tur, satır 931) bağımsız, ayrı bir ikinci min-h rezervasyonu.
+                        Yeni dış wrapper her zaman render olur (min-h-6), içindeki koşullu
+                        <div> (border-t + içerik) DEĞİŞMEDİ — satır yokken sadece boş alan
+                        kalsın, yapay bir border çizgisi belirmesin diye border-t hâlâ
+                        koşullu. gap-2.5 → gap-1.5: 3 sütundan 4 sütuna çıkınca mobilde
+                        taşma olmasın diye sıkılaştırıldı, text boyutları değişmedi. */}
                     <div className="min-h-6">
-                      {mtfResults[p]?.trends && (
-                        <div className="flex justify-center gap-2.5 mt-1 border-t border-border/30 pt-1">
-                          {mtfResults[p]!.trends.map((t) => (
+                      {mtfDisplayTrends[p] && (
+                        <div className="flex justify-center gap-1.5 mt-1 border-t border-border/30 pt-1">
+                          {mtfDisplayTrends[p]!.map((t) => (
                             <span key={t.tf} className="flex flex-col items-center" style={{ gap: "1px" }}>
                               <span className="text-2xs font-mono uppercase tracking-wider text-text-t2/70 leading-none">{t.tf}</span>
                               <span className={`text-[10px] font-mono leading-none ${

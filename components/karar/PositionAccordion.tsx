@@ -9,6 +9,29 @@ import { useFocusStore } from "@/lib/store/focusStore";
 import { useT } from "@/lib/i18n/context";
 import type { Pair } from "@/lib/constants/pairs";
 
+// lucide-react bu projede kurulu değil (package.json'da doğrulandı,
+// npm install bu sandbox'ta engelli — CLAUDE.md §3) — lucide'ın
+// "TrendingUp" ikonunun kendi SVG path'i (MIT lisanslı, herkese açık
+// ikon şekli) birebir aynı görsel sonucu vermek için buraya inline
+// kopyalandı, yeni bir bağımlılık eklenmedi.
+function TrendingUpIcon({ className }: { className?: string }): React.ReactElement {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden
+    >
+      <polyline points="22 7 13.5 15.5 8.5 10.5 2 17" />
+      <polyline points="16 7 22 7 22 13" />
+    </svg>
+  );
+}
+
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function fmt(n: number, dec = 0): string {
   return n.toLocaleString("en-US", { minimumFractionDigits: dec, maximumFractionDigits: dec });
@@ -199,11 +222,12 @@ export function PositionAccordion(): React.ReactElement | null {
                   setFocus(pos.pair as Pair);
                   router.push("/grafik");
                 }}
-                className="font-mono text-2xs text-text-t4 hover:text-text-t1 ml-1 shrink-0 px-1 py-0.5 rounded transition-colors"
+                className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-mono text-2xs font-semibold text-emerald-400 ml-1 shrink-0 transition-colors hover:bg-emerald-500/20 hover:border-emerald-500/50 active:bg-emerald-500/25"
                 title={t("position.goToChart")}
                 aria-label={t("position.goToChart")}
               >
-                →Chart
+                <TrendingUpIcon className="h-3 w-3 shrink-0" />
+                {t("position.goToChart")}
               </span>
 
               <span

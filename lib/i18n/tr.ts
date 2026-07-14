@@ -1101,7 +1101,7 @@ export const tr: Dictionary = {
     },
     mtf: {
       title: "ÇOKLU ZAMAN DİLİMİ TREND",
-      tf: { "1h": "1S", "4h": "4S", "1d": "1G" },
+      tf: { "15m": "15D", "1h": "1S", "4h": "4S", "1d": "1G" },
       cls: {
         strong_up: "Güçlü yükseliş trendi",
         up: "Yükseliş trendi",
