@@ -116,11 +116,24 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
           temada açık bg-surface-s2 arkaplana karşı neredeyse görünmez
           oluyordu. text-text-t1 (tema-farkında token, projenin geri
           kalanında zaten kullanılıyor) ile değiştirildi — gerçek kontrast
-          düzeltmesi bu, sadece kenarlık/gölge eklemek yetmezdi. */}
+          düzeltmesi bu, sadece kenarlık/gölge eklemek yetmezdi.
+
+          Taşma düzeltmesi: grid-cols-3 Tailwind'de minmax(0,1fr) demek —
+          kolonlar wrapper'ın max-w-[85%] kısıtı altında içeriğin doğal
+          genişliğinin ALTINA küçülebiliyor. formatCoinAmount() eklenince
+          SIZE değeri uzadı ("4.0410 ETH"), text-lg + whitespace-nowrap
+          kombinasyonu kolon sınırını aşıp bir sonraki kolonun üstüne
+          taşıyordu (ekran görüntüsüyle doğrulandı). İki değişiklik:
+          (1) text-lg → text-sm, üç değer de daha az yatay yer kaplıyor;
+          (2) whitespace-nowrap üç değer div'inden de kaldırıldı — sığmayan
+          nadir durumda (çok uzun coin adı vb.) kesilip komşu kutuya taşmak
+          yerine kendi kutusu içinde 2. satıra sarsın, hiçbir zaman bilgi
+          kaybı (truncate) olmasın. Etiketler (ENTRY/LIQ/SIZE) zaten kısa
+          sabit kelimeler, whitespace-nowrap'ta bırakıldı. */}
       <div className="grid grid-cols-3 gap-1.5">
         <div className={`rounded border ${theme === "light" ? "border-slate-300" : "border-border/50"} bg-surface-s2 px-1.5 py-1 text-center`}>
           <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Entry</div>
-          <div className="whitespace-nowrap text-lg font-bold tabular-nums text-text-t1">
+          <div className="text-sm font-bold tabular-nums text-text-t1">
             {formatPrice(position.entryPx, locale)}
           </div>
         </div>
@@ -128,7 +141,7 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
         {position.liqPx !== null && (
           <div className="rounded border border-red-500/50 bg-red-500/5 px-1.5 py-1 text-center">
             <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-red-400">Liq</div>
-            <div className="whitespace-nowrap text-lg font-bold tabular-nums text-red-400">
+            <div className="text-sm font-bold tabular-nums text-red-400">
               {formatPrice(position.liqPx, locale)}
             </div>
           </div>
@@ -142,7 +155,7 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
               (örn. 4.04099999999999) 4 ondalığa temizliyor. Yeni bir
               toFixed()/parse mantığı YAZILMADI, tek bir formatlama noktası
               kullanıldı — position.pair hâlâ aynı kaynak, ayrıca taşınmadı. */}
-          <div className="whitespace-nowrap text-lg font-bold tabular-nums text-text-t1">
+          <div className="text-sm font-bold tabular-nums text-text-t1">
             {formatCoinAmount(position.size, position.pair, locale)}
           </div>
         </div>
