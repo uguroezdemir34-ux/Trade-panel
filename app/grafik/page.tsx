@@ -16,6 +16,7 @@ import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
 import { AdvancedPositionCard } from "@/components/grafik/AdvancedPositionCard";
 import { GuardianPanel } from "@/components/grafik/GuardianPanel";
 import { ActivePairMiniCard } from "@/components/grafik/ActivePairMiniCard";
+import { DxyMiniCard } from "@/components/grafik/DxyMiniCard";
 import { EquityMiniCard } from "@/components/grafik/EquityMiniCard";
 import { emaSeries } from "@/lib/indicators/ema";
 import { rsiSeries } from "@/lib/indicators/rsi";
@@ -416,9 +417,8 @@ export default function GrafikPage() {
           NOT: MarketRibbon.tsx artık bu sayfada render edilmiyor — dosya
           SİLİNMEDİ (başka bir yerde yeniden kullanılabilir diye durur),
           BTC/ETH/DXY/EQUITY bilgisi aşağıdaki 4'lü mini kart şeridine
-          taşındı (EQUITY artık ayrı bir kart, DXY item'ı düşürüldü —
-          ActivePairMiniCard/EquityMiniCard'ın hiçbirinde DXY yok, sadece
-          MarketRibbon'da vardı). */}
+          taşındı. Aktif parite kartı şeritten KALDIRILDI — skoru zaten
+          hemen üstteki GuardianPanel'de var, tekrarı gereksizdi. */}
       {isOverlayActive && (
         <div className="flex items-center justify-end">
           <button
@@ -433,12 +433,12 @@ export default function GrafikPage() {
       )}
       {isOverlayActive && <GuardianPanel pair={pair} />}
       {isOverlayActive && (
-        // BTC + ETH + aktif parite (dedupe'lı, ScoreRingV2+MTF ile) + EQUITY
-        // (4. kart, ScoreRingV2 gerektirmez — ayrı, basit bir component).
+        // BTC + ETH (ScoreRingV2+MTF ile) + DXY + EQUITY (ScoreRingV2
+        // gerektirmeyen, ayrı basit iki-satır kartlar).
         <div className="flex gap-2 overflow-x-auto py-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
-          {Array.from(new Set<Pair>(["BTC", "ETH", pair])).map((p) => (
-            <ActivePairMiniCard key={p} pair={p} />
-          ))}
+          <ActivePairMiniCard pair="BTC" />
+          <ActivePairMiniCard pair="ETH" />
+          <DxyMiniCard />
           <EquityMiniCard />
         </div>
       )}
@@ -695,11 +695,13 @@ export default function GrafikPage() {
             }}
           />
         ) : (
-          <div className="flex flex-col gap-2 px-0 py-3">
+          <div className="flex flex-col gap-1 px-0 py-3">
             {/* Geri butonu + pair adı — kendi px-3'ünü taşıyor, parent'ın
                 px-0 olması sadece chartSection'ın (kendi iç padding'i olan
                 PositionOverlayBar/ChartControls) tam genişlik almasını
-                sağlıyor, bu satırı etkilemiyor. */}
+                sağlıyor, bu satırı etkilemiyor. gap-2→gap-1: başlık ile
+                (War Room aktifken) hemen altındaki GuardianPanel arası
+                dikey boşluk yarıya indirildi. */}
             <div className="flex items-center gap-3 px-3">
               <button
                 onClick={() => { setMobileView("list"); window.history.back(); }}

@@ -45,6 +45,7 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
   );
   const livePrice = useMarketStore((s) => s.prices[pair]?.last ?? null);
   const locale = useSettingsStore((s) => s.locale);
+  const theme = useSettingsStore((s) => s.theme);
 
   if (!position || livePrice === null) return null;
 
@@ -52,9 +53,18 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
   const roe = computeRoe(position, livePrice);
   const isLong = position.direction === "LONG";
   const isProfit = upl >= 0;
+  // Light temada bg-border/60 token'ı chart'ın açık arkaplanına karşı
+  // çok soluk kalıyordu — literal gri sınır + daha belirgin gölge ile
+  // değiştirildi (ScoreRingV2'deki isDark deseniyle aynı: theme JS'te
+  // okunup koşullu class seçiliyor, Tailwind'in dark: variant'ı bu
+  // projede darkMode config'i olmadığı için kullanılmıyor).
+  const cardBorderShadow =
+    theme === "light"
+      ? "border-slate-300 shadow-md"
+      : "border-border/60 shadow-lg";
 
   return (
-    <div className="pointer-events-auto flex flex-col gap-1.5 rounded-lg border border-border/60 bg-bg-card/60 px-3 py-2.5 font-mono shadow-lg backdrop-blur-sm">
+    <div className={`pointer-events-auto flex flex-col gap-1.5 rounded-lg border ${cardBorderShadow} bg-bg-card/60 px-3 py-2.5 font-mono backdrop-blur-sm`}>
       {/* Yön kapsülü + kaldıraç */}
       <div className="flex items-center justify-between gap-3">
         <span
@@ -81,8 +91,12 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
         >
           {formatPrice(upl, locale, true)}
         </div>
+        {/* mt-1 → mt-2: text-2xl font-black + leading-none üstteki rakamın
+            görsel alt kenarını çok sıkı bırakıyordu, % satırıyla neredeyse
+            değiyordu (özellikle light temada, ekran görüntüsünde teyit
+            edildi) — boşluk iki katına çıkarıldı. */}
         <div
-          className={`mt-1 whitespace-nowrap text-sm font-bold tabular-nums ${
+          className={`mt-2 whitespace-nowrap text-sm font-bold tabular-nums ${
             isProfit ? "text-emerald-400" : "text-red-500"
           }`}
         >
@@ -90,11 +104,16 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
         </div>
       </div>
 
-      {/* Entry / Liq / Size — dashboard grid */}
+      {/* Entry / Liq / Size — dashboard grid.
+          NOT: değer text'leri önceden hardcoded text-white idi — light
+          temada açık bg-surface-s2 arkaplana karşı neredeyse görünmez
+          oluyordu. text-text-t1 (tema-farkında token, projenin geri
+          kalanında zaten kullanılıyor) ile değiştirildi — gerçek kontrast
+          düzeltmesi bu, sadece kenarlık/gölge eklemek yetmezdi. */}
       <div className="grid grid-cols-3 gap-1.5">
-        <div className="rounded border border-border/50 bg-surface-s2 px-1.5 py-1 text-center">
+        <div className={`rounded border ${theme === "light" ? "border-slate-300" : "border-border/50"} bg-surface-s2 px-1.5 py-1 text-center`}>
           <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Entry</div>
-          <div className="whitespace-nowrap text-lg font-bold tabular-nums text-white">
+          <div className="whitespace-nowrap text-lg font-bold tabular-nums text-text-t1">
             {formatPrice(position.entryPx, locale)}
           </div>
         </div>
@@ -108,9 +127,9 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
           </div>
         )}
 
-        <div className="rounded border border-border/50 bg-surface-s2 px-1.5 py-1 text-center">
+        <div className={`rounded border ${theme === "light" ? "border-slate-300" : "border-border/50"} bg-surface-s2 px-1.5 py-1 text-center`}>
           <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Size</div>
-          <div className="whitespace-nowrap text-lg font-bold tabular-nums text-white">
+          <div className="whitespace-nowrap text-lg font-bold tabular-nums text-text-t1">
             {position.size}
           </div>
         </div>
