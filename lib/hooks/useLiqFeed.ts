@@ -22,47 +22,33 @@ import { useLiqFeedStore, type LiqEvent, type LiqExchange } from "@/lib/store/li
 const OKX_CONTRACT_SIZE: Partial<Record<Pair, number>> = {
   BTC: 0.001,
   ETH: 0.01,
-  XRP: 10,
   SOL: 0.1,
   BNB: 0.01,
-  ADA: 100,
   AVAX: 0.1,
-  DOT: 1,
   LINK: 0.1,
-  POL: 10,
-  DOGE: 100,
-  SHIB: 100_000,
   SUI: 1,
   NEAR: 1,
-  TRX: 1_000,
-  APT: 1,
-  TAO: 0.01,
-  PENDLE: 1,
-  OP: 1,
-  WIF: 1,
 };
 
 // ── Symbol → Pair maps ───────────────────────────────────────────────────────
 const BINANCE_PAIR: Record<string, Pair> = {
-  BTCUSDT: "BTC", ETHUSDT: "ETH", XRPUSDT: "XRP", SOLUSDT: "SOL",
-  BNBUSDT: "BNB", ADAUSDT: "ADA", AVAXUSDT: "AVAX", DOTUSDT: "DOT",
-  LINKUSDT: "LINK", POLUSDT: "POL", MATICUSDT: "POL", DOGEUSDT: "DOGE",
-  "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR", TRXUSDT: "TRX",
-  APTUSDT: "APT", TAOUSDT: "TAO", PENDLEUSDT: "PENDLE", OPUSDT: "OP", WIFUSDT: "WIF",
+  BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL",
+  BNBUSDT: "BNB", AVAXUSDT: "AVAX",
+  LINKUSDT: "LINK",
+  SUIUSDT: "SUI", NEARUSDT: "NEAR",
+  XRPUSDT: "XRP",
 };
 
 const BYBIT_PAIR: Record<string, Pair> = {
-  BTCUSDT: "BTC", ETHUSDT: "ETH", XRPUSDT: "XRP", SOLUSDT: "SOL",
-  BNBUSDT: "BNB", ADAUSDT: "ADA", AVAXUSDT: "AVAX", DOTUSDT: "DOT",
-  LINKUSDT: "LINK", POLUSDT: "POL", MATICUSDT: "POL", DOGEUSDT: "DOGE",
-  "1000SHIBUSDT": "SHIB", SUIUSDT: "SUI", NEARUSDT: "NEAR", TRXUSDT: "TRX",
-  APTUSDT: "APT", TAOUSDT: "TAO", PENDLEUSDT: "PENDLE", OPUSDT: "OP", WIFUSDT: "WIF",
+  BTCUSDT: "BTC", ETHUSDT: "ETH", SOLUSDT: "SOL",
+  BNBUSDT: "BNB", AVAXUSDT: "AVAX",
+  LINKUSDT: "LINK",
+  SUIUSDT: "SUI", NEARUSDT: "NEAR",
+  XRPUSDT: "XRP",
 };
 
 // Binance / Bybit "1000X" symbols: reported size is in 1000 units
-const KILO_MULTIPLIER: Record<string, number> = {
-  "1000SHIBUSDT": 1_000,
-};
+const KILO_MULTIPLIER: Record<string, number> = {};
 
 const RECONNECT_DELAY_MS = 10_000;
 const PRUNE_INTERVAL_MS = 5 * 60 * 1_000;

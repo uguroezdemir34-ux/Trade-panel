@@ -30,6 +30,15 @@ import { VerticalLinePrimitive } from "@/lib/chart/primitives/VerticalLinePrimit
 import { CrossLinePrimitive } from "@/lib/chart/primitives/CrossLinePrimitive";
 import { FibTimeZonePrimitive } from "@/lib/chart/primitives/FibTimeZonePrimitive";
 
+function chartPriceFormat(price: number): { type: "price"; precision: number; minMove: number } {
+  if (price < 0.001)  return { type: "price", precision: 8, minMove: 0.00000001 };
+  if (price < 0.01)   return { type: "price", precision: 6, minMove: 0.000001   };
+  if (price < 1)      return { type: "price", precision: 4, minMove: 0.0001     };
+  if (price < 100)    return { type: "price", precision: 3, minMove: 0.001      };
+  if (price < 10_000) return { type: "price", precision: 2, minMove: 0.01       };
+  return                     { type: "price", precision: 0, minMove: 1          };
+}
+
 interface Props {
   series: ChartSeries;
   height?: number;
@@ -57,6 +66,31 @@ const COLOR_VWAP     = "#f97316";
 const COLOR_MACD     = "#3b82f6";
 const COLOR_SIGNAL   = "#f59e0b";
 const COLOR_LIVE     = "#3b82f6";
+
+/**
+ * Hex → rgba(...) çevirici — price-line'ların ÇİZGİSİNİ (mumların
+ * üzerinden geçen yatay hat) yarı-şeffaf yapmak için kullanılıyor.
+ *
+ * NOT (araştırma sonucu): fiyat ekseni üzerindeki dolgun renkli etiket
+ * kutusunu (ekran görüntüsündeki "LIVE"/"OKX Entry" kutuları) ayrı bir
+ * axisLabelColor/axisLabelTextColor opsiyonuyla düzeltmeye çalışıldı —
+ * deploy sonrası görsel doğrulamada HİÇBİR etkisi olmadığı görüldü,
+ * geri alındı. Kurulu lightweight-charts sürümünün (package.json'da
+ * ^4.2.3) gerçek PriceLineOptions API'si bu sandbox'ta doğrulanamadı
+ * (node_modules yok; tradingview.github.io, unpkg.com, cdn.jsdelivr.net,
+ * raw.githubusercontent.com, registry.npmjs.org — 5 farklı kaynak
+ * denendi, hepsi proxy politikası tarafından 403 ile reddedildi).
+ * TEKNİK KISIT: eksen etiket kutusunun rengini kontrol eden gerçek API
+ * şu an bilinmiyor — bu iş yalnızca gerçek node_modules'e erişimi olan
+ * bir ortamda (kütüphanenin kendi .d.ts dosyası okunarak) çözülebilir.
+ */
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
 
 const THEME_COLORS = {
   dark:  { grid: "#2d2d2d", text: "#a3a3a3", border: "#2d2d2d" },
@@ -185,9 +219,12 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         timeVisible: true,
         secondsVisible: false,
         borderColor: tc.border,
-        rightOffset: 8,
+        rightOffset: 20,
+        fixLeftEdge: true,
+        fixRightEdge: false,
       },
-      rightPriceScale: { borderColor: tc.border },
+      rightPriceScale: { borderColor: tc.border, autoScale: true },
+      handleScroll: { vertTouchDrag: false },
       crosshair: { mode: 1 },
     });
     chartRef.current = chart;
@@ -652,8 +689,14 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         try {
           currentPriceLineRef.current = candle.createPriceLine({
             price: currentPrice,
-            color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
+            color: hexToRgba(COLOR_LIVE, 0.75), lineWidth: 1, lineStyle: 3,
             axisLabelVisible: true, title: t("grafik.livePriceLabel"),
+            // axisLabelColor/axisLabelTextColor DENENDİ, deploy'da görsel
+            // etkisi olmadığı doğrulandı (kütüphane bu alanları tanımıyor
+            // gibi görünüyor — kurulu lightweight-charts sürümünde
+            // erişilebilir bir kaynaktan doğrulanamadı, geri alındı).
+            // TEKNİK KISIT: fiyat ekseni üzerindeki etiket kutusunun
+            // arkaplan/metin rengini kontrol eden gerçek API şu an bilinmiyor.
           });
         } catch { /* ignore */ }
       }
@@ -694,6 +737,10 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     });
 
     candle.setData(series.candles as CandlestickData<Time>[]);
+    const lastClose = (series.candles as CandlestickData<Time>[]).at(-1)?.close;
+    if (lastClose && lastClose > 0) {
+      candle.applyOptions({ priceFormat: chartPriceFormat(lastClose) });
+    }
 
     // EMA20
     if (series.ema20?.length) {
@@ -913,12 +960,19 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       const COLORS: Record<string, string> = { entry: "#3b82f6", sl: "#ef4444", tp1: "#22c55e", tp2: "#86efac" };
       const TITLES: Record<string, string> = { entry: t("grafik.tradeLevelEntry"), sl: "SL", tp1: "TP1", tp2: "TP2" };
       for (const tl of series.tradeLevels) {
+        const hex = COLORS[tl.kind] ?? "#ffffff";
         const line = candle.createPriceLine({
           price: tl.price,
-          color: COLORS[tl.kind] ?? "#ffffff",
+          color: hexToRgba(hex, 0.75),
           lineWidth: 1,
-          lineStyle: tl.kind === "entry" ? 0 : 2,
+          // entry eskiden solid (0) — artık diğerleriyle aynı kesikli (2),
+          // mumların üzerinden geçen hat daha az baskın olsun diye.
+          lineStyle: 2,
           axisLabelVisible: true,
+          // axisLabelColor/axisLabelTextColor DENENDİ, deploy'da görsel
+          // etkisi olmadığı doğrulandı — geri alındı (bkz. LIVE line'daki
+          // aynı not). TEKNİK KISIT: fiyat ekseni etiket kutusunun
+          // arkaplan/metin rengini kontrol eden gerçek API şu an bilinmiyor.
           title: tl.label ?? TITLES[tl.kind] ?? tl.kind,
         });
         tradeLinesRef.current.push(line);
@@ -948,6 +1002,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     }
     if (!didFitRef.current && series.candles.length > 0) {
       chart.timeScale().fitContent();
+      chart.timeScale().scrollToRealTime();
       didFitRef.current = true;
     }
   }, [series, resetKey]);

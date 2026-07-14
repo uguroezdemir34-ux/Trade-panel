@@ -58,7 +58,6 @@ function makeTrade(
     leverage: 1,
     stopPrice: 49_000,
     riskAmountUsd: 10,
-    isPaper: true,
     entryContext: {
       score,
       verdict: "go",

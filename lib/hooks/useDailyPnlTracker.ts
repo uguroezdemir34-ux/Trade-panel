@@ -38,7 +38,6 @@ export function useDailyPnlTracker(): void {
     const todayPnlUsd = trades
       .filter((t) => {
         if (t.status !== "closed" || !t.exit) return false;
-        if (t.isPaper) return false; // Demo/paper trade'leri sayma
         return toLocalDateStr(t.exit.closedAt) === todayStr;
       })
       .reduce((sum, t) => sum + (t.exit?.pnlUsd ?? 0), 0);

@@ -25,7 +25,10 @@ import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMarketStore } from "@/lib/store/marketStore";
+import { useRiskStore } from "@/lib/store/riskStore";
 import { createChannel } from "@/lib/notify/registry";
+import { decideAdherence, type GoSignalCandidate } from "@/lib/risk/position-adoption";
+import { ADHERENCE_CONFIG } from "@/lib/risk/adherence-score";
 import type { Position } from "@/lib/okx/positions";
 
 const POLL_INTERVAL_MS = 10_000;
@@ -55,6 +58,7 @@ export function usePositionPoller(delayMs = 0): void {
 
     setPositions(positions);
     reconcileOpenTrades(positions);
+    void adoptNewPositions(positions);
   }
 
   useEffect(() => {
@@ -121,6 +125,64 @@ function reconcileOpenTrades(livePositions: Position[]): void {
         reasonText: "Exchange reconciled — position closed on exchange (SL/TP/liq/manual)",
         timestamp: now,
       }).catch(() => {/* ignore */});
+    }
+  }
+}
+
+/**
+ * ADHERENCE — "orphan adoption": exchange'de daha önce hiç görülmemiş yeni
+ * bir pozisyon tespit edildiğinde, go_signals'a bakıp panelin son sinyaliyle
+ * uyumlu mu (system_with) yoksa ters mi (system_against) karar verir ve
+ * riskStore.disciplineEntries'e otomatik bir kayıt ekler.
+ *
+ * Dedup: positionKey (pair_direction_cTime) zaten disciplineEntries'te
+ * varsa hiçbir network isteği atılmaz — sadece gerçekten yeni bir pozisyon
+ * için tek seferlik bir go-signals sorgusu yapılır.
+ */
+async function adoptNewPositions(livePositions: Position[]): Promise<void> {
+  const { disciplineEntries, logEvent } = useRiskStore.getState();
+
+  const adoptedKeys = new Set(
+    disciplineEntries
+      .filter((e) => e.source === "auto-position-open")
+      .map((e) => e.positionKey as string),
+  );
+
+  for (const pos of livePositions) {
+    if (pos.direction !== "LONG" && pos.direction !== "SHORT") continue;
+
+    const positionKey = `${pos.pair}_${pos.direction}_${pos.cTime}`;
+    if (adoptedKeys.has(positionKey)) continue;
+
+    try {
+      const sinceMs = pos.cTime - ADHERENCE_CONFIG.WINDOW_MIN * 60_000;
+      const res = await fetch(
+        `/api/go-signals?pair=${encodeURIComponent(pos.pair)}&sinceMs=${sinceMs}`,
+        { signal: AbortSignal.timeout(8_000) },
+      );
+      if (!res.ok) continue;
+
+      const data = (await res.json()) as {
+        candidates?: Array<{ direction: string; signalTs: number }>;
+      };
+      const candidates: GoSignalCandidate[] = (data.candidates ?? []).filter(
+        (c): c is GoSignalCandidate => c.direction === "LONG" || c.direction === "SHORT",
+      );
+
+      const decision = decideAdherence(pos.direction, candidates, pos.cTime, ADHERENCE_CONFIG.WINDOW_MIN);
+      if (!decision.type) continue;
+
+      logEvent(decision.type, {
+        source: "auto-position-open",
+        pair: pos.pair,
+        direction: pos.direction,
+        positionKey,
+        matchedSignalTs: decision.matchedSignalTs,
+        entryPx: pos.entryPx,
+      });
+    } catch {
+      // Network/route hatası — sessizce atla. positionKey adopte edilmedi,
+      // bir sonraki 10sn'lik poll cycle'da otomatik tekrar denenir.
     }
   }
 }

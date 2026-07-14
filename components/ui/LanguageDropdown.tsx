@@ -8,15 +8,10 @@ const LOCALE_META: Record<Locale, { flag: string; label: string; native: string 
   en: { flag: "🇬🇧", label: "EN", native: "English" },
   tr: { flag: "🇹🇷", label: "TR", native: "Türkçe" },
   de: { flag: "🇩🇪", label: "DE", native: "Deutsch" },
-  fr: { flag: "🇫🇷", label: "FR", native: "Français" },
-  es: { flag: "🇪🇸", label: "ES", native: "Español" },
-  pt: { flag: "🇧🇷", label: "PT", native: "Português" },
   zh: { flag: "🇨🇳", label: "ZH", native: "中文" },
   ja: { flag: "🇯🇵", label: "JA", native: "日本語" },
   ko: { flag: "🇰🇷", label: "KO", native: "한국어" },
   ru: { flag: "🇷🇺", label: "RU", native: "Русский" },
-  ar: { flag: "🇸🇦", label: "AR", native: "العربية" },
-  hi: { flag: "🇮🇳", label: "HI", native: "हिन्दी" },
 };
 
 export function LanguageDropdown(): React.ReactElement {
@@ -49,7 +44,7 @@ export function LanguageDropdown(): React.ReactElement {
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="border-border bg-bg-card hover:border-border-strong flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-xs transition-colors"
+        className="header-control-border border-border bg-bg-card hover:border-border-strong flex items-center gap-1.5 rounded border px-2 py-1 font-mono text-xs transition-colors"
         style={{ color: "rgb(var(--text-t2))" }}
         aria-haspopup="listbox"
         aria-expanded={open}
@@ -66,7 +61,7 @@ export function LanguageDropdown(): React.ReactElement {
 
       {open && (
         <div
-          className="border-border bg-bg-card absolute right-0 top-full z-50 mt-1 min-w-[160px] rounded border py-1 shadow-2xl"
+          className="header-control-border border-border bg-bg-card absolute right-0 top-full z-50 mt-1 min-w-[160px] rounded border py-1 shadow-2xl"
           style={{ boxShadow: "0 8px 32px rgba(0,0,0,0.4)" }}
           role="listbox"
         >

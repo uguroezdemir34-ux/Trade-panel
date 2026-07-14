@@ -21,6 +21,8 @@ import type { DisciplineEntry } from "./discipline-log";
 export const ADHERENCE_CONFIG = {
   /** Lookback penceresi (gün) */
   WINDOW_DAYS: 7,
+  /** Pozisyon açılışı ile GO sinyali arası izin verilen maks. süre (dk) — position-adoption */
+  WINDOW_MIN: 30,
   /** Sistem ile uyumlu trade pozitif puan */
   WITH_SYSTEM_POINTS: 5,
   /** Sistem aleyhine trade negatif puan */

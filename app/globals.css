@@ -32,13 +32,20 @@
   --surface-s2: 25 30 44;   /* İkincil yüzey */
   --surface-s3: 34 40 58;   /* Üçüncü yüzey */
 
-  /* Signals — vibrant on dark */
-  --signal-green:  34 197  94;   /* #22c55e */
-  --signal-red:   239  68  68;   /* #ef4444 */
-  --signal-amber: 245 158  11;   /* #f59e0b */
-  --signal-blue:  100 160 255;   /* Daha parlak mavi */
+  /* Signals — mat/kurumsal (desature edilmiş, bkz. CLAUDE.md renk sadeleştirme turu) */
+  --signal-green:   56 137  97;   /* #388961 */
+  --signal-red:    199  96 105;   /* #c76069 — 4.94:1, AA duzeltmesi */
+  --signal-amber:  166 117  48;   /* #a67530 */
+  --signal-blue:    78 129 188;   /* #4e81bc */
   --signal-up:     34 197  94;
   --signal-down:  239  68  68;
+
+  /* Score band palette */
+  --signal-gold:     212 175  55;   /* #D4AF37 — skor ≥80 */
+  --signal-sapphire:  63 156 147;   /* #3F9C93 — skor 60-79 */
+  --signal-bronze:   192 138  62;   /* #C08A3E — skor 40-59 */
+  --signal-wine:     178  92 116;   /* #B25C74 — skor 30-39 */
+  --signal-crimson:  192  69  90;   /* #C0455A — skor <30 */
 
   /* Brand — turuncu-amber */
   --brand:        255 110  24;   /* #ff6e18 */
@@ -75,17 +82,114 @@
   --surface-s2: 222 224 242;
   --surface-s3: 208 211 234;
 
-  /* Signals — darkened for WCAG AA on white */
-  --signal-green:  20 130  60;   /* #14823c — 4.8:1 */
-  --signal-red:   188  28  28;   /* #bc1c1c — 6.2:1 */
-  --signal-amber: 178  82   8;   /* #b25208 — 4.6:1 */
-  --signal-blue:   28  80 220;   /* #1c50dc — 6.3:1 */
+  /* Signals — mat/kurumsal (desature edilmiş, bkz. CLAUDE.md renk sadeleştirme turu) */
+  --signal-green:   40  93  66;   /* #285d42 — 7.68:1 */
+  --signal-red:    130  53  60;   /* #82353c — 8.32:1 */
+  --signal-amber:  122  84  41;   /* #7a5429 — 6.71:1 */
+  --signal-blue:    59  99 145;   /* #3b6391 — 6.21:1 */
   --signal-up:     20 130  60;
   --signal-down:  188  28  28;
+
+  /* Score band palette — light mode WCAG AA */
+  --signal-gold:     138 109  31;   /* #8A6D1F */
+  --signal-sapphire:  31 111 107;   /* #1F6F6B */
+  --signal-bronze:   140  94  31;   /* #8C5E1F */
+  --signal-wine:     122  51  71;   /* #7A3347 */
+  --signal-crimson:  139  38  53;   /* #8B2635 */
 
   /* Brand — koyu turuncu, beyaz üzerinde kontrast */
   --brand:        186  68   0;   /* #ba4400 — 5.1:1 */
   --brand-accent: 200  76   0;   /* #c84c00 — 4.8:1 */
+}
+
+/*
+ * ── CYBER-TERMINAL — opsiyonel 3. tema (ayarlardan seçilir) ──────────────
+ * Görsel Kalite Paketi — Bölüm 1, Parça A. Kasıtlı olarak minimal: sadece
+ * --bg override edilir, geri kalan tüm renkler (text-t1..t4, signal-*,
+ * border, brand) dark temanın zaten WCAG-kalibre edilmiş değerlerinden
+ * :root'tan miras alınır — mevcut "renkler değiştirilmemeli" kısıtını
+ * ihlal etmeden, dark tema paletini bozmadan üçüncü bir opsiyonel varyant.
+ * Grid dokusu + font override'ı ayrı kurallarla aşağıda.
+ */
+[data-theme="cyber-terminal"] {
+  --bg: 11 14 20;   /* #0B0E14 — derin gece mavisi-siyah */
+}
+
+/* İnce grid dokusu — %5 opaklık, yeni asset/bağımlılık yok, saf CSS gradient */
+[data-theme="cyber-terminal"] body {
+  background-image:
+    linear-gradient(rgba(232, 234, 244, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232, 234, 244, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+/*
+ * Font override — JetBrains Mono. Tailwind'in font-sans/font-mono utility
+ * class'ları statik (CSS değişkeni değil, doğrudan derlenmiş font-family
+ * listesi) — bu yüzden basit bir :root cascade onları override edemez,
+ * !important ile .font-mono/.font-sans'ın kendisini hedeflemek gerekiyor.
+ * Sadece bu tema altında, light/dark'a hiç dokunmuyor. CJK/Arabic/
+ * Devanagari fallback zinciri korunuyor — JetBrains Mono o glyph'leri
+ * içermiyor.
+ */
+[data-theme="cyber-terminal"] body,
+[data-theme="cyber-terminal"] .font-mono,
+[data-theme="cyber-terminal"] .font-sans {
+  font-family: "JetBrains Mono", "Noto Sans SC", "Noto Sans JP", "Noto Sans KR",
+    "Noto Sans Arabic", "Noto Sans Devanagari", ui-monospace, monospace !important;
+}
+
+/*
+ * Cam efektli konteynerler (Faz 2 — adaptif glassmorphism) — .glass-panel
+ * class'ı taşıyan 11 panel: ScoreHeatmap + SqueezeRadarBanner (2 sabit) +
+ * /karar 9-grid'indeki 9 pair kartı. SADECE [data-theme="cyber-terminal"]
+ * altında etkili — light/dark temada bu class'ın hiçbir görsel etkisi yok
+ * (kartlar önceki görünümünü aynen korur).
+ *
+ * İki katman, CSS specificity ile çözülür (JS'e/media query'e gerek yok):
+ *   1) Taban kural (aşağıda) — data-perf attribute'u HENÜZ yoksa (ilk
+ *      paint, DevicePerfSync henüz hydrate olmadan) veya "low" ise devreye
+ *      girer: fake-glass — soft glow + border gradient + layered
+ *      transparency + hafif noise, backdrop-filter YOK. Güvenli varsayılan
+ *      (devicePerfStore.ts: mode hep "low" başlar).
+ *   2) [data-perf="high"] override (daha yüksek specificity, sıralamadan
+ *      bağımsız kazanır) — sadece devicePerfStore FPS ölçümüyle "high"a
+ *      yükselttiğinde gerçek backdrop-filter: blur(12px) döner.
+ */
+[data-theme="cyber-terminal"] .glass-panel {
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/></svg>"),
+    linear-gradient(180deg, rgba(232, 234, 244, 0.07) 0%, rgba(232, 234, 244, 0.02) 100%);
+  background-color: transparent !important;
+  border-color: rgba(232, 234, 244, 0.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 16px rgba(0, 0, 0, 0.28);
+}
+
+[data-theme="cyber-terminal"][data-perf="high"] .glass-panel {
+  background-image: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(232, 234, 244, 0.04) !important;
+  border-color: rgba(232, 234, 244, 0.12) !important;
+  box-shadow: none;
+}
+
+/*
+ * Cyber-Terminal son ayarlar — küçük, düşük riskli renk düzeltmeleri.
+ *
+ * 1) Heatmap nötr/düşük skor hücreleri (text-t3) — mobilde güneş altında
+ *    okunabilirlik için text-t2'ye yükseltildi (bir üst kontrast kademesi).
+ *    Sadece renk, layout/mantık değişmedi.
+ * 2) Header'daki dil/tema seçim kutuları (.header-control-border) —
+ *    --border sadece :root'tan miras kalıyordu (Parça A'da override
+ *    edilmedi), daha derin --bg'ye göre görece "açık/donuk" duruyordu.
+ *    Glass panel'lerin sınırıyla aynı ince/parlak tonla hizalandı.
+ */
+[data-theme="cyber-terminal"] .heatmap-cell-neutral {
+  color: rgb(var(--text-t2)) !important;
+}
+[data-theme="cyber-terminal"] .header-control-border {
+  border-color: rgba(232, 234, 244, 0.16) !important;
 }
 
 /* Soft tint backgrounds — brighter in light mode (8% of bright color is invisible on white) */
@@ -138,6 +242,14 @@
   background: linear-gradient(180deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.06) 100%) !important;
   border: 1px solid rgba(180,83,9,0.20) !important;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.70), inset 0 -1px 2px rgba(0,0,0,0.04) !important;
+}
+
+/* Card depth — subtle top-right specular for physical surface feel */
+.card-depth {
+  background-image: radial-gradient(ellipse at 70% 20%, rgba(255,255,255,0.018) 0%, transparent 58%);
+}
+[data-theme="light"] .card-depth {
+  background-image: radial-gradient(ellipse at 70% 20%, rgba(255,255,255,0.045) 0%, transparent 58%);
 }
 
 /* Smooth transitions — enabled after initial paint to avoid FOUC */
@@ -382,6 +494,17 @@ textarea {
   100% { box-shadow: 0 0 0 0 rgb(0 0 0 / 0), 0 0 4px 1px var(--led-color, rgb(34 197 94 / 0.4)); }
 }
 .flow-led { animation: flow-led-ring 2s ease-in-out infinite; }
+
+/* Ticker Tape — sürekli akan fiyat şeridi. Sadece transform (GPU compositor
+   thread'inde çalışır, ana thread'i meşgul etmez) — requestAnimationFrame
+   KULLANILMIYOR, bilinçli karar (bkz. CLAUDE.md §9 Görsel Kalite Paketi). */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-tape-track { animation: none !important; }
+}
 
 /* === Hero card dış kabuk — nötr karanlık metal çerçeve ===
    --border-strong tokeni: dark=58 58 58, light=136 136 152.

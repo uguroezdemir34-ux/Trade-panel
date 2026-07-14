@@ -10,24 +10,13 @@ import { NextResponse } from "next/server";
 const COINGECKO_IDS: Record<string, string> = {
   BTC:    "bitcoin",
   ETH:    "ethereum",
-  XRP:    "ripple",
   SOL:    "solana",
   BNB:    "binancecoin",
-  ADA:    "cardano",
   AVAX:   "avalanche-2",
-  DOT:    "polkadot",
   LINK:   "chainlink",
-  POL:    "matic-network",
-  DOGE:   "dogecoin",
-  SHIB:   "shiba-inu",
   SUI:    "sui",
   NEAR:   "near",
-  TRX:    "tron",
-  APT:    "aptos",
-  TAO:    "bittensor",
-  PENDLE: "pendle",
-  OP:     "optimism",
-  WIF:    "dogwifcoin",
+  XRP:    "ripple",
 };
 
 const ID_TO_PAIR: Record<string, string> = Object.fromEntries(

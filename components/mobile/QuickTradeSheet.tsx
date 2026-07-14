@@ -118,7 +118,6 @@ export function QuickTradeSheet(): React.ReactElement {
           leverage: DEFAULT_LEVERAGE,
           stopPrice: slPrice,
           riskAmountUsd: riskUsd,
-          isPaper: demoMode,
           entryContext: {
             score: 0,
             verdict: "go",

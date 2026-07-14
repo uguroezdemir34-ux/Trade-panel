@@ -23,9 +23,15 @@ import type { Pair } from "@/lib/constants/pairs";
 
 export type TrendDirection = "up" | "flat" | "down";
 
+/** Not: "15m" 3 UX görevi (karar/piyasa/grafik mini kart şeritleri) için
+ *  eklendi — SADECE görüntü amaçlı computeTimeframeTrend() çağrılarında
+ *  kullanılır. computeMtfTrend() (aşağıda) HÂLÂ sadece 1h/4h/1d'yi
+ *  hesaba katıyor — bu union'ın genişlemesi o fonksiyonun davranışını
+ *  DEĞİŞTİRMEZ, sadece computeTimeframeTrend()'in tf parametresine yeni
+ *  bir etiket eklemeye izin verir. */
 export interface TimeframeTrend {
   /** Timeframe etiketi */
-  tf: "1h" | "4h" | "1d";
+  tf: "15m" | "1h" | "4h" | "1d";
   /** Yön */
   direction: TrendDirection;
   /** EMA20 değeri */
@@ -64,7 +70,7 @@ const FLAT_THRESHOLD = 0.001; // 0.1%
  * Tek timeframe için trend yönü.
  */
 export function computeTimeframeTrend(
-  tf: "1h" | "4h" | "1d",
+  tf: "15m" | "1h" | "4h" | "1d",
   candles: readonly Candle[],
 ): TimeframeTrend {
   if (candles.length < 20) {
@@ -134,4 +140,28 @@ export function computeMtfTrend(
   }
 
   return { pair, trends, cls, upCount, downCount, flatCount };
+}
+
+/**
+ * 4 timeframe'lik (15m/1h/4h/1d) GÖRÜNTÜLEME dizisi — SKORLAMA amaçlı
+ * DEĞİL. computeMtfTrend()'in "kaç TF hizalı" (cls/upCount/downCount)
+ * çekirdek mantığını KULLANMAZ/DEĞİŞTİRMEZ — orchestrator.ts'in MTF gate'i
+ * (composeScoreInput → mtfResult.cls) hâlâ SADECE computeMtfTrend()'in
+ * kendi, ayrı 3-TF (1h/4h/1d) çağrısına bağlı (useScoreEngine.ts:247,
+ * bu fonksiyona hiç dokunmuyor). Bu, karar/piyasa/grafik sayfalarındaki
+ * mini kart şeritlerinde 15m okunu göstermek için eklenen, saf/bağımsız
+ * bir yardımcı — 3 UX görevi (2026-07-14) kapsamında eklendi.
+ */
+export function computeDisplayTrends(
+  candles15m: readonly Candle[],
+  candles1h: readonly Candle[],
+  candles4h: readonly Candle[],
+  candles1d: readonly Candle[],
+): TimeframeTrend[] {
+  return [
+    computeTimeframeTrend("15m", candles15m),
+    computeTimeframeTrend("1h", candles1h),
+    computeTimeframeTrend("4h", candles4h),
+    computeTimeframeTrend("1d", candles1d),
+  ];
 }

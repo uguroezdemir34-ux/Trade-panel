@@ -47,7 +47,6 @@ export function entryToTradeRecord(
     pnlPct: typeof entry.pnlPct === "number" ? entry.pnlPct : undefined,
     score: typeof entry.score === "number" ? entry.score : undefined,
     closeReason,
-    isPaper: typeof entry.isPaper === "boolean" ? entry.isPaper : undefined,
   };
 }
 

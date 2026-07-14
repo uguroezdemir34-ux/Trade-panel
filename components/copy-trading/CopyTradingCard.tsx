@@ -89,7 +89,6 @@ function TraderProfileCard(): React.ReactElement {
           score: s.entryContext.score,
           closeReason: s.exit!.reason,
           rMultiple: s.exit!.rMultiple,
-          isPaper: s.isPaper,
         })),
     [snapshots],
   );

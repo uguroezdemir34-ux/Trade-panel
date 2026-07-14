@@ -155,3 +155,14 @@ export function filterLastNDays(
   const cutoff = now - days * 86_400_000;
   return trades.filter((t) => t.closedAt >= cutoff);
 }
+
+/**
+ * Filtre — sadece son N işlem (kronolojik sırayla, gün-bazlı değil count-bazlı).
+ * Veri N'den azsa mevcut tüm işlemler döner (caller trade sayısını raporlar).
+ */
+export function filterLastNTrades(
+  trades: readonly TradeRecord[],
+  n: number,
+): TradeRecord[] {
+  return [...trades].sort((a, b) => a.closedAt - b.closedAt).slice(-n);
+}

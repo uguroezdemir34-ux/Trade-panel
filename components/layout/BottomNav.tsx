@@ -20,6 +20,7 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useHydrated } from "@/lib/store/hydration";
 import { useT } from "@/lib/i18n/context";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
+import { useScoreStore } from "@/lib/store/scoreStore";
 
 export function BottomNav(): React.ReactElement {
   const pathname = usePathname();
@@ -29,6 +30,9 @@ export function BottomNav(): React.ReactElement {
   const t = useT();
   const triggeredAlarmCount = usePriceAlarmStore(
     (s) => s.alarms.filter((a) => a.status === "triggered").length,
+  );
+  const goCount = useScoreStore(
+    (s) => Object.values(s.results).filter((r) => r?.verdict === "go").length,
   );
 
   return (
@@ -46,7 +50,6 @@ export function BottomNav(): React.ReactElement {
             <li key={tab.id}>
               <Link
                 href={tab.path}
-                prefetch={false}
                 onClick={() => {
                   if (hydrated) setLastTab(tab.id);
                 }}
@@ -65,6 +68,11 @@ export function BottomNav(): React.ReactElement {
               >
                 <span className="relative text-lg leading-none" aria-hidden>
                   {tab.icon}
+                  {tab.id === "karar" && goCount > 0 && (
+                    <span className="absolute -top-1 -right-1.5 bg-green-500 text-white font-mono font-bold rounded-full leading-none flex items-center justify-center" style={{ fontSize: 7, minWidth: 12, height: 12, padding: "0 2px" }}>
+                      {goCount > 9 ? "9+" : goCount}
+                    </span>
+                  )}
                   {tab.id === "ayarlar" && triggeredAlarmCount > 0 && (
                     <span className="absolute -top-1 -right-1.5 bg-amber-400 text-black font-mono font-bold rounded-full leading-none flex items-center justify-center" style={{ fontSize: 7, minWidth: 12, height: 12, padding: "0 2px" }}>
                       {triggeredAlarmCount > 9 ? "9+" : triggeredAlarmCount}

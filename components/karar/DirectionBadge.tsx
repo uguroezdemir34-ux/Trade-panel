@@ -44,6 +44,13 @@ const DIR_STYLES: Record<Direction, React.CSSProperties> = {
   },
 };
 
+/** lib/score/direction.ts confidence (0,2,3) → sözel etiket. Sayısal yüzde gösterilmez. */
+function confidenceLabelKey(confidence: number): string {
+  if (confidence >= 3) return "direction.confidenceHigh";
+  if (confidence >= 2) return "direction.confidenceMedium";
+  return "direction.confidenceLow";
+}
+
 export function DirectionBadge({
   direction,
   confidence,
@@ -61,7 +68,9 @@ export function DirectionBadge({
       <span className="leading-none">{ICONS[direction]}</span>
       <span>{t(KEYS[direction])}</span>
       {confidence > 0 && (
-        <span className="opacity-60">· {confidence}/3 {t("direction.alignment")}</span>
+        <span className="opacity-60">
+          · {confidence}/3 {t("direction.alignment")} · {t(confidenceLabelKey(confidence))}
+        </span>
       )}
     </div>
   );

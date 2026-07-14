@@ -4,7 +4,6 @@
  * Panel'deki global ST objesinin **ayarlar bölümü**:
  *   - ug52_lastTab        → son açık tab
  *   - ug52_demo_mode      → demo trading modu (true = real değil, paper)
- *   - ug52_ftMode         → forward test modu (true = Telegram'a gönderme, sadece logla)
  *   - ug52_ws_url         → özel WebSocket URL (dev / fallback için)
  *
  * Tüm değişiklikler localStorage'a otomatik yazılır.
@@ -40,7 +39,7 @@ export type TabId = (typeof TAB_IDS)[number];
 
 const tabIdSchema = z.enum(TAB_IDS);
 
-const themeSchema = z.enum(["dark", "light"]);
+const themeSchema = z.enum(["dark", "light", "cyber-terminal"]);
 export type Theme = z.infer<typeof themeSchema>;
 
 const exchangeSchema = z.enum(["okx", "binance", "bybit"]);
@@ -49,7 +48,6 @@ export type ActiveExchange = z.infer<typeof exchangeSchema>;
 const settingsSchema = z.object({
   lastTab: tabIdSchema,
   demoMode: z.boolean(),
-  forwardTestMode: z.boolean(),
   wsUrl: z.string().nullable(),
   maxTradesPerDay: z.number().int().min(1).max(20),
   defaultLeverage: z.number().int().min(1).max(125),
@@ -76,7 +74,6 @@ export type SettingsData = z.infer<typeof settingsSchema>;
 export const DEFAULT_SETTINGS: SettingsData = {
   lastTab: "karar",
   demoMode: false,
-  forwardTestMode: false,
   wsUrl: null,
   maxTradesPerDay: 2,
   defaultLeverage: 10,
@@ -98,7 +95,6 @@ export const DEFAULT_SETTINGS: SettingsData = {
 const KEYS = {
   lastTab: "lastTab",
   demoMode: "demo_mode",
-  forwardTestMode: "ftMode",
   wsUrl: "ws_url",
   maxTradesPerDay: "max_trades_per_day",
   defaultLeverage: "default_leverage",
@@ -122,7 +118,6 @@ interface SettingsStoreState extends SettingsData {
   setLastTab: (tab: TabId) => void;
   setScorerWeights: (weights: ScorerWeights | null) => void;
   setDemoMode: (on: boolean) => void;
-  setForwardTestMode: (on: boolean) => void;
   setWsUrl: (url: string | null) => void;
   setMaxTradesPerDay: (n: number) => void;
   setDefaultLeverage: (n: number) => void;
@@ -154,11 +149,6 @@ export function loadSettings(): SettingsData {
     demoMode: loadFromStorage<boolean>(
       KEYS.demoMode,
       DEFAULT_SETTINGS.demoMode,
-      z.boolean(),
-    ),
-    forwardTestMode: loadFromStorage<boolean>(
-      KEYS.forwardTestMode,
-      DEFAULT_SETTINGS.forwardTestMode,
       z.boolean(),
     ),
     wsUrl: loadFromStorage<string | null>(
@@ -242,11 +232,6 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ demoMode: on });
   },
 
-  setForwardTestMode: (on) => {
-    saveToStorage(KEYS.forwardTestMode, on);
-    set({ forwardTestMode: on });
-  },
-
   setWsUrl: (url) => {
     saveToStorage(KEYS.wsUrl, url);
     set({ wsUrl: url });
@@ -316,7 +301,6 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     // Sadece state'i sıfırla, localStorage'a yaz
     saveToStorage(KEYS.lastTab, DEFAULT_SETTINGS.lastTab);
     saveToStorage(KEYS.demoMode, DEFAULT_SETTINGS.demoMode);
-    saveToStorage(KEYS.forwardTestMode, DEFAULT_SETTINGS.forwardTestMode);
     saveToStorage(KEYS.wsUrl, DEFAULT_SETTINGS.wsUrl);
     saveToStorage(KEYS.maxTradesPerDay, DEFAULT_SETTINGS.maxTradesPerDay);
     saveToStorage(KEYS.defaultLeverage, DEFAULT_SETTINGS.defaultLeverage);
@@ -350,6 +334,3 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
 export const selectLastTab = (s: SettingsStoreState): TabId => s.lastTab;
 /** Sadece demoMode */
 export const selectDemoMode = (s: SettingsStoreState): boolean => s.demoMode;
-/** Sadece forwardTestMode */
-export const selectForwardTestMode = (s: SettingsStoreState): boolean =>
-  s.forwardTestMode;

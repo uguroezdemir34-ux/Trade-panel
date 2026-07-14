@@ -79,6 +79,15 @@ export interface ExitInfo {
   holdingSec: number;
   /** R multiple — (pnl / risk_amount) */
   rMultiple?: number;
+  /**
+   * MAE (Maximum Adverse Excursion) — trade açıkken yaşanan en kötü fiyat
+   * (lib/trades/mae.ts). Close-time retroaktif hesaplanır; candleStore
+   * cache'i [openedAt, closedAt] aralığını kapsamıyorsa üçü de undefined
+   * kalır (tahmini/uydurma değer üretilmez).
+   */
+  maePrice?: number;
+  maeUsd?: number;
+  maePct?: number;
 }
 
 // ═══════════════ TRADE SNAPSHOT ═══════════════
@@ -119,9 +128,6 @@ export interface TradeSnapshot {
   /** Risk amount USDT (SL'e kadar olası kayıp) — R-multiple için */
   riskAmountUsd: number;
 
-  // Forward test mi gerçek mi
-  isPaper: boolean;
-
   // Context (entry anında yakalandı)
   entryContext: EntryContext;
 
@@ -147,7 +153,6 @@ export interface OpenTradeInput {
   takeProfit1?: number;
   takeProfit2?: number;
   riskAmountUsd: number;
-  isPaper: boolean;
   entryContext: EntryContext;
   /** Trade kaynağı — belirtilmezse "manual" sayılır */
   source?: "manual" | "bot";

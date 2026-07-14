@@ -143,14 +143,6 @@ describe("dailyPnlPct calculation", () => {
   it("balance is zero: returns 0% (no divide-by-zero)", () => {
     expect(computeDailyPnlPct(0, 0)).toBe(0);
   });
-
-  it("paper trades excluded: only real P&L counts toward drawdown", () => {
-    // This is enforced by the isPaper filter in useDailyPnlTracker.
-    // Here we simulate: real=$-20, paper=$+100. Only real counts.
-    const realPnl = -20;
-    const pct = computeDailyPnlPct(realPnl, 1000);
-    expect(computeDrawdownProtocol(pct).tier).toBe("caution");
-  });
 });
 
 // ─────────────────────────────────────────────────────────────

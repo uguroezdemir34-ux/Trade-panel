@@ -10,6 +10,22 @@
 "use client";
 
 import { useEffect } from "react";
+
+// --- debug instrumentation (?debug=1 only) ---
+function isDebug(): boolean {
+  if (typeof window === "undefined") return false;
+  try { return new URLSearchParams(window.location.search).get("debug") === "1"; }
+  catch { return false; }
+}
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function perfLog(entry: Record<string, unknown>): void {
+  if (!isDebug()) return;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const w = window as any;
+  if (!w.__PERF_LOG__) w.__PERF_LOG__ = [];
+  w.__PERF_LOG__.push({ ...entry, _ts: Date.now() });
+}
+// --- end debug ---
 import { PAIRS } from "@/lib/constants/pairs";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
@@ -32,17 +48,47 @@ import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import { adx as computeAdx } from "@/lib/indicators/adx";
 import type { Pair } from "@/lib/constants/pairs";
 
+function yieldToEventLoop(): Promise<void> {
+  return new Promise<void>((resolve) => {
+    if (typeof requestIdleCallback !== "undefined") {
+      requestIdleCallback(() => resolve(), { timeout: 50 });
+    } else {
+      setTimeout(resolve, 0);
+    }
+  });
+}
+
+// Skip-retry fast path throttle (modül seviyesi — candleStore equality fn'i
+// bir hook değil, useRef kullanamıyor). Kalıcı skip'te kalan pariteler
+// (örn. candle verisi hiç gelmeyen pair'ler) yüzünden fast path'in
+// candleStore'un HER güncellemesinde (WS canlı mum tick'leri dahil) motoru
+// tetiklemesini önler — throttle penceresi dolmadıysa normal candle
+// ts/confirm karşılaştırmasına düşülür, gerçek bir değişiklik yine yakalanır.
+let _lastSkipRecheckAt = 0;
+const SKIP_RECHECK_THROTTLE_MS = 3_000;
+
 export function useScoreEngine(): void {
   // Trigger: only when 15m/1h/4h last candle timestamps/confirm flags change.
   // Prevents score recomputation on 1d-only polls or identity-equal updates.
   const candles = useCandleStore(
     (s) => s.candles,
     (prev, next) => {
-      // Fast path: any pair never scored → trigger immediately so the
-      // initial "waiting" screen clears as soon as candles arrive.
-      // null = skipped sentinel (insufficient candles), NOT undefined.
+      // Fast path: any pair never scored OR skipped → trigger immediately so
+      // insufficient-data pairs get re-evaluated every cycle instead of
+      // waiting for their next candle ts/confirm change (which may be up to
+      // 60 minutes away for 1h bars). undefined = never scored, null =
+      // skipped (composeScoreInput returned null) — both should retry.
       const { results } = useScoreStore.getState();
-      if (PAIRS.some((p) => results[p] === undefined)) return false;
+      if (PAIRS.some((p) => results[p] === undefined || results[p] === null)) {
+        const now = Date.now();
+        if (now - _lastSkipRecheckAt >= SKIP_RECHECK_THROTTLE_MS) {
+          _lastSkipRecheckAt = now;
+          return false;
+        }
+        // Throttled — kalıcı skip'te kalan pair(ler) yüzünden burada spin
+        // etmek yerine aşağıdaki normal candle ts/confirm karşılaştırmasına
+        // düş, gerçek bir veri değişikliği yine yakalanır.
+      }
 
       for (const pair of PAIRS) {
         for (const tf of ["15m", "1h", "4h"] as const) {
@@ -65,7 +111,9 @@ export function useScoreEngine(): void {
   const scorerWeights = useSettingsStore((s) => s.scorerWeights);
 
   useEffect(() => {
+    let cancelled = false;
     const now = Date.now();
+    const engineT0 = isDebug() ? performance.now() : 0;
 
     // Snapshot — subscription yok, re-render tetiklemiyor
     const marketStore = useMarketStore.getState();
@@ -98,7 +146,9 @@ export function useScoreEngine(): void {
       btcNearSR = Math.min(distR, distS) <= 0.5;
     }
 
+    void (async () => {
     for (const pair of PAIRS) {
+      if (cancelled) return;
       const candles4h = candles[`${pair}_4h`] ?? EMPTY_CANDLES;
       const candles1h = candles[`${pair}_1h`] ?? EMPTY_CANDLES;
       const candles15m = candles[`${pair}_15m`] ?? EMPTY_CANDLES;
@@ -203,7 +253,9 @@ export function useScoreEngine(): void {
           } as DirectionInput);
           const srResult = detectSRLevels(c4hInd, c1hInd, input.px, direction, input.volRatio);
           const srModifier = srResult.modifier * SR_SCALE_FACTOR;
+          const scoreT0 = isDebug() ? performance.now() : 0;
           const result = computeScore({ ...input, srModifier, scorerWeights: scorerWeights ?? null, mtfResult });
+          perfLog({ type: "score_compute", pair, durationMs: +((performance.now() - scoreT0).toFixed(2)) });
           setResult(pair as Pair, result, now);
         } catch {
           // Ignore scoring errors — stale result remains until next candle update
@@ -214,6 +266,10 @@ export function useScoreEngine(): void {
         // "never scored" — prevents perpetual re-trigger on data-starved pairs.
         setSkipped(pair as Pair, now);
       }
+      await yieldToEventLoop();
     }
+    perfLog({ type: "engine_cycle", totalMs: +((performance.now() - engineT0).toFixed(1)), pairs: PAIRS.length });
+    })();
+    return () => { cancelled = true; };
   }, [candles, setResult, scorerWeights]);
 }

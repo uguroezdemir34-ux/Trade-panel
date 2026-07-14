@@ -193,7 +193,6 @@ function makeSnapshot(
     leverage: 10,
     stopPrice: 49000,
     riskAmountUsd: 100,
-    isPaper: false,
     entryContext: { score: 82, verdict: "go" },
     ...overrides,
   } as TradeSnapshot;

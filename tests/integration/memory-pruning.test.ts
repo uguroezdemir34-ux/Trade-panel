@@ -54,7 +54,6 @@ function makeTrade(
     leverage: 5,
     stopPrice: 49000,
     riskAmountUsd: 10,
-    isPaper: false,
     entryContext: { score: 82, verdict: "go" },
     exit:
       status === "closed" && closedAt !== undefined

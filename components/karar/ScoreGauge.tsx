@@ -10,6 +10,10 @@
  * DO NOT edit pt() / arcPath() / needle angle — score binding is correct.
  */
 
+import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useT } from "@/lib/i18n/context";
+import { getScoreColor } from "@/lib/ui/scoreColor";
+
 interface Props {
   score: number;
   threshold: number;
@@ -35,9 +39,12 @@ function arcPath(from: number, to: number, r: number): string {
 }
 
 export function ScoreGauge({ score, threshold, goThreshold }: Props): React.ReactElement {
+  // cyber-terminal de dark-ailesi sayılır (gauge için ayrı bir varyant yok, dark stiline düşer)
+  const t = useT();
+  const isDark = useSettingsStore((s) => s.theme) !== "light";
   const v = Math.max(0, Math.min(100, score));
-  /* color: used for needle, hub shine, score text — threshold-based (per original logic) */
-  const color = v >= threshold ? "#22c55e" : v >= 65 ? "#f59e0b" : "#ef4444";
+  /* color: used for needle, hub shine, score text — 5-bant merkezi skor rengi (lib/ui/scoreColor.ts) */
+  const color = getScoreColor(v).color;
   /* progressColor: used only for progress arc — must match 2-zone layout (goThreshold boundary) */
   const progressColor = v >= goThreshold ? "#22c55e" : "#ef4444";
 
@@ -85,55 +92,47 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
 
   return (
     <svg
-      viewBox="0 0 220 232"
+      viewBox="0 0 220 218"
       className="w-full select-none"
-      aria-label={`Skor: ${v}/100`}
+      aria-label={t("karar.aiScoreAria", { score: v })}
     >
       <defs>
-        {/*
-          Ring gradient: 135° (top-left → bottom-right).
-          x1="0%" y1="0%" x2="100%" y2="100%" maps to TL→BR in SVG space.
-          Highlight: #9a8a68  Mid: #5a4e3a  Shadow: #26201a
-        */}
+        {/* Bezel ring: dark=silver/gunmetal, light=gold/bronze */}
         <linearGradient id="sg-metal" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%"   stopColor="#9a8a68" />
-          <stop offset="18%"  stopColor="#7a6a50" />
-          <stop offset="35%"  stopColor="#5a4e3a" />
-          <stop offset="55%"  stopColor="#3e3428" />
-          <stop offset="75%"  stopColor="#2e261e" />
-          <stop offset="90%"  stopColor="#26201a" />
-          <stop offset="100%" stopColor="#1c1610" />
+          <stop offset="0%"   stopColor={isDark ? "#b8c0c8" : "#f0d060"} />
+          <stop offset="18%"  stopColor={isDark ? "#8c96a0" : "#d4a820"} />
+          <stop offset="35%"  stopColor={isDark ? "#5e6670" : "#b08808"} />
+          <stop offset="55%"  stopColor={isDark ? "#3c4248" : "#8c6c06"} />
+          <stop offset="75%"  stopColor={isDark ? "#2a2e34" : "#6e5204"} />
+          <stop offset="90%"  stopColor={isDark ? "#20242a" : "#5c4204"} />
+          <stop offset="100%" stopColor={isDark ? "#161a1e" : "#483202"} />
         </linearGradient>
 
         {/* Outer dark collar behind ring */}
         <linearGradient id="sg-outer" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%"   stopColor="#18120a" />
-          <stop offset="50%"  stopColor="#0e0a06" />
-          <stop offset="100%" stopColor="#060402" />
+          <stop offset="0%"   stopColor={isDark ? "#12141a" : "#3a2c08"} />
+          <stop offset="50%"  stopColor={isDark ? "#0c0e12" : "#261e06"} />
+          <stop offset="100%" stopColor={isDark ? "#08090e" : "#160e04"} />
         </linearGradient>
 
-        {/*
-          Glass face — dome radialGradient.
-          Centre slightly bright (#1b1e23) → darkens toward edge (#0a0b0d).
-          cx/cy offset gives the impression of curvature catching light from upper-left.
-        */}
+        {/* Glass dome face: dark=deep gunmetal, light=warm cream */}
         <radialGradient id="sg-glass" cx="42%" cy="33%" r="68%">
-          <stop offset="0%"   stopColor="#1b1e23" />
-          <stop offset="48%"  stopColor="#131519" />
-          <stop offset="100%" stopColor="#0a0b0d" />
+          <stop offset="0%"   stopColor={isDark ? "#1c2028" : "#fefcf4"} />
+          <stop offset="48%"  stopColor={isDark ? "#14171e" : "#eee0c0"} />
+          <stop offset="100%" stopColor={isDark ? "#0c0e14" : "#d4c090"} />
         </radialGradient>
 
-        {/* Edge vignette — deepens perimeter */}
+        {/* Edge vignette — lighter in light mode */}
         <radialGradient id="sg-vignette" cx="50%" cy="50%" r="50%">
-          <stop offset="48%" stopColor="#000" stopOpacity="0" />
-          <stop offset="100%" stopColor="#000" stopOpacity="0.55" />
+          <stop offset="48%"  stopColor="#000" stopOpacity="0" />
+          <stop offset="100%" stopColor="#000" stopOpacity={isDark ? "0.55" : "0.18"} />
         </radialGradient>
 
-        {/* Chrome hub — bright top-left, dark bottom-right */}
+        {/* Hub: dark=chrome grey, light=warm gold chrome */}
         <radialGradient id="sg-hub" cx="30%" cy="25%" r="75%">
-          <stop offset="0%"   stopColor="#dcdde0" />
-          <stop offset="38%"  stopColor="#989aa0" />
-          <stop offset="100%" stopColor="#3a3d42" />
+          <stop offset="0%"   stopColor={isDark ? "#d8dae0" : "#e8dfc0"} />
+          <stop offset="38%"  stopColor={isDark ? "#949aa4" : "#c0b078"} />
+          <stop offset="100%" stopColor={isDark ? "#383c44" : "#6a5c28"} />
         </radialGradient>
 
         {/* Needle drop-shadow only — no color spread */}
@@ -156,7 +155,7 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       </defs>
 
       {/* ── Outermost dark disk */}
-      <circle cx={CX} cy={CY} r={107} fill="#030404" />
+      <circle cx={CX} cy={CY} r={107} fill={isDark ? "#030404" : "#1e1808"} />
 
       {/* ── Dark outer collar */}
       <circle cx={CX} cy={CY} r={101} fill="none" stroke="url(#sg-outer)" strokeWidth="5" />
@@ -167,20 +166,20 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       {/* ── Highlight arc: top-left catch-light on ring (210°→315°, CW) */}
       <path
         d={ringHiPath}
-        fill="none" stroke="#c8b890" strokeWidth="1.4"
-        strokeLinecap="round" opacity="0.32"
+        fill="none" stroke={isDark ? "#c8b890" : "#f4e090"} strokeWidth="2.0"
+        strokeLinecap="round" opacity="0.55"
       />
 
       {/* ── Shadow arc: bottom-right of ring (30°→60°, CW) */}
       <path
         d={ringShadowPath}
-        fill="none" stroke="#0a0806" strokeWidth="2"
-        strokeLinecap="round" opacity="0.55"
+        fill="none" stroke={isDark ? "#0a0806" : "#2a1e06"} strokeWidth="2"
+        strokeLinecap="round" opacity="0.75"
       />
 
       {/* ── Groove: dark inset channel between ring and face */}
-      <circle cx={CX} cy={CY} r={88}   fill="none" stroke="#09090c" strokeWidth="3" />
-      <circle cx={CX} cy={CY} r={86.5} fill="none" stroke="#242630" strokeWidth="0.6" />
+      <circle cx={CX} cy={CY} r={88}   fill="none" stroke={isDark ? "#09090c" : "#1a1008"} strokeWidth="3" />
+      <circle cx={CX} cy={CY} r={86.5} fill="none" stroke={isDark ? "#242630" : "#3a2c10"} strokeWidth="0.6" />
 
       {/* ── Glass dome face */}
       <circle cx={CX} cy={CY} r={85} fill="url(#sg-glass)" />
@@ -188,19 +187,24 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       {/* ── Vignette */}
       <circle cx={CX} cy={CY} r={85} fill="url(#sg-vignette)" />
 
-      {/* ── Glass dome highlight — white ellipse stroke, upper third of face */}
-      <ellipse
-        cx={CX} cy={CY - 32}
-        rx={50} ry={18}
-        fill="none"
-        stroke="#ffffff" strokeWidth="11"
-        opacity="0.10"
-        strokeLinecap="round"
-      />
+      {/* ── Nameplate — branded text below needle apex */}
+      <text
+        x={CX}
+        y={82}
+        textAnchor="middle"
+        dominantBaseline="middle"
+        fontSize="6.5"
+        fontFamily="ui-monospace, SFMono-Regular, monospace"
+        letterSpacing="0.18em"
+        fill={isDark ? "#6a7a8a" : "#9a7838"}
+        opacity="0.72"
+      >
+        QUANTIX OS
+      </text>
 
       {/* ── Track background (270° channel) */}
-      <path d={arcPath(0, 100, R)} fill="none" stroke="#07080e" strokeWidth={SW + 5} />
-      <path d={arcPath(0, 100, R)} fill="none" stroke="#05060a" strokeWidth={SW + 2} />
+      <path d={arcPath(0, 100, R)} fill="none" stroke={isDark ? "#07080e" : "#1a1206"} strokeWidth={SW + 5} />
+      <path d={arcPath(0, 100, R)} fill="none" stroke={isDark ? "#05060a" : "#120c04"} strokeWidth={SW + 2} />
 
       {/* ── Zone 0 → goThreshold: RED — kılcal ince arka plan çizgisi */}
       <path
@@ -235,7 +239,7 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
           <line key={`mt${n}`}
             x1={xa.toFixed(1)} y1={ya.toFixed(1)}
             x2={xb.toFixed(1)} y2={yb.toFixed(1)}
-            stroke="#6b7280" strokeWidth="1"
+            stroke={isDark ? "#6b7280" : "#8a7240"} strokeWidth="1"
           />
         );
       })}
@@ -250,7 +254,7 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
           <line key={`smt${n}`}
             x1={xa.toFixed(1)} y1={ya.toFixed(1)}
             x2={xb.toFixed(1)} y2={yb.toFixed(1)}
-            stroke="#38404e" strokeWidth="0.6"
+            stroke={isDark ? "#38404e" : "#7a6030"} strokeWidth="0.6"
           />
         );
       })}
@@ -266,12 +270,12 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
             <line
               x1={xa.toFixed(1)} y1={ya.toFixed(1)}
               x2={xb.toFixed(1)} y2={yb.toFixed(1)}
-              stroke="#cbd0d6" strokeWidth="2"
+              stroke={isDark ? "#cbd0d6" : "#a08840"} strokeWidth="2"
             />
             <text
               x={lx.toFixed(1)} y={ly.toFixed(1)}
               textAnchor="middle" dominantBaseline="middle"
-              fill="#c2c7cd"
+              fill={isDark ? "#c2c7cd" : "#7a6030"}
               fontSize="7.5"
               fontFamily="ui-monospace, SFMono-Regular, monospace"
             >
@@ -315,19 +319,25 @@ export function ScoreGauge({ score, threshold, goThreshold }: Props): React.Reac
       <circle cx={CX} cy={CY} r="5.5"  fill="none" stroke="#72747a" strokeWidth="0.9" />
       <circle cx={CX - 2.5} cy={CY - 2.5} r="1.4" fill="#fff" opacity="0.42" />
 
-      {/*
-        ── SCORE NUMBER — sits BELOW the gauge disc, bottom-left corner.
-        At y=222 the outer disk (r=107, cy=108) does not cover x<56, so this
-        area is transparent SVG — the card background shows through.
-        Proof: (28-110)²+(222-108)²=6724+12996=19720 > 107²=11449.
-      */}
+      {/* Emboss highlight — 1px up-left offset, light tone, low opacity */}
       <text
-        x={28} y={222}
-        textAnchor="start"
+        x={CX - 1} y={169}
+        textAnchor="middle"
+        fill={isDark ? "#ffffff" : "#fffbe8"}
+        opacity="0.18"
+        fontSize="32" fontWeight="700"
+        fontFamily="ui-monospace, SFMono-Regular, monospace"
+      >
+        {v}
+      </text>
+      {/* Score number — centered in the 90° bottom gap of the 270° arc */}
+      <text
+        x={CX} y={170}
+        textAnchor="middle"
         fill={color}
-        stroke="#08090c" strokeWidth="5"
+        stroke="#08090c" strokeWidth="4"
         paintOrder="stroke fill"
-        fontSize="44" fontWeight="700"
+        fontSize="32" fontWeight="700"
         fontFamily="ui-monospace, SFMono-Regular, monospace"
         filter="url(#sg-text-depth)"
       >

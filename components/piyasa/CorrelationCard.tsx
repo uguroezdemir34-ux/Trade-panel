@@ -1,45 +1,28 @@
 "use client";
 
 /**
- * CORRELATION CARD — Pair-to-BTC 30-day daily return correlation.
+ * CORRELATION CARD — Korelasyon Matrisi'nin seçilebilir-anchor görünümü.
  *
- * Uses 1d candles from the candle store. Hidden until BTC has ≥10 candles.
- * Color coding: |r| ≥ 0.8 = very high, ≥ 0.6 = high, ≥ 0.4 = moderate.
+ * Tam 24×24 grid mobilde okunmaz (576 hücre) — bunun yerine matrisin TEK
+ * BİR SATIRINI gösteriyoruz: kullanıcı bir "anchor" pair seçer (default
+ * BTC — önceki davranışla birebir aynı varsayılan görünüm), o pair'in
+ * diğer 23'e karşı 30 günlük getiri korelasyonu listelenir. Anchor'ı
+ * değiştirerek matrisin istenen herhangi bir satırı görülebilir.
+ *
+ * Pearson hesabı artık lib/market/correlation.ts'teki paylaşılan
+ * `computeAnchorCorrelations()`'tan geliyor (önceden bu dosyada kendi
+ * kopya pearson/dailyReturns'ü vardı — components/karar/CorrelationWarning.tsx
+ * zaten shared modülü kullanıyordu, bu dosya kullanmıyordu; anchor'ı
+ * genelleştirirken bu tutarsızlık da giderildi).
  */
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n/context";
-import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
+import { useCandleStore } from "@/lib/store/candleStore";
+import { computeAnchorCorrelations } from "@/lib/market/correlation";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 
 const WINDOW = 30; // last N daily candles for correlation
-
-function dailyReturns(closes: number[]): number[] {
-  const returns: number[] = [];
-  for (let i = 1; i < closes.length; i++) {
-    returns.push((closes[i] - closes[i - 1]) / closes[i - 1]);
-  }
-  return returns;
-}
-
-function pearson(x: number[], y: number[]): number | null {
-  const n = Math.min(x.length, y.length);
-  if (n < 5) return null;
-  const xs = x.slice(-n);
-  const ys = y.slice(-n);
-  const mx = xs.reduce((s, v) => s + v, 0) / n;
-  const my = ys.reduce((s, v) => s + v, 0) / n;
-  let num = 0, dx2 = 0, dy2 = 0;
-  for (let i = 0; i < n; i++) {
-    const ex = xs[i] - mx;
-    const ey = ys[i] - my;
-    num += ex * ey;
-    dx2 += ex * ex;
-    dy2 += ey * ey;
-  }
-  const denom = Math.sqrt(dx2 * dy2);
-  return denom === 0 ? null : num / denom;
-}
 
 function corrColor(r: number): string {
   const abs = Math.abs(r);
@@ -61,38 +44,31 @@ function corrBar(r: number): { width: number; color: string } {
 export function CorrelationCard(): React.ReactElement | null {
   const t = useT();
   const allCandles = useCandleStore((s) => s.candles);
+  const [anchor, setAnchor] = useState<Pair>("BTC");
 
-  const rows = useMemo(() => {
-    const btcCandles = allCandles["BTC_1d"] ?? EMPTY_CANDLES;
-    if (btcCandles.length < 10) return null;
-
-    const btcCloses = btcCandles.slice(-WINDOW - 1).map((c) => c.close);
-    const btcRet = dailyReturns(btcCloses);
-
-    const out: { pair: Pair; r: number }[] = [];
-    for (const pair of PAIRS) {
-      if (pair === "BTC") continue;
-      const candles = allCandles[`${pair}_1d`] ?? EMPTY_CANDLES;
-      if (candles.length < 10) continue;
-      const closes = candles.slice(-WINDOW - 1).map((c) => c.close);
-      const ret = dailyReturns(closes);
-      const r = pearson(btcRet, ret);
-      if (r !== null) out.push({ pair, r });
-    }
-    return out.sort((a, b) => b.r - a.r);
-  }, [allCandles]);
+  const rows = useMemo(
+    () => computeAnchorCorrelations(allCandles, anchor, WINDOW),
+    [allCandles, anchor],
+  );
 
   if (!rows || rows.length === 0) return null;
 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4">
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center justify-between mb-3 gap-2">
         <h3 className="text-text-t3 font-mono text-2xs tracking-widest uppercase">
-          BTC Korelasyon · {WINDOW}g
+          {t("piyasa.correlationCard.title", { anchor, window: String(WINDOW) })}
         </h3>
-        <span className="text-text-t4 font-mono text-2xs">
-          Pearson r
-        </span>
+        <select
+          value={anchor}
+          onChange={(e) => setAnchor(e.target.value as Pair)}
+          className="border-border bg-bg-card2 text-text-t2 rounded border font-mono text-2xs px-1.5 py-0.5"
+          aria-label="Anchor pair"
+        >
+          {PAIRS.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
       </div>
 
       <div className="flex flex-col gap-1">
@@ -113,7 +89,7 @@ export function CorrelationCard(): React.ReactElement | null {
       </div>
 
       <p className="text-text-t4 font-mono text-2xs mt-3">
-        {t("piyasa.correlationCard.desc")}
+        {t("piyasa.correlationCard.desc", { anchor })}
       </p>
     </div>
   );

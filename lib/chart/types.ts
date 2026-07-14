@@ -165,6 +165,4 @@ export interface ChartSeries {
   verticalLines?: VerticalLine[];
   crossLines?: CrossLine[];
   fibTimeZones?: FibTimeZone[];
-  /** Canlı fiyat — grafik üzerinde mavi kesikli "LIVE" çizgisi */
-  currentPrice?: number;
 }

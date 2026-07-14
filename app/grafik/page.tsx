@@ -1,16 +1,23 @@
 "use client";
 
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useFocusStore } from "@/lib/store/focusStore";
 import { useT } from "@/lib/i18n/context";
 import { ChartControls, type ChartClickMode } from "@/components/grafik/ChartControls";
 import { ChartLegend } from "@/components/grafik/ChartLegend";
+import { PositionOverlayBar } from "@/components/grafik/PositionOverlayBar";
 import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
+import { AdvancedPositionCard } from "@/components/grafik/AdvancedPositionCard";
+import { GuardianPanel } from "@/components/grafik/GuardianPanel";
+import { ActivePairMiniCard } from "@/components/grafik/ActivePairMiniCard";
+import { DxyMiniCard } from "@/components/grafik/DxyMiniCard";
+import { EquityMiniCard } from "@/components/grafik/EquityMiniCard";
 import { emaSeries } from "@/lib/indicators/ema";
 import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
@@ -22,13 +29,18 @@ import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel, MobileWatchlistView } from "@/components/grafik/WatchlistPanel";
-import { LivePriceStrip } from "@/components/karar/LivePriceStrip";
+import { PairDropdownMini } from "@/components/grafik/PairDropdownMini";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
 import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
 
 const PriceChart = dynamic(
   () => import("@/components/grafik/PriceChart").then((m) => m.PriceChart),
-  { ssr: false },
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-[480px] rounded border border-border bg-bg-card animate-pulse" />
+    ),
+  },
 );
 
 const VOL_UP = "rgba(34,197,94,0.5)";
@@ -56,7 +68,7 @@ function buildSeries(
     ema20: boolean; ema50: boolean; ema200: boolean; volume: boolean;
     rsi: boolean; macd: boolean; bb: boolean; vwap: boolean; sr: boolean;
     trades: boolean; alarmLevels: AlarmLevel[]; tradeLevels: TradeLevelLine[];
-    drawnLines: DrawnLine[]; livePrice?: number;
+    drawnLines: DrawnLine[];
   },
 ): ChartSeries {
   const candlePoints = candles.map((c) => ({
@@ -146,7 +158,7 @@ function buildSeries(
         position: t.direction === "LONG" ? "belowBar" as const : "aboveBar" as const,
         color: t.direction === "LONG" ? "#22c55e" : "#ef4444",
         shape: t.direction === "LONG" ? "arrowUp" as const : "arrowDown" as const,
-        text: `${t.direction} ${t.isPaper ? "(P)" : ""}`,
+        text: t.direction,
       }));
   }
 
@@ -166,19 +178,22 @@ function buildSeries(
     bb: bbBands, vwap: vwapBands, alarmLevels: opts.alarmLevels,
     markers, srLevels, tradeLevels: opts.tradeLevels,
     drawnLines: opts.drawnLines,
-    currentPrice: opts.livePrice,
   };
 }
 
 export default function GrafikPage() {
   const t = useT();
-  const theme = useSettingsStore((s) => s.theme);
-
-  const [pair, setPair]           = useState<Pair>("BTC");
-  const [prioMs, setPrioMs]       = useState<number | null>(null);
-  usePriorityFetch(pair, setPrioMs);
+  const theme           = useSettingsStore((s) => s.theme);
+  const isOverlayActive = useFocusStore((s) => s.isOverlayActive);
+  const clearFocus       = useFocusStore((s) => s.clearFocus);
+  // War Room: /karar'dan "→ Chart" ile geldiyse yerel pair state'i focusStore'dan başlat.
+  const [pair, setPair]           = useState<Pair>(() => useFocusStore.getState().activeFocusPair ?? "BTC");
+  const focusActiveAtMountRef      = useRef(useFocusStore.getState().isOverlayActive);
+  usePriorityFetch(pair);
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
-  const [mobileView, setMobileView] = useState<"list" | "chart">("list");
+  const [mobileView, setMobileView] = useState<"list" | "chart">(() =>
+    useFocusStore.getState().isOverlayActive ? "chart" : "list",
+  );
   const [showEma20, setShowEma20]   = useState(true);
   const [showEma50, setShowEma50]   = useState(true);
   const [showEma200, setShowEma200] = useState(true);
@@ -192,6 +207,7 @@ export default function GrafikPage() {
 
   // New tool state (not persisted — session only)
   const [showSplit, setShowSplit]       = useState(false);
+  const [secPair, setSecPair]           = useState<Pair>("ETH");
   const [showFlow, setShowFlow]         = useState(false);
   const [clickMode, setClickMode]       = useState<ChartClickMode>("none");
   const [drawnLines, setDrawnLines]     = useState<DrawnLine[]>([]);
@@ -199,13 +215,34 @@ export default function GrafikPage() {
   const [secCandles, setSecCandles]     = useState<Candle[]>([]);
   const [secLoading, setSecLoading]     = useState(false);
 
+  // Ana chart yüksekliği — /grafik'te header+haber bandı artık gizli olduğu
+  // için kazanılan dikey alanı chart'a veriyoruz. PriceChart.tsx'in kendisi
+  // sadece genişliği ResizeObserver ile takip ediyor (yükseklik sabit bir
+  // number prop) — bu yüzden hesaplamayı burada, çağıran tarafta yapıp
+  // mevcut height prop'una geçiriyoruz, PriceChart.tsx'e dokunmuyoruz.
+  // CHROME_PX yaklaşık bir değer (back butonu satırı + ChartControls +
+  // ChartLegend + BottomNav/safe-area toplamı) — kesin piksel-mükemmel
+  // değil, gerekirse görsel test sonrası ayarlanabilir.
+  const [primaryChartHeight, setPrimaryChartHeight] = useState(480);
+  useEffect(() => {
+    const CHROME_PX = 300;
+    const MIN_HEIGHT_PX = 320;
+    function computeHeight() {
+      setPrimaryChartHeight(Math.max(MIN_HEIGHT_PX, window.innerHeight - CHROME_PX));
+    }
+    computeHeight();
+    window.addEventListener("resize", computeHeight);
+    return () => window.removeEventListener("resize", computeHeight);
+  }, []);
+
   // Load persisted settings on mount
   useEffect(() => {
     try {
       const raw = localStorage.getItem(CHART_STORAGE_KEY);
       if (!raw) return;
       const s = JSON.parse(raw) as Record<string, unknown>;
-      if (typeof s.pair === "string" && (PAIRS as readonly string[]).includes(s.pair)) setPair(s.pair as Pair);
+      // War Room odağı aktifse localStorage'daki eski pair onu ezmesin.
+      if (!focusActiveAtMountRef.current && typeof s.pair === "string" && (PAIRS as readonly string[]).includes(s.pair)) setPair(s.pair as Pair);
       if (typeof s.tf === "string" && VALID_TF.has(s.tf)) setTimeframe(s.tf as Timeframe);
       const o = s.o as Record<string, boolean> | undefined;
       if (o) {
@@ -251,11 +288,11 @@ export default function GrafikPage() {
   useEffect(() => {
     if (!showSplit) { setSecCandles([]); return; }
     setSecLoading(true);
-    fetchCandles(pair, secTf, 200)
+    fetchCandles(secPair, secTf, 200)
       .then((data) => { setSecCandles(data ?? []); })
       .catch(() => { setSecCandles([]); })
       .finally(() => { setSecLoading(false); });
-  }, [showSplit, pair, secTf]);
+  }, [showSplit, secPair, secTf]);
 
   // Live candle stream — updates last candle via RAF-throttled WS (ADIM 3)
   useOkxCandleStream(pair, timeframe);
@@ -265,7 +302,8 @@ export default function GrafikPage() {
   const trades     = useTradesStore((s) => s.trades);
   const positions  = usePositionStore((s) => s.positions);
   const alarms     = usePriceAlarmStore((s) => s.alarms);
-  const livePrice  = useMarketStore((s) => s.prices[pair]?.last ?? null);
+  const livePrice    = useMarketStore((s) => s.prices[pair]?.last ?? null);
+  const secLivePrice = useMarketStore((s) => s.prices[secPair]?.last ?? null);
 
   const tradeLevels = useMemo<TradeLevelLine[]>(() => {
     const allPos = positions ?? [];
@@ -289,7 +327,7 @@ export default function GrafikPage() {
       // tradesStore: yalnızca eksik seviye değerleri için backup
       // Açıklık kararına karışmıyor; livePos guard geçtikten sonra okunuyor
       const appTrade = trades.find(
-        (t) => !t.isPaper && t.status === "open" && t.pair === pair && t.direction === dir
+        (t) => t.status === "open" && t.pair === pair && t.direction === dir
       );
 
       // SL: OKX algo order birincil; null ise app-side stopPrice değeri
@@ -322,24 +360,22 @@ export default function GrafikPage() {
       volume: showVolume, rsi: showRsi, macd: showMacd, bb: showBb,
       vwap: showVwap, sr: showSr, trades: showTrades,
       alarmLevels, tradeLevels, drawnLines,
-      livePrice: livePrice ?? undefined,
     }),
     [candles, trades, pair, showEma20, showEma50, showEma200, showVolume,
      showRsi, showMacd, showBb, showVwap, showSr, showTrades,
-     alarmLevels, tradeLevels, drawnLines, livePrice],
+     alarmLevels, tradeLevels, drawnLines],
   );
 
   // Secondary series (split view — EMA200 + volume only, same drawnLines)
   const secSeries = useMemo<ChartSeries | null>(() => {
     if (!showSplit || secCandles.length === 0) return null;
-    return buildSeries(secCandles, trades, pair, {
+    return buildSeries(secCandles, trades, secPair, {
       ema20: false, ema50: false, ema200: true,
       volume: showVolume, rsi: false, macd: false, bb: false,
       vwap: false, sr: showSr, trades: false,
       alarmLevels: [], tradeLevels, drawnLines,
-      livePrice: livePrice ?? undefined,
     });
-  }, [showSplit, secCandles, trades, pair, showVolume, showSr, tradeLevels, drawnLines, livePrice]);
+  }, [showSplit, secCandles, trades, secPair, showVolume, showSr, tradeLevels, drawnLines]);
 
   // Click handler dispatched to the appropriate mode
   const handlePriceClick = useCallback((price: number) => {
@@ -377,6 +413,36 @@ export default function GrafikPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const chartSection = useMemo(() => (
     <>
+      {/* War Room overlay — /karar'dan "→ Chart" ile odaklanıldığında (C + D).
+          NOT: MarketRibbon.tsx artık bu sayfada render edilmiyor — dosya
+          SİLİNMEDİ (başka bir yerde yeniden kullanılabilir diye durur),
+          BTC/ETH/DXY/EQUITY bilgisi aşağıdaki 4'lü mini kart şeridine
+          taşındı. Aktif parite kartı şeritten KALDIRILDI — skoru zaten
+          hemen üstteki GuardianPanel'de var, tekrarı gereksizdi. */}
+      {isOverlayActive && (
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => clearFocus()}
+            className="shrink-0 rounded border border-border px-2 py-1.5 font-mono text-xs text-text-t3 hover:text-text-t1 hover:border-text-t2 transition-colors"
+            title={t("grafik.warRoomClose")}
+            aria-label={t("grafik.warRoomClose")}
+          >
+            ✕
+          </button>
+        </div>
+      )}
+      {isOverlayActive && <GuardianPanel pair={pair} />}
+      {isOverlayActive && (
+        // BTC + ETH (ScoreRingV2+MTF ile) + DXY + EQUITY (ScoreRingV2
+        // gerektirmeyen, ayrı basit iki-satır kartlar).
+        <div className="flex gap-2 overflow-x-auto py-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+          <ActivePairMiniCard pair="BTC" />
+          <ActivePairMiniCard pair="ETH" />
+          <DxyMiniCard />
+          <EquityMiniCard />
+        </div>
+      )}
+
       <ChartControls
         timeframe={timeframe}
         showEma20={showEma20}
@@ -391,7 +457,6 @@ export default function GrafikPage() {
         showSr={showSr}
         showSplit={showSplit}
         clickMode={clickMode}
-        hasDrawnLines={drawnLines.length > 0}
         onTimeframeChange={setTimeframe}
         onToggleEma20={() => setShowEma20((v) => !v)}
         onToggleEma50={() => setShowEma50((v) => !v)}
@@ -407,7 +472,6 @@ export default function GrafikPage() {
         showFlow={showFlow}
         onToggleFlow={() => setShowFlow((v) => !v)}
         onSetClickMode={handleSetClickMode}
-        onClearDrawnLines={() => setDrawnLines([])}
       />
 
       <ChartLegend
@@ -423,23 +487,44 @@ export default function GrafikPage() {
         showSr={showSr}
       />
 
-      {/* Active mode indicator */}
-      {clickMode !== "none" && (
+      <PositionOverlayBar pair={pair} />
+
+      {/* Active mode indicator + drawn lines count */}
+      {(clickMode !== "none" || drawnLines.length > 0) && (
         <div className={`flex items-center gap-2 rounded border px-3 py-1.5 text-xs font-mono ${
-          clickMode === "hline"
-            ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-400"
-            : "border-green-500/40 bg-green-500/10 text-green-400"
+          clickMode !== "none"
+            ? clickMode === "hline"
+              ? "border-yellow-500/40 bg-yellow-500/10 text-yellow-400"
+              : "border-green-500/40 bg-green-500/10 text-green-400"
+            : "border-border/50 bg-surface-2/50 text-text-t3"
         }`}>
-          <span className="animate-pulse">●</span>
-          {clickMode === "hline"
-            ? t("grafik.drawHline")
-            : t("grafik.drawPrice")}
-          <button
-            onClick={() => handleSetClickMode("none")}
-            className="ml-auto opacity-60 hover:opacity-100"
-          >
-            {t("grafik.drawCancelAll")}
-          </button>
+          {clickMode !== "none" && (
+            <>
+              <span className="animate-pulse">●</span>
+              <span>{clickMode === "hline" ? t("grafik.drawHline") : t("grafik.drawPrice")}</span>
+              <button
+                onClick={() => handleSetClickMode("none")}
+                className="min-h-[40px] px-2 flex items-center opacity-60 hover:opacity-100"
+              >
+                {t("grafik.drawCancelAll")}
+              </button>
+            </>
+          )}
+          {drawnLines.length > 0 && (
+            <>
+              {clickMode !== "none" && <div className="w-px h-3.5 bg-current/20 mx-1 shrink-0" />}
+              <span className="font-mono text-[10px] tabular-nums">
+                {drawnLines.length} {t("grafik.drawnLinesLabel")}
+              </span>
+              <button
+                onClick={() => setDrawnLines([])}
+                className="ml-auto shrink-0 font-mono text-[10px] min-h-[40px] px-2 flex items-center opacity-60 hover:opacity-100 hover:text-red-400"
+                title={t("grafik.clearLines")}
+              >
+                ✕
+              </button>
+            </>
+          )}
         </div>
       )}
 
@@ -455,7 +540,7 @@ export default function GrafikPage() {
               <button
                 key={label}
                 onClick={() => void copyToClipboard(fmtPrice(capturedPrice))}
-                className={`rounded border px-2 py-0.5 font-mono text-2xs tracking-wider transition-colors ${
+                className={`rounded border px-2 py-2 font-mono text-2xs tracking-wider transition-colors ${
                   label === "SL"
                     ? "border-red-500/40 text-red-400 hover:bg-red-500/10"
                     : label.startsWith("TP")
@@ -485,34 +570,69 @@ export default function GrafikPage() {
         {/* Primary chart */}
         <div className={showSplit ? "flex-1 min-w-0" : "w-full"}>
           {showSplit && (
-            <p className="mb-1 font-mono text-2xs text-text-t4 uppercase tracking-wider">
-              {pair} · {timeframe.toUpperCase()}
-            </p>
+            <div className="mb-1 flex items-center gap-1.5">
+              <PairDropdownMini value={pair} onChange={setPair} />
+              <span className="font-mono text-2xs text-text-t4 uppercase tracking-wider">
+                · {timeframe.toUpperCase()}
+              </span>
+            </div>
           )}
-          <PriceChart
-            series={series}
-            height={showSplit ? 360 : 480}
-            theme={theme}
-            onChartClick={handlePriceClick}
-            resetKey={`${pair}_${timeframe}`}
-          />
+          <div className="relative">
+            <PriceChart
+                series={series}
+                height={showSplit ? 360 : primaryChartHeight}
+                theme={theme}
+                onChartClick={handlePriceClick}
+                resetKey={`${pair}_${timeframe}`}
+                currentPrice={livePrice ?? undefined}
+              />
+            {isOverlayActive && (
+              // right-16 (64px): lightweight-charts sağ fiyat eksenini otomatik
+              // genişlikte çiziyor (borderVisible/minimumWidth override edilmemiş,
+              // bkz. PriceChart.tsx:201 rightPriceScale), gerçek piksel genişliği
+              // runtime'da DOM'dan ölçülüyor — burada sandbox'tan ölçülemedi, 9
+              // paritenin (lib/constants/pairs.ts) en uzun ondalıklı fiyat
+              // gösterimini (örn. SUI'nin $0.7178 gibi 4 ondalıklı hali)
+              // kapsayacak güvenli bir sabit tampon kullanıldı.
+              // NOT (HUD yeniden tasarımı sonrası): bu div'de sadece `right` set
+              // (left YOK, width YOK) — CSS auto-width kutusu sağ kenardan
+              // sabitlenip SOLA doğru büyür. AdvancedPositionCard genişlese/
+              // küçülse bile sağ kenar hep bu 64px'te sabit kalır, fiyat
+              // eksenine olan mesafe değişmez — bu yüzden right-16 değerine
+              // dokunulmadı (bkz. görev raporu).
+              // max-w-[85%]: BİLEREK CARD'IN KENDİSİNE değil, bu wrapper'a
+              // eklendi. Wrapper'ın containing block'u bu `.relative` div
+              // (gerçek/definite genişlik — chart genişliği), yüzde burada
+              // güvenle çözülüyor. Aynı yüzdeyi doğrudan AdvancedPositionCard'ın
+              // kök className'ine eklemek CSS açısından döngüsel/tanımsız
+              // olurdu (kartın parent'ı zaten shrink-to-fit, genişliği kendi
+              // içeriğine bağlı) — bkz. görev raporu.
+              <div className="absolute top-2 right-16 max-w-[85%] pointer-events-none">
+                <AdvancedPositionCard pair={pair} />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Secondary chart (split view) */}
         {showSplit && (
           <div className="flex-1 min-w-0">
-            <p className="mb-1 font-mono text-2xs text-text-t4 uppercase tracking-wider">
-              {pair} · {secTf.toUpperCase()}
-              {secLoading && <span className="ml-2 opacity-50">…</span>}
-            </p>
+            <div className="mb-1 flex items-center gap-1.5">
+              <PairDropdownMini value={secPair} onChange={setSecPair} />
+              <span className="font-mono text-2xs text-text-t4 uppercase tracking-wider">
+                · {secTf.toUpperCase()}
+              </span>
+              {secLoading && <span className="font-mono text-2xs text-text-t4 opacity-50">…</span>}
+            </div>
             {secSeries ? (
               <PriceChart
-                series={secSeries}
-                height={360}
-                theme={theme}
-                onChartClick={handlePriceClick}
-                resetKey={`${pair}_${secTf}`}
-              />
+                  series={secSeries}
+                  height={360}
+                  theme={theme}
+                  onChartClick={handlePriceClick}
+                  resetKey={`${secPair}_${secTf}`}
+                  currentPrice={secLivePrice ?? undefined}
+                />
             ) : (
               <div className="flex items-center justify-center h-[360px] rounded border border-border bg-bg-card">
                 <span className="font-mono text-2xs text-text-t4">
@@ -556,7 +676,8 @@ export default function GrafikPage() {
     timeframe, showEma20, showEma50, showEma200, showTrades, showVolume,
     showRsi, showMacd, showBb, showVwap, showSr, showSplit, showFlow,
     clickMode, drawnLines, capturedPrice, secLoading, secSeries, series,
-    pair, secTf, theme, t, handleSetClickMode, handlePriceClick,
+    pair, secPair, secTf, theme, t, handleSetClickMode, handlePriceClick,
+    isOverlayActive, clearFocus,
   ]);
 
   return (
@@ -574,16 +695,22 @@ export default function GrafikPage() {
             }}
           />
         ) : (
-          <div className="flex flex-col gap-3 px-3 py-3">
-            {/* Geri butonu + pair adı */}
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col gap-1 px-0 py-3">
+            {/* Geri butonu + pair adı — kendi px-3'ünü taşıyor, parent'ın
+                px-0 olması sadece chartSection'ın (kendi iç padding'i olan
+                PositionOverlayBar/ChartControls) tam genişlik almasını
+                sağlıyor, bu satırı etkilemiyor. gap-2→gap-1: başlık ile
+                (War Room aktifken) hemen altındaki GuardianPanel arası
+                dikey boşluk yarıya indirildi. */}
+            <div className="flex items-center gap-3 px-3">
               <button
                 onClick={() => { setMobileView("list"); window.history.back(); }}
                 className="flex items-center gap-1.5 rounded border border-border px-2.5 py-1.5 font-mono text-xs text-text-t3 hover:text-text-t1 hover:border-text-t2 transition-colors"
               >
                 {t("grafik.mobileBack")}
               </button>
-              <span className="font-mono text-sm font-bold text-text-t1">{pair} · USDT</span>
+              <PairDropdownMini value={pair} onChange={setPair} size="lg" />
+              <span className="font-mono text-sm font-bold text-text-t1 opacity-50">· USDT</span>
             </div>
             {chartSection}
           </div>
@@ -592,20 +719,11 @@ export default function GrafikPage() {
 
       {/* ── Masaüstü: yan yana layout ── */}
       <div className="hidden md:flex gap-3 items-start">
-        <div className="hidden md:block">
-          <LivePriceStrip variant="vertical" />
-        </div>
         <WatchlistPanel activePair={pair} onPairChange={setPair} />
-        <div className="flex-1 min-w-0 flex flex-col gap-3">
+        <div className="flex-1 min-w-0 flex flex-col gap-2">
           {chartSection}
         </div>
       </div>
-      {/* DEV debug — priority fetch timing */}
-      {prioMs !== null && (
-        <div className="fixed bottom-2 right-2 z-50 bg-black/70 text-green-400 text-xs font-mono px-2 py-1 rounded pointer-events-none">
-          [PRIO] {pair} {prioMs}ms
-        </div>
-      )}
     </>
   );
 }

@@ -2,7 +2,7 @@
  * QUANTIX OS — Çift Katmanlı i18n Kontrol Mekanizması
  *
  * Katman 1 — Yapısal Kontrol:
- *   EN referans alınarak tüm 12 dil dosyasının aynı anahtar yapısına
+ *   EN referans alınarak tüm 7 dil dosyasının aynı anahtar yapısına
  *   sahip olduğu doğrulanır (eksik key, fazla key, tip uyumsuzluğu).
  *
  * Katman 2 — Terminoloji Kontrolü:
@@ -20,15 +20,10 @@
 import { en } from "../lib/i18n/en";
 import { tr } from "../lib/i18n/tr";
 import { de } from "../lib/i18n/de";
-import { fr } from "../lib/i18n/fr";
-import { es } from "../lib/i18n/es";
-import { pt } from "../lib/i18n/pt";
 import { zh } from "../lib/i18n/zh";
 import { ja } from "../lib/i18n/ja";
 import { ko } from "../lib/i18n/ko";
 import { ru } from "../lib/i18n/ru";
-import { ar } from "../lib/i18n/ar";
-import { hi } from "../lib/i18n/hi";
 
 type AnyDict = Record<string, unknown>;
 
@@ -36,15 +31,10 @@ const LOCALES: Record<string, AnyDict> = {
   en: en as unknown as AnyDict,
   tr: tr as unknown as AnyDict,
   de: de as unknown as AnyDict,
-  fr: fr as unknown as AnyDict,
-  es: es as unknown as AnyDict,
-  pt: pt as unknown as AnyDict,
   zh: zh as unknown as AnyDict,
   ja: ja as unknown as AnyDict,
   ko: ko as unknown as AnyDict,
   ru: ru as unknown as AnyDict,
-  ar: ar as unknown as AnyDict,
-  hi: hi as unknown as AnyDict,
 };
 
 // ── Katman 1: Yapısal kontrol ─────────────────────────────────────
@@ -217,7 +207,7 @@ function run(): void {
   const { errors: l1Errors, warnings: l1Warnings } = layer1StructuralCheck();
 
   if (l1Errors.length === 0 && l1Warnings.length === 0) {
-    console.log("  ✅ Tüm 12 dil dosyası EN referansıyla birebir eşleşiyor.\n");
+    console.log("  ✅ Tüm 7 dil dosyası EN referansıyla birebir eşleşiyor.\n");
   } else {
     for (const e of l1Errors) console.log(`  ❌ ${e}`);
     for (const w of l1Warnings) console.log(`  ⚠️  ${w}`);

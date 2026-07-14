@@ -16,6 +16,7 @@ import { z } from "zod";
 import type { Pair } from "@/lib/constants/pairs";
 import { PAIRS } from "@/lib/constants/pairs";
 import type { FetchFn } from "./candles";
+import { ensureCtValMap, getRealSize } from "./contractSize";
 
 /** Tek bir açık pozisyon (parse edilmiş hali) */
 export interface Position {
@@ -106,14 +107,19 @@ function extractPair(instId: string): Pair | null {
 }
 
 /** Tek pozisyon row'unu parse et */
-function parsePositionRow(raw: z.infer<typeof positionRowSchema>): Position | null {
+function parsePositionRow(
+  raw: z.infer<typeof positionRowSchema>,
+  ctValMap: Record<string, number>,
+): Position | null {
   const pair = extractPair(raw.instId);
   if (!pair) return null;
 
   const posValue = num(raw.pos);
   if (posValue === 0) return null; // Boş pozisyon (kapanmış)
 
-  const size = Math.abs(posValue);
+  // OKX'in `pos` alanı SWAP için KONTRAT ADEDİ — gerçek coin miktarı
+  // ctVal ile çarpılarak elde edilir (bkz. lib/okx/contractSize.ts).
+  const size = getRealSize(Math.abs(posValue), raw.instId, ctValMap);
   const entryPx = num(raw.avgPx);
   if (entryPx <= 0) return null;
 
@@ -152,8 +158,18 @@ function parsePositionRow(raw: z.infer<typeof positionRowSchema>): Position | nu
 /**
  * Raw OKX response → Position[]
  * Boş pozisyonları, geçersiz veya desteklenmeyen pair'leri eler.
+ *
+ * @param ctValMap instId → ctVal haritası (bkz. lib/okx/contractSize.ts).
+ *   Verilmezse boş obje varsayılır — getRealSize() bu durumda size'ı
+ *   ölçeklendirmeden (eski, buggy davranışla aynı) döner; bu sadece
+ *   ctValMap sağlanamayan çağrı yerleri (ör. testler) için güvenli bir
+ *   varsayılan, gerçek üretim yolu (fetchPositions) her zaman doldurulmuş
+ *   bir harita geçirir.
  */
-export function parsePositionResponse(raw: unknown): Position[] | null {
+export function parsePositionResponse(
+  raw: unknown,
+  ctValMap: Record<string, number> = {},
+): Position[] | null {
   const r = positionResponseSchema.safeParse(raw);
   if (!r.success) return null;
   if (r.data.code !== "0") return null;
@@ -161,7 +177,7 @@ export function parsePositionResponse(raw: unknown): Position[] | null {
 
   const positions: Position[] = [];
   for (const row of r.data.data) {
-    const p = parsePositionRow(row);
+    const p = parsePositionRow(row, ctValMap);
     if (p) positions.push(p);
   }
   return positions;
@@ -258,6 +274,11 @@ export async function fetchPositions(
   const fn = fetchFn ?? (globalThis.fetch as unknown as FetchFn);
   const url = "/api/okx/api/v5/account/positions";
   try {
+    // Kontrat büyüklüğü haritası — pozisyon isteğiyle paralel (bağımsız,
+    // ayrı bir public endpoint), 6 saatlik TTL cache sayesinde çoğu poll
+    // cycle'ında zaten network'e hiç çıkmıyor (bkz. contractSize.ts).
+    const ctValMapPromise = ensureCtValMap();
+
     let res: { ok: boolean; json: () => Promise<unknown> };
     if (clientCreds?.key) {
       res = await fetch(url, {
@@ -272,14 +293,16 @@ export async function fetchPositions(
     const raw = await res.json() as Record<string, unknown>;
     if (!raw || typeof raw !== "object") return null;
 
+    const ctValMap = await ctValMapPromise;
+
     let positions: Position[] | null = null;
     // Proxy response: { ok: boolean, data: [...positions] }
     if (typeof raw.ok === "boolean") {
       if (!raw.ok) return null;
-      positions = parsePositionResponse({ code: "0", data: raw.data });
+      positions = parsePositionResponse({ code: "0", data: raw.data }, ctValMap);
     } else if (typeof raw.code === "string") {
       // Direct OKX envelope passthrough
-      positions = parsePositionResponse(raw);
+      positions = parsePositionResponse(raw, ctValMap);
     }
 
     if (!positions || positions.length === 0) return positions;

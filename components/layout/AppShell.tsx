@@ -26,6 +26,7 @@ import { AppHeader } from "./AppHeader";
 import { BottomNav } from "./BottomNav";
 import { SplashScreen } from "./SplashScreen";
 import { ThemeSync } from "./ThemeSync";
+import { DevicePerfSync } from "./DevicePerfSync";
 import { AlarmToastContainer } from "./AlarmToastContainer";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useAccountStore } from "@/lib/store/accountStore";
@@ -39,7 +40,12 @@ import { useGoAlerts } from "@/lib/hooks/useGoAlerts";
 import { useScoreHistory } from "@/lib/hooks/useScoreHistory";
 import { useBalancePoller } from "@/lib/hooks/useBalancePoller";
 import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
+import { useOrderBookPoller } from "@/lib/hooks/useOrderBookPoller";
+import { useNewsPoller } from "@/lib/hooks/useNewsPoller";
+import { useEquityIndexPoller } from "@/lib/hooks/useEquityIndexPoller";
+import { NewsFeedBanner } from "./NewsFeedBanner";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
+import { useWeeklyMonthlyPnlTracker } from "@/lib/hooks/useWeeklyMonthlyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
 import { useSignalFirehose } from "@/lib/hooks/useSignalFirehose";
 import { usePriceAlarms } from "@/lib/hooks/usePriceAlarms";
@@ -52,6 +58,7 @@ import { useEmergencyStopGuard } from "@/lib/hooks/useEmergencyStopGuard";
 import { useSlProximityAlert } from "@/lib/hooks/useSlProximityAlert";
 import { usePriorityAlerts } from "@/lib/hooks/usePriorityAlerts";
 import { useCapacitorApp } from "@/lib/hooks/useCapacitorApp";
+import { useGoSignalOutcomeTracker } from "@/lib/hooks/useGoSignalOutcomeTracker";
 import { QuickTradeSheet } from "@/components/mobile/QuickTradeSheet";
 import { DisclaimerModal } from "./DisclaimerModal";
 import { useAuthStub } from "@/lib/auth/stubs";
@@ -115,8 +122,13 @@ export function AppShell({
   usePositionPoller(1_000); // t+1s
   useBalancePoller(2_000);  // t+2s
   useMacroPoller(3_000);    // t+3s — en yavaş değişen veri, en son
+  useOrderBookPoller(4_000); // t+4s — Anomali Işığı Faz 2 (order book duvarı), 3dk cadence
+  useNewsPoller(5_000);      // t+5s — Haber Akışı (RSS+Finnhub haber sentiment), 20dk cadence
+  useEquityIndexPoller(6_000); // t+6s — S&P/Nasdaq/DXY proxy (SPY/QQQ/UUP), 5dk cadence, veri katmanı (UI henüz yok)
   // Günlük P&L takip → drawdown protokol tier güncelle (güvenlik kritik)
   useDailyPnlTracker();
+  // Haftalık/aylık kümülatif P&L takip (UTC hafta/ay sınırı) → Portfolyo sayfası kartları
+  useWeeklyMonthlyPnlTracker();
   // Order flow trade feed → tradeFeedStore (CVD/VPIN/SMC için)
   useTradeFeed();
   // Telegram sinyal firehose — verdict go geçişlerini izler
@@ -139,6 +151,8 @@ export function AppShell({
   usePwaSetup();
   // Capacitor native lifecycle — back button, StatusBar, SplashScreen
   useCapacitorApp();
+  // GO sinyal sonrası 15dk/1sa fiyat hareketi takibi
+  useGoSignalOutcomeTracker();
 
   useEffect(() => {
     if (!authLoaded) return;
@@ -186,9 +200,11 @@ export function AppShell({
   return (
     <div className="bg-bg text-text-t1 min-h-screen">
       <ThemeSync />
+      <DevicePerfSync />
       <DisclaimerModal />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />
+      <NewsFeedBanner />
       <AlarmToastContainer />
       <main className="app-main mx-auto max-w-screen-2xl px-4 pt-4 lg:px-6">
         {children}

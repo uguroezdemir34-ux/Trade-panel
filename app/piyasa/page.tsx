@@ -3,10 +3,12 @@
 import { useMemo } from "react";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
+import { computeMtfTrend, computeTimeframeTrend } from "@/lib/market/mtfTrend";
+import type { MtfTrendResult, TimeframeTrend } from "@/lib/market/mtfTrend";
+import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { MarketSummaryBanner } from "@/components/piyasa/MarketSummaryBanner";
 import { FearGreedGauge } from "@/components/piyasa/FearGreedGauge";
 import { DominanceCard } from "@/components/piyasa/DominanceCard";
-import { MtfTrendGrid } from "@/components/piyasa/MtfTrendGrid";
 import { FundingRateRow } from "@/components/piyasa/FundingRateRow";
 import { FundingAlertBanner } from "@/components/piyasa/FundingAlertBanner";
 import { OiVelocityCard } from "@/components/piyasa/OiVelocityCard";
@@ -16,9 +18,7 @@ import { VolatilityRankCard } from "@/components/piyasa/VolatilityRankCard";
 import { MarketSessionsCard } from "@/components/piyasa/MarketSessionsCard";
 import { MarketBreadthCard } from "@/components/piyasa/MarketBreadthCard";
 import { CorrelationCard } from "@/components/piyasa/CorrelationCard";
-import { computeMtfTrend } from "@/lib/market/mtfTrend";
-import { PAIRS, type Pair } from "@/lib/constants/pairs";
-import type { MtfTrendResult } from "@/lib/market/mtfTrend";
+import { MtfTrendGrid } from "@/components/piyasa/MtfTrendGrid";
 
 export default function PiyasaPage() {
   const marketSummary = useMacroStore((s) => s.marketSummary);
@@ -31,26 +31,12 @@ export default function PiyasaPage() {
   const oiVelocity = useMacroStore((s) => s.oiVelocity);
   const oiLoading = useMacroStore((s) => s.oiLoading);
 
-  const allCandles = useCandleStore(
-    (s) => s.candles,
-    (prev, next) => {
-      for (const pair of PAIRS) {
-        for (const tf of ["1h", "4h", "1d"] as const) {
-          const key = `${pair}_${tf}` as const;
-          const p = prev[key];
-          const n = next[key];
-          if (p === n) continue;
-          if (!p || !n || p.length !== n.length) return false;
-          const pLast = p[p.length - 1];
-          const nLast = n[n.length - 1];
-          if (!pLast || !nLast) return false;
-          if (pLast.ts !== nLast.ts || pLast.confirm !== nLast.confirm) return false;
-        }
-      }
-      return true;
-    },
-  );
-
+  // MtfTrendGrid daha önce yazılmış ama hiçbir sayfada mount edilmemişti —
+  // burada monte edildi. Candle verisi yeni bir fetch GEREKTİRMİYOR:
+  // useCandlePoller (AppShell) zaten TÜM pariteler için 15m/1h/4h/1d'yi
+  // sürekli çekiyor (lib/hooks/useCandlePoller.ts TIMEFRAMES_SHORT/LONG),
+  // burada sadece mevcut candleStore okunuyor.
+  const allCandles = useCandleStore((s) => s.candles);
   const mtfResults = useMemo(() => {
     const out: Partial<Record<Pair, MtfTrendResult>> = {};
     for (const pair of PAIRS) {
@@ -58,13 +44,21 @@ export default function PiyasaPage() {
       const c4h = allCandles[`${pair}_4h`] ?? EMPTY_CANDLES;
       const c1d = allCandles[`${pair}_1d`] ?? EMPTY_CANDLES;
       if (c1h.length >= 20) {
-        out[pair] = computeMtfTrend(
-          pair,
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          c1h as any,
-          c4h as any,
-          c1d as any,
-        );
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        out[pair] = computeMtfTrend(pair, c1h as any, c4h as any, c1d as any);
+      }
+    }
+    return out;
+  }, [allCandles]);
+  // 15m — AYRI, computeMtfTrend()'in cls/upCount/downCount hesabına hiç
+  // girmiyor (bkz. MtfTrendGrid.tsx'teki Props yorumu).
+  const mtfTrends15m = useMemo(() => {
+    const out: Partial<Record<Pair, TimeframeTrend>> = {};
+    for (const pair of PAIRS) {
+      const c15m = allCandles[`${pair}_15m`] ?? EMPTY_CANDLES;
+      if (c15m.length >= 20) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        out[pair] = computeTimeframeTrend("15m", c15m as any);
       }
     }
     return out;
@@ -98,11 +92,11 @@ export default function PiyasaPage() {
         </div>
       </div>
 
-      {/* Alt: MTF trend + OI yan yana (masaüstü) / Funding */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-        <MtfTrendGrid results={mtfResults} />
-        <OiVelocityCard velocity={oiVelocity} loading={oiLoading} />
-      </div>
+      {/* MTF yön matrisi — 15m/1h/4h/1d, tüm pariteler */}
+      <MtfTrendGrid results={mtfResults} trends15m={mtfTrends15m} />
+
+      {/* Alt: OI + Funding */}
+      <OiVelocityCard velocity={oiVelocity} loading={oiLoading} />
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <FundingRateRow funding={funding} loading={fundingLoading} />
         <CorrelationCard />

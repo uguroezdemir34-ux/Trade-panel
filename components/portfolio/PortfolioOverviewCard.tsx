@@ -75,8 +75,8 @@ export function PortfolioOverviewCard(): React.ReactElement {
   const dailyPnlColor = dailyTotalUsd >= 0 ? "text-signal-green" : "text-signal-red";
   const dailyPnlGlow =
     dailyTotalUsd >= 0
-      ? "0 0 8px rgba(34,197,94,0.5)"
-      : "0 0 8px rgba(239,68,68,0.5)";
+      ? "0 0 8px rgba(56,137,97,0.5)"
+      : "0 0 8px rgba(199,96,105,0.5)";
 
   return (
     <div className="border-b border-border bg-bg-card px-4 pt-3 pb-3">

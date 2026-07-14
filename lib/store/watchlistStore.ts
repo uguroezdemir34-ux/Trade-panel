@@ -1,12 +1,15 @@
 import { create } from "zustand";
-import type { Pair } from "@/lib/constants/pairs";
+import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { loadFromStorage, saveToStorage } from "@/lib/store/persist";
 
 function load(): Pair[] {
   if (typeof window !== "undefined") {
     try { localStorage.removeItem("quantix_watchlist_v1"); } catch {}
   }
-  return loadFromStorage<Pair[]>("watchlist", []);
+  const loaded = loadFromStorage<Pair[]>("watchlist", []);
+  // PAIRS'ten çıkarılmış bir coin localStorage'da kalmış olabilir —
+  // hayalet kart olarak grid'de görünmesin diye burada eleniyor.
+  return loaded.filter((p) => (PAIRS as readonly string[]).includes(p));
 }
 
 function save(pairs: Pair[]): void {

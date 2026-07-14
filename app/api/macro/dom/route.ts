@@ -30,6 +30,7 @@ export async function GET() {
     ethD: domResult.ethD,
     btcDChange24h: domResult.btcDChange24h,
     ethDChange24h: domResult.ethDChange24h,
+    usdtDChange24h: domResult.usdtDChange24h,
     phase: phase.phase,
     phaseLabel: phase.label,
     summary,

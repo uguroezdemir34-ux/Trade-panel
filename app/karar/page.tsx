@@ -1,18 +1,18 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useAccountStore } from "@/lib/store/accountStore";
-import { useSettingsStore } from "@/lib/store/settingsStore";
-import { useRiskStore } from "@/lib/store/riskStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { computeOiDivergence } from "@/lib/market/oi-divergence";
+import { computeDisplayTrends } from "@/lib/market/mtfTrend";
+import type { TimeframeTrend } from "@/lib/market/mtfTrend";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
 import { useT, useLocale } from "@/lib/i18n/context";
@@ -28,25 +28,58 @@ function fmtCompact(v: number): string {
   return v.toFixed(0);
 }
 
+/* Skor hızı pencereleri — snapshot cadence'i ~15dk (candle kapanışına bağlı) olduğu için
+   5dk gibi daha kısa bir pencere sahte hassasiyet verir, o yüzden desteklenmiyor. */
+const MOMENTUM_WINDOW_MIN = 15;
+const DELTA_BADGE_WINDOW_MIN = 30;
+/** Geçmişi olmayan pariteler için paylaşılan sabit referans — her render'da yeni [] literal'i
+ *  ScoreRingV2'nin `prev.snaps === next.snaps` memo karşılaştırıcısını kırıyordu (FAZ 2a). */
+const EMPTY_SCORE_SNAPS: number[] = [];
+
 const PAIR_GROUPS: Record<string, readonly Pair[]> = {
   all:    PAIRS,
-  majors: ["BTC", "ETH", "BNB", "XRP", "SOL", "APT"],
-  alts:   ["ADA", "AVAX", "DOT", "LINK", "POL", "NEAR", "TRX", "SUI", "TAO", "PENDLE", "OP"],
-  meme:   ["DOGE", "SHIB", "WIF"],
+  majors: ["BTC", "ETH", "BNB", "SOL"],
+  alts:   ["AVAX", "LINK", "NEAR", "SUI", "XRP"],
 };
-type PairGroup = "all" | "majors" | "alts" | "meme" | "go" | "watch" | "act";
+type PairGroup = "all" | "majors" | "alts" | "go" | "watch" | "act";
+
+/** Market Regime rozeti (Faz 3) — TrendRegimeLabel/AtrRegime enum'larını çevrilebilir i18n key'lerine eşler. */
+const TREND_REGIME_LABEL_KEY: Record<TrendRegimeLabel, string> = {
+  trending_strong: "karar.regimeTrendStrong",
+  trending_weak: "karar.regimeTrendWeak",
+  ranging_meanrev: "karar.regimeTrendRangingMR",
+  ranging: "karar.regimeTrendRanging",
+  transitioning: "karar.regimeTrendTransition",
+  mixed: "karar.regimeTrendMixed",
+  unknown: "karar.regimeTrendUnknown",
+};
+const VOL_REGIME_LABEL_KEY: Record<AtrRegime, string> = {
+  compression: "karar.regimeVolCompression",
+  normal: "karar.regimeVolNormal",
+  expansion: "karar.regimeVolExpansion",
+  extreme_expansion: "karar.regimeVolExtreme",
+};
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
+import { getScoreColor } from "@/lib/ui/scoreColor";
+import { computeSqueezeRadar } from "@/lib/market/squeezeRadar";
+import { PAIR_CATEGORY } from "@/lib/constants/pairMeta";
 import { ScoreBreakdown } from "@/components/karar/ScoreBreakdown";
 import { BlocksList } from "@/components/karar/BlocksList";
 import { ReasonsList } from "@/components/karar/ReasonsList";
 import { DirectionBadge } from "@/components/karar/DirectionBadge";
 import { FlowAlignmentRow } from "@/components/karar/FlowAlignmentRow";
 import { PositionSizer } from "@/components/karar/PositionSizer";
-import { TradeConfirmModal } from "@/components/karar/TradeConfirmModal";
 import { computePositionSize } from "@/lib/sizer/position";
 import { atr } from "@/lib/indicators/atr";
 import { adx } from "@/lib/indicators/adx";
+import { bb } from "@/lib/indicators/bb";
+import {
+  classifyTrendRegime,
+  classifyVolRegime,
+  type TrendRegimeLabel,
+} from "@/lib/market/regimeCombiner";
+import type { AtrRegime } from "@/lib/indicators/atr-percentile";
 import { ema } from "@/lib/indicators/ema";
 import { rsi as rsiIndicator } from "@/lib/indicators/rsi";
 import { toIndicatorCandle } from "@/lib/okx/candles";
@@ -56,6 +89,12 @@ import { useFlowIntelligence } from "@/lib/hooks/useFlowIntelligence";
 import { formatCvd } from "@/lib/orderflow/cvd";
 import { getBucketStats } from "@/lib/bucket/stats";
 import { useScoreHistoryStore } from "@/lib/store/scoreHistoryStore";
+import { computeScoreVelocity } from "@/lib/score/velocity";
+import { computeHoldExitGuide, HOLD_EXIT_LABEL_I18N_KEY } from "@/lib/score/holdExitGuide";
+import { computeMarketPulseIndex } from "@/lib/score/marketPulse";
+import { computeOiCollapseAnomaly, computeOrderBookWallAnomaly } from "@/lib/score/anomalyDetector";
+import { useOrderBookStore } from "@/lib/store/orderBookStore";
+import { AnomalyBadge } from "@/components/karar/AnomalyBadge";
 import { SessionStatsBar } from "@/components/karar/SessionStatsBar";
 import { QuickAlarm } from "@/components/karar/QuickAlarm";
 import { StreakBanner } from "@/components/karar/StreakBanner";
@@ -71,6 +110,16 @@ import { PairSignalHistory } from "@/components/karar/PairSignalHistory";
 import { PairTradeStats } from "@/components/karar/PairTradeStats";
 import { WalletSummaryBar } from "@/components/karar/WalletSummaryBar";
 import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
+import { CoinIcon } from "@/components/karar/CoinIcon";
+import { ScoreRingV2 } from "@/components/karar/ScoreRingV2";
+import { MarketPulseWidget } from "@/components/karar/MarketPulseWidget";
+import { SignalAccuracyCard } from "@/components/karar/SignalAccuracyCard";
+import { PerformancePanel } from "@/components/karar/PerformancePanel";
+import { MissedSignalsBanner } from "@/components/karar/MissedSignalsBanner";
+import { PositionAccordion } from "@/components/karar/PositionAccordion";
+import { TickerTape } from "@/components/karar/TickerTape";
+import { ScoreHeatmap } from "@/components/karar/ScoreHeatmap";
+import { SqueezeRadarBanner } from "@/components/karar/SqueezeRadarBanner";
 
 export default function KararPage() {
   const t = useT();
@@ -94,14 +143,24 @@ export default function KararPage() {
   const watchlistLoad = useWatchlistStore((s) => s.load);
 
   useEffect(() => { watchlistLoad(); }, [watchlistLoad]);
-  const [showConfirm, setShowConfirm] = useState(false);
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [execError, setExecError] = useState<string | null>(null);
+
+  // Geçici debug — ?debug=1 query param'ı varsa Eruda mobil konsol yükle
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("debug=1")) {
+      import("eruda").then((eruda) => eruda.default.init());
+    }
+  }, []);
   const [showTrend, setShowTrend] = useState(false);
   const [showHacim, setShowHacim] = useState(false);
   const [showMomentum, setShowMomentum] = useState(false);
   const [showDivergence, setShowDivergence] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
+  const [showMarketPulse, setShowMarketPulse] = useState(true);
+
+  // BTC card — score-change pulse (single-shot, no continuous animation)
+  const btcPrevScoreRef  = useRef<number | undefined>(undefined);
+  const btcPulseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [btcPulseActive, setBtcPulseActive] = useState(false);
 
   const result = useScoreStore((s) => s.results[activePair]);
   const allResults = useScoreStore((s) => s.results);
@@ -119,16 +178,73 @@ export default function KararPage() {
   const balanceTotal = useAccountStore((s) => s.balanceTotal);
   const balanceFree = useAccountStore((s) => s.balanceFree);
   const drawdownProtocol = useAccountStore((s) => s.drawdownProtocol);
-  const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
-  const logEvent = useRiskStore((s) => s.logEvent);
   const trades = useTradesStore((s) => s.trades);
-  const openPending = useTradesStore((s) => s.openPending);
   const openPositions = usePositionStore((s) => s.positions);
-  const openUpl = openPositions.reduce((sum, p) => sum + p.upl, 0);
-  const funding = useMacroStore((s) => s.funding);
+  const allOiVelocity = useMacroStore((s) => s.oiVelocity);
+  const allOrderBookImbalance = useOrderBookStore((s) => s.imbalance);
   const fgValue = useMacroStore((s) => s.fgValue);
   const marketCap = useMacroStore((s) => s.marketCap);
   const oiVelocityForPair = useMacroStore((s) => s.oiVelocity[activePair] ?? null);
+
+  const handleCloseMarketPulse = useCallback(() => setShowMarketPulse(false), []);
+
+  const snapScoresByPair = useMemo(() => {
+    const out: Partial<Record<string, number[]>> = {};
+    for (const p of PAIRS) {
+      out[p] = (scoreHistory[p] ?? [])
+        .filter((s) => typeof s.score === "number" && isFinite(s.score))
+        .map((s) => s.score);
+    }
+    return out;
+  }, [scoreHistory]);
+
+  // MTF trend data for the pair grid — smart equality so only 15m/1h/4h/1d candle closes trigger recompute
+  const allCandlesForMtf = useCandleStore(
+    (s) => s.candles,
+    (prev, next) => {
+      for (const pair of PAIRS) {
+        for (const tf of ["15m", "1h", "4h", "1d"] as const) {
+          const key = `${pair}_${tf}` as const;
+          const p = prev[key];
+          const n = next[key];
+          if (p === n) continue;
+          if (!p || !n || p.length !== n.length) return false;
+          const pLast = p[p.length - 1];
+          const nLast = n[n.length - 1];
+          if (!pLast || !nLast) return false;
+          if (pLast.ts !== nLast.ts || pLast.confirm !== nLast.confirm) return false;
+        }
+      }
+      return true;
+    },
+  );
+
+  // Squeeze rozeti (Faz 2) — SqueezeRadarBanner'la aynı saf fonksiyon, aynı
+  // allCandlesForMtf subscription'ı üzerinden (yeni store subscription yok).
+  const squeezePairs = useMemo(
+    () => new Set(computeSqueezeRadar(allCandlesForMtf).map((e) => e.pair)),
+    [allCandlesForMtf],
+  );
+
+  // Görüntüleme amaçlı 4-TF (15m/1h/4h/1d) dizisi — computeMtfTrend()'in
+  // KENDİSİ burada hiç ÇAĞRILMIYOR/DEĞİŞTİRİLMİYOR; score engine'in KENDİ,
+  // ayrı 3-TF (1h/4h/1d) çağrısı (lib/hooks/useScoreEngine.ts:247) bu
+  // memo'dan bağımsız, hiç etkilenmiyor — bkz. lib/market/mtfTrend.ts'teki
+  // computeDisplayTrends() yorum bloğu.
+  const mtfDisplayTrends = useMemo(() => {
+    const out: Partial<Record<Pair, TimeframeTrend[]>> = {};
+    for (const pair of PAIRS) {
+      const c15m = allCandlesForMtf[`${pair}_15m`] ?? EMPTY_CANDLES;
+      const c1h = allCandlesForMtf[`${pair}_1h`] ?? EMPTY_CANDLES;
+      const c4h = allCandlesForMtf[`${pair}_4h`] ?? EMPTY_CANDLES;
+      const c1d = allCandlesForMtf[`${pair}_1d`] ?? EMPTY_CANDLES;
+      if (c1h.length >= 20) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        out[pair] = computeDisplayTrends(c15m as any, c1h as any, c4h as any, c1d as any);
+      }
+    }
+    return out;
+  }, [allCandlesForMtf]);
 
   // Keyboard shortcuts: 1-9 / [ ] / G / ?
   useEffect(() => {
@@ -175,8 +291,37 @@ export default function KararPage() {
     return () => window.removeEventListener("keydown", onKey);
   }, [allResults, activePair]);
 
+  // BTC pulse — fires once when BTC score value changes
+  const btcScoreForPulse = allResults["BTC"]?.score;
+  useEffect(() => {
+    if (btcScoreForPulse === undefined) return;
+    if (btcPrevScoreRef.current !== undefined && btcPrevScoreRef.current !== btcScoreForPulse) {
+      if (btcPulseTimerRef.current) clearTimeout(btcPulseTimerRef.current);
+      setBtcPulseActive(true);
+      btcPulseTimerRef.current = setTimeout(() => {
+        setBtcPulseActive(false);
+        btcPulseTimerRef.current = null;
+      }, 700);
+    }
+    btcPrevScoreRef.current = btcScoreForPulse;
+    return () => {
+      if (btcPulseTimerRef.current) {
+        clearTimeout(btcPulseTimerRef.current);
+        btcPulseTimerRef.current = null;
+      }
+    };
+  }, [btcScoreForPulse]);
+
   const goPairs = useMemo(
     () => PAIRS.filter((p) => allResults[p]?.verdict === "go"),
+    [allResults],
+  );
+
+  // Market Pulse Index — 24 coin evreninin direction×dirConfidence ağırlıklı
+  // net yön eğilimi. Saf türetme, useScoreEngine'e dokunmaz. Geçerli sonuç
+  // yoksa null — kart sahte bir yüzde göstermesin diye.
+  const marketPulseIndex = useMemo(
+    () => computeMarketPulseIndex(allResults),
     [allResults],
   );
 
@@ -225,19 +370,39 @@ export default function KararPage() {
   const displayPairsRef = useRef<readonly Pair[]>(displayPairs);
   displayPairsRef.current = displayPairs;
 
+  /* 15dk zaman-penceresi bazlı skor hızı — snapshot sayısı değil, ts farkına göre */
   const pairMomentum = useMemo<Partial<Record<Pair, number>>>(() => {
     try {
       const out: Partial<Record<Pair, number>> = {};
       for (const p of PAIRS) {
-        const snaps = scoreHistory[p];
-        if (!Array.isArray(snaps) || snaps.length < 4) continue;
-        const recent = snaps.slice(-4);
-        out[p] = recent[recent.length - 1].score - recent[0].score;
+        const v = computeScoreVelocity(scoreHistory[p], MOMENTUM_WINDOW_MIN);
+        if (v) out[p] = v.delta;
       }
       return out;
     } catch { return {}; }
   }, [scoreHistory]);
 
+  /* TEMP DEBUG — velocity badge tanılama, iş bitince kaldırılacak.
+     scoreHistory değiştiğinde (yani ~15dk cadence'te) bir kez loglar, per-render/per-tick değil.
+     resultState ayrımı: "undefined" = useScoreEngine'in try/catch'i sessizce yuttu (gerçek bug),
+     "null(skipped)" = composeScoreInput meşru şekilde null döndü (candle/fiyat eksik, setSkipped çalıştı),
+     "ok" = skor normal hesaplandı ama yine de history büyümüyorsa ayrı bir sorun var demektir.
+     candles1h/candles4h: candleStore.getState() ile snapshot okunuyor (yeni subscription açmıyor,
+     ekstra re-render tetiklemiyor) — composeScoreInput'un 200 eşiğiyle karşılaştırmak için. */
+  useEffect(() => {
+    const candles = useCandleStore.getState().candles;
+    for (const p of PAIRS) {
+      const snaps = scoreHistory[p] ?? [];
+      const n = snaps.length;
+      const gapMin = n >= 2 ? Math.round((snaps[n - 1].ts - snaps[n - 2].ts) / 60_000) : null;
+      const r = allResults[p];
+      const resultState = r === undefined ? "undefined" : r === null ? "null(skipped)" : `ok(score=${r.score})`;
+      const c1h = candles[`${p}_1h`]?.length ?? 0;
+      const c4h = candles[`${p}_4h`]?.length ?? 0;
+      // eslint-disable-next-line no-console
+      console.log(`[velocity-debug] ${p}: snapshots=${n} lastGap=${gapMin === null ? "n/a" : `${gapMin}dk`} resultState=${resultState} candles1h=${c1h} candles4h=${c4h}`);
+    }
+  }, [scoreHistory, allResults]);
 
   const latestScoreTime = useMemo(() => {
     const times = Object.values(computedAt).filter((v): v is number => v !== undefined);
@@ -322,6 +487,30 @@ export default function KararPage() {
     } catch { return null; }
   }, [candles1h]);
 
+  // Market Regime rozeti (Faz 3) — lib/market/regimeCombiner.ts, lib/score/*'a dokunmaz.
+  const bbPctValue = useMemo(() => {
+    try {
+      return bb(candles1h.map((c) => c.close), { period: 20 })?.pct ?? null;
+    } catch { return null; }
+  }, [candles1h]);
+
+  const trendRegimeLabel = useMemo(
+    () =>
+      classifyTrendRegime({
+        adx: adxValue,
+        dirConfidence: result?.dirConfidence ?? 0,
+        counterTrend: result?.counterTrend ?? false,
+        bbPct: bbPctValue,
+        direction: result?.direction ?? "NEUTRAL",
+      }),
+    [adxValue, bbPctValue, result?.dirConfidence, result?.counterTrend, result?.direction],
+  );
+
+  const volRegimeResult = useMemo(
+    () => classifyVolRegime(candles1h),
+    [candles1h],
+  );
+
   const rsiValue = useMemo(() => {
     try {
       if (candles1h.length < 15) return null;
@@ -399,90 +588,12 @@ export default function KararPage() {
     });
   }, [result, livePrice, atrValue, adxValue, swingLevels, activePair, balanceTotal, balanceFree, drawdownProtocol]);
 
-  async function handleConfirm(_marginMode: "cross" | "isolated" = "cross") {
-    if (!sizerResult || !result || !livePrice) return;
-    if (result.direction !== "LONG" && result.direction !== "SHORT") return;
-
-    setIsExecuting(true);
-    setExecError(null);
-
-    const fundingResult = funding[activePair] ?? null;
-
-    if (forwardTestMode) {
-      openPending({
-        pair: activePair,
-        direction: result.direction,
-        entryPrice: livePrice,
-        qty: sizerResult.qty,
-        leverage: sizerResult.leverage,
-        stopPrice: sizerResult.stop.stopPrice,
-        takeProfit1: sizerResult.tp.tp1Price,
-        takeProfit2: sizerResult.tp.tp2Price,
-        riskAmountUsd: sizerResult.risk.riskUsd,
-        isPaper: true,
-        entryContext: {
-          score: result.score,
-          verdict: result.verdict,
-          fgValue: fgValue ?? undefined,
-          fundingRate: fundingResult?.fundingRate ?? undefined,
-          drawdownTier: drawdownProtocol.tier,
-        },
-      });
-      logEvent("trade_open", {
-        pair: activePair,
-        direction: result.direction,
-        score: result.score,
-        decision: "go",
-        source: "manual",
-        reason: "forward_test",
-      });
-      setShowConfirm(false);
-      setIsExecuting(false);
-      return;
-    }
-
-    setExecError(t("karar.execForwardTestRequired"));
-    setIsExecuting(false);
-  }
-
   return (
-    <div className="flex flex-col gap-3">
-      {/* Forward Test Mode banner */}
-      {forwardTestMode && (
-        <div className="flex items-center gap-2 rounded-lg border border-[#22C55E]/30 bg-[#22C55E]/8 px-3 py-2">
-          <span className="font-mono text-xs font-bold tracking-widest text-[#22C55E]">
-            FWD TEST
-          </span>
-          <span className="text-text-t2 font-mono text-xs">
-            {t("karar.fwdTestActive")}
-          </span>
-        </div>
-      )}
+    <div className="flex flex-col gap-2 sm:gap-3">
+      <TickerTape />
 
-      <WalletSummaryBar />
-
-      <StreakBanner />
-
-      {/* Mini open positions bar — only when positions exist */}
-      {openPositions.length > 0 && (
-        <Link
-          href="/portfolyo"
-          className="flex items-center justify-between rounded-lg border border-border bg-surface-s1 px-3 py-1.5 font-mono text-2xs hover:bg-surface-s2 transition-colors"
-        >
-          <span className="text-text-t3">
-            {openPositions.length} {t("app.openPositions")}
-          </span>
-          <span translate="no" className={`font-semibold tabular-nums ${openUpl >= 0 ? "text-signal-green" : "text-signal-red"}`}>
-            {`UPL ${openUpl >= 0 ? "+" : ""}${openUpl.toFixed(0)} $`}
-          </span>
-          <span className="text-text-t4">→</span>
-        </Link>
-      )}
-
-      <SessionStatsBar />
-
-      {/* Keyboard shortcut hint — sağ üst köşe */}
-      <div className="flex justify-end -mt-1">
+      {/* Klavye kısayolları */}
+      <div className="flex items-center justify-end -mt-1">
         <button
           onClick={() => setShowShortcuts(true)}
           className="font-mono text-2xs text-text-t4 hover:text-text-t2 transition-colors border border-border/40 rounded px-2 py-0.5"
@@ -492,369 +603,36 @@ export default function KararPage() {
         </button>
       </div>
 
-      {/* Desktop 2-column layout */}
+      {/* Orta bölüm — 2 sütun */}
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:gap-4">
 
-        {/* LEFT SIDEBAR — pair selection */}
+        {/* SOL SÜTUN — hesap & risk */}
         <div className="flex flex-col gap-3 lg:w-72 lg:shrink-0 order-2 lg:order-1">
-          {/* Score freshness */}
-          <div className="flex items-center justify-between">
-            <span translate="no" className="text-text-t4 font-mono text-2xs tracking-wider">
-              {latestScoreTime !== null
-                ? `${t("karar.scoresUpdated")} · ${scoreAge(latestScoreTime)} ${t("karar.scoresAgo")}`
-                : t("karar.scoresNever")}
-            </span>
-            {computing && (
-              <span className="text-brand font-mono text-2xs animate-pulse">⟳</span>
-            )}
-          </div>
+          <WalletSummaryBar />
 
-          {/* Pair grid */}
-          <div className="flex flex-col gap-2">
+          {showMarketPulse && marketPulseIndex !== null && (
+            <MarketPulseWidget value={marketPulseIndex} onClose={handleCloseMarketPulse} />
+          )}
 
-          {/* Pair group filter */}
-          <div className="flex flex-wrap gap-1">
-            {(["all", "majors", "alts", "meme", "go", "act", "watch"] as PairGroup[]).map((g) => {
-              const label =
-                g === "all" ? t("karar.groupAll") :
-                g === "majors" ? "Majors" :
-                g === "alts" ? "Alts" :
-                g === "meme" ? "Meme" :
-                g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
-                g === "act" ? `ACT${actionablePairs.length > 0 ? ` (${actionablePairs.length})` : ""}` :
-                `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
-              const isActive = pairGroup === g;
-              const isGo = g === "go";
-              const isAct = g === "act";
-              const isWatch = g === "watch";
-              return (
-                <button
-                  key={g}
-                  onClick={() => {
-                    setPairGroup(g);
-                    const target =
-                      g === "go" ? goPairs :
-                      g === "act" ? actionablePairs :
-                      g === "watch" ? watchlistPairs :
-                      PAIR_GROUPS[g] ?? PAIRS;
-                    if (target.length > 0 && !target.includes(activePair)) {
-                      setActivePair(target[0] as Pair);
-                    }
-                  }}
-                  className={[
-                    "px-2.5 py-1 rounded font-mono text-2xs font-medium transition-colors",
-                    isActive
-                      ? isGo || isAct
-                        ? "bg-green-500/20 text-green-400"
-                        : isWatch
-                        ? "bg-amber-500/20 text-amber-400"
-                        : "bg-surface-s2 text-text-t1"
-                      : isGo && goPairs.length > 0
-                      ? "text-green-400/70 hover:text-green-400"
-                      : isAct && actionablePairs.length > 0
-                      ? "text-green-400/70 hover:text-green-400"
-                      : isWatch && watchlistPairs.length > 0
-                      ? "text-amber-400/70 hover:text-amber-400"
-                      : "text-text-t4 hover:text-text-t2",
-                  ].join(" ")}
-                >
-                  {label}
-                </button>
-              );
-            })}
-          </div>
+          <PositionAccordion />
 
-          {/* Pair grid header — skor sıralaması toggle */}
-          <div className="flex items-center justify-end">
-            <button
-              onClick={() => setSortByScore((s) => !s)}
-              className={[
-                "px-2 py-0.5 rounded font-mono text-2xs border transition-colors",
-                sortByScore
-                  ? "bg-brand/20 border-brand text-brand"
-                  : "border-border text-text-t4 hover:text-text-t2",
-              ].join(" ")}
-            >
-              {sortByScore ? "↓ SKOR" : "SIRALA"}
-            </button>
-          </div>
+          <ScoreHeatmap onSelect={setActivePair} />
 
-          {/* Pair grid — v2: 3 kolon, kapsül slider kartları */}
-          <div className="grid grid-cols-3 gap-1">
-            {pairGroup === "watch" && watchlistPairs.length === 0 ? (
-              <div className="col-span-3 flex flex-col items-center justify-center py-10 gap-1.5">
-                <span className="font-mono text-[28px] text-text-t4/30 leading-none">☆</span>
-                <p className="font-mono text-[11px] text-text-t3 text-center">Takip listen boş</p>
-                <p className="font-mono text-[10px] text-text-t4 text-center px-6">kartlardaki ☆ ile pair ekle</p>
-              </div>
-            ) : displayPairs.map((p) => {
-              const pr = allResults[p];
-              const v = pr?.verdict;
-              const score = pr?.score;
-              const dir = pr?.direction;
-              const isActive = activePair === p;
+          <MissedSignalsBanner />
 
-              /* Score history snapshots — valid numbers only */
-              const snaps = (scoreHistory[p] ?? []).filter(
-                (s) => typeof s.score === "number" && isFinite(s.score),
-              );
+          <StreakBanner />
 
-              const goGap = v === "go" && score !== undefined && pr?.effectiveThreshold !== undefined
-                ? score - pr.effectiveThreshold
-                : -1;
-              const goStrength: "strong" | "medium" | "weak" | null =
-                goGap >= 15 ? "strong"
-                : goGap >= 8  ? "medium"
-                : goGap >= 0  ? "weak"
-                : null;
+          <SessionStatsBar />
 
-              const goRingClass =
-                goStrength === "strong" ? "ring-green-400/90"
-                : goStrength === "medium" ? "ring-green-400/60"
-                : goStrength === "weak"   ? "ring-yellow-400/70"
-                : "";
-              const goPingClass =
-                goStrength === "strong" ? "bg-green-300"
-                : goStrength === "medium" ? "bg-green-400"
-                : "bg-yellow-400";
-              const goBgClass =
-                goStrength === "strong" ? "bg-green-500/10"
-                : goStrength === "medium" ? "bg-green-500/5"
-                : "bg-yellow-500/5";
+          <SignalAccuracyCard />
 
-              const scoreColor =
-                v === "go"
-                  ? goStrength === "strong" ? "text-green-300"
-                    : goStrength === "weak"  ? "text-yellow-400"
-                    : "text-green-400"
-                  : v === "wait"
-                  ? "text-yellow-400"
-                  : "text-text-t4";
-
-              const gradientClass =
-                v === "go"    ? "bg-gradient-to-r from-green-600 to-green-400"
-                : v === "wait"  ? "bg-gradient-to-r from-amber-600 to-amber-400"
-                : v === "no"    ? "bg-gradient-to-r from-red-700/50 to-red-500/30"
-                : "bg-surface-s2";
-
-              const dirArrow = dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
-
-              const pairChg = allTicks[p]?.chg ?? null;
-              const chgColor =
-                pairChg === null ? "text-text-t4"
-                : pairChg > 0 ? "text-signal-up"
-                : pairChg < 0 ? "text-signal-down"
-                : "text-text-t4";
-
-              const momentum = pairMomentum[p];
-              const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
-              const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
-
-              const isWatched = watchlistPairs.includes(p);
-
-              return (
-                <div key={p} className="relative group">
-                  {goStrength && !isActive && (
-                    <>
-                      <div className={`absolute inset-0 rounded-lg ring-1 ${goRingClass} animate-pulse pointer-events-none`} />
-                      <span className="absolute top-0.5 left-0.5 flex h-2 w-2 pointer-events-none z-10">
-                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${goPingClass} opacity-60`} />
-                        <span className={`relative inline-flex rounded-full h-2 w-2 ${goPingClass}`} />
-                      </span>
-                    </>
-                  )}
-
-                  <button
-                    onClick={() => setActivePair(p as Pair)}
-                    className={[
-                      "w-full text-left rounded-lg border p-1.5 font-mono transition-colors",
-                      isActive
-                        ? "border-white/20 bg-surface-s2 text-text-t1"
-                        : goStrength === "strong"
-                        ? `border-green-400/50 ${goBgClass} text-text-t3 hover:text-text-t2`
-                        : goStrength
-                        ? `border-green-500/25 ${goBgClass} text-text-t3 hover:text-text-t2`
-                        : v === "wait"
-                        ? "border-amber-400/20 bg-bg-card text-text-t3 hover:text-text-t2"
-                        : "border-border/30 bg-bg-card text-text-t3 hover:text-text-t2",
-                    ].join(" ")}
-                  >
-                    {/* Satır 1: watchlist chip + pair adı + 24h% rozeti */}
-                    <div className="flex items-center justify-between gap-0.5 mb-0.5">
-                      <div className="flex items-center gap-0.5 min-w-0">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (isWatched) {
-                              watchlistToggle(p as Pair);
-                              toast(t("watchlist.toast.removed", { pair: p }));
-                            } else {
-                              watchlistToggle(p as Pair);
-                              toast(t("watchlist.toast.added", { pair: p }));
-                            }
-                          }}
-                          className={`shrink-0 px-0.5 py-2 leading-none font-mono text-[9px] transition-colors ${
-                            isWatched ? "text-amber-400" : "text-text-t4/50"
-                          }`}
-                        >
-                          {isWatched ? "★" : "☆"}
-                        </button>
-                        <span className="text-[11px] font-bold text-text-t1 leading-none">{p}</span>
-                        {alarmedPairs.has(p) && (
-                          <span className="h-1 w-1 rounded-full bg-amber-400 shrink-0" />
-                        )}
-                      </div>
-                      {pairChg !== null && (
-                        <span translate="no" className={`text-[8px] tabular-nums px-0.5 py-px rounded-sm bg-surface-s2 leading-tight shrink-0 ${chgColor}`}>
-                          {`${pairChg >= 0 ? "+" : ""}${pairChg.toFixed(1)}%`}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Satır 2: 24S score + hacim */}
-                    <div className="flex items-center justify-between gap-0.5 mb-0.5">
-                      <span translate="no" className={`text-[8px] tabular-nums leading-none ${isActive ? "text-text-t3" : scoreColor}`}>
-                        {score !== undefined ? `24S ${score}${dirArrow}` : "24S ·"}
-                      </span>
-                      {allTicks[p]?.vol24h !== undefined && (
-                        <span translate="no" className="text-[8px] tabular-nums leading-none text-text-t4 shrink-0">
-                          ${fmtCompact(allTicks[p]!.vol24h!)}
-                        </span>
-                      )}
-                    </div>
-
-                    {/* Kapsül slider */}
-                    <div className="relative py-1.5">
-                      <div className="h-1.5 w-full rounded-full bg-surface-s2 overflow-hidden relative">
-                        {score !== undefined && (
-                          <div
-                            className={`absolute inset-y-0 left-0 rounded-full ${gradientClass}`}
-                            style={{ width: `${Math.min(100, score)}%` }}
-                          />
-                        )}
-                      </div>
-                      {score !== undefined && (
-                        <div
-                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 h-3.5 w-1.5 rounded-full bg-white/90 shadow-sm pointer-events-none"
-                          style={{ left: `${Math.min(98, score)}%` }}
-                        />
-                      )}
-                      {pr?.goThreshold !== undefined && (
-                        <div
-                          className="absolute top-1/2 -translate-y-1/2 h-3.5 w-px bg-white/25 pointer-events-none"
-                          style={{ left: `${Math.min(99, pr.goThreshold)}%` }}
-                        />
-                      )}
-                    </div>
-
-                    {/* Score sparkline — inline SVG polyline, snaps.length < 2 → null */}
-                    {snaps.length >= 2 && (() => {
-                      const minS = Math.min(...snaps.map((s) => s.score));
-                      const maxS = Math.max(...snaps.map((s) => s.score));
-                      const range = maxS - minS || 1;
-                      const pts = snaps
-                        .map((s, i) =>
-                          `${(1 + (i / (snaps.length - 1)) * 58).toFixed(1)},${(9 - ((s.score - minS) / range) * 8).toFixed(1)}`,
-                        )
-                        .join(" ");
-                      const col =
-                        snaps.at(-1)!.score > snaps[0].score
-                          ? "#22c55e"
-                          : snaps.at(-1)!.score < snaps[0].score
-                          ? "#ef4444"
-                          : "#52566a";
-                      return (
-                        <div className="-mt-0.5 mb-0.5">
-                          <svg width="100%" height="10" viewBox="0 0 60 10" preserveAspectRatio="none">
-                            <polyline
-                              points={pts}
-                              fill="none"
-                              stroke={col}
-                              strokeWidth="1.3"
-                              strokeLinejoin="round"
-                              strokeLinecap="round"
-                              opacity="0.65"
-                            />
-                          </svg>
-                        </div>
-                      );
-                    })()}
-
-                    {/* Büyük skor */}
-                    <div className="flex items-center justify-center gap-0.5 mt-0.5">
-                      <span translate="no" className={`text-sm font-bold tabular-nums leading-none ${isActive ? "text-text-t1" : scoreColor}`}>
-                        {score !== undefined ? score : "·"}
-                      </span>
-                      {dir && (
-                        <span className={`text-[10px] leading-none ${isActive ? "text-text-t2" : scoreColor}`}>
-                          {dirArrow}
-                        </span>
-                      )}
-                      {showMom && (
-                        <span className={`text-[8px] leading-none ml-px ${momColor}`}>
-                          {(momentum ?? 0) > 0 ? "▲" : "▼"}
-                        </span>
-                      )}
-                      {/* Delta badge — son 12 snapshot ile fark, 0dk ise gizle */}
-                      {snaps.length >= 2 && (() => {
-                        const fi = Math.max(0, snaps.length - 12);
-                        const first = snaps[fi];
-                        const last  = snaps[snaps.length - 1];
-                        const dVal  = last.score - first.score;
-                        const dMin  = Math.round((last.ts - first.ts) / 60_000);
-                        if (dMin === 0) return null;
-                        const sign = dVal > 0 ? "+" : "";
-                        const dc =
-                          dVal > 0 ? "text-green-400"
-                          : dVal < 0 ? "text-red-400"
-                          : "text-text-t4";
-                        return (
-                          <span
-                            translate="no"
-                            className={`ml-1 font-mono text-[7px] tabular-nums leading-none opacity-70 ${dc}`}
-                          >
-                            ~{dMin}dk {sign}{Math.round(dVal)}
-                          </span>
-                        );
-                      })()}
-                    </div>
-
-                    {/* Alt: fiyat + market cap */}
-                    <div className="flex items-center justify-between mt-1 gap-1">
-                      <div className="flex items-center gap-1 min-w-0">
-                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
-                          v === "go"    ? "bg-green-400"
-                          : v === "wait"  ? "bg-amber-400"
-                          : "bg-red-400/50"
-                        }`} />
-                        {allTicks[p]?.last !== undefined && (
-                          <span translate="no" className="text-[11px] font-semibold tabular-nums text-text-t1 leading-none tracking-tight">
-                            {formatTickPrice(allTicks[p]!.last, locale)}
-                          </span>
-                        )}
-                      </div>
-                      {marketCap[p] !== undefined && (
-                        <span translate="no" className="text-[8px] tabular-nums text-text-t4 leading-none shrink-0">
-                          ${fmtCompact(marketCap[p]!)}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-
-                  {pairNotes[p as Pair] && (
-                    <span className="absolute bottom-2 right-1 h-1 w-1 rounded-full bg-blue-400/80 pointer-events-none" />
-                  )}
-                </div>
-              );
-            })}
-
-
-          </div>
-          </div>{/* end pair grid wrapper */}
+          <PerformancePanel />
         </div>
 
-        {/* RIGHT MAIN — active pair details */}
+        {/* SAĞ SÜTUN — sinyal detay */}
         <div className="flex flex-col gap-3 lg:flex-1 lg:min-w-0 order-1 lg:order-2">
+          <SqueezeRadarBanner onSelect={setActivePair} />
+
           {!result && (
             <div className="bg-surface-s1 rounded-lg p-6 text-center font-mono text-sm text-text-t3">
               {computing ? t("karar.computing") : t("karar.waitingData")}
@@ -865,7 +643,7 @@ export default function KararPage() {
             <>
               {/* ── Premium hero card ── */}
               <div
-                className="rounded-xl flex flex-col gap-3 p-4"
+                className="rounded-xl flex flex-col gap-2 sm:gap-3 px-4 py-2 sm:py-4"
                 style={{
                   border: "1px solid transparent",
                   background: "linear-gradient(rgb(var(--bg-card)), rgb(var(--bg-card))) padding-box, linear-gradient(135deg, rgba(184, 140, 60, 0.38) 0%, rgba(90, 70, 25, 0.08) 50%, rgba(184, 140, 60, 0.38) 100%) border-box",
@@ -874,7 +652,7 @@ export default function KararPage() {
               >
 
               {/* QUANTIX OS header band */}
-              <div className="-mt-4 -mx-4 mb-1 px-4 py-1.5 rounded-t-[10px] flex items-center gap-2 select-none panel-header-band">
+              <div className="-mt-2 sm:-mt-4 -mx-4 mb-1 px-4 py-0.5 sm:py-1.5 rounded-t-[10px] flex items-center gap-2 select-none panel-header-band">
                 <span className="font-mono text-[9px] tracking-[0.16em] uppercase text-text-t4">
                   QUANTIX OS
                 </span>
@@ -896,10 +674,10 @@ export default function KararPage() {
               </div>
 
               {/* 2-col from md (768px): left = info/badges, right = score gauge */}
-              <div className="flex flex-col gap-3 md:flex-row md:items-start md:gap-4">
+              <div className="flex flex-col gap-2 sm:gap-3 md:flex-row md:items-start md:gap-4">
 
                 {/* Left sub-col: price header + position strip + verdict + protection badges */}
-                <div className="flex flex-col gap-3 md:flex-1 md:min-w-0">
+                <div className="flex flex-col gap-2 sm:gap-3 md:flex-1 md:min-w-0">
 
                   {/* Price header */}
                   <PairPriceHeader
@@ -924,7 +702,7 @@ export default function KararPage() {
                         {`${activePosition.upl >= 0 ? "+" : ""}${activePosition.upl.toFixed(0)}$`}
                       </span>
                       {activeTrade && (
-                        <span className="text-text-t4 shrink-0">{holdingStr(activeTrade.openedAt)}</span>
+                        <span className="text-text-t4 shrink-0">{holdingStr(activeTrade.openedAt, t)}</span>
                       )}
                       <span className="text-text-t4 ml-auto shrink-0">→</span>
                     </Link>
@@ -953,6 +731,23 @@ export default function KararPage() {
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/60 shrink-0" />
                       {t("karar.signalBarClose")}
                     </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-brand/25 bg-brand/8 font-mono text-[9px] text-brand/70 tracking-wide select-none">
+                      <span className="w-1.5 h-1.5 rounded-full bg-brand/60 shrink-0" />
+                      {t("karar.regimeBadge", {
+                        trend: t(TREND_REGIME_LABEL_KEY[trendRegimeLabel]),
+                        vol: volRegimeResult ? t(VOL_REGIME_LABEL_KEY[volRegimeResult.label]) : "—",
+                      })}
+                    </span>
+                    {sizerResult && (
+                      <>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-border/40 bg-surface-s2 font-mono text-[9px] text-text-t2 tracking-wide select-none tabular-nums">
+                          {t("karar.rrLabel")} {sizerResult.rr1.toFixed(2)} / {sizerResult.rr2.toFixed(2)}
+                        </span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded border border-border/40 bg-surface-s2 font-mono text-[9px] text-text-t2 tracking-wide select-none tabular-nums">
+                          {t("karar.expectedMoveLabel")} {sizerResult.tp1Pct.toFixed(1)}% / {sizerResult.tp2Pct.toFixed(1)}%
+                        </span>
+                      </>
+                    )}
                   </div>
 
                 </div>
@@ -961,7 +756,7 @@ export default function KararPage() {
                 <div className="flex gap-2 items-start md:w-52 md:shrink-0">
 
                   {/* Gauge */}
-                  <div className="flex-1 min-w-0">
+                  <div className="w-[140px] shrink-0 md:flex-1 md:min-w-0">
                     <ScoreGauge
                       score={result.score}
                       threshold={result.effectiveThreshold}
@@ -970,7 +765,7 @@ export default function KararPage() {
                   </div>
 
                   {/* SM + FLOW badge + VOL DELTA + GO/F&G — kadranın sağında dikey sıra */}
-                  <div className="flex flex-col gap-1.5 w-[82px] shrink-0">
+                  <div className="grid grid-cols-2 gap-1 flex-1 md:flex md:flex-col md:gap-1.5 md:w-[82px] md:shrink-0">
 
                     {/* Smart Money */}
                     {flowResult && (
@@ -1044,7 +839,7 @@ export default function KararPage() {
                       <div className="text-[8px] font-mono text-text-t4 tracking-widest uppercase mb-0.5 leading-none">GO</div>
                       <div
                         className={`text-[14px] font-mono font-bold tabular-nums leading-tight ${goPairs.length > 0 ? "text-green-400" : "text-text-t4"}`}
-                        style={goPairs.length > 0 ? { textShadow: "0 0 10px rgba(74,222,128,0.45)" } : undefined}
+                        style={goPairs.length > 0 ? { textShadow: "0 0 10px rgba(103,193,148,0.45)" } : undefined}
                       >
                         {goPairs.length}
                         <span className="text-[8px] font-mono text-text-t4 font-normal tabular-nums">/{PAIRS.length}</span>
@@ -1112,9 +907,9 @@ export default function KararPage() {
                     : oiDivergence === "diverge" ? "text-signal-down"
                     : "text-text-t4"
                   }`}>
-                    {oiDivergence === "confirm" ? "✓ ONAY"
-                    : oiDivergence === "diverge" ? "⚠ DIVERJANS"
-                    : "○ NÖTR"}
+                    {oiDivergence === "confirm" ? t("karar.oiDiv.confirm")
+                    : oiDivergence === "diverge" ? t("karar.oiDiv.diverge")
+                    : t("karar.oiDiv.neutral")}
                   </span>
                 </div>
               )}
@@ -1287,41 +1082,392 @@ export default function KararPage() {
                 </AccordionSection>
               </div>
 
-              {sizerResult && (
-                <PositionSizer
-                  result={sizerResult}
-                  onTrade={() => {
-                    setExecError(null);
-                    setShowConfirm(true);
-                  }}
-                />
-              )}
-
-              {execError && (
-                <div className="bg-soft-red text-signal-red rounded-lg p-3 font-mono text-xs">
-                  {execError}
-                </div>
-              )}
+              {sizerResult && <PositionSizer result={sizerResult} />}
             </>
           )}
         </div>
       </div>
 
-      {showConfirm && sizerResult && (
-        <TradeConfirmModal
-          result={sizerResult}
-          onClose={() => setShowConfirm(false)}
-          onConfirm={handleConfirm}
-        />
-      )}
-
-      {isExecuting && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="bg-bg-card rounded-lg p-6 font-mono text-sm text-text-t1">
-            {t("karar.sendingOrder")}
+      {/* Alt bölüm — 9'lu 3x3 coin grid matrisi */}
+          {/* Score freshness */}
+          <div className="flex items-center justify-between">
+            <span translate="no" className="text-text-t4 font-mono text-2xs tracking-wider">
+              {latestScoreTime !== null
+                ? `${t("karar.scoresUpdated")} · ${scoreAge(latestScoreTime)} ${t("karar.scoresAgo")}`
+                : t("karar.scoresNever")}
+            </span>
+            {computing && (
+              <span className="text-brand font-mono text-2xs animate-pulse">⟳</span>
+            )}
           </div>
-        </div>
-      )}
+
+          {/* Pair grid */}
+          <div className="flex flex-col gap-2">
+
+          {/* Pair group filter */}
+          <div className="flex flex-wrap gap-1">
+            {(["all", "majors", "alts", "go", "act", "watch"] as PairGroup[]).map((g) => {
+              const label =
+                g === "all" ? t("karar.groupAll") :
+                g === "majors" ? t("karar.filterMajors") :
+                g === "alts" ? t("karar.filterAlts") :
+                g === "watch" ? `⭐${watchlistPairs.length > 0 ? ` (${watchlistPairs.length})` : ""}` :
+                g === "act" ? `ACT${actionablePairs.length > 0 ? ` (${actionablePairs.length})` : ""}` :
+                `GO${goPairs.length > 0 ? ` (${goPairs.length})` : ""}`;
+              const isActive = pairGroup === g;
+              const isGo = g === "go";
+              const isAct = g === "act";
+              const isWatch = g === "watch";
+              return (
+                <button
+                  key={g}
+                  onClick={() => {
+                    setPairGroup(g);
+                    const target =
+                      g === "go" ? goPairs :
+                      g === "act" ? actionablePairs :
+                      g === "watch" ? watchlistPairs :
+                      PAIR_GROUPS[g] ?? PAIRS;
+                    if (target.length > 0 && !target.includes(activePair)) {
+                      setActivePair(target[0] as Pair);
+                    }
+                  }}
+                  className={[
+                    "px-2.5 py-1 rounded font-mono text-2xs font-medium transition-colors",
+                    isActive
+                      ? isGo || isAct
+                        ? "bg-green-500/20 text-green-400"
+                        : isWatch
+                        ? "bg-amber-500/20 text-amber-400"
+                        : "bg-surface-s2 text-text-t1"
+                      : isGo && goPairs.length > 0
+                      ? "text-green-400/70 hover:text-green-400"
+                      : isAct && actionablePairs.length > 0
+                      ? "text-green-400/70 hover:text-green-400"
+                      : isWatch && watchlistPairs.length > 0
+                      ? "text-amber-400/70 hover:text-amber-400"
+                      : "text-text-t4 hover:text-text-t2",
+                  ].join(" ")}
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Pair grid header — skor sıralaması toggle */}
+          <div className="flex items-center justify-end">
+            <button
+              onClick={() => setSortByScore((s) => !s)}
+              className={[
+                "px-2 py-0.5 rounded font-mono text-2xs border transition-colors",
+                sortByScore
+                  ? "bg-brand/20 border-brand text-brand"
+                  : "border-border text-text-t4 hover:text-text-t2",
+              ].join(" ")}
+            >
+              {sortByScore ? t("karar.sortByScore") : t("karar.sortLabel")}
+            </button>
+          </div>
+
+          {/* Pair grid — v2: mobilde 2 kolon (daha geniş kart), lg: sidebar'da 3 kolon, kapsül slider kartları */}
+          <div className="grid grid-cols-3 gap-2 lg:gap-1.5">
+            {pairGroup === "watch" && watchlistPairs.length === 0 ? (
+              <div className="col-span-3 flex flex-col items-center justify-center py-10 gap-1.5">
+                <span className="font-mono text-[28px] text-text-t4/30 leading-none">☆</span>
+                <p className="font-mono text-[11px] text-text-t3 text-center">Takip listen boş</p>
+                <p className="font-mono text-[10px] text-text-t4 text-center px-6">kartlardaki ☆ ile pair ekle</p>
+              </div>
+            ) : displayPairs.map((p) => {
+              const pr = allResults[p];
+              const v = pr?.verdict;
+              const score = pr?.score;
+              const dir = pr?.direction;
+              const isActive = activePair === p;
+
+
+              const goGap = v === "go" && score !== undefined && pr?.effectiveThreshold !== undefined
+                ? score - pr.effectiveThreshold
+                : -1;
+              const goStrength: "strong" | "medium" | "weak" | null =
+                goGap >= 15 ? "strong"
+                : goGap >= 8  ? "medium"
+                : goGap >= 0  ? "weak"
+                : null;
+
+              const goRingClass =
+                goStrength === "strong" ? "ring-green-400/90"
+                : goStrength === "medium" ? "ring-green-400/60"
+                : goStrength === "weak"   ? "ring-yellow-400/70"
+                : "";
+              const goPingClass =
+                goStrength === "strong" ? "bg-green-300"
+                : goStrength === "medium" ? "bg-green-400"
+                : "bg-yellow-400";
+              const goBgClass =
+                goStrength === "strong" ? "bg-green-500/10"
+                : goStrength === "medium" ? "bg-green-500/5"
+                : "bg-yellow-500/5";
+
+              const dirArrow = dir === "LONG" ? "▲" : dir === "SHORT" ? "▼" : "";
+
+              const pairChg = allTicks[p]?.chg ?? null;
+              const chgColor =
+                pairChg === null ? "text-text-t4"
+                : pairChg > 0 ? "text-signal-up"
+                : pairChg < 0 ? "text-signal-down"
+                : "text-text-t4";
+
+              const snaps = (scoreHistory[p] ?? []).filter(
+                (s) => typeof s.score === "number" && isFinite(s.score),
+              );
+              const momentum = pairMomentum[p];
+              const showMom = momentum !== undefined && Math.abs(momentum) >= 5;
+              const momColor = (momentum ?? 0) > 0 ? "text-green-400" : "text-red-400";
+
+              const isWatched = watchlistPairs.includes(p);
+
+              // İkon rozetleri (Faz 2) — mevcut sub kategorilerinden, yeni hesaplama yok.
+              // BASE_MAX (orchestrator.ts) ile orantı: trend/25, adx/15.
+              const trendHigh = pr?.sub?.trend !== undefined && pr.sub.trend / 25 >= 0.7;
+              const adxStrong = pr?.sub?.adx !== undefined && pr.sub.adx / 15 >= 0.7;
+              const inSqueeze = squeezePairs.has(p as Pair);
+
+              // Anomali Işığı — FAZ 1 (OI-çöküş) + FAZ 2 (order book duvarı):
+              // sadece mevcut results[p] + macroStore.oiVelocity[p] +
+              // orderBookStore.imbalance[p]'den okur, yeni fetch yok.
+              const oiCollapseAnomaly = computeOiCollapseAnomaly(pr, allOiVelocity[p] ?? null);
+              const orderBookWallAnomaly = computeOrderBookWallAnomaly(pr, allOrderBookImbalance[p] ?? null);
+
+              return (
+                <div key={p} className="relative group">
+                  <AnomalyBadge
+                    oiAnomaly={oiCollapseAnomaly}
+                    wallAnomaly={orderBookWallAnomaly}
+                    wallDetail={allOrderBookImbalance[p] ?? null}
+                  />
+                  {goStrength && !isActive && (
+                    <>
+                      <div className={`absolute inset-0 rounded-lg ring-1 ${goRingClass} animate-pulse pointer-events-none`} />
+                      <span className="absolute top-0.5 left-0.5 flex h-2 w-2 pointer-events-none z-10">
+                        <span className={`animate-ping absolute inline-flex h-full w-full rounded-full ${goPingClass} opacity-60`} />
+                        <span className={`relative inline-flex rounded-full h-2 w-2 ${goPingClass}`} />
+                      </span>
+                    </>
+                  )}
+                  {p === "BTC" && btcPulseActive && (
+                    <span className="absolute inset-0 rounded-lg ring-1 ring-white/25 animate-[ping_600ms_ease-out_1] pointer-events-none z-20" aria-hidden />
+                  )}
+
+                  <button
+                    onClick={() => setActivePair(p as Pair)}
+                    style={v === "go" ? {
+                      // 3 kademeli glow — goRingClass/goPingClass'ın zaten kullandığı
+                      // strong/medium=yeşil, weak=sarı renk ayrımıyla tutarlı hale
+                      // getirildi (önceden weak de yeşil glow alıyordu, ring'iyle uyumsuzdu).
+                      boxShadow: goStrength === "strong"
+                        ? "0 0 12px 2px rgba(103,193,148,0.35)"
+                        : goStrength === "medium"
+                        ? "0 0 10px 1px rgba(56,137,97,0.22)"
+                        : "0 0 8px 1px rgba(188,142,78,0.20)",
+                      willChange: "box-shadow",
+                    } : undefined}
+                    className={[
+                      "w-full text-left rounded-lg border p-2.5 lg:p-2 font-mono transition-colors card-depth glass-panel",
+                      isActive
+                        ? `${score !== undefined ? getScoreColor(score).borderClass : "border-white/20"} bg-surface-s2 text-text-t1`
+                        : goStrength === "strong"
+                        ? `border-green-400/50 ${goBgClass} text-text-t3 hover:text-text-t2`
+                        : goStrength
+                        ? `border-green-500/25 ${goBgClass} text-text-t3 hover:text-text-t2`
+                        : v === "wait"
+                        ? "border-amber-400/20 bg-bg-card text-text-t3 hover:text-text-t2"
+                        : "border-border/30 bg-bg-card text-text-t3 hover:text-text-t2",
+                    ].join(" ")}
+                  >
+                    {/* Satır 1: watchlist chip + pair adı + 24h% rozeti */}
+                    <div className="flex items-center justify-between gap-0.5 mb-0.5">
+                      <div className="flex items-center gap-0.5 min-w-0">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (isWatched) {
+                              watchlistToggle(p as Pair);
+                              toast(t("watchlist.toast.removed", { pair: p }));
+                            } else {
+                              watchlistToggle(p as Pair);
+                              toast(t("watchlist.toast.added", { pair: p }));
+                            }
+                          }}
+                          className={`shrink-0 px-0.5 py-2 leading-none font-mono text-[9px] transition-colors ${
+                            isWatched ? "text-amber-400" : "text-text-t4/50"
+                          }`}
+                        >
+                          {isWatched ? "★" : "☆"}
+                        </button>
+                        <CoinIcon pair={p as Pair} size={18} />
+                        <span className="text-[12px] lg:text-[11px] font-bold text-text-t1 leading-none">{p}</span>
+                        {PAIR_CATEGORY[p] && (
+                          <span className="text-[7px] font-mono text-sky-400/80 shrink-0 leading-none">
+                            {PAIR_CATEGORY[p]}
+                          </span>
+                        )}
+                        {alarmedPairs.has(p) && (
+                          <span className="h-1 w-1 rounded-full bg-amber-400 shrink-0" />
+                        )}
+                      </div>
+                      {pairChg !== null && (
+                        <span translate="no" className={`text-[8px] tabular-nums px-0.5 py-px rounded-sm bg-surface-s2 leading-tight shrink-0 ${chgColor}`}>
+                          {`${pairChg >= 0 ? "+" : ""}${pairChg.toFixed(1)}%`}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* İkon rozetleri (Faz 2) — sadece koşul sağlanınca render edilir */}
+                    {(trendHigh || adxStrong || inSqueeze) && (
+                      <div className="flex items-center justify-center gap-1 leading-none" aria-hidden>
+                        {trendHigh && <span className="text-[9px]" title="Trend">📊</span>}
+                        {adxStrong && <span className="text-[9px]" title="Momentum">⚡</span>}
+                        {inSqueeze && <span className="text-[9px]" title="Squeeze">🔥</span>}
+                      </div>
+                    )}
+
+                    {/* ScoreRingV2 — tüm paritelerde */}
+                    <div className="flex justify-center py-0.5">
+                      {score !== undefined && pr?.goThreshold !== undefined ? (
+                        <ScoreRingV2
+                          score={score}
+                          goThreshold={pr.goThreshold}
+                          snaps={snapScoresByPair[p] ?? EMPTY_SCORE_SNAPS}
+                          size={52}
+                          id={p}
+                        />
+                      ) : (
+                        <div className="h-[64px] flex items-center justify-center">
+                          <span className="text-text-t4 font-mono text-lg">·</span>
+                        </div>
+                      )}
+                      {showMom && (
+                        <span className={`text-[8px] leading-none ml-px ${momColor}`}>
+                          {(momentum ?? 0) > 0 ? "▲" : "▼"}
+                        </span>
+                      )}
+                      {/* Delta badge — 30dk zaman-penceresi. TEMP DEBUG: veri yoksa "–" (boş bırakma yerine),
+                          "veri yok" ile "hiç render edilmedi" ayrımı netleşsin diye — iş bitince eski haline dönecek. */}
+                      {(() => {
+                        const v = computeScoreVelocity(snaps, DELTA_BADGE_WINDOW_MIN);
+                        if (!v || v.actualMin === 0) {
+                          return (
+                            <span
+                              translate="no"
+                              className="ml-1 font-mono text-[7px] tabular-nums leading-none opacity-40 text-text-t4"
+                            >
+                              –
+                            </span>
+                          );
+                        }
+                        const sign = v.delta > 0 ? "+" : "";
+                        const dc =
+                          v.delta > 0 ? "text-green-400"
+                          : v.delta < 0 ? "text-red-400"
+                          : "text-text-t4";
+                        return (
+                          <span
+                            translate="no"
+                            className={`ml-1 font-mono text-[7px] tabular-nums leading-none opacity-70 ${dc}`}
+                          >
+                            ~{v.actualMin}{t("units.minute")} {sign}{Math.round(v.delta)}
+                          </span>
+                        );
+                      })()}
+                    </div>
+
+                    {/* Hold/Exit Guide + WAIT badge alanı — ikisi de opsiyonel render olduğu
+                        için sabit min-h ile sarmalandı, kart yüksekliği badge var/yok
+                        fark etmeksizin aynı kalsın diye (komşu kartlarla Y-ekseni hizası
+                        için — bkz. fiyat/hacim satırının komşu kartlarla aynı satırda
+                        kalması). Skor motoruna, renk/glow'a dokunulmadı — sadece bu
+                        alanın yükseklik rezervasyonu. */}
+                    <div className="flex flex-col items-center justify-center gap-0.5 min-h-7 -mt-0.5 mb-0.5">
+                      {(() => {
+                        const guide = computeHoldExitGuide(pr, snaps);
+                        if (!guide) return null;
+                        const gc =
+                          guide === "max_hold" ? "text-signal-green bg-soft-green"
+                          : guide === "quick_profit" ? "text-signal-amber bg-soft-amber"
+                          : guide === "early_exit_warning" ? "text-signal-red bg-soft-red"
+                          : "text-text-t3 bg-text-t3/10";
+                        return (
+                          <span className={`text-[8px] font-mono px-1.5 py-0.5 rounded leading-none ${gc}`}>
+                            {t(HOLD_EXIT_LABEL_I18N_KEY[guide])}
+                          </span>
+                        );
+                      })()}
+                      {v === "wait" && score !== undefined && (
+                        <span translate="no" className="text-[8px] font-mono text-amber-400 bg-amber-400/10 px-1.5 py-0.5 rounded">
+                          {`Wait ${dirArrow}${score}`}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* MTF mini trend satırı: 15M / 1H / 4H / 1D — badge wrapper'dan (bir
+                        önceki tur, satır 931) bağımsız, ayrı bir ikinci min-h rezervasyonu.
+                        Yeni dış wrapper her zaman render olur (min-h-6), içindeki koşullu
+                        <div> (border-t + içerik) DEĞİŞMEDİ — satır yokken sadece boş alan
+                        kalsın, yapay bir border çizgisi belirmesin diye border-t hâlâ
+                        koşullu. gap-2.5 → gap-1.5: 3 sütundan 4 sütuna çıkınca mobilde
+                        taşma olmasın diye sıkılaştırıldı, text boyutları değişmedi. */}
+                    <div className="min-h-6">
+                      {mtfDisplayTrends[p] && (
+                        <div className="flex justify-center gap-1.5 mt-1 border-t border-border/30 pt-1">
+                          {mtfDisplayTrends[p]!.map((t) => (
+                            <span key={t.tf} className="flex flex-col items-center" style={{ gap: "1px" }}>
+                              <span className="text-2xs font-mono uppercase tracking-wider text-text-t2/70 leading-none">{t.tf}</span>
+                              <span className={`text-[10px] font-mono leading-none ${
+                                t.direction === "up"   ? "text-[#22c55e]"
+                                : t.direction === "down" ? "text-[#ef4444]/80"
+                                : "text-text-t2/50"
+                              }`}>
+                                {t.direction === "up" ? "▲" : t.direction === "down" ? "▼" : "─"}
+                              </span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Alt: fiyat + market cap */}
+                    <div className="flex items-center justify-between mt-1 gap-1">
+                      <div className="flex items-center gap-1 min-w-0">
+                        <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                          v === "go"    ? "bg-green-400"
+                          : v === "wait"  ? "bg-amber-400"
+                          : "bg-red-400/50"
+                        }`} />
+                        {allTicks[p]?.last !== undefined && (
+                          <span translate="no" className="text-[11px] font-semibold tabular-nums text-text-t1 leading-none tracking-tight">
+                            {formatTickPrice(allTicks[p]!.last, locale)}
+                          </span>
+                        )}
+                      </div>
+                      {marketCap[p] !== undefined && (
+                        <span translate="no" className="text-[8px] tabular-nums text-text-t4 leading-none shrink-0">
+                          ${fmtCompact(marketCap[p]!)}
+                        </span>
+                      )}
+                    </div>
+                  </button>
+
+                  {pairNotes[p as Pair] && (
+                    <span className="absolute bottom-2 right-1 h-1 w-1 rounded-full bg-blue-400/80 pointer-events-none" />
+                  )}
+                </div>
+              );
+            })}
+
+
+          </div>
+          </div>{/* end pair grid wrapper */}
 
       {showShortcuts && (
         <KeyboardShortcutsModal onClose={() => setShowShortcuts(false)} />
@@ -1568,11 +1714,11 @@ function fmtPrice(price: number): string {
   return "$" + price.toPrecision(4);
 }
 
-function holdingStr(openedAt: number): string {
+function holdingStr(openedAt: number, t: ReturnType<typeof useT>): string {
   const m = Math.floor((Date.now() - openedAt) / 60_000);
-  if (m < 60) return `${m}dk`;
+  if (m < 60) return `${m}${t("units.minute")}`;
   const h = Math.floor(m / 60);
-  return h < 24 ? `${h}sa` : `${Math.floor(h / 24)}g`;
+  return h < 24 ? `${h}${t("units.hour")}` : `${Math.floor(h / 24)}${t("units.day")}`;
 }
 
 function fmtPx(px: number): string {
@@ -1599,7 +1745,7 @@ function PairPriceHeader({
     : "text-text-t3";
 
   return (
-    <div className="flex items-center justify-between bg-surface-s1 rounded-lg px-3 py-2.5">
+    <div className="flex items-center justify-between bg-surface-s1 rounded-lg px-3 py-2 sm:py-2.5">
       <span className="font-mono text-base font-bold text-text-t1 tracking-wide">{pair}</span>
       <div className="flex items-center gap-3">
         {price !== null && (

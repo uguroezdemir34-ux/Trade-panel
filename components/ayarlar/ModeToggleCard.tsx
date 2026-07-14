@@ -1,10 +1,9 @@
 "use client";
 
 /**
- * MODE TOGGLE CARD — Demo Mode + Forward Test Mode toggle'ları.
+ * MODE TOGGLE CARD — Demo Mode toggle'ı.
  *
  * Demo Mode: OKX simulated trading endpoint'i.
- * Forward Test Mode: Emir vermeden sinyal kaydeder (saf ölçüm).
  */
 
 import { useT } from "@/lib/i18n/context";
@@ -13,9 +12,7 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 export function ModeToggleCard(): React.ReactElement {
   const t = useT();
   const demoMode = useSettingsStore((s) => s.demoMode);
-  const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
   const setDemoMode = useSettingsStore((s) => s.setDemoMode);
-  const setForwardTestMode = useSettingsStore((s) => s.setForwardTestMode);
 
   return (
     <div className="border-border bg-bg-card rounded-lg border p-4 space-y-4">
@@ -30,15 +27,6 @@ export function ModeToggleCard(): React.ReactElement {
         onToggle={() => setDemoMode(!demoMode)}
         activeColor="text-signal-amber"
         activeBg="bg-soft-amber"
-      />
-
-      <ToggleRow
-        label={t("settings.forwardTestMode.label")}
-        description={t("settings.forwardTestMode.description")}
-        value={forwardTestMode}
-        onToggle={() => setForwardTestMode(!forwardTestMode)}
-        activeColor="text-signal-green"
-        activeBg="bg-soft-green"
       />
     </div>
   );

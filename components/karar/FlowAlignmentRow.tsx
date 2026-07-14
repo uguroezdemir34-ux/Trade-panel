@@ -18,6 +18,10 @@ import type { FlowIntelligenceResult } from "@/lib/orderflow/flowIntelligence";
 import type { LiquidationMap } from "@/lib/orderflow/liquidationMap";
 import { useLiqFeedStore } from "@/lib/store/liqFeedStore";
 import type { LiqEvent } from "@/lib/store/liqFeedStore";
+import { useMacroStore } from "@/lib/store/macroStore";
+import { useOrderBookStore } from "@/lib/store/orderBookStore";
+import { classifyFundingBias } from "@/lib/market/fundingBias";
+import { classifyLiquidity } from "@/lib/market/orderbook-imbalance";
 import { useT } from "@/lib/i18n/context";
 
 const EMPTY_LIQ_EVENTS: LiqEvent[] = [];
@@ -27,6 +31,7 @@ interface Props {
 }
 
 export function FlowAlignmentRow({ flow }: Props) {
+  const t = useT();
   const [expanded, setExpanded] = useState(false);
 
   // Exchange feed counts — only subscribed when expanded to avoid wasted renders
@@ -45,7 +50,16 @@ export function FlowAlignmentRow({ flow }: Props) {
 
   const totalFeedEvents = allEvents.length;
 
+  // Funding bias — macroStore'daki ham funding rate'ten yön-agnostik türetme.
+  const fundingRaw = useMacroStore((s) => (flow ? s.funding[flow.pair]?.fundingRate : undefined));
+  // Order book likidite tier — orderBookStore'daki son imbalance snapshot'ından.
+  const obImbalance = useOrderBookStore((s) => (flow ? s.imbalance[flow.pair] : undefined));
+
   if (!flow) return null;
+
+  const fundingBias = fundingRaw !== undefined && fundingRaw !== null ? classifyFundingBias(fundingRaw) : null;
+  const liquidityTier =
+    obImbalance != null ? classifyLiquidity(flow.pair, obImbalance.bidDepthUsd + obImbalance.askDepthUsd) : null;
 
   const colorClass = flow.vetoed
     ? "text-signal-down"
@@ -123,6 +137,39 @@ export function FlowAlignmentRow({ flow }: Props) {
               label="SMC"
               value={flow.smc.recentEvents[0].label}
               tone={flow.smc.recentEvents[0].direction === "bullish" ? "up" : "down"}
+            />
+          )}
+
+          {/* Smart Money (VPIN) toxicity rozeti */}
+          {flow.flowVerdict.vpin && flow.flowVerdict.vpin.ready && (
+            <DetailRow
+              label={t("karar.flowSmartMoney")}
+              value={`${flow.flowVerdict.vpin.toxicity.toUpperCase()} ${flow.flowVerdict.vpin.vpin.toFixed(2)}`}
+              tone={
+                flow.flowVerdict.vpin.toxicity === "toxic" || flow.flowVerdict.vpin.toxicity === "extreme"
+                  ? "down"
+                  : flow.flowVerdict.vpin.toxicity === "warning"
+                  ? "warn"
+                  : "neutral"
+              }
+            />
+          )}
+
+          {/* Funding Bias — yön-agnostik, macroStore ham funding rate'inden */}
+          {fundingBias && (
+            <DetailRow
+              label={t("karar.flowFundingBias")}
+              value={`${fundingBias.toUpperCase()} ${fundingRaw! >= 0 ? "+" : ""}${(fundingRaw! * 100).toFixed(3)}%`}
+              tone={fundingBias === "bullish" ? "up" : fundingBias === "bearish" ? "down" : "neutral"}
+            />
+          )}
+
+          {/* Order Book Likidite — Thin/Normal/Thick (fallback baseline) */}
+          {liquidityTier && (
+            <DetailRow
+              label={t("karar.flowLiquidity")}
+              value={liquidityTier.toUpperCase()}
+              tone={liquidityTier === "thin" ? "warn" : liquidityTier === "thick" ? "up" : "neutral"}
             />
           )}
 
@@ -249,12 +296,12 @@ function ExBadge({ label, count, color }: { label: string; count: number; color:
 interface DetailRowProps {
   label: string;
   value: string;
-  tone?: "up" | "down" | "neutral";
+  tone?: "up" | "down" | "neutral" | "warn";
 }
 
 function DetailRow({ label, value, tone = "neutral" }: DetailRowProps) {
   const valueColor =
-    tone === "up" ? "text-signal-up" : tone === "down" ? "text-signal-down" : "text-text-t2";
+    tone === "up" ? "text-signal-up" : tone === "down" ? "text-signal-down" : tone === "warn" ? "text-warning" : "text-text-t2";
   return (
     <div className="flex items-center justify-between text-xs">
       <span className="text-text-t4">{label}</span>

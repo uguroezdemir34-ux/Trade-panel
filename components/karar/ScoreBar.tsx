@@ -55,14 +55,14 @@ export function ScoreBar({
         />
         {/* Threshold marker (efektif eşik) */}
         <div
-          className="absolute top-0 h-full w-0.5 bg-white/70"
+          className="absolute top-0 h-full w-0.5 bg-text-t1"
           style={{ left: `${thresholdPct}%` }}
           title={`${t("score.threshold")}: ${threshold}`}
         />
         {/* Klasik threshold marker (pullback aktifse) */}
         {threshold !== goThreshold && (
           <div
-            className="absolute top-0 h-full w-0.5 bg-white/30"
+            className="absolute top-0 h-full w-0.5 bg-text-t3"
             style={{ left: `${classicPct}%` }}
             title={`${t("score.classic")}: ${goThreshold}`}
           />

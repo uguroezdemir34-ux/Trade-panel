@@ -78,7 +78,6 @@ function makePendingTrade(overrides: Partial<{
     leverage: 10,
     stopPrice: 49000,
     riskAmountUsd: 100,
-    isPaper: false,
     entryContext: { score: 82, verdict: "go" },
     now: overrides.now ?? NOW,
   });

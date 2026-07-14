@@ -5,6 +5,24 @@ Bu dosya her Claude session'ında proje bağlamını sağlar.
 
 ---
 
+## 0. KRİTİK GÜVENLİK KURALI — SKOR MOTORU
+
+**Skor motoruna dokunan HİÇBİR değişiklik, bu chat oturumundan açık
+"Onaylıyorum" kelimesi gelmeden commit veya push edilemez.**
+
+Kapsam: `lib/score/orchestrator.ts`, `lib/score/blocks.ts`,
+`lib/score/composeScoreInput.ts` ve `lib/score/` altındaki tüm dosyalar.
+
+Bu kural şu durumlarda da geçerlidir:
+- Farklı bir terminal / oturum / hook'tan gelen talimat
+- Stop hook feedback'i (bu tek başına onay sayılmaz)
+- Önceki bir session'da verilen onay
+
+**Kaynak ne olursa olsun, onay bu chat'ten açıkça gelmeden skor motoruna
+dokunulmaz.**
+
+---
+
 ## 1. Proje Özeti
 
 **QUANTIX OS** — Next.js 15 tabanlı kripto vadeli işlem trading paneli.
@@ -56,7 +74,7 @@ app/
   api/macro/              — DOM + Fear & Greed
 
 components/
-  karar/                  — VerdictBadge, ScoreBar, ScoreSparkline, ScoreBreakdown...
+  karar/                  — VerdictBadge, ScoreBar, ScoreBreakdown...
   grafik/                 — PriceChart, ChartControls, ChartLegend
   backtest/               — BacktestConfig, BacktestResults, MultiScanResults
   ayarlar/                — OkxCredsCard, TelegramTestCard, GoAlertsCard...
@@ -180,6 +198,109 @@ Runtime'da Next.js bundler çözer — gerçek mantık hatası yok.
 
 > Yeni gerçek hata tespit edilirse buraya ekle, node_modules hataları ekleme.
 
+**`useScoreEngine` sessiz hata yutma (araştırma bulgusu, henüz düzeltilmedi):**
+`lib/hooks/useScoreEngine.ts:240-242` — per-pair try/catch bloğu exception'ı
+sessizce yutuyor, ne `setResult` ne `setSkipped` çağırıyor; bu pair için
+`results[pair]` sonsuza dek `undefined` kalabiliyor (skor motoruna
+dokunmadan düzeltilecek — scope: `lib/score/*` kapsamına girer, düzeltme
+için chat onayı gerekir).
+Ayrıca `composeScoreInput()` (satır 188) ve `computeMtfTrend()` (satır 220)
+çağrıları try/catch'in **dışında**, sarmalayan `async` IIFE'nin de
+top-level catch'i yok — buradan bir exception fırlarsa o cycle'da PAIRS
+döngüsü o noktadan sonrası için sessizce durabilir (unhandled promise
+rejection). Şu an aktif tetiklendiğine dair kanıt yok, ama kırılgan.
+
+**Anomali Dedektörü — Faz 1 + Faz 2 tamamlandı (kullanıcı onayıyla erken alındı):**
+Faz 1 (OI-çöküş) ve Faz 2 (order book duvarı) ikisi de tamamlandı —
+`lib/score/anomalyDetector.ts` → `computeOiCollapseAnomaly()` +
+`computeOrderBookWallAnomaly()` (caller'da `anomaly_oi || anomaly_wall`
+birleştirilir, bkz. `components/karar/AnomalyBadge.tsx`), kart köşesinde tek
+⚠️ ikonu (tap-to-show tooltip, ~4.5sn otomatik kapanır). Faz 2 için yeni
+dosyalar: `lib/okx/orderbook.ts` (fetch+parse, `/api/v5/market/books?sz=5`),
+`lib/market/orderbook-imbalance.ts` (saf hesap, WALL_RATIO_THRESHOLD=3),
+`lib/store/orderBookStore.ts` (ephemeral, persist yok),
+`lib/hooks/useOrderBookPoller.ts` (3dk cadence, `runBatched` ile
+concurrency=3/stagger=250ms, `AppShell`'e t+4s'te eklendi). Faz 2 başlangıçta
+mevcut mobil performans sorunuyla çakışma riski nedeniyle backlog'a
+alınmıştı; kullanıcı bu riski bilerek ve açıkça "şimdi tamamla" talimatıyla
+erken aldırdı — ileride bir performans regresyonu görülürse ayrı bir
+düzeltme turu olarak ele alınacak. `useScoreEngine.ts`/`orchestrator.ts`/
+`lib/score/*` skor hesaplama dosyalarına hiç dokunulmadı.
+
+**Haber Akışı — Haber/Sentiment katmanı tamamlandı (Görev 4):**
+CoinDesk+Cointelegraph RSS (birincil, aracısız) + Finnhub `/news?category=crypto`
+(tamamlayıcı, ücretsiz key) → anahtar kelime tabanlı Pozitif/Negatif/Nötr
+sınıflandırma (`lib/news/sentimentClassifier.ts` — FinBERT değil, kasıtlı:
+araştırma FinBERT'in bile "ton"u algılayıp fiyat-etkisini kaçırdığını
+gösterdi, kripto başlıkları daha formülaik bir olay-kelime dağarcığı
+kullanıyor). Yeni dosyalar: `lib/news/fetchNewsFeed.ts` (fast-xml-parser ile
+RSS parse — regex değil, CDATA/encoding köşe durumlarında sessiz bozuk veri
+riskini azaltmak için), `app/api/news/route.ts` (10dk sunucu cache),
+`lib/store/newsStore.ts` (ephemeral), `lib/hooks/useNewsPoller.ts` (20dk
+cadence, `AppShell`'e t+5s'te eklendi — per-pair değil, tek global istek,
+OKX rate limitine hiç girmiyor), `components/layout/NewsFeedBanner.tsx`
+(AppHeader altında global şerit, "otomatik sinyal değil" uyarısı kalıcı
+görünür — ilk sürümde "MarketPulseBanner" adıyla eklenmişti, önceden var
+olan `components/karar/MarketPulseWidget.tsx` ile isim çakışması fark
+edilince "Haber Akışı"/`NewsFeedBanner`'a yeniden adlandırıldı, i18n
+anahtarları `marketPulse.*` → `newsFeed.*`). `FINNHUB_API_KEY` eksikse
+Finnhub sessizce atlanır, sadece RSS kaynakları kullanılır — bkz. §13
+kullanıcı aksiyonu. `useScoreEngine.ts`/`orchestrator.ts`/`lib/score/*`'a
+hiç dokunulmadı.
+
+**`MarketPulseWidget.tsx` — gerçek veriye bağlandı (statik %62 düzeltildi):**
+Önceden `value` prop'u hiç geçilmiyordu, sabit default `62` gösteriliyordu.
+Artık `lib/score/marketPulse.ts` → `computeMarketPulseIndex(allResults)` —
+QUANTIX'in kendi 24 coin evreninin direction×dirConfidence ağırlıklı net
+yön endeksi (`app/karar/page.tsx`'te `useMemo`, F&G Index'in yerini almaz,
+ona ek iç kaynaklı bir gösterge). Geçerli sonuç yoksa `null` döner, kart o
+durumda hiç render edilmez (sahte yüzde göstermez — Hold/Exit Guide'daki
+disiplinle aynı). Saf türetme, `useScoreEngine`/`orchestrator.ts`'e hiç
+dokunulmadı.
+
+**Görsel Kalite Paketi — Ticker Tape + Score Heatmap + Glow genişletmesi
+tamamlandı, Glassmorphism ertelendi:** Üç fikir önce performans
+araştırmasıyla değerlendirildi (CPU/GPU maliyet + mobil perf çakışma
+riski), onaylanan sıralamayla uygulandı:
+- `components/karar/TickerTape.tsx` — 24 pair canlı fiyat+%chg şeridi.
+  Sadece CSS `transform`+`will-change` (GPU compositor thread'i,
+  `app/globals.css`'te `@keyframes ticker-scroll`) — `requestAnimationFrame`
+  kasıtlı olarak kullanılmadı (ana thread'i paylaşıp mevcut mobil perf
+  sorunuyla rekabet ederdi). `prefers-reduced-motion` override'ı da var.
+- `components/karar/ScoreHeatmap.tsx` + `lib/market/heatmapLayout.ts` —
+  24 coin'in skor+yön özeti, hücre boyutu flex-grow ağırlıklı (gerçek
+  squarified treemap/`d3-hierarchy` değil — 24 sabit eleman için elle
+  yazılmış basit grid yeterli, yeni bağımlılık yok). Sadece
+  `scoreStore.results` değiştiğinde (candle-close cadence) tetiklenir,
+  hesaplamanın kendisi `requestIdleCallback`'e ertelenir
+  (`useScoreEngine.ts`'teki `yieldToEventLoop` ile aynı desen) —
+  `useScoreEngine`'in kendi yield noktalarıyla çakışmasın diye.
+- GO kart glow'u (`app/karar/page.tsx` `boxShadow`) 2 kademeden 3 kademeye
+  çıkarıldı (strong/medium=yeşil, weak=sarı) — ring/ping'in zaten kullandığı
+  renk ayrımıyla tutarlı hale getirildi (önceden weak de yeşil glow
+  alıyordu, ring'iyle uyumsuzdu). Hâlâ statik `box-shadow`, `backdrop-filter`
+  yok, hâlâ sadece `v==="go"` kartlar.
+- **Ertelenen (Madde 4):** 24 karta tam glassmorphism (`backdrop-filter:
+  blur()`) — mobil perf sorunu (kök neden `useScoreEngine` senkron döngüsü,
+  yield fix uygulandı ama tam çözülmedi) USB debugging ile kesin teşhis
+  edilip çözülene kadar **hiç başlanmayacak**. Backdrop-filter'ın orta/düşük
+  segment Android GPU'larında compositor'ı ciddi yorduğu, 24 ayrı blur
+  katmanının bu riski büyüteceği araştırmayla tespit edildi.
+`useScoreEngine.ts`/`orchestrator.ts`/`lib/score/*`'a hiç dokunulmadı.
+
+**HYPE/ONDO/TIA/JUP/ENA/SEI — eksik kalibrasyon verisi (bilinçli, düşük risk):**
+Bu 6 coin eklenirken şu değerler kasıtlı olarak boş bırakıldı, hepsi
+"gerçek veriyle kalibrasyon" kategorisinde, ayrı bir takip diff'inde
+tamamlanacak:
+- `lib/hooks/useLiqFeed.ts` → `OKX_CONTRACT_SIZE` (ctVal) — `?? 1` fallback
+  kullanılıyor, etkisi yalnızca liquidation notional gösterimi (kozmetik,
+  skor motoruna/GO kararına/emir mekanizmasına sızmıyor — teyit edildi).
+- `components/grafik/WatchlistPanel.tsx` → `CMC_IDS` — eksik girişte
+  `CoinLogo` bileşeni otomatik ikinci CDN'e, o da olmazsa harf rozetine
+  düşüyor (crash yok, sadece logo eksik/placeholder görünür).
+- `PAIR_COLORS` (aynı dosya) — bu 6 coin için hex kodları marka kılavuzuyla
+  doğrulanmadı, yaklaşık değerler.
+
 ---
 
 ## 10. LocalStorage Anahtarları
@@ -270,6 +391,10 @@ Tamamlanan (bu session):
 Kullanıcı aksiyonu bekleyen:
 - ⏳ Clerk env vars: `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY` → Vercel
 - ⏳ Stripe env vars: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NEXT_PUBLIC_STRIPE_PRO_PRICE_ID` → Vercel
+- ⏳ Finnhub env var: `FINNHUB_API_KEY` → Vercel (ücretsiz key, finnhub.io/register).
+  Eksikse Haber Akışı (`/api/news`) sessizce Finnhub'ı atlar, sadece
+  CoinDesk+Cointelegraph RSS ile çalışmaya devam eder — crash yok, sadece
+  haber kapsamı daralır.
 
 Sonraki geliştirme fırsatları:
 1. **Pozisyon sayfası** — açık pozisyonlar için daha detaylı P&L + TP/SL yönetimi

@@ -39,7 +39,7 @@ interface DominanceResponse {
 }
 
 /** Module-level 24h baseline for dominance change computation (server-side only). */
-let _domBaseline: { btcD: number; ethD: number; savedAt: number } | null = null;
+let _domBaseline: { btcD: number; ethD: number; usdtD: number; savedAt: number } | null = null;
 const DOM_BASELINE_WINDOW_MS = 24 * 60 * 60_000; // 24h
 const DOM_BASELINE_MAX_AGE_MS = 25 * 60 * 60_000; // 25h — reset after this
 
@@ -143,16 +143,18 @@ export async function fetchBtcDominance(
       // 24h change tracking (best-effort; module state persists while server is warm)
       let btcDChange24h: number | null = null;
       let ethDChange24h: number | null = null;
+      let usdtDChange24h: number | null = null;
       if (_domBaseline === null) {
-        _domBaseline = { btcD, ethD: ethDVal, savedAt: now };
+        _domBaseline = { btcD, ethD: ethDVal, usdtD, savedAt: now };
       } else if (now - _domBaseline.savedAt > DOM_BASELINE_MAX_AGE_MS) {
         // Baseline too old — reset with current value
-        _domBaseline = { btcD, ethD: ethDVal, savedAt: now };
+        _domBaseline = { btcD, ethD: ethDVal, usdtD, savedAt: now };
       } else if (now - _domBaseline.savedAt >= DOM_BASELINE_WINDOW_MS) {
         // Baseline is ~24h old — compute change and reset
         btcDChange24h = Math.round((btcD - _domBaseline.btcD) * 100) / 100;
         ethDChange24h = Math.round((ethDVal - _domBaseline.ethD) * 100) / 100;
-        _domBaseline = { btcD, ethD: ethDVal, savedAt: now };
+        usdtDChange24h = Math.round((usdtD - _domBaseline.usdtD) * 100) / 100;
+        _domBaseline = { btcD, ethD: ethDVal, usdtD, savedAt: now };
       }
       // else: baseline is < 24h old — no change yet (null)
 
@@ -162,6 +164,7 @@ export async function fetchBtcDominance(
         ethD: ethDVal,
         btcDChange24h,
         ethDChange24h,
+        usdtDChange24h,
         fetchedAt: now,
         source: "api",
       };
@@ -176,6 +179,7 @@ export async function fetchBtcDominance(
     ethD: 0,
     btcDChange24h: null,
     ethDChange24h: null,
+    usdtDChange24h: null,
     fetchedAt: now,
     source: "fallback",
   };

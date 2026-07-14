@@ -18,18 +18,22 @@ import { TABS } from "@/lib/nav/tabs";
 export function AppHeader(): React.ReactElement {
   const hydrated = useHydrated();
   const demoMode = useSettingsStore((s) => s.demoMode);
-  const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
   const dailyPnlPct = useAccountStore((s) => s.dailyPnlPct);
   const positions = usePositionStore((s) => s.positions);
   const t = useT();
   const pathname = usePathname();
+
+  // /grafik dikey alan kazanımı — chart sayfasında header tamamen gizlenir.
+  // WatchlistPanel'in sticky offset'i buna göre ayrıca sabitlendi (o bileşen
+  // sadece /grafik'te kullanıldığı için route kontrolüne gerek kalmadı).
+  if (pathname === "/grafik") return null;
 
   const openUpl = positions.reduce((sum, p) => sum + p.upl, 0);
   const openCount = positions.length;
 
   return (
     <header
-      className="border-border bg-bg/80 sticky top-0 z-30 border-b backdrop-blur-md"
+      className="border-border bg-bg sticky top-0 z-50 border-b"
       style={{
         paddingTop: "env(safe-area-inset-top)",
         boxShadow: "0 1px 0 0 rgba(195, 85, 35, 0.08), 0 8px 24px -12px rgba(82, 35, 135, 0.20)",
@@ -104,11 +108,6 @@ export function AppHeader(): React.ReactElement {
               {demoMode && (
                 <span className="bg-soft-blue text-signal-blue rounded px-2 py-0.5 font-mono text-2xs tracking-wider">
                   {t("app.demo")}
-                </span>
-              )}
-              {forwardTestMode && (
-                <span className="bg-soft-amber text-signal-amber rounded px-2 py-0.5 font-mono text-2xs tracking-wider">
-                  {t("app.forwardTest")}
                 </span>
               )}
             </>

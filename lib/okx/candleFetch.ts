@@ -37,30 +37,54 @@ export function saveCache(pair: string, tf: string, data: Candle[]): void {
   }
 }
 
-/** Tek fetch — başarısız olursa 1.5s sonra 1 retry. */
+/** Tek fetch — başarısız olursa exponential backoff ile 2 retry (1s, 3s). */
 export async function fetchWithRetry(
   pair: string,
   tf: Timeframe,
   limit: number,
+  onRetry?: (waitMs: number, attempt: number) => void,
 ): Promise<Candle[] | null> {
-  const result = await fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
-  if (result) return result;
-  await new Promise<void>((r) => setTimeout(r, 1_500));
-  return fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
+  const delays = [1_000, 3_000];
+  for (let i = 0; i <= delays.length; i++) {
+    const result = await fetchCandles(pair as Parameters<typeof fetchCandles>[0], tf, limit);
+    if (result) return result;
+    if (i < delays.length) {
+      onRetry?.(delays[i], i + 1);
+      await new Promise<void>((r) => setTimeout(r, delays[i]));
+    }
+  }
+  return null;
 }
 
-/** Görevleri max N eşzamanlı çalıştır. */
+/** usePriorityFetch tarafından şu an çekilen pair — poller init'te bu pair'i atlar. */
+let _priorityPair: string | null = null;
+export function setPriorityPair(pair: string): void { _priorityPair = pair; }
+export function getPriorityPair(): string | null { return _priorityPair; }
+
+/** Görevleri max N eşzamanlı çalıştır; staggerMs: worker başlangıç aralığı. */
 export async function runBatched(
   tasks: Array<() => Promise<void>>,
   concurrency: number,
+  staggerMs = 0,
 ): Promise<void> {
-  const queue = [...tasks];
-  async function worker(): Promise<void> {
-    let task = queue.shift();
-    while (task) {
-      await task();
-      task = queue.shift();
+  // task index'iyle birlikte kuyruğa alınıyor — pair/tf burada bilinmiyor
+  // (task opaque bir closure), ama en azından kuyruk pozisyonu loglanabilsin.
+  const queue = tasks.map((task, index) => ({ task, index }));
+  async function worker(workerIndex: number): Promise<void> {
+    if (staggerMs > 0 && workerIndex > 0)
+      await new Promise<void>((r) => setTimeout(r, workerIndex * staggerMs));
+    let item = queue.shift();
+    while (item) {
+      try {
+        await item.task();
+      } catch (err) {
+        // task() zaten kendi try/catch'ine sahipse (fetchCandles, saveCache
+        // vb.) bu no-op'tur — beklenmedik bir throw'a karşı savunma:
+        // worker kalıcı olarak durmasın, kuyruğa devam etsin (FAZ 3).
+        console.warn(`[runBatched] task #${item.index} threw, kuyruğa devam ediliyor`, err);
+      }
+      item = queue.shift();
     }
   }
-  await Promise.all(Array.from({ length: Math.min(concurrency, tasks.length) }, worker));
+  await Promise.all(Array.from({ length: Math.min(concurrency, tasks.length) }, (_, i) => worker(i)));
 }

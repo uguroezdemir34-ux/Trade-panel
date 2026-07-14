@@ -5,8 +5,7 @@
  *   1. verdict: non-go → go geçişi (go kalırsa tekrar atma)
  *   2. 2 dakika cooldown per pair (30s poll aralığında duplicate önleme)
  *   3. demoMode = true → sessiz (kağıt trading, gerçek sinyal gitmez)
- *   4. forwardTestMode = true → console.info ile logla, Telegram'a gitme
- *   5. direction = NEUTRAL → atla
+ *   4. direction = NEUTRAL → atla
  *
  * Stop/TP hesabı: 1H ATR + swing seviyelerinden yapısal stop + ADX-adaptive TP.
  */
@@ -41,7 +40,6 @@ const CONFIRM_DELAY_MS   = 5 * 60 * 1000;   // 5 dakika — momentary false-posi
 export function useSignalFirehose(): void {
   const results = useScoreStore((s) => s.results);
   const demoMode = useSettingsStore((s) => s.demoMode);
-  const forwardTestMode = useSettingsStore((s) => s.forwardTestMode);
   const tgCreds = useCredentialStore((s) => s.telegram);
 
   const prevVerdicts     = useRef<Partial<Record<Pair, Verdict>>>({});
@@ -104,13 +102,15 @@ export function useSignalFirehose(): void {
             oiDivergence,
             triggeredGates: result.triggeredShadowGates,
           });
-          void fireSignal(pair, result, tgCreds, forwardTestMode);
+          fireSignal(pair, result, tgCreds).catch((err) => {
+            console.warn(`[signal-firehose] ${pair} sinyal gönderimi başarısız:`, err);
+          });
         }
       }
 
       prevVerdicts.current[pair] = verdict;
     }
-  }, [results, demoMode, forwardTestMode, tgCreds, appendGoSignal]);
+  }, [results, demoMode, tgCreds, appendGoSignal]);
 }
 
 // ── Signal hesabı + gönderim ───────────────────────────────────────
@@ -119,7 +119,6 @@ async function fireSignal(
   pair: Pair,
   result: ScoreResult,
   tgCreds: TelegramCreds | null,
-  forwardTestMode: boolean,
 ): Promise<void> {
   if (result.direction === "NEUTRAL") return;
 
@@ -189,11 +188,6 @@ async function fireSignal(
     reasonText,
     timestamp: Date.now(),
   };
-
-  if (forwardTestMode) {
-    console.info("[QUANTIX FWD-TEST] Sinyal:", msg);
-    return;
-  }
 
   // Send to Telegram and Discord in parallel
   const discordUrl = useSettingsStore.getState().discordWebhookUrl;

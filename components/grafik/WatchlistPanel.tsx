@@ -13,42 +13,41 @@ import { useT } from "@/lib/i18n/context";
 import { Sparkline } from "@/components/grafik/Sparkline";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 
-/* CoinMarketCap IDs — official logos for all 20 pairs */
+/* CoinMarketCap IDs — official logos. CoinLogo bileşeni eksik girişte
+   otomatik ikinci CDN'e, o da olmazsa harf rozetine düşüyor (crash yok,
+   sadece logo eksik görünür). */
 const CMC_IDS: Record<string, number> = {
-  BTC: 1,       ETH: 1027,    XRP: 52,      SOL: 5426,    BNB: 1839,
-  ADA: 2010,    AVAX: 5805,   DOT: 6636,    LINK: 1975,   POL: 3890,
-  DOGE: 74,     SHIB: 5994,   SUI: 20947,   NEAR: 6535,   TRX: 1958,
-  APT: 21794,   TAO: 22974,   PENDLE: 21451, OP: 11840,   WIF: 29047,
+  BTC: 1,       ETH: 1027,    SOL: 5426,    BNB: 1839,
+  AVAX: 5805,   LINK: 1975,
+  SUI: 20947,   NEAR: 6535,
+  XRP: 52,
 };
-const CDN_OVERRIDES: Record<string, string> = { POL: "matic" };
+const CDN_OVERRIDES: Record<string, string> = {};
 /* Trust Wallet asset overrides — used when CMC ID is wrong/unavailable */
-const LOGO_OVERRIDES: Record<string, string> = {
-  PENDLE: "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/ethereum/assets/0x808507121b80c02388fad14726482e061b8da827/logo.png",
-  WIF:    "https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/solana/assets/EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm/logo.png",
-};
+const LOGO_OVERRIDES: Record<string, string> = {};
 
 interface Props {
   activePair: Pair;
   onPairChange: (pair: Pair) => void;
 }
 
-/* ── Coin renk paleti ── */
+/* ── Coin renk paleti — tamamen kozmetik. ── */
 const PAIR_COLORS: Record<string, string> = {
-  BTC:   "#f7931a", ETH:  "#627eea", XRP:  "#00aae4", SOL:  "#9945ff",
-  BNB:   "#f3ba2f", ADA:  "#0033ad", AVAX: "#e84142", DOT:  "#e6007a",
-  LINK:  "#2a5ada", POL:  "#8247e5", DOGE: "#c2a633", SHIB: "#ff4200",
-  SUI:   "#4da2ff", NEAR: "#00c08b", TRX:  "#ef0027", APT:  "#4285f4",
-  TAO:   "#00c4b4", PENDLE: "#8fbe00", OP:  "#ff0420", WIF:  "#a855f7",
+  BTC:   "#f7931a", ETH:  "#627eea", SOL:  "#9945ff",
+  BNB:   "#f3ba2f", AVAX: "#e84142",
+  LINK:  "#2a5ada",
+  SUI:   "#4da2ff", NEAR: "#00c08b",
+  XRP:   "#23292f",
 };
 function pairColor(p: string): string { return PAIR_COLORS[p] ?? "#6366f1"; }
 
 /* ── Coin tam adları ── */
 const COIN_NAMES: Record<string, string> = {
-  BTC: "Bitcoin",      ETH: "Ethereum",       XRP: "XRP",          SOL: "Solana",
-  BNB: "BNB Chain",    ADA: "Cardano",         AVAX: "Avalanche",   DOT: "Polkadot",
-  LINK: "Chainlink",   POL: "Polygon",         DOGE: "Dogecoin",    SHIB: "Shiba Inu",
-  SUI: "Sui",          NEAR: "NEAR Protocol",  TRX: "TRON",         APT: "Aptos",
-  TAO: "Bittensor",    PENDLE: "Pendle",        OP: "Optimism",      WIF: "dogwifhat",
+  BTC: "Bitcoin",      ETH: "Ethereum",       SOL: "Solana",
+  BNB: "BNB Chain",    AVAX: "Avalanche",
+  LINK: "Chainlink",
+  SUI: "Sui",          NEAR: "NEAR Protocol",
+  XRP: "XRP",
 };
 function coinName(p: string): string { return COIN_NAMES[p] ?? p; }
 
@@ -65,11 +64,12 @@ function fmtPct(chg: number | undefined | null): string {
 }
 function fmtPrice(p: number): string {
   if (p <= 0) return "—";
-  if (p < 0.00001) return p.toExponential(2);
-  if (p < 0.01)    return p.toFixed(6);
-  if (p < 1)       return p.toFixed(4);
-  if (p < 100)     return p.toFixed(3);
-  return p.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  if (p < 0.000001) return p.toExponential(2);
+  if (p < 0.001)    return p.toFixed(8);
+  if (p < 0.01)     return p.toFixed(6);
+  if (p < 1)        return p.toFixed(4);
+  if (p < 100)      return p.toFixed(4);
+  return p.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 function fmtAbs(abs: number, last: number): string {
   if (last <= 0) return "—";
@@ -303,26 +303,26 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
   const cvdClr = cvd
     ? cvd.w15m.direction === "bullish" ? "text-emerald-400"
     : cvd.w15m.direction === "bearish" ? "text-red-400"
-    : "text-zinc-400"
-    : "text-zinc-500";
+    : "text-text-t3"
+    : "text-text-t4";
 
   const scoreBg =
-    sc == null ? "bg-zinc-700"    :
-    sc >= 70   ? "bg-emerald-600" :
-    sc >= 40   ? "bg-amber-600"   :
+    sc == null ? "bg-border-strong" :
+    sc >= 70   ? "bg-emerald-600"   :
+    sc >= 40   ? "bg-amber-600"     :
                  "bg-red-600";
 
   const verdictBg =
     verdict === "go"   ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40" :
     verdict === "wait" ? "bg-amber-500/20 text-amber-400 border-amber-500/40"       :
     verdict === "no"   ? "bg-red-500/20 text-red-400 border-red-500/40"             :
-                         "bg-zinc-800 text-zinc-500 border-zinc-700";
+                         "bg-surface-s2 text-text-t4 border-border";
 
   return (
-    <div className="shrink-0 mx-2 mb-2 mt-1 rounded-lg border border-zinc-700 bg-zinc-900/80 p-3">
+    <div className="shrink-0 mx-2 mb-2 mt-1 rounded-lg border border-border bg-bg-card2 p-3">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-1.5 min-w-0">
-          <span className="font-mono text-[11px] font-bold text-white tracking-wide">
+          <span className="font-mono text-[11px] font-bold text-text-t1 tracking-wide">
             {activePair} /&nbsp;USDT
           </span>
           {direction && direction !== "NEUTRAL" && (
@@ -333,12 +333,12 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
             </span>
           )}
         </div>
-        <span className={`flex items-center justify-center w-8 h-6 rounded font-mono text-xs font-bold text-white shrink-0 ${scoreBg}`}>
+        <span className={`flex items-center justify-center w-8 h-6 rounded font-mono text-xs font-bold text-text-t1 shrink-0 ${scoreBg}`}>
           {sc ?? "—"}
         </span>
       </div>
       <div className="mb-2.5">
-        <div className="font-mono text-[20px] font-bold text-white tabular-nums leading-none">
+        <div className="font-mono text-[20px] font-bold text-text-t1 tabular-nums leading-none">
           {last > 0 ? fmtPrice(last) : "—"}
         </div>
         <div className={`font-mono text-[11px] tabular-nums font-semibold mt-0.5 ${chgColor(chg)}`}>
@@ -347,25 +347,25 @@ function PairDetailCard({ activePair }: { activePair: Pair }) {
       </div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-2 mb-2.5">
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlistVolumeDelta")}</p>
+          <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlistVolumeDelta")}</p>
           <p className={`font-mono text-[11px] font-semibold tabular-nums ${cvdClr}`}>{cvdRatio ?? "—"}</p>
         </div>
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlist24hHigh")}</p>
+          <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlist24hHigh")}</p>
           <p className="font-mono text-[10px] font-semibold text-emerald-400 tabular-nums">
             {high24 != null && high24 > 0 ? fmtPrice(high24) : "—"}
           </p>
         </div>
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlistVerdict")}</p>
+          <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlistVerdict")}</p>
           <p className={`font-mono text-[11px] font-bold uppercase ${
             verdict === "go"   ? "text-emerald-400" :
             verdict === "wait" ? "text-amber-400"   :
-            verdict === "no"   ? "text-red-400"     : "text-zinc-500"
+            verdict === "no"   ? "text-red-400"     : "text-text-t4"
           }`}>{verdict ? verdict.toUpperCase() : "—"}</p>
         </div>
         <div>
-          <p className="text-zinc-500 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlist24hLow")}</p>
+          <p className="text-text-t4 font-mono text-[7.5px] uppercase tracking-widest mb-0.5">{t("grafik.watchlist24hLow")}</p>
           <p className="font-mono text-[10px] font-semibold text-red-400 tabular-nums">
             {low24 != null && low24 > 0 ? fmtPrice(low24) : "—"}
           </p>
@@ -490,29 +490,26 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
   return (
     <div className="flex-1 min-h-0 flex flex-col overflow-hidden">
       {/* Dominance */}
-      <div className="shrink-0 px-2 pt-2 pb-1.5 border-b border-border/50">
-        <p className="text-text-t4 font-mono text-[9px] uppercase tracking-widest mb-1.5">Dominance</p>
-        <div className="flex flex-col gap-0.5">
-          {([
-            { label: "BTC.D",  val: btcD,  chg: btcDChange24h },
-            { label: "ETH.D",  val: ethD,  chg: ethDChange24h },
-            { label: "USDT.D", val: usdtD, chg: null },
-          ] as const).map(({ label, val, chg }) => (
-            <div key={label} className="flex items-center justify-between">
-              <span className="text-text-t3 font-mono text-[10px]">{label}</span>
-              <div className="flex items-center gap-1">
-                {chg !== null && chg !== undefined && (
-                  <span className={`font-mono text-[9px] ${domChgColor(chg)}`}>
-                    {chg >= 0 ? "+" : ""}{chg.toFixed(1)}
-                  </span>
-                )}
-                <span className="text-text-t2 font-mono text-[10px] font-medium tabular-nums">
-                  {fmtDom(val)}
-                </span>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="shrink-0 flex items-center border-b border-border/50">
+        {([
+          { label: "BTC.D",  val: btcD,  chg: btcDChange24h },
+          { label: "ETH.D",  val: ethD,  chg: ethDChange24h },
+          { label: "USDT.D", val: usdtD, chg: null },
+        ] as const).map(({ label, val, chg }, i) => (
+          <div key={label} className={`flex flex-col items-center flex-1 py-1.5 ${i < 2 ? "border-r border-border/30" : ""}`}>
+            <span className="text-text-t4 font-mono text-[8px] uppercase tracking-widest leading-none">{label}</span>
+            <span className="text-text-t2 font-mono text-[10px] font-medium tabular-nums leading-none mt-0.5">
+              {fmtDom(val)}
+            </span>
+            {chg !== null && chg !== undefined ? (
+              <span className={`font-mono text-[8px] leading-none ${domChgColor(chg)}`}>
+                {chg >= 0 ? "+" : ""}{chg.toFixed(1)}
+              </span>
+            ) : (
+              <span className="font-mono text-[8px] leading-none text-text-t4">—</span>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Header */}
@@ -582,7 +579,7 @@ function WatchlistContent({ activePair, onPairChange }: Props) {
                 {/* Pair info — navigasyon */}
                 <button
                   onClick={() => onPairChange(pair)}
-                  className={`flex-1 grid ${GRID_COLS} gap-x-1 items-center px-2 py-1.5 text-left min-w-0`}
+                  className={`flex-1 grid ${GRID_COLS} gap-x-1 items-center px-2 py-2.5 text-left min-w-0`}
                 >
                   <span className={`font-mono text-[10px] font-semibold truncate ${isActive ? "text-brand" : "text-text-t2"}`}>
                     {pair}
@@ -651,7 +648,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   const allScores     = useScoreStore((s) => s.results);
   const allCandles    = useCandleStore((s) => s.candles);
   const theme         = useSettingsStore((s) => s.theme);
-  const isDark        = theme === "dark";
+  const isDark        = theme !== "light"; // cyber-terminal de dark-ailesi sayılır
 
   const { pairs: watchedPairs, toggle, remove, reset, load,
           moveToTop, moveToBottom, moveUp, moveDown } = useWatchlistStore();
@@ -841,15 +838,15 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                   onPointerMove={handlePointerMove}
                   onPointerUp={handlePointerUp}
                   onPointerCancel={handlePointerUp}
-                  className="w-full flex items-center gap-3 px-4 py-3.5 text-left active:brightness-110 transition-all select-none"
+                  className="w-full flex items-center gap-3 px-4 py-2.5 text-left active:brightness-110 transition-all select-none"
                 >
                   {/* Coin logosu */}
-                  <CoinLogo pair={pair} size={52} />
+                  <CoinLogo pair={pair} size={40} />
 
                   {/* İsim bloğu */}
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`font-mono text-[13px] font-bold tracking-tight leading-tight whitespace-nowrap truncate ${isActive ? "" : "text-text-t1"}`}
+                      className={`font-mono text-[11px] font-bold tracking-tight leading-tight whitespace-nowrap truncate ${isActive ? "" : "text-text-t1"}`}
                       style={isActive ? { color } : undefined}
                     >
                       {pair}
@@ -862,23 +859,23 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
                   {/* Sparkline */}
                   <div className="shrink-0">
                     {sparkPoints.length >= 2 ? (
-                      <Sparkline points={sparkPoints} color={sparkColor} width={62} height={32} />
+                      <Sparkline points={sparkPoints} color={sparkColor} width={50} height={24} />
                     ) : (
-                      <div style={{ width: 62, height: 32 }} />
+                      <div style={{ width: 50, height: 24 }} />
                     )}
                   </div>
 
                   {/* Fiyat + değişim + QX skoru */}
                   <div className="w-[112px] shrink-0 flex flex-col items-end gap-1">
-                    <p className="font-mono text-[15px] font-bold text-text-t1 tabular-nums leading-none w-full text-right truncate">
+                    <p className="font-mono text-[13px] font-bold text-text-t1 tabular-nums leading-none w-full text-right truncate">
                       {last > 0 ? fmtPrice(last) : "—"}
                     </p>
                     <div className="flex items-center gap-1.5">
-                      <span className={`font-mono text-[12px] tabular-nums ${chgColor(chg)}`}>
+                      <span className={`font-mono text-[10px] tabular-nums ${chgColor(chg)}`}>
                         {fmtPct(chg)}
                       </span>
                       {sc != null && (
-                        <span className={`flex items-center justify-center w-9 h-5 rounded font-mono text-[11px] font-bold text-white ${scoreBg}`}>
+                        <span className={`flex items-center justify-center w-9 h-5 rounded font-mono text-[9px] font-bold text-white ${scoreBg}`}>
                           {sc}
                         </span>
                       )}
@@ -929,10 +926,14 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   );
 }
 
-/* ── WatchlistPanel (masaüstü yan panel) ── */
+/* ── WatchlistPanel (masaüstü yan panel) ──
+ * sticky top-0: bu bileşen sadece /grafik'te render ediliyor, o sayfada
+ * AppHeader route guard'ı ile tamamen gizlendiği için 56px header offset'i
+ * artık gerekmiyor (bkz. AppHeader.tsx). Başka bir sayfada kullanılırsa bu
+ * satır ayrıca gözden geçirilmeli. */
 export function WatchlistPanel({ activePair, onPairChange }: Props): React.ReactElement {
   return (
-    <div className="hidden md:flex flex-col border border-border bg-bg-card rounded-lg overflow-hidden select-none w-[266px] shrink-0 self-stretch">
+    <div className="hidden md:flex flex-col border border-border bg-bg-card rounded-lg overflow-hidden select-none w-[290px] shrink-0 sticky top-0 max-h-[calc(100vh-16px)]">
       <WatchlistContent activePair={activePair} onPairChange={onPairChange} />
     </div>
   );
