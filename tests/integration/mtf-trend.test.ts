@@ -51,6 +51,23 @@ function makeCandlesWithLastClose(lastClose: number, baseClose = 50000, count = 
   return candles;
 }
 
+/** Diziye, farklı bir fiyata sahip AÇIK (confirm=false) bir mum ekler — repainting testleri için. */
+function withOpenCandle(candles: Candle[], openClose: number): Candle[] {
+  const last = candles[candles.length - 1];
+  return [
+    ...candles,
+    {
+      ts: last.ts + 3_600_000,
+      open: openClose,
+      high: openClose + 10,
+      low: openClose - 10,
+      close: openClose,
+      volume: 1000,
+      confirm: false,
+    },
+  ];
+}
+
 // ─────────────────────────────────────────────────────────────
 // computeTimeframeTrend
 // ─────────────────────────────────────────────────────────────
@@ -109,6 +126,30 @@ describe("computeTimeframeTrend()", () => {
     if (r.direction === "up") {
       expect(r.deviation).toBeGreaterThan(0);
     }
+  });
+
+  // ─── Repainting fix: açık (confirm=false) mum trend hesabına girmemeli ───
+
+  it("açık son mum, aksi yönde bir fiyata sahip olsa bile trend hesabını değiştirmez", () => {
+    const closed = makeCandlesWithLastClose(50500, 50000, 100); // kapanmış: up
+    const withOpen = withOpenCandle(closed, 40000); // açık mum: sert düşüş
+    const rClosedOnly = computeTimeframeTrend("1h", closed);
+    const rWithOpen = computeTimeframeTrend("1h", withOpen);
+    // Açık mum yok sayılmalı — sonuç, kapanmış mumlarla hesaplananla BİREBİR aynı
+    expect(rWithOpen.direction).toBe(rClosedOnly.direction);
+    expect(rWithOpen.lastClose).toBe(rClosedOnly.lastClose);
+    expect(rWithOpen.ema20).toBe(rClosedOnly.ema20);
+    expect(rWithOpen.direction).toBe("up"); // açık mumun sert düşüşüne rağmen hâlâ up
+  });
+
+  it("19 kapanmış + 1 açık mum (toplam 20 ham) → hâlâ yetersiz veri sayılır (flat/null)", () => {
+    const closed19 = makeCandles(19);
+    const withOpen = withOpenCandle(closed19, 60000); // 20. eleman ama açık
+    const r = computeTimeframeTrend("1h", withOpen);
+    // Ham dizi uzunluğu 20 ama confirmed=19 < 20 → hesaplanamaz
+    expect(r.direction).toBe("flat");
+    expect(r.ema20).toBeNull();
+    expect(r.lastClose).toBeNull();
   });
 });
 

@@ -95,9 +95,9 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
   const {
     pair,
     livePrice,
-    candles4h,
-    candles1h,
-    candles15m,
+    candles4h: rawCandles4h,
+    candles1h: rawCandles1h,
+    candles15m: rawCandles15m,
     fg,
     eventSkipUntil,
     btcCooldownUntil,
@@ -113,6 +113,16 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     now,
     oiVelocityScore,
   } = input;
+
+  // Repainting fix: sadece KAPANMIŞ mumlar indikatör hesabına girer — açık/canlı
+  // mum (confirm=false) EMA/RSI/ADX/BB/VWAP/px4h/px15 türetimini manipüle edemez.
+  // livePrice buna dahil DEĞİL (kasıtlı) — o ayrı bir kavram: "şu an fiyat
+  // (sabit) EMA'nın neresinde" karşılaştırması (inferDirection'daki px1h) doğal
+  // olarak canlı kalmalı, tekrar-boyanan (repainting) taraf candle-türevli
+  // değerlerin KENDİSİ, canlı fiyatla yapılan karşılaştırma değil.
+  const candles4h = rawCandles4h.filter((c) => c.confirm);
+  const candles1h = rawCandles1h.filter((c) => c.confirm);
+  const candles15m = rawCandles15m.filter((c) => c.confirm);
 
   // Önkoşullar
   if (livePrice === null || livePrice <= 0) return null;
@@ -136,7 +146,10 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
   const ema50_4h = ema(closes4h, { period: 50 });
   const ema200_4h = ema(closes4h, { period: 200 });
   // Gerçek günlük EMA50 — candles1d sağlanmamışsa veya < 50 bar ise null → orchestrator soft block ekler
-  const closes1d = input.candles1d ? input.candles1d.map(toIndicatorCandle).map((c) => c.c) : [];
+  // (repainting fix: burada da sadece kapanmış günlük mum)
+  const closes1d = input.candles1d
+    ? input.candles1d.filter((c) => c.confirm).map(toIndicatorCandle).map((c) => c.c)
+    : [];
   const ema50_1d = closes1d.length >= 50 ? ema(closes1d, { period: 50 }) : null;
 
   // ───── İndikatörler (1h ana timeframe) ─────

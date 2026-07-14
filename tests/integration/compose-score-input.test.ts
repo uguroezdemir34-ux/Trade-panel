@@ -38,6 +38,23 @@ function makeCandles(
   }));
 }
 
+/** Diziye, farklı bir fiyata sahip AÇIK (confirm=false) bir mum ekler — repainting testleri için. */
+function withOpenCandle(candles: OkxCandle[], openClose: number): OkxCandle[] {
+  const last = candles[candles.length - 1];
+  return [
+    ...candles,
+    {
+      ts: last.ts + 3_600_000,
+      open: openClose,
+      high: openClose + 50,
+      low: openClose - 50,
+      close: openClose,
+      volume: 1000,
+      confirm: false,
+    },
+  ];
+}
+
 const defaultDrawdown: ComposeInput["drawdownProtocol"] = {
   tier: "normal",
   minScore: 80,
@@ -149,6 +166,47 @@ describe("composeScoreInput() — fiyat alanları", () => {
   it("pair pass-through", () => {
     const r = composeScoreInput(makeFullInput({ pair: "ETH" }));
     expect(r!.pair).toBe("ETH");
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// Repainting fix: açık (confirm=false) mum indikatör hesabına girmez
+// ─────────────────────────────────────────────────────────────
+
+describe("composeScoreInput() — repainting fix (confirm=false hariç tutulur)", () => {
+  it("px4h, açık son 4H mumu değil son KAPANMIŞ 4H mumu yansıtır", () => {
+    const c4h = makeCandles(200, 50000);
+    const expectedClose = c4h[199].close; // son kapanmış mum
+    const withOpen = withOpenCandle(c4h, 999_999); // açık mum, aşırı farklı fiyat
+    const r = composeScoreInput(makeFullInput({ candles4h: withOpen }));
+    expect(r).not.toBeNull();
+    expect(r!.px4h).toBe(expectedClose);
+    expect(r!.px4h).not.toBe(999_999);
+  });
+
+  it("px15, açık son 15m mumu değil son KAPANMIŞ 15m mumu yansıtır", () => {
+    const c15m = makeCandles(50, 49000);
+    const expectedClose = c15m[49].close;
+    const withOpen = withOpenCandle(c15m, 1); // açık mum, aşırı farklı fiyat
+    const r = composeScoreInput(makeFullInput({ candles15m: withOpen }));
+    expect(r).not.toBeNull();
+    expect(r!.px15).toBe(expectedClose);
+    expect(r!.px15).not.toBe(1);
+  });
+
+  it("199 kapanmış + 1 açık 4H mum (200 ham) → hâlâ yetersiz veri sayılır (null)", () => {
+    const c4h = makeCandles(199);
+    const withOpen = withOpenCandle(c4h, 50000); // ham uzunluk 200 ama confirmed=199
+    const r = composeScoreInput(makeFullInput({ candles4h: withOpen }));
+    expect(r).toBeNull();
+  });
+
+  it("livePrice açık mumdan etkilenmez — hâlâ girdide verilen canlı fiyat", () => {
+    const c4h = makeCandles(200, 50000);
+    const withOpen = withOpenCandle(c4h, 999_999);
+    const r = composeScoreInput(makeFullInput({ candles4h: withOpen, livePrice: 52500 }));
+    expect(r).not.toBeNull();
+    expect(r!.px).toBe(52500); // livePrice hiç filtrelenmiyor, dokunulmadı
   });
 });
 

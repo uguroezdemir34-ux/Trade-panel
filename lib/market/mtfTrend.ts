@@ -73,7 +73,11 @@ export function computeTimeframeTrend(
   tf: "15m" | "1h" | "4h" | "1d",
   candles: readonly Candle[],
 ): TimeframeTrend {
-  if (candles.length < 20) {
+  // Repainting fix: açık/canlı mum (confirm=false) trend yönünü manipüle
+  // etmesin — sadece kapanmış mumlar EMA20/lastClose hesabına girer.
+  const confirmed = candles.filter((c) => c.confirm);
+
+  if (confirmed.length < 20) {
     return {
       tf,
       direction: "flat",
@@ -83,7 +87,7 @@ export function computeTimeframeTrend(
     };
   }
 
-  const closes = candles.map((c) => c.close);
+  const closes = confirmed.map((c) => c.close);
   const ema20 = ema(closes, { period: 20 });
   const lastClose = closes[closes.length - 1];
 
