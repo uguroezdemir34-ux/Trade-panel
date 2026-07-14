@@ -4,7 +4,7 @@ import { usePositionStore } from "@/lib/store/positionStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { computeLiveUpl, computeRoe } from "@/lib/sizer/position-pnl";
-import { formatPrice, formatPercent } from "@/lib/i18n/format";
+import { formatPrice, formatPercent, formatCoinAmount } from "@/lib/i18n/format";
 
 interface Props {
   pair: string;
@@ -62,7 +62,7 @@ export function PositionOverlayBar({ pair }: Props): React.ReactElement | null {
       <span className="shrink-0 text-text-t3">{position.leverage}×</span>
 
       <span className="ml-auto shrink-0 tabular-nums text-[10px] text-text-t4">
-        {position.size} {position.pair}
+        {formatCoinAmount(position.size, position.pair, locale)}
       </span>
     </div>
   );

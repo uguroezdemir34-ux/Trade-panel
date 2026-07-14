@@ -33,7 +33,7 @@ import { usePositionStore } from "@/lib/store/positionStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { computeLiveUpl, computeRoe } from "@/lib/sizer/position-pnl";
-import { formatPrice, formatPercent } from "@/lib/i18n/format";
+import { formatPrice, formatPercent, formatCoinAmount } from "@/lib/i18n/format";
 
 interface Props {
   pair: string;
@@ -136,11 +136,14 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
 
         <div className={`rounded border ${theme === "light" ? "border-slate-300" : "border-border/50"} bg-surface-s2 px-1.5 py-1 text-center`}>
           <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Size</div>
-          {/* Birim: PositionOverlayBar.tsx:65'teki AYNI kaynak (position.pair,
-              Position tipinin kendi alanı) — yeni bir pair.split()/replace()
-              parse mantığı YAZILMADI, tek bir birim türetme noktası korundu. */}
+          {/* Birim + yuvarlama: formatCoinAmount (lib/i18n/format.ts) — PositionCard.tsx
+              ve CloseConfirmModal.tsx'te zaten kullanılan AYNI yardımcı, ctVal
+              çarpımından (RealSize = sz * ctVal) gelen ham float artığını
+              (örn. 4.04099999999999) 4 ondalığa temizliyor. Yeni bir
+              toFixed()/parse mantığı YAZILMADI, tek bir formatlama noktası
+              kullanıldı — position.pair hâlâ aynı kaynak, ayrıca taşınmadı. */}
           <div className="whitespace-nowrap text-lg font-bold tabular-nums text-text-t1">
-            {position.size} {position.pair}
+            {formatCoinAmount(position.size, position.pair, locale)}
           </div>
         </div>
       </div>
