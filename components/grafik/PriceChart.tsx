@@ -67,6 +67,24 @@ const COLOR_MACD     = "#3b82f6";
 const COLOR_SIGNAL   = "#f59e0b";
 const COLOR_LIVE     = "#3b82f6";
 
+/**
+ * Hex → rgba(...) çevirici — price-line'ların axis label kutusunu
+ * yarı-şeffaf yapmak için. lightweight-charts'ın createPriceLine()
+ * çağrısındaki `color` SADECE çizginin kendisini (mumların üzerinden
+ * geçen yatay hat) etkiler — fiyat ekseni üzerindeki dolgun renkli
+ * etiket kutusu AYRI bir opsiyon: `axisLabelColor`. İkisi de aynı
+ * yarı-şeffaf rgba ile besleniyor ki hem çizgi hem kutu mumları
+ * kapatmasın (bkz. ekran görüntüsü — "LIVE"/"OKX Entry" kutuları
+ * opak/solid olduğu için mumları tamamen örtüyordu).
+ */
+function hexToRgba(hex: string, alpha: number): string {
+  const h = hex.replace("#", "");
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
 const THEME_COLORS = {
   dark:  { grid: "#2d2d2d", text: "#a3a3a3", border: "#2d2d2d" },
   light: { grid: "#e5e5e5", text: "#525252",  border: "#e5e5e5" },
@@ -664,8 +682,13 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         try {
           currentPriceLineRef.current = candle.createPriceLine({
             price: currentPrice,
-            color: COLOR_LIVE, lineWidth: 1, lineStyle: 3,
+            color: hexToRgba(COLOR_LIVE, 0.75), lineWidth: 1, lineStyle: 3,
             axisLabelVisible: true, title: t("grafik.livePriceLabel"),
+            // axisLabelColor: eksen üzerindeki "LIVE" kutusu — color'dan
+            // AYRI bir opsiyon, o kutuyu etkilemez (bkz. hexToRgba yorumu).
+            // Yarı-şeffaf olmadan ekran görüntüsündeki gibi mumları kapatıyordu.
+            axisLabelColor: hexToRgba(COLOR_LIVE, 0.55),
+            axisLabelTextColor: "#ffffff",
           });
         } catch { /* ignore */ }
       }
@@ -929,12 +952,20 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       const COLORS: Record<string, string> = { entry: "#3b82f6", sl: "#ef4444", tp1: "#22c55e", tp2: "#86efac" };
       const TITLES: Record<string, string> = { entry: t("grafik.tradeLevelEntry"), sl: "SL", tp1: "TP1", tp2: "TP2" };
       for (const tl of series.tradeLevels) {
+        const hex = COLORS[tl.kind] ?? "#ffffff";
         const line = candle.createPriceLine({
           price: tl.price,
-          color: COLORS[tl.kind] ?? "#ffffff",
+          color: hexToRgba(hex, 0.75),
           lineWidth: 1,
-          lineStyle: tl.kind === "entry" ? 0 : 2,
+          // entry eskiden solid (0) — artık diğerleriyle aynı kesikli (2),
+          // mumların üzerinden geçen hat daha az baskın olsun diye.
+          lineStyle: 2,
           axisLabelVisible: true,
+          // Fiyat ekseni etiket kutusu — createPriceLine'ın color'ı BU
+          // kutuyu ETKİLEMEZ, ayrı axisLabelColor gerekiyor (bkz. dosya
+          // başındaki hexToRgba yorumu). Yarı-şeffaf ki mumlar arkadan görünsün.
+          axisLabelColor: hexToRgba(hex, 0.55),
+          axisLabelTextColor: "#ffffff",
           title: tl.label ?? TITLES[tl.kind] ?? tl.kind,
         });
         tradeLinesRef.current.push(line);
