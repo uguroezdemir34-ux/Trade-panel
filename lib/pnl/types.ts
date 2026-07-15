@@ -75,8 +75,16 @@ export interface PnlStats {
   lossCount: number;
   /** Win rate 0-1 (0.0 = hiç kazanılmamış) */
   winRate: number;
-  /** Ortalama R (ortalama kazanan / ortalama kaybeden mutlak değer) */
-  avgR: number | null;
+  /**
+   * Ortalama kazanan / ortalama kaybeden (USD, mutlak değer) oranı.
+   *
+   * İSİMLENDİRME NOTU: bilerek "avgR" DEĞİL — bu isim, backtest sisteminde
+   * (lib/backtest/types.ts BacktestStats.avgRMultiple, ScoreBucket.avgR,
+   * lib/pnl/monthly.ts MonthlyAggregate.avgR) tutarlı şekilde "ortalama
+   * R-multiple" (pnl/risk oranı) anlamında kullanılıyor — BAMBAŞKA bir
+   * formül. Bu alan onunla KARIŞTIRILMASIN diye açıkça farklı adlandırıldı.
+   */
+  avgWinLossRatio: number | null;
   /** Toplam kazanç USDT (sadece pozitifler) */
   grossProfit: number;
   /** Toplam kayıp USDT (sadece negatifler, mutlak) */

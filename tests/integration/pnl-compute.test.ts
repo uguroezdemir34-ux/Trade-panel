@@ -170,7 +170,7 @@ describe("computePnlStats()", () => {
     const stats = computePnlStats([]);
     expect(stats.totalTrades).toBe(0);
     expect(stats.winRate).toBe(0);
-    expect(stats.avgR).toBeNull();
+    expect(stats.avgWinLossRatio).toBeNull();
     expect(stats.profitFactor).toBeNull();
   });
 
@@ -190,15 +190,15 @@ describe("computePnlStats()", () => {
     expect(stats.profitFactor).toBeNull(); // no profit
   });
 
-  it("avgR = avgWin / avgLoss", () => {
+  it("avgWinLossRatio = avgWin / avgLoss", () => {
     const trades = [
       tradeAt(JAN_15, 200),     // win
       tradeAt(JAN_15 + 1000, 100),  // win
       tradeAt(JAN_15 + 2000, -100), // loss
     ];
     const stats = computePnlStats(trades);
-    // avgWin = 150, avgLoss = 100, avgR = 1.5
-    expect(stats.avgR).toBeCloseTo(1.5);
+    // avgWin = 150, avgLoss = 100, avgWinLossRatio = 1.5
+    expect(stats.avgWinLossRatio).toBeCloseTo(1.5);
   });
 
   it("profitFactor = grossProfit / grossLoss", () => {

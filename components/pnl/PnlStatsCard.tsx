@@ -70,8 +70,8 @@ export function PnlStatsCard({ stats }: Props): React.ReactElement {
         />
         <Stat
           label={t("pnl.stats.avgR")}
-          value={stats.avgR === null ? "—" : stats.avgR.toFixed(2) + "R"}
-          sub={stats.avgR === null ? "" : stats.avgR >= 1 ? "↑" : "↓"}
+          value={stats.avgWinLossRatio === null ? "—" : stats.avgWinLossRatio.toFixed(2) + "×"}
+          sub={stats.avgWinLossRatio === null ? "" : stats.avgWinLossRatio >= 1 ? "↑" : "↓"}
         />
         <Stat
           label={t("pnl.stats.profitFactor")}

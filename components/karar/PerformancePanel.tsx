@@ -113,7 +113,7 @@ export function PerformancePanel(): React.ReactElement {
             {t("performance.avgR")}
           </div>
           <div className="font-mono text-sm font-bold tabular-nums text-text-t1">
-            {fmtRatio(stats.avgR)}
+            {fmtRatio(stats.avgWinLossRatio)}
           </div>
         </div>
       </div>

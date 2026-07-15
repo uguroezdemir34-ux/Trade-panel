@@ -18,7 +18,7 @@ export function emptyPnlStats(): PnlStats {
     winCount: 0,
     lossCount: 0,
     winRate: 0,
-    avgR: null,
+    avgWinLossRatio: null,
     grossProfit: 0,
     grossLoss: 0,
     profitFactor: null,
@@ -54,13 +54,14 @@ export function computePnlStats(
 
   const winRate = totalTrades === 0 ? 0 : winCount / totalTrades;
 
-  // avg R = avg win / avg loss (mutlak değer)
-  let avgR: number | null = null;
+  // avgWinLossRatio = avg win / avg loss (mutlak değer) — backtest'in R-multiple
+  // ortalamasıyla (avgRMultiple) KARIŞTIRILMAMALI, bkz. types.ts alan yorumu.
+  let avgWinLossRatio: number | null = null;
   if (winCount > 0 && lossCount > 0) {
     const avgWin = grossProfit / winCount;
     const avgLoss = grossLoss / lossCount;
     if (avgLoss > 0) {
-      avgR = avgWin / avgLoss;
+      avgWinLossRatio = avgWin / avgLoss;
     }
   }
 
@@ -112,7 +113,7 @@ export function computePnlStats(
     winCount,
     lossCount,
     winRate,
-    avgR,
+    avgWinLossRatio,
     grossProfit,
     grossLoss,
     profitFactor,
