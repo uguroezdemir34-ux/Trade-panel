@@ -198,6 +198,7 @@ export const ru: Dictionary = {
     profilePullback: "Профиль: Pullback (Авто)",
     profileTrend: "Профиль: Трендовый режим (Авто)",
     signalBarClose: "Сигнал: закрытие свечи подтверждено",
+    hysteresisStable: "Stable Trend",
     rrLabel: "R:R",
     expectedMoveLabel: "Move",
     regimeBadge: "Trend: {trend} · Vol: {vol}",

@@ -49,9 +49,15 @@ const LABEL_KEYS: Record<Verdict, string> = {
 export function VerdictBadge({
   verdict,
   signalType,
+  hysteresisActive,
+  hysteresisDetail,
 }: {
   verdict: Verdict;
   signalType?: "classic" | "pullback";
+  /** applyHysteresis() tetiklendi mi (bkz. ScoreResult.reasons.hysteresis) — "Kararlı Trend" rozeti gösterir. */
+  hysteresisActive?: boolean;
+  /** reasons.hysteresis'in ham metni — native title tooltip'te detay için, opsiyonel. */
+  hysteresisDetail?: string;
 }): React.ReactElement {
   const t = useT();
 
@@ -67,6 +73,15 @@ export function VerdictBadge({
       {signalType === "pullback" && (
         <span className="bg-soft-amber text-signal-amber rounded px-2 py-0.5 font-mono text-2xs tracking-wider">
           {t("verdict.pullback")}
+        </span>
+      )}
+      {hysteresisActive && (
+        <span
+          className="inline-flex items-center gap-1 rounded border border-emerald-500/25 bg-emerald-500/8 px-2 py-0.5 font-mono text-2xs tracking-wide text-emerald-400/80"
+          title={hysteresisDetail}
+        >
+          <span>🔗</span>
+          <span>{t("karar.hysteresisStable")}</span>
         </span>
       )}
     </div>

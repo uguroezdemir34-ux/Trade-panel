@@ -201,6 +201,7 @@ export const ja: Dictionary = {
     profileTrend: "Profile: Trend Mode (Auto)",
     // TODO: translate
     signalBarClose: "Signal: Bar Close Confirmed",
+    hysteresisStable: "Stable Trend",
     rrLabel: "R:R",
     expectedMoveLabel: "Move",
     regimeBadge: "Trend: {trend} · Vol: {vol}",

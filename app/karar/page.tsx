@@ -60,6 +60,7 @@ const VOL_REGIME_LABEL_KEY: Record<AtrRegime, string> = {
   extreme_expansion: "karar.regimeVolExtreme",
 };
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
+import { ActiveBlockBadge } from "@/components/karar/ActiveBlockBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
 import { getScoreColor } from "@/lib/ui/scoreColor";
 import { computeSqueezeRadar } from "@/lib/market/squeezeRadar";
@@ -713,6 +714,8 @@ export default function KararPage() {
                     <VerdictBadge
                       verdict={result.verdict}
                       signalType={result.pullbackActive ? "pullback" : "classic"}
+                      hysteresisActive={!!result.reasons.hysteresis}
+                      hysteresisDetail={result.reasons.hysteresis}
                     />
                     <DirectionBadge
                       direction={result.direction}
@@ -720,6 +723,9 @@ export default function KararPage() {
                     />
                     <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
                   </div>
+
+                  {/* Aktif engel sebepleri — WAIT/NO iken, Detaylar'ı açmadan görünür */}
+                  <ActiveBlockBadge verdict={result.verdict} blocks={result.blocks} />
 
                   {/* Protection badges — inset info panel */}
                   <div className="flex flex-wrap gap-1.5 rounded-lg px-3 py-2 panel-inset">

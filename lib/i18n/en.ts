@@ -199,6 +199,7 @@ export const en: Dictionary = {
       profilePullback: "Profile: Pullback (Auto)",
     profileTrend: "Profile: Trend Mode (Auto)",
     signalBarClose: "Signal: Bar Close Confirmed",
+    hysteresisStable: "Stable Trend",
     rrLabel: "R:R",
     expectedMoveLabel: "Move",
     regimeBadge: "Trend: {trend} · Vol: {vol}",

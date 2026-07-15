@@ -199,6 +199,7 @@ export const tr: Dictionary = {
       profilePullback: "Profil: Geri Çekilme (Otomatik)",
     profileTrend: "Profil: Trend Modu (Otomatik)",
     signalBarClose: "Sinyal: Bar Kapanış Onaylı",
+    hysteresisStable: "Kararlı Trend",
     rrLabel: "R:R",
     expectedMoveLabel: "Hareket",
     regimeBadge: "Trend: {trend} · Vol: {vol}",
