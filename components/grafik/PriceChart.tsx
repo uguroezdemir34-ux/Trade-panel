@@ -209,6 +209,17 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         background: { color: "transparent" },
         textColor: tc.text,
         fontFamily: "ui-monospace, SFMono-Regular, 'SF Mono', Menlo, monospace",
+        // fontSize: kütüphane varsayılanı (fontSize hiç set edilmemişti,
+        // önceden implicit varsayılan kullanılıyordu) yerine açıkça 11
+        // verildi — sağ fiyat eksenindeki etiketler (1900.00 vb.) daha
+        // kompakt görünsün diye. Fiyat ekseninin kendi genişliği ayrı bir
+        // opsiyonla değil, etiket metninin gerçek piksel genişliğine göre
+        // otomatik hesaplanıyor — font küçülünce eksen de otomatik daralıyor,
+        // ayrıca bir "genişlik" ayarına gerek yok. scaleMargins bu projede
+        // (satır ~747, 852, 885, 921) SADECE dikey panel bölme için
+        // kullanılıyor (candle/volume/rsi/macd yükseklik oranları) — yatay
+        // eksen genişliğiyle ilgisi yok, bu yüzden ona dokunulmadı.
+        fontSize: 11,
       },
       grid: {
         vertLines: { color: tc.grid },
