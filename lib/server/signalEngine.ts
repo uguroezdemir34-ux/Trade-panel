@@ -16,6 +16,7 @@ import { toIndicatorCandle } from "@/lib/okx/candles";
 import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import { detectLiquiditySweep } from "@/lib/sr/sweep";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
+import { computeTimeQuality } from "@/lib/market/timeQuality";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Candle } from "@/lib/okx/candles";
 import { fetchFearGreed } from "@/lib/macro/fetch";
@@ -58,7 +59,8 @@ const FROZEN_STATE = {
     reason: "",
   },
   trades: [] as [],
-  timeQuality: { quality: 1.0, reason: "server-cron" },
+  // timeQuality BURADA YOK — latest.ts'e bağlı olduğu için sabit dondurulamaz,
+  // computeTimeQuality(latest.ts) ile fetchAndScore() içinde ayrıca override ediliyor.
 };
 
 export interface ServerSignalResult {
@@ -264,6 +266,7 @@ async function fetchAndScore(pair: Pair): Promise<{
     srModifier: 0,
     sweep15m,
     ...FROZEN_STATE,
+    timeQuality: computeTimeQuality(latest.ts),
   });
 
   if (!composed) return null;
@@ -354,6 +357,7 @@ function scorePrevBar(
       srModifier: 0, // dedup approximation: S/R not recomputed for prev bar
       sweep15m: { type: null as null, strength: 0 }, // dedup: sweep not recomputed for prev bar
       ...FROZEN_STATE,
+      timeQuality: computeTimeQuality(prevLatest.ts),
     });
     if (!composed) return null;
     return computeScore({ ...composed, scorerWeights: null }).verdict;

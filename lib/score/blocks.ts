@@ -216,7 +216,7 @@ export function checkFundingExtreme(fundingRate: number | null): string | null {
 }
 
 export interface TimeQualityInput {
-  /** Panel timeQuality() çıktısı: { quality: number, reason: string } */
+  /** lib/market/timeQuality.ts → computeTimeQuality() çıktısı: { quality, reason } */
   quality: number;
   reason: string;
 }

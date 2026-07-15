@@ -38,7 +38,8 @@ export interface GoSignalEntry {
   engineVersion?: string;
   /** OI rejim diverjansı — sadece gözlem, skor motorunu etkilemez */
   oiDivergence?: OiDivergence;
-  /** Gölge kapılar tetiklenme listesi (chopGate, atrRatioGate, timeGate, btcSrGate, pocBlock, oiDivergence:*) */
+  /** Gölge kapılar tetiklenme listesi (chopGate, atrRatioGate, btcSrGate, pocBlock, oiDivergence:*) —
+   *  timeGate v56.x itibarıyla kaldırıldı, checkTimeQuality() artık gerçek bir hard block (bkz. blocks.ts) */
   triggeredGates?: string[];
   /** Sinyal sonrası 15 dakikadaki fiyat hareketi (yalnızca browser açıksa doldurulur) */
   outcome15m?: GoSignalOutcome;

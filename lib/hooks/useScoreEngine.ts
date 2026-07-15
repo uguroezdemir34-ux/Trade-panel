@@ -47,6 +47,7 @@ import { detectLiquiditySweep } from "@/lib/sr/sweep";
 import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import { adx as computeAdx } from "@/lib/indicators/adx";
 import { evaluateBtcMovement, deriveBtcMovementInput, BTC_COOLDOWN_CONSTANTS } from "@/lib/risk/btc-cooldown";
+import { computeTimeQuality } from "@/lib/market/timeQuality";
 import type { Pair } from "@/lib/constants/pairs";
 
 function yieldToEventLoop(): Promise<void> {
@@ -272,7 +273,7 @@ export function useScoreEngine(): void {
         btcNearSR,
         srModifier: 0,
         sweep15m,
-        timeQuality: { quality: 1, reason: "" },
+        timeQuality: computeTimeQuality(now),
         now,
       });
 

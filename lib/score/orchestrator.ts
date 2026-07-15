@@ -286,7 +286,6 @@ export interface ScoreReasons {
   volBreakout?: string;
   atrRegime?: string;
   chopGate?: string;
-  timeGate?: string;
   oiDivergence?: string;
   btcSrGate?: string;
   atrRatioGate?: string;
@@ -628,13 +627,16 @@ export function computeScore(input: ScoreInput): ScoreResult {
     }
   }
 
-  // Zaman kalitesi kapısı (gölge)
-  const utcHour = new Date(input.now).getUTCHours();
-  if (utcHour >= 0 && utcHour < 4) {
-    reasons.timeGate = `🌙 Asya düşük likidite (${utcHour.toString().padStart(2, "0")}:xx UTC) (gölge)`;
-  } else if (utcHour === 12) {
-    reasons.timeGate = `⚡ Londra→NY geçiş (12:xx UTC) (gölge)`;
-  }
+  // NOT: Eski shadow-only "zaman kalitesi kapısı" (00:00-04:00 UTC Asya +
+  // 12:00 UTC Londra→NY geçişi, reasons.timeGate) buradan KALDIRILDI —
+  // checkTimeQuality() artık lib/market/timeQuality.ts ile beslenip GERÇEK bir
+  // hard block olarak aktif (bkz. §8 hard block bloğu, satır ~535 civarı).
+  // İkisini paralel tutmak, farklı saat sınırlarına sahip iki ayrı "zaman
+  // sinyali" göstererek kafa karıştırırdı (biri artık gerçekten bloklarken
+  // diğeri hâlâ sadece gölge/log olurdu) — eski shadow gate'in tek amacı zaten
+  // "gerçek blok yapmaya değer mi" diye gözlemlemekti, bu amaç artık gerçek
+  // hard block ile karşılandı. Londra→NY geçişi (12:00 UTC) sinyali bu
+  // kaldırmayla kayboldu — hiçbir yerde bloklamıyordu, salt gözlem amaçlıydı.
 
   // BTC S/R proximity gate (gölge)
   if (input.btcNearSR && pair !== "BTC") {
@@ -652,7 +654,6 @@ export function computeScore(input: ScoreInput): ScoreResult {
   const triggeredShadowGates: string[] = [];
   if (reasons.chopGate) triggeredShadowGates.push("chopGate");
   if (reasons.atrRatioGate) triggeredShadowGates.push("atrRatioGate");
-  if (reasons.timeGate) triggeredShadowGates.push("timeGate");
   if (reasons.btcSrGate) triggeredShadowGates.push("btcSrGate");
   if (reasons.pocBlock) triggeredShadowGates.push("pocBlock");
   if (oiDivResult === "diverge") triggeredShadowGates.push("oiDivergence:diverge");

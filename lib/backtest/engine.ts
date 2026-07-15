@@ -23,6 +23,7 @@
 import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
 import { evaluateBtcMovement, deriveBtcMovementInput, BTC_COOLDOWN_CONSTANTS } from "@/lib/risk/btc-cooldown";
+import { computeTimeQuality } from "@/lib/market/timeQuality";
 import { computeAdaptiveTPs } from "@/lib/sizer/take-profit";
 import { computeStructuralStop } from "@/lib/sizer/stop";
 import type { Candle } from "@/lib/okx/candles";
@@ -68,7 +69,9 @@ const FROZEN_STATE = {
   trades: [] as readonly Trade[],
   srModifier: 0,
   sweep15m: { type: null, strength: 0 } as SweepInput,
-  timeQuality: { quality: 1.0, reason: "backtest" },
+  // timeQuality BURADA YOK — bar.ts'e bağlı olduğu için sabit dondurulamaz,
+  // her bar için computeTimeQuality(bar.ts) ile dinamik hesaplanıp composeScoreInput
+  // çağrısında ayrıca override ediliyor (bkz. aşağıdaki ana döngü).
 };
 
 /** Align 4h bars to 1h bars (precompute pointer array in O(n+m)) */
@@ -295,6 +298,7 @@ export async function runBacktest(
       btcCooldownUntil,
       btcCooldownReason: btcCooldownUntil || btcSelfCooldownUntil ? btcReason : "",
       btcSelfCooldownUntil,
+      timeQuality: computeTimeQuality(bar.ts),
     });
     if (!composed) continue;
 
