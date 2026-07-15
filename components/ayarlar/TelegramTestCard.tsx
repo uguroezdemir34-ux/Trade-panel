@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { useT } from "@/lib/i18n/context";
 import { useCredentialStore, type TelegramCreds } from "@/lib/store/credentialStore";
+import { usePinLockStore } from "@/lib/store/pinLockStore";
 
 type TestStatus = "idle" | "loading" | "success" | "not_configured" | "error";
 
@@ -22,6 +23,7 @@ export function TelegramTestCard(): React.ReactElement {
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   const { telegram, setTelegram, _loaded } = useCredentialStore();
+  const unlocked = usePinLockStore((s) => s.unlocked);
 
   // Local form state
   const [formOpen, setFormOpen] = useState(false);
@@ -178,10 +180,10 @@ export function TelegramTestCard(): React.ReactElement {
               <button
                 type="button"
                 onClick={handleSave}
-                disabled={!botToken.trim() || !chatId.trim()}
+                disabled={!unlocked || !botToken.trim() || !chatId.trim()}
                 className="border-border hover:bg-bg-page disabled:opacity-40 rounded border px-2 py-1 font-mono text-2xs tracking-widest uppercase transition-colors"
               >
-                {t("settings.telegram.saveKeys")}
+                {!unlocked ? "🔒 PIN Kilidini Açın" : t("settings.telegram.saveKeys")}
               </button>
               {telegram && (
                 <button

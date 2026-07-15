@@ -321,7 +321,10 @@ tamamlanacak:
 ## 11. Kritik Güvenlik Notları
 
 - OKX API key'leri: `credentialStore` → AES-256-GCM, browser localStorage'ta şifreli
-- `STATE_ENCRYPTION_KEY` Vercel env'de: `Vaakb/KgX9J/bIbPti/+Z9elm+ig5EZhohXKFDBep18=`
+- `STATE_ENCRYPTION_KEY` Vercel env'de: `your-state-encryption-key-here` (placeholder —
+  gerçek değer SADECE Vercel dashboard'da tutulur, buraya asla yazılmaz).
+  **AKSİYON GEREKİYOR:** Bu dosyada önceden gerçek görünümlü bir değer sızdırılmıştı
+  (git geçmişinde hâlâ mevcut) — Vercel dashboard'da bu env var'ın rotate edilmesi gerekiyor.
 - OKX sırları sunucu tarafında (`next.config.ts` `serverComponentsExternalPackages`)
 - Telegram Layer 1: `TELEGRAM_BOT_TOKEN` + `TELEGRAM_VIP_CHAT_ID` (Vercel env)
 - `EXECUTION_MODE=LIVE` — demo key konfigüre edilmemiş

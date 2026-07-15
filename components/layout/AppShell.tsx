@@ -61,6 +61,7 @@ import { useCapacitorApp } from "@/lib/hooks/useCapacitorApp";
 import { useGoSignalOutcomeTracker } from "@/lib/hooks/useGoSignalOutcomeTracker";
 import { QuickTradeSheet } from "@/components/mobile/QuickTradeSheet";
 import { DisclaimerModal } from "./DisclaimerModal";
+import { MasterPinModal } from "./MasterPinModal";
 import { useAuthStub } from "@/lib/auth/stubs";
 import { setCurrentUserId } from "@/lib/auth/scope";
 import { migrateStorageForUser } from "@/lib/auth/migrate";
@@ -202,6 +203,7 @@ export function AppShell({
       <ThemeSync />
       <DevicePerfSync />
       <DisclaimerModal />
+      <MasterPinModal />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />
       <NewsFeedBanner />

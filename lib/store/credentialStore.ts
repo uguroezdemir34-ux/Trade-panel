@@ -47,6 +47,13 @@ interface CredentialStoreState {
   setBnbFutures: (c: BinanceCreds | null) => Promise<void>;
   setBybitFutures: (c: BybitCreds | null) => Promise<void>;
   load: () => Promise<void>;
+  /**
+   * `load()`'un `_loaded` guard'ını atlayıp storage'ı yeniden okur — Master
+   * PIN `unlock()` başarılı olduktan SONRA çağrılır: uygulama boot'unda
+   * `load()` kilitliyken çalışmıştı (hepsi null döndü, `_loaded=true` oldu),
+   * `unlock()` sonrası artık gerçek anahtar var, veriyi TEKRAR okumak lazım.
+   */
+  reload: () => Promise<void>;
   clearAll: () => Promise<void>;
 }
 
@@ -87,6 +94,20 @@ const bybitSchema = z
   })
   .nullable();
 
+/** `load()` ve `reload()`'un paylaştığı okuma mantığı — bkz. `reload()` yorumu. */
+async function readAllAndSet(
+  set: (partial: Partial<CredentialStoreState>) => void,
+): Promise<void> {
+  const [okxProd, okxDemo, telegram, bnbFutures, bybitFutures] = await Promise.all([
+    loadSecure(K.okxProd, null, { schema: okxSchema }),
+    loadSecure(K.okxDemo, null, { schema: okxSchema }),
+    loadSecure(K.telegram, null, { schema: tgSchema }),
+    loadSecure(K.bnbFutures, null, { schema: bnbSchema }),
+    loadSecure(K.bybitFutures, null, { schema: bybitSchema }),
+  ]);
+  set({ okxProd, okxDemo, telegram, bnbFutures, bybitFutures, _loaded: true });
+}
+
 export const useCredentialStore = create<CredentialStoreState>((set) => ({
   okxProd: null,
   okxDemo: null,
@@ -123,15 +144,11 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
   load: async () => {
     // Guard: skip if already loaded (idempotent — safe for StrictMode double-invocation)
     if (useCredentialStore.getState()._loaded) return;
+    await readAllAndSet(set);
+  },
 
-    const [okxProd, okxDemo, telegram, bnbFutures, bybitFutures] = await Promise.all([
-      loadSecure(K.okxProd, null, { schema: okxSchema }),
-      loadSecure(K.okxDemo, null, { schema: okxSchema }),
-      loadSecure(K.telegram, null, { schema: tgSchema }),
-      loadSecure(K.bnbFutures, null, { schema: bnbSchema }),
-      loadSecure(K.bybitFutures, null, { schema: bybitSchema }),
-    ]);
-    set({ okxProd, okxDemo, telegram, bnbFutures, bybitFutures, _loaded: true });
+  reload: async () => {
+    await readAllAndSet(set);
   },
 
   clearAll: async () => {

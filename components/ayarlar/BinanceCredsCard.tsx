@@ -6,6 +6,7 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useT } from "@/lib/i18n/context";
 import { EXECUTION_ENABLED } from "@/lib/config/execution";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
+import { usePinLockStore } from "@/lib/store/pinLockStore";
 
 export function BinanceCredsCard(): React.ReactElement {
   return (
@@ -26,6 +27,7 @@ function BinanceCredsCardInner(): React.ReactElement {
   const [secret, setSecret] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const unlocked = usePinLockStore((s) => s.unlocked);
 
   async function handleSave() {
     if (!key.trim() || !secret.trim()) return;
@@ -116,10 +118,14 @@ function BinanceCredsCardInner(): React.ReactElement {
           <button
             type="button"
             onClick={handleSave}
-            disabled={saving || !key.trim() || !secret.trim()}
+            disabled={!unlocked || saving || !key.trim() || !secret.trim()}
             className="w-full rounded bg-brand py-2 font-mono text-xs font-semibold text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
           >
-            {saved ? "✓ " + t("settings.binanceCreds.saveSuccess") : t("settings.binanceCreds.save")}
+            {!unlocked
+              ? "🔒 PIN Kilidini Açın"
+              : saved
+                ? "✓ " + t("settings.binanceCreds.saveSuccess")
+                : t("settings.binanceCreds.save")}
           </button>
         </div>
       )}

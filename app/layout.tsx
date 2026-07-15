@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import { ClerkClientWrapper } from "@/lib/auth/ClerkClientWrapper";
 import { AppShell } from "@/components/layout/AppShell";
@@ -56,14 +57,18 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  // middleware.ts'in her istekte ürettiği, CSP script-src'nin izin verdiği
+  // tek kullanımlık nonce — aşağıdaki iki inline <script>'e enjekte edilir.
+  const nonce = (await headers()).get("x-nonce") ?? "";
   return (
     <html lang="tr" dir="ltr" suppressHydrationWarning translate="no">
         <head>
           {/* Prevent theme FOUC — reads localStorage before React hydrates */}
           <script
+            nonce={nonce}
             dangerouslySetInnerHTML={{
               __html: `try{var t=localStorage.getItem('ug52_theme');var v=t?JSON.parse(t):'dark';document.documentElement.setAttribute('data-theme',v);document.documentElement.style.colorScheme=(v==='light'?'light':'dark');}catch(e){}`,
             }}
@@ -72,6 +77,7 @@ export default function RootLayout({
               Active in development only — stripped from production build. */}
           {process.env.NODE_ENV === "development" && (
             <script
+              nonce={nonce}
               dangerouslySetInnerHTML={{
                 __html: `(function(){var _e=[];function _show(){var b=document.body;if(!b){setTimeout(_show,80);return;}var el=document.getElementById('__qx_err');if(!el){el=document.createElement('div');el.id='__qx_err';el.style.cssText='position:fixed;top:0;left:0;right:0;bottom:0;background:#cc0000;color:#fff;padding:14px;z-index:2147483647;overflow:auto;font-family:monospace;font-size:11px;word-break:break-all;white-space:pre-wrap;';b.insertBefore(el,b.firstChild);}el.textContent=_e.join('\\n\\n--- ---\\n\\n');}function _add(m){_e.push(m);_show();}window.onerror=function(m,s,l,c,err){_add('[ERR] '+m+'\\n'+s+':'+l+':'+c+(err&&err.stack?'\\n'+err.stack:''));return false;};window.addEventListener('unhandledrejection',function(ev){var r=ev.reason;_add('[PROMISE] '+(r&&r.message?r.message:String(r))+(r&&r.stack?'\\n'+r.stack:''));});setTimeout(function(){var b=document.body;var ok=b&&Array.from(b.children).some(function(c){return c.id!=='__qx_err';});if(!ok)_add('[TIMEOUT 8s] App yuklenmedi. Toplam hata: '+_e.length);},8000);})();`,
               }}

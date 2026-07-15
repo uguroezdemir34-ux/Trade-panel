@@ -1,32 +1,57 @@
 /**
- * SECURE STORAGE — AES-256-GCM şifreli localStorage katmanı.
+ * SECURE STORAGE — AES-256-GCM şifreli localStorage katmanı, Master PIN
+ * anahtar türetimiyle.
  *
  * Tehdit modeli:
  *   - localStorage düz metin olarak saklanır → XSS, tarayıcı senkronizasyonu,
  *     disk forensiği veya uzantılar bu veriyi okuyabilir.
- *   - Bu katman bakiye, trade geçmişi ve risk state'ini şifreli yazar.
+ *   - Bu katman bakiye, trade geçmişi, risk state'i ve Layer 2 credential'ları
+ *     (OKX/Telegram/Binance/Bybit) şifreli yazar.
  *
  * Şifreleme stratejisi:
  *   AES-256-GCM (AEAD) — kimlik doğrulamalı şifreleme.
  *   Her write için 96-bit rastgele IV üretilir → replay / IV-reuse saldırısı yok.
  *
- * Anahtar yönetimi:
- *   1. İlk yükleme: `crypto.subtle.generateKey` ile AES-256-GCM key üretilir.
- *   2. Anahtar bellekte tutulur (module singleton).
- *   3. Tarayıcıda: JWK olarak localStorage'a yazılır — tab kapatma/yenileme
- *      sonrası aynı cihazdan veri çözülebilir.
- *   4. Node.js (test): localStorage yok, key sadece bellekte yaşar.
+ * Anahtar yönetimi (YENİ — Master PIN modeli):
+ *   ÖNCEKİ modelde AES anahtarı rastgele üretilip localStorage'a (JWK olarak)
+ *   yazılıyordu — yani anahtar, koruduğu veriyle AYNI storage'da duruyordu.
+ *   Bu, XSS'e karşı HİÇBİR koruma sağlamıyordu (herhangi bir script hem
+ *   anahtarı hem veriyi aynı yerden okuyabilirdi).
+ *
+ *   YENİ modelde anahtar HİÇBİR storage'a yazılmaz:
+ *     1. Kullanıcı bir Master PIN girer (`unlock(pin)`).
+ *     2. PIN + cihaza özel, GİZLİ OLMAYAN bir salt → PBKDF2-SHA256
+ *        (600k iterasyon) ile AES-256-GCM anahtarı türetilir.
+ *     3. Anahtar SADECE bellekte (modül-seviyesi değişken, `_unlockedKey`)
+ *        tutulur — sayfa yenilemesi/tab kapanışı anahtarı otomatik siler
+ *        (yeniden PIN girilmesi gerekir).
+ *     4. `isUnlocked()` / `unlock(pin)` / `lock()` bu durumu yönetir.
+ *     5. PIN doğruluğu, ilk kurulumda şifrelenen sabit bir "verifier" ile
+ *        deneme-yanılma yapılarak kontrol edilir (yanlış PIN → AEAD tag
+ *        mismatch → decrypt hatası).
+ *   `getOrCreateSessionKey()` artık kilitliyken (`unlock()` çağrılmamışsa)
+ *   HATA FIRLATIR — bu, `loadSecure`/`saveSecure`'un zaten var olan
+ *   try/catch'i tarafından yakalanır (bkz. aşağıdaki "Graceful recovery"),
+ *   yani kilitli durumda okuma `defaultValue`'ya, yazma `false`'a düşer,
+ *   sistem çökmez.
+ *
+ *   ESKİ (localStorage-anahtar modeliyle) şifrelenmiş veri, yeni PIN
+ *   modeline geçişte KASITLI olarak okunamaz hale gelir — bu bir migrasyon
+ *   eksikliği DEĞİL, güvenlik iyileştirmesinin doğal sonucu (eski anahtar
+ *   hiç saklanmıyor, saklanacak bir yer de olmamalı). Kullanıcı yeni PIN'i
+ *   ilk kurduğunda eski kayıtlar decrypt edilemez → graceful recovery ile
+ *   sessizce silinir, kullanıcı credential'larını (varsa) yeniden girer.
  *
  * Depolama formatı:
  *   localStorage değeri: "ENC1:<base64(IV + ciphertext)>"
  *   "ENC1:" prefiksi: sürüm marker, şifreli veri ile düz JSON'ı ayırt eder.
  *
  * Graceful recovery:
- *   Şifre çözme herhangi bir sebeple başarısız olursa (yanlış key, bozuk veri,
- *   eski format) → localStorage kaydı silinir, `defaultValue` döner.
- *   Sistem çökmez.
+ *   Şifre çözme herhangi bir sebeple başarısız olursa (yanlış/eksik key,
+ *   bozuk veri, eski format, KİLİTLİ durum) → localStorage kaydı silinir
+ *   (varsa), `defaultValue` döner. Sistem çökmez.
  *
- * Saf olmayan fonksiyonlar: localStorage/sessionStorage/crypto erişir.
+ * Saf olmayan fonksiyonlar: localStorage/crypto erişir.
  * Test enjeksiyonu: `cryptoKey` parametresi ile DI sağlanır.
  */
 
@@ -38,15 +63,26 @@ import { STORAGE_PREFIX, isStorageAvailable } from "./persist";
 /** localStorage değerinin başındaki sürüm markeri */
 export const ENC_PREFIX = "ENC1:";
 
-/** sessionStorage'da anahtar saklama key'i */
-const SESSION_KEY_NAME = "ug52_sk";
-
 /** AES-GCM IV boyutu (byte) */
 const IV_LENGTH = 12;
 
-// ─── Singleton key (bellek içi) ───────────────────────────────
+/** Cihaz başına bir kez üretilen, GİZLİ OLMAYAN PBKDF2 salt'ı (düz saklanabilir). */
+const PIN_SALT_KEY = "ug52_pin_salt";
 
-let _cachedKey: CryptoKey | null = null;
+/** PIN doğruluğunu kanıtlamak için şifrelenmiş sabit bir işaretçi. */
+const PIN_VERIFIER_KEY = "ug52_pin_verifier";
+
+/** PBKDF2 iterasyon sayısı — OWASP 2023+ SHA-256 önerisi. */
+const PBKDF2_ITERATIONS = 600_000;
+
+/** `unlock()`'ın başarı/hata sabit metni — verifier içeriği, gizli değil. */
+const VERIFIER_PLAINTEXT = { v: "quantix-pin-ok" } as const;
+
+// ─── Singleton key (bellek içi, SADECE PIN doğrulandıktan sonra dolar) ─
+// Hiçbir zaman localStorage/sessionStorage'a yazılmaz — sayfa yenilemesi
+// bu değeri otomatik sıfırlar (yeniden `unlock()` gerekir).
+
+let _unlockedKey: CryptoKey | null = null;
 
 // ─── Web Crypto erişimi ───────────────────────────────────────
 
@@ -128,58 +164,148 @@ export async function importKey(encoded: string): Promise<CryptoKey> {
 }
 
 /**
- * Session anahtarını döndür veya oluştur.
+ * Kilitli/açık durumdaki oturum anahtarını döndürür.
  *
- * Öncelik sırası:
- *   1. Bellek cache (_cachedKey)
- *   2. localStorage'dan yükle (tab kapatma/yenileme sonrası aynı cihazda devam)
- *   3. Yeni üret + localStorage'a kaydet
+ * ÖNEMLİ DEĞİŞİKLİK: artık localStorage'dan anahtar YÜKLEMEZ/ÜRETMEZ.
+ * `_unlockedKey` doluysa (yani `unlock(pin)` başarıyla çağrıldıysa) onu
+ * döner; değilse hata fırlatır. Caller'lar (`loadSecure`/`saveSecure`)
+ * bu hatayı zaten yakalayıp graceful recovery yapıyor — bkz. dosya başı.
  *
- * DI: `_keyOverride` sadece testlerde kullanılır.
+ * DI: `_keyOverride` sadece testlerde kullanılır (mevcut test paketi
+ * tamamen `cryptoKey` DI ile çalışıyor, bu fonksiyonun varsayılan yolu
+ * hiçbir mevcut testi etkilemiyor).
  */
 export async function getOrCreateSessionKey(
   _keyOverride?: CryptoKey,
 ): Promise<CryptoKey> {
   if (_keyOverride) return _keyOverride;
-  if (_cachedKey) return _cachedKey;
-
-  // Browser: localStorage'dan yükle
-  const ks = getKeyStorage();
-  if (ks) {
-    try {
-      const stored = ks.getItem(SESSION_KEY_NAME);
-      if (stored) {
-        const key = await importKey(stored);
-        _cachedKey = key;
-        return key;
-      }
-    } catch {
-      // Bozuk kayıt — yeni üret
-      ks.removeItem(SESSION_KEY_NAME);
-    }
-  }
-
-  // Yeni üret
-  const key = await generateSessionKey();
-  _cachedKey = key;
-
-  // Browser: localStorage'a kaydet
-  if (ks) {
-    try {
-      ks.setItem(SESSION_KEY_NAME, await exportKey(key));
-    } catch {
-      // localStorage dolu veya erişilemiyor — bellekte devam et
-    }
-  }
-
-  return key;
+  if (_unlockedKey) return _unlockedKey;
+  throw new Error("LOCKED: Master PIN girilmeden şifreli veriye erişilemez.");
 }
 
 /**
- * Bellek cache'ini sıfırla (test yardımcısı — anahtar rotasyonu simülasyonu).
+ * Bellek cache'ini sıfırla (test yardımcısı + `lock()`'un iç implementasyonu).
  */
 export function _resetSessionKeyCache(): void {
-  _cachedKey = null;
+  _unlockedKey = null;
+}
+
+// ─── Master PIN — anahtar türetimi ────────────────────────────
+
+/**
+ * Cihaz başına bir kez üretilen PBKDF2 salt'ı. Salt GİZLİ DEĞİLDİR (PBKDF2
+ * güvenliği salt'ın gizliliğine dayanmaz, sadece rainbow-table'ları önler)
+ * — düz metin localStorage'da saklanması güvenlik açığı YARATMAZ.
+ */
+function getOrCreateSalt(): Uint8Array {
+  const ks = getKeyStorage();
+  if (ks) {
+    try {
+      const stored = ks.getItem(PIN_SALT_KEY);
+      if (stored) return new Uint8Array(base64ToBuffer(stored));
+    } catch {
+      // devam — yeni salt üret
+    }
+  }
+  const salt = getCrypto().getRandomValues(new Uint8Array(16));
+  if (ks) {
+    try {
+      ks.setItem(PIN_SALT_KEY, bufferToBase64(salt.buffer));
+    } catch {
+      // localStorage yazılamıyor — salt sadece bu çağrı için geçerli olur,
+      // bir sonraki unlock() farklı bir salt üretir (kabul edilebilir: PIN
+      // doğrulaması yine de tutarlı çalışır çünkü verifier de yazılamayacak).
+    }
+  }
+  return salt;
+}
+
+/** Master PIN + salt → AES-256-GCM anahtarı (PBKDF2-SHA256, 600k iterasyon). */
+async function deriveKeyFromPin(pin: string, salt: Uint8Array): Promise<CryptoKey> {
+  const baseKey = await getCrypto().subtle.importKey(
+    "raw",
+    new TextEncoder().encode(pin),
+    "PBKDF2",
+    false,
+    ["deriveKey"],
+  );
+  return getCrypto().subtle.deriveKey(
+    { name: "PBKDF2", salt: salt as BufferSource, iterations: PBKDF2_ITERATIONS, hash: "SHA-256" },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false, // extractable=false — bu anahtar hiçbir şekilde export edilemez
+    ["encrypt", "decrypt"],
+  );
+}
+
+/**
+ * Kullanıcı Master PIN girdiğinde çağrılır.
+ *
+ * İlk kurulum (henüz hiç PIN belirlenmemiş): girilen PIN "doğru PIN" olarak
+ * kabul edilir, bir verifier şifrelenip kaydedilir, `isNewSetup: true` döner.
+ *
+ * Sonraki girişler: mevcut verifier bu PIN'den türetilen anahtarla decrypt
+ * edilmeye çalışılır — yanlış PIN'de AEAD tag mismatch ile başarısız olur
+ * (throw etmez, `{ ok: false }` döner — caller'ın "yanlış PIN" mesajı
+ * göstermesi için).
+ *
+ * NOT: Yanlış girilen PIN'i "unutma" diye bir kurtarma mekanizması KASITLI
+ * olarak yoktur — bu, gerçek güvenliğin gereği (bkz. dosya başı yorum).
+ */
+export async function unlock(pin: string): Promise<{ ok: boolean; isNewSetup: boolean }> {
+  const salt = getOrCreateSalt();
+  const key = await deriveKeyFromPin(pin, salt);
+  const ks = getKeyStorage();
+  const existingVerifier = ks?.getItem(PIN_VERIFIER_KEY) ?? null;
+
+  if (!existingVerifier) {
+    // İlk kurulum — bu PIN artık "doğru PIN"
+    try {
+      const verifier = await encryptValue(key, VERIFIER_PLAINTEXT);
+      ks?.setItem(PIN_VERIFIER_KEY, verifier);
+    } catch {
+      // localStorage yazılamıyor — yine de bu oturum için kilidi aç (bellekte
+      // çalışmaya devam eder), ama bir sonraki sayfa yüklemesinde verifier
+      // olmadığı için yeniden "ilk kurulum" gibi davranılır.
+    }
+    _unlockedKey = key;
+    return { ok: true, isNewSetup: true };
+  }
+
+  try {
+    await decryptValue(key, existingVerifier); // yanlış PIN → burada throw eder
+    _unlockedKey = key;
+    return { ok: true, isNewSetup: false };
+  } catch {
+    return { ok: false, isNewSetup: false };
+  }
+}
+
+/**
+ * Bellekteki anahtarı siler — sekme kapanışında zaten otomatik olur
+ * (modül state'i sıfırlanır), bu fonksiyon manuel "kilitle" aksiyonu için.
+ */
+export function lock(): void {
+  _resetSessionKeyCache();
+}
+
+/** Kilidin şu an açık olup olmadığını (PIN doğrulanmış mı) döner. */
+export function isUnlocked(): boolean {
+  return _unlockedKey !== null;
+}
+
+/**
+ * PIN daha önce hiç belirlenmemiş mi? (UI'ın "PIN oluştur" vs "PIN gir"
+ * ekranlarından hangisini göstereceğine karar vermesi için.)
+ */
+export function hasPinConfigured(): boolean {
+  const ks = getKeyStorage();
+  if (!ks) return false;
+  try {
+    return ks.getItem(PIN_VERIFIER_KEY) !== null;
+  } catch {
+    return false;
+  }
 }
 
 // ─── Şifreleme / Çözme ───────────────────────────────────────

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useT } from "@/lib/i18n/context";
 import { useCredentialStore, type OkxCreds } from "@/lib/store/credentialStore";
 import { EXECUTION_ENABLED } from "@/lib/config/execution";
+import { usePinLockStore } from "@/lib/store/pinLockStore";
 
 export function OkxCredsCard(): React.ReactElement {
   const t = useT();
@@ -65,6 +66,7 @@ function KeySection({
   const [pass, setPass] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const unlocked = usePinLockStore((s) => s.unlocked);
 
   async function handleSave() {
     if (!key.trim() || !secret.trim() || !pass.trim()) return;
@@ -122,10 +124,14 @@ function KeySection({
           <button
             type="button"
             onClick={handleSave}
-            disabled={saving || !key.trim() || !secret.trim() || !pass.trim()}
+            disabled={!unlocked || saving || !key.trim() || !secret.trim() || !pass.trim()}
             className="w-full rounded bg-brand py-2 font-mono text-xs font-semibold text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
           >
-            {saved ? "✓ " + t("settings.okx.keySaved") : t("settings.okx.saveKeys")}
+            {!unlocked
+              ? "🔒 PIN Kilidini Açın"
+              : saved
+                ? "✓ " + t("settings.okx.keySaved")
+                : t("settings.okx.saveKeys")}
           </button>
         </>
       )}

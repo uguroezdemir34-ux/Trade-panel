@@ -28,6 +28,11 @@ import {
   migrateToEncrypted,
   _resetSessionKeyCache,
   ENC_PREFIX,
+  unlock,
+  lock,
+  isUnlocked,
+  hasPinConfigured,
+  getOrCreateSessionKey,
 } from "@/lib/store/secure-storage";
 import { STORAGE_PREFIX } from "@/lib/store/persist";
 
@@ -573,6 +578,112 @@ describe("storage unavailable senaryoları", () => {
 // ─────────────────────────────────────────────────────────────
 // 12. Hassas alan örnekleri — gerçek store verileri
 // ─────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────
+// 13. Master PIN — unlock() / lock() / isUnlocked()
+// ─────────────────────────────────────────────────────────────
+
+describe("Master PIN — unlock()/lock()/isUnlocked()", () => {
+  it("kilitliyken getOrCreateSessionKey() hata fırlatır", async () => {
+    expect(isUnlocked()).toBe(false);
+    await expect(getOrCreateSessionKey()).rejects.toThrow(/LOCKED/);
+  });
+
+  it("kilitliyken loadSecure/saveSecure çökmez — default/false döner", async () => {
+    // cryptoKey override YOK — varsayılan (kilitli) yol test ediliyor
+    const loadResult = await loadSecure("locked_test", "DEFAULT");
+    expect(loadResult).toBe("DEFAULT");
+
+    const saveResult = await saveSecure("locked_test", { x: 1 });
+    expect(saveResult).toBe(false);
+  });
+
+  it("ilk unlock() — yeni PIN kurulumu, isNewSetup:true", async () => {
+    const result = await unlock("1234");
+    expect(result.ok).toBe(true);
+    expect(result.isNewSetup).toBe(true);
+    expect(isUnlocked()).toBe(true);
+  });
+
+  it("unlock() sonrası kilit açıkken saveSecure/loadSecure çalışır (cryptoKey vermeden)", async () => {
+    await unlock("1234");
+    const saved = await saveSecure("pin_protected", { secret: "gizli" });
+    expect(saved).toBe(true);
+
+    const loaded = await loadSecure("pin_protected", null);
+    expect(loaded).toEqual({ secret: "gizli" });
+  });
+
+  it("doğru PIN ile ikinci unlock() — isNewSetup:false, ok:true", async () => {
+    await unlock("1234");
+    lock();
+    expect(isUnlocked()).toBe(false);
+
+    const result = await unlock("1234");
+    expect(result.ok).toBe(true);
+    expect(result.isNewSetup).toBe(false);
+    expect(isUnlocked()).toBe(true);
+  });
+
+  it("yanlış PIN ile unlock() — ok:false, kilit açılmaz", async () => {
+    await unlock("1234");
+    lock();
+
+    const result = await unlock("9999");
+    expect(result.ok).toBe(false);
+    expect(isUnlocked()).toBe(false);
+  });
+
+  it("lock() sonrası bellekteki anahtar silinir — tekrar LOCKED hatası", async () => {
+    await unlock("1234");
+    lock();
+    await expect(getOrCreateSessionKey()).rejects.toThrow(/LOCKED/);
+  });
+
+  it("doğru PIN ile unlock sonrası önceki oturumda kaydedilen veri okunabilir", async () => {
+    await unlock("my-secret-pin");
+    await saveSecure("cross_session", { balance: 42 });
+    lock();
+
+    // Yeni "oturum" — aynı PIN ile tekrar unlock
+    const unlockResult = await unlock("my-secret-pin");
+    expect(unlockResult.ok).toBe(true);
+
+    const loaded = await loadSecure("cross_session", null);
+    expect(loaded).toEqual({ balance: 42 });
+  });
+
+  it("yanlış PIN ile eski veriye erişilemez (graceful — çökmez, default döner)", async () => {
+    await unlock("correct-pin");
+    await saveSecure("wrong_pin_test", { secret: "hidden" });
+    lock();
+
+    await unlock("wrong-pin"); // ok:false, kilit AÇILMAZ (yanlış PIN)
+    expect(isUnlocked()).toBe(false);
+
+    const loaded = await loadSecure("wrong_pin_test", "FALLBACK");
+    expect(loaded).toBe("FALLBACK");
+  });
+
+  it("hasPinConfigured() — PIN kurulmadan false, kurulduktan sonra true", async () => {
+    expect(hasPinConfigured()).toBe(false);
+    await unlock("1234");
+    expect(hasPinConfigured()).toBe(true);
+  });
+
+  it("eski (localStorage-anahtar modeli) verisi yeni PIN modelinde okunamaz — sessizce silinir", async () => {
+    // Eski model simülasyonu: rastgele bir anahtarla (PIN'den TÜRETİLMEMİŞ)
+    // doğrudan şifrele — artık hiçbir PIN bu anahtarı türetemez.
+    const legacyKey = await generateSessionKey();
+    const legacyEncrypted = await encryptValue(legacyKey, { legacyBalance: 999 });
+    mockStorage.setItem(STORAGE_PREFIX + "legacy_key_data", legacyEncrypted);
+
+    await unlock("new-pin-1234"); // yeni model devreye girer
+    const loaded = await loadSecure("legacy_key_data", { legacyBalance: 0 });
+    expect(loaded).toEqual({ legacyBalance: 0 }); // eski veri okunamaz, default'a düşer
+    expect(mockStorage.getItem(STORAGE_PREFIX + "legacy_key_data")).toBeNull(); // temizlendi
+  });
+});
 
 describe("Gerçek store veri yapıları", () => {
   it("account state (bakiye + drawdown) şifreli saklanır", async () => {
