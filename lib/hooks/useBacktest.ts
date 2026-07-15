@@ -73,11 +73,26 @@ export function useBacktest() {
           store.setDownloadPct(0.5 + p * 0.5),
         );
 
+        // BTC cooldown simülasyonu için referans mumlar (bkz. lib/backtest/engine.ts).
+        // pair "BTC" ise zaten kendi candles1h/4h'i BTC'nin ta kendisi — ayrı fetch gereksiz.
+        const [btcCandles1h, btcCandles4h] =
+          pair === "BTC"
+            ? [candles1h, candles4h]
+            : await Promise.all([
+                fetchCandles("BTC", "1h", fromMs),
+                fetchCandles("BTC", "4h", fromMs),
+              ]);
+
         store.setDownloadPct(1);
         store.setStatus("computing");
 
-        const result = await runBacktest(candles1h, candles4h, config, (pct) =>
-          store.setComputePct(pct),
+        const result = await runBacktest(
+          candles1h,
+          candles4h,
+          config,
+          (pct) => store.setComputePct(pct),
+          btcCandles1h,
+          btcCandles4h,
         );
 
         store.setResult(result, config);
@@ -97,6 +112,11 @@ export function useBacktest() {
       store.startScan(scanConfig);
       store.setScanProgress(0, PAIRS.length, PAIRS[0]);
 
+      // BTC cooldown simülasyonu için referans mumlar — TÜM taramada bir kez fetch
+      // edilir (BTC verisi her pair için aynı), her runBacktest() çağrısına geçirilir.
+      const btcCandles1h = await fetchCandles("BTC", "1h", fromMs);
+      const btcCandles4h = await fetchCandles("BTC", "4h", fromMs);
+
       for (let i = 0; i < PAIRS.length; i++) {
         const pair = PAIRS[i];
         store.setScanProgress(i, PAIRS.length, pair);
@@ -105,12 +125,19 @@ export function useBacktest() {
           const candles1h = await fetchCandles(pair, "1h", fromMs);
           const candles4h = await fetchCandles(pair, "4h", fromMs);
 
-          const result = await runBacktest(candles1h, candles4h, {
-            pair,
-            dataMonths,
-            frozenFg,
-            minScore,
-          });
+          const result = await runBacktest(
+            candles1h,
+            candles4h,
+            {
+              pair,
+              dataMonths,
+              frozenFg,
+              minScore,
+            },
+            undefined,
+            btcCandles1h,
+            btcCandles4h,
+          );
 
           const { stats } = result;
           const row: ScanRow = {

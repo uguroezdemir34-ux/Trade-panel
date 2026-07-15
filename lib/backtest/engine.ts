@@ -22,6 +22,7 @@
 
 import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
+import { evaluateBtcMovement, deriveBtcMovementInput, BTC_COOLDOWN_CONSTANTS } from "@/lib/risk/btc-cooldown";
 import { computeAdaptiveTPs } from "@/lib/sizer/take-profit";
 import { computeStructuralStop } from "@/lib/sizer/stop";
 import type { Candle } from "@/lib/okx/candles";
@@ -203,10 +204,29 @@ export async function runBacktest(
   candles4h: readonly Candle[],
   config: BacktestConfig,
   onProgress?: (pct: number) => void,
+  /**
+   * BTC referans mumları — cooldown simülasyonu için (bkz. lib/risk/btc-cooldown.ts).
+   * OPSİYONEL: verilmezse mevcut davranış (btcCooldownUntil/btcSelfCooldownUntil hep null,
+   * yani cooldown hiç simüle edilmez) birebir korunur — geriye dönük uyumlu. config.pair
+   * "BTC" ise ve self-cooldown simüle edilmek isteniyorsa, caller candles1h/candles4h'in
+   * KENDİSİNİ burada da geçirmeli (engine burada otomatik bir fallback UYGULAMAZ).
+   */
+  btcCandles1h?: readonly Candle[],
+  btcCandles4h?: readonly Candle[],
 ): Promise<BacktestResult> {
   const trades: BacktestTrade[] = [];
   const ptrs = build4hPointers(candles1h, candles4h);
   const total = candles1h.length - WARMUP;
+
+  // BTC cooldown historical state — sadece btcCandles1h/4h verildiyse ilerletilir.
+  // Pointer'lar SADECE ileri hareket eder (bar.ts artan sırada işlendiği için O(n+m)).
+  const btcConfirmed1h = btcCandles1h?.filter((c) => c.confirm) ?? [];
+  const btcConfirmed4h = btcCandles4h?.filter((c) => c.confirm) ?? [];
+  let btcPtr1h = -1;
+  let btcPtr4h = -1;
+  let btcAltUntil = 0;
+  let btcSelfUntil = 0;
+  let btcReason = "";
 
   for (let i = WARMUP; i < candles1h.length; i++) {
     // Progress + yield to event loop every YIELD_EVERY bars
@@ -229,6 +249,33 @@ export async function runBacktest(
 
     if (c1h.length < 200 || c4h.length < 200 || c15m.length < 20) continue;
 
+    // BTC cooldown historical simülasyon — bar.ts anına kadar bilinen BTC hareketiyle
+    // (bkz. lib/risk/btc-cooldown.ts). btcCandles1h/4h verilmediyse btcConfirmed1h/4h
+    // boş kalır, aşağıdaki blok hiç tetiklenmez → btcCooldownUntil/btcSelfCooldownUntil
+    // FROZEN_STATE'teki gibi null kalır (mevcut davranış korunur).
+    if (btcConfirmed1h.length > 1 && btcConfirmed4h.length > 1) {
+      while (btcPtr1h + 1 < btcConfirmed1h.length && btcConfirmed1h[btcPtr1h + 1].ts <= bar.ts) btcPtr1h++;
+      while (btcPtr4h + 1 < btcConfirmed4h.length && btcConfirmed4h[btcPtr4h + 1].ts <= bar.ts) btcPtr4h++;
+      if (btcPtr1h >= 1 && btcPtr4h >= 1) {
+        const movementInput = deriveBtcMovementInput(
+          btcConfirmed1h[btcPtr1h],
+          btcConfirmed1h[btcPtr1h - 1],
+          btcConfirmed4h[btcPtr4h],
+          btcConfirmed4h[btcPtr4h - 1],
+        );
+        if (movementInput) {
+          const movement = evaluateBtcMovement(movementInput);
+          if (movement.triggered) {
+            btcAltUntil = Math.max(btcAltUntil, bar.ts + BTC_COOLDOWN_CONSTANTS.ALT_COOLDOWN_MS);
+            btcSelfUntil = Math.max(btcSelfUntil, bar.ts + BTC_COOLDOWN_CONSTANTS.SELF_COOLDOWN_MS);
+            btcReason = movement.reason;
+          }
+        }
+      }
+    }
+    const btcCooldownUntil = config.pair !== "BTC" && btcAltUntil > bar.ts ? btcAltUntil : null;
+    const btcSelfCooldownUntil = config.pair === "BTC" && btcSelfUntil > bar.ts ? btcSelfUntil : null;
+
     const composed = composeScoreInput({
       pair: config.pair,
       livePrice: bar.close,
@@ -240,6 +287,9 @@ export async function runBacktest(
       oiVelocityScore: null,
       now: bar.ts,
       ...FROZEN_STATE,
+      btcCooldownUntil,
+      btcCooldownReason: btcCooldownUntil || btcSelfCooldownUntil ? btcReason : "",
+      btcSelfCooldownUntil,
     });
     if (!composed) continue;
 

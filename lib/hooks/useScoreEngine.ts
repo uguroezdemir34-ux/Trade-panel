@@ -46,6 +46,7 @@ import { computeMtfTrend } from "@/lib/market/mtfTrend";
 import { detectLiquiditySweep } from "@/lib/sr/sweep";
 import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import { adx as computeAdx } from "@/lib/indicators/adx";
+import { evaluateBtcMovement, deriveBtcMovementInput, BTC_COOLDOWN_CONSTANTS } from "@/lib/risk/btc-cooldown";
 import type { Pair } from "@/lib/constants/pairs";
 
 function yieldToEventLoop(): Promise<void> {
@@ -118,7 +119,6 @@ export function useScoreEngine(): void {
     // Snapshot — subscription yok, re-render tetiklemiyor
     const marketStore = useMarketStore.getState();
     const macroStore = useMacroStore.getState();
-    const riskStore = useRiskStore.getState();
     const accountStore = useAccountStore.getState();
     const positionStore = usePositionStore.getState();
     const tradesStore = useTradesStore.getState();
@@ -145,6 +145,46 @@ export function useScoreEngine(): void {
       const distS = btcSR.levels.nearest_support?.distance_pct ?? Infinity;
       btcNearSR = Math.min(distR, distS) <= 0.5;
     }
+
+    // BTC cooldown tetikleyicisi (bkz. lib/risk/btc-cooldown.ts) — PAIRS döngüsünden
+    // ÖNCE çalışır ki BTC'nin kendisi dahil TÜM paritelerin bu cycle'daki
+    // composeScoreInput() çağrıları güncel cooldown değerini görsün. Kasıtlı tasarım:
+    // BtcCooldown sınıfının KENDİ localStorage persist'i (ham 'ug52_btccd' key'i)
+    // KULLANILMIYOR — riskStore.setBtcCooldown()/setBtcSelfCooldown() zaten
+    // lib/store/persist.ts üzerinden user-scoped persist yapıyor (bkz. d3a72e5
+    // ug52_ → ug52_{userId}_ migrasyonu); iki ayrı persist yolu birbirinden
+    // sapardı. Bunun yerine evaluateBtcMovement() saf fonksiyonu + burada
+    // tekrarlanan "max al, uzat" mantığı kullanılıyor. Sadece KAPANMIŞ
+    // (confirm===true) mumlar kullanılıyor — composeScoreInput.ts'teki
+    // repainting-fix disiplinine uygun.
+    {
+      const btcConfirmed1h = btcCandles1h.filter((c) => c.confirm);
+      const btcConfirmed4h = btcCandles4h.filter((c) => c.confirm);
+      const movementInput = deriveBtcMovementInput(
+        btcConfirmed1h[btcConfirmed1h.length - 1],
+        btcConfirmed1h[btcConfirmed1h.length - 2],
+        btcConfirmed4h[btcConfirmed4h.length - 1],
+        btcConfirmed4h[btcConfirmed4h.length - 2],
+      );
+      if (movementInput) {
+        const movement = evaluateBtcMovement(movementInput);
+        if (movement.triggered) {
+          const rs = useRiskStore.getState();
+          rs.setBtcCooldown(
+            Math.max(rs.btcCooldownUntil, now + BTC_COOLDOWN_CONSTANTS.ALT_COOLDOWN_MS),
+            movement.reason,
+          );
+          rs.setBtcSelfCooldown(
+            Math.max(rs.btcSelfCooldownUntil, now + BTC_COOLDOWN_CONSTANTS.SELF_COOLDOWN_MS),
+          );
+        }
+      }
+    }
+    // riskStore snapshot BURADAN SONRA alınıyor — yukarıdaki setBtcCooldown/
+    // setBtcSelfCooldown çağrıları store'u güncellemiş olabilir, PAIRS döngüsündeki
+    // (BTC dahil) composeScoreInput() çağrılarının aynı cycle içinde güncel
+    // değeri görmesi gerekiyor.
+    const riskStore = useRiskStore.getState();
 
     void (async () => {
     for (const pair of PAIRS) {

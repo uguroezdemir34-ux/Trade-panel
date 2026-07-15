@@ -17,6 +17,7 @@
  */
 
 import type { StorageLike } from "@/lib/trailing/persistence";
+import type { Candle } from "@/lib/okx/candles";
 
 export interface BtcCooldownState {
   /** Alt'lar için cooldown bitiş timestamp'i (ms). 0 → aktif değil. */
@@ -185,6 +186,30 @@ export class BtcCooldown {
       // bozuk JSON → state varsayılan kalır
     }
   }
+}
+
+/**
+ * Kapanmış (confirm===true) son iki 1H ve son iki 4H mumdan BtcMovementInput türetir.
+ * Yetersiz veri (mumlardan biri eksik) veya sıfır/negatif referans fiyat → null,
+ * caller tetikleme kontrolünü atlamalı.
+ *
+ * Sadece KAPANMIŞ mumlar kabul edilir (caller confirm filtresini kendisi uygular) —
+ * composeScoreInput.ts'teki repainting-fix disipliniyle tutarlı: açık/canlı bir mumun
+ * anlık aralığı bu eşik kontrolünü yanlış tetiklememeli.
+ */
+export function deriveBtcMovementInput(
+  last1h: Pick<Candle, "high" | "low" | "close"> | undefined,
+  prev1h: Pick<Candle, "close"> | undefined,
+  last4h: Pick<Candle, "close"> | undefined,
+  prev4h: Pick<Candle, "close"> | undefined,
+): BtcMovementInput | null {
+  if (!last1h || !prev1h || !last4h || !prev4h) return null;
+  if (prev1h.close <= 0 || prev4h.close <= 0 || last1h.low <= 0) return null;
+  return {
+    lastClosePct: Math.abs((last1h.close - prev1h.close) / prev1h.close) * 100,
+    lastRangePct: Math.abs((last1h.high - last1h.low) / last1h.low) * 100,
+    last4hPct: Math.abs((last4h.close - prev4h.close) / prev4h.close) * 100,
+  };
 }
 
 // Test ve diğer modüller için sabitleri dışa aç (read-only)
