@@ -192,6 +192,15 @@ export interface ScoreInput {
 
   /** MTF trend gate (1h/4h/1d EMA20 — computeMtfTrend çıktısı). no_data → gate atlanır. */
   mtfResult?: MtfTrendResult | null;
+
+  /**
+   * Bir önceki cycle'da/bar'da hesaplanan verdict — hysteresis smoothing için.
+   * undefined/null → smoothing atlanır (geriye dönük uyumlu, davranış değişmez).
+   * Kaynağı caller'a göre değişir: browser'da scoreStore.results[pair]?.verdict,
+   * backtest'te runBacktest() içindeki fonksiyon-lokal değişken, server-cron'da
+   * scorePrevBar()'ın zaten hesapladığı değer.
+   */
+  prevVerdict?: Verdict | null;
 }
 
 export interface ScorerWeights {
@@ -214,6 +223,42 @@ const BASE_MAX: ScorerWeights = {
 };
 
 export type Verdict = "go" | "wait" | "no";
+
+/**
+ * Hysteresis tamponu (puan) — PLACEHOLDER değer, kullanıcı netleştirene kadar geçici.
+ * "go" verdict'i, total effectiveThreshold'un bu kadar altına düşene kadar (VE
+ * blocks/softBlocks yokken) "wait"e geçmez. bkz. applyHysteresis().
+ */
+export const HYSTERESIS_MARGIN = 4;
+
+/**
+ * Hysteresis smoothing — SADECE "go → wait" geçişini, skor eşiğe hâlâ (margin
+ * içinde) yakınken yumuşatır. Hard/soft block kaynaklı wait/no ASLA ezilmez —
+ * bu bir güvenlik bypass'ı değil, sadece skor gürültüsünü söndürme mekanizması.
+ *
+ * Saf fonksiyon olarak computeScore()'un DIŞINA çıkarıldı ki tam skorlama
+ * pipeline'ına (8 kategori scorer + SR + sweep + regime) bağımlı olmadan,
+ * doğrudan total/effectiveThreshold/blocks/softBlocks değerleriyle test edilebilsin.
+ */
+export function applyHysteresis(
+  rawVerdict: Verdict,
+  prevVerdict: Verdict | null | undefined,
+  total: number,
+  effectiveThreshold: number,
+  blocks: readonly string[],
+  softBlocks: readonly string[],
+): { verdict: Verdict; smoothed: boolean } {
+  if (
+    rawVerdict === "wait" &&
+    prevVerdict === "go" &&
+    blocks.length === 0 &&
+    softBlocks.length === 0 &&
+    total >= effectiveThreshold - HYSTERESIS_MARGIN
+  ) {
+    return { verdict: "go", smoothed: true };
+  }
+  return { verdict: rawVerdict, smoothed: false };
+}
 
 export interface ScoreSubScores {
   trend: number;
@@ -252,6 +297,7 @@ export interface ScoreReasons {
   lockRamp?: string;
   pullback?: string;
   pullbackThreshold?: string;
+  hysteresis?: string;
 }
 
 export interface ScoreResult {
@@ -663,6 +709,13 @@ export function computeScore(input: ScoreInput): ScoreResult {
     verdict = "wait";
   } else {
     verdict = "no";
+  }
+
+  // ───── 11b. Hysteresis smoothing (bkz. applyHysteresis, HYSTERESIS_MARGIN placeholder) ─────
+  const hysteresisResult = applyHysteresis(verdict, input.prevVerdict, total, effectiveThreshold, blocks, softBlocks);
+  verdict = hysteresisResult.verdict;
+  if (hysteresisResult.smoothed) {
+    reasons.hysteresis = `🔁 Hysteresis: prevVerdict=go, total ${total.toFixed(1)} (eşik ${effectiveThreshold}, tampon ${HYSTERESIS_MARGIN}) → go korundu`;
   }
 
   // ───── 12. Adaptive cut explanation (panel satır 7985) ─────

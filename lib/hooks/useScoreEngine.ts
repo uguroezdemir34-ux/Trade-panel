@@ -294,7 +294,11 @@ export function useScoreEngine(): void {
           const srResult = detectSRLevels(c4hInd, c1hInd, input.px, direction, input.volRatio);
           const srModifier = srResult.modifier * SR_SCALE_FACTOR;
           const scoreT0 = isDebug() ? performance.now() : 0;
-          const result = computeScore({ ...input, srModifier, scorerWeights: scorerWeights ?? null, mtfResult });
+          // Hysteresis: bir önceki cycle'da bu pair için hesaplanan verdict.
+          // undefined/skip sentinel (null) → smoothing atlanır (computeScore
+          // içindeki applyHysteresis geriye dönük uyumlu tasarlandı).
+          const prevVerdict = useScoreStore.getState().results[pair as Pair]?.verdict ?? null;
+          const result = computeScore({ ...input, srModifier, scorerWeights: scorerWeights ?? null, mtfResult, prevVerdict });
           perfLog({ type: "score_compute", pair, durationMs: +((performance.now() - scoreT0).toFixed(2)) });
           setResult(pair as Pair, result, now);
         } catch {

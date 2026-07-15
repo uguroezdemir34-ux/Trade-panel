@@ -37,7 +37,7 @@ import type {
 } from "./types";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Trade } from "@/lib/bucket/stats";
-import type { ScoreInput } from "@/lib/score/orchestrator";
+import type { ScoreInput, Verdict } from "@/lib/score/orchestrator";
 import type { SweepInput } from "@/lib/score/scorers";
 
 /** Minimum bars of 1h context required before a signal is valid */
@@ -228,6 +228,11 @@ export async function runBacktest(
   let btcSelfUntil = 0;
   let btcReason = "";
 
+  // Hysteresis: fonksiyon-lokal — her runBacktest() çağrısı kendi stack frame'inde
+  // sıfırdan başlar, bu yüzden pariteler arası SIZINTI yapısal olarak imkansız
+  // (bkz. tests/integration/hysteresis.test.ts, "prevVerdict sızmıyor" testi).
+  let prevVerdict: Verdict | null = null;
+
   for (let i = WARMUP; i < candles1h.length; i++) {
     // Progress + yield to event loop every YIELD_EVERY bars
     if ((i - WARMUP) % YIELD_EVERY === 0) {
@@ -296,7 +301,12 @@ export async function runBacktest(
     const result = computeScore({
       ...composed,
       scorerWeights: config.scorerWeights ?? null,
+      prevVerdict,
     });
+    // "continue" ile atlanan bar YOK — bu satır her computeScore() çağrısından
+    // hemen sonra, herhangi bir erken çıkıştan ÖNCE çalışır. Böylece prevVerdict
+    // her zaman "en son GERÇEKTEN hesaplanan verdict"i temsil eder.
+    prevVerdict = result.verdict;
     if (result.verdict !== "go") continue;
     if (config.minScore && result.score < config.minScore) continue;
 

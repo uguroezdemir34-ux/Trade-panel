@@ -190,6 +190,7 @@ async function fetchAndScore(pair: Pair): Promise<{
   blocks: string[];
   softBlocks: string[];
   pullbackActive: boolean;
+  prevVerdict: "go" | "wait" | "no" | null;
 } | null> {
   const instId = `${pair}-USDT-SWAP`;
   const now = Date.now();
@@ -281,7 +282,13 @@ async function fetchAndScore(pair: Pair): Promise<{
   const srModifier = srResult.modifier * SR_SCALE_FACTOR;
 
   const mtfResult = computeMtfTrend(pair, candles1h, candles4h, candles1d);
-  const result = computeScore({ ...composed, srModifier, scorerWeights: null, mtfResult });
+  // Hysteresis: bir önceki bar'ın verdict'i. scorePrevBar() zaten burada gereken
+  // TÜM veriye (candles1h/4h/1d, fg, fundingRate) sahip — computeServerSignal()'ın
+  // AYRICA ikinci kez çağırmasına gerek yok, tek hesap burada yapılıp döndürülüyor
+  // (verimlilik yan etkisi: composeScoreInput+computeScore'un ikinci kez
+  // tekrarlanması önleniyor).
+  const prevVerdict = scorePrevBar(candles1h, candles4h, candles1d, pair, fg, fundingRate);
+  const result = computeScore({ ...composed, srModifier, scorerWeights: null, mtfResult, prevVerdict });
 
   return {
     candles1h,
@@ -304,6 +311,7 @@ async function fetchAndScore(pair: Pair): Promise<{
     blocks: result.blocks,
     softBlocks: result.softBlocks,
     pullbackActive: result.pullbackActive,
+    prevVerdict,
   };
 }
 
@@ -363,14 +371,11 @@ export async function computeServerSignal(pair: Pair): Promise<ServerSignalResul
     const current = await fetchAndScore(pair);
     if (!current) return null;
 
-    const prevVerdict = scorePrevBar(
-      current.candles1h,
-      current.candles4h,
-      current.candles1d,
-      pair,
-      current.fg,
-      current.fundingRate,
-    );
+    // prevVerdict artık fetchAndScore() içinde TEK SEFERDE hesaplanıyor (hem
+    // hysteresis'e beslemek hem burada dedup için kullanmak üzere) — burada
+    // AYRICA scorePrevBar() çağrılmıyor, composeScoreInput+computeScore'un
+    // ikinci kez tekrarlanmasını önlüyor.
+    const prevVerdict = current.prevVerdict;
     const isNewSignal = current.verdict === "go" && prevVerdict !== "go";
 
     return {
