@@ -50,14 +50,97 @@ import { evaluateBtcMovement, deriveBtcMovementInput, BTC_COOLDOWN_CONSTANTS } f
 import { computeTimeQuality } from "@/lib/market/timeQuality";
 import type { Pair } from "@/lib/constants/pairs";
 
-function yieldToEventLoop(): Promise<void> {
-  return new Promise<void>((resolve) => {
+/**
+ * IDLE SLOT SCHEDULING — cycle'ın 9 parite üzerindeki senkron işini böler.
+ *
+ * ÖNCEKİ davranış: her pair'den sonra KOŞULSUZ bir yield (requestIdleCallback
+ * timeout:50 / setTimeout(0) fallback) — cycle başına sabit 9 yield, cihazın
+ * o an gerçekten boş olup olmadığına bakılmaksızın.
+ *
+ * YENİ davranış: requestIdleCallback'in KENDİ IdleDeadline'ını kullanarak
+ * dinamik bütçeleme — bir idle slot'ta ne kadar boş zaman VARSA o kadar pair
+ * art arda (yield'siz) işlenir, sadece kalan süre azaldığında (veya
+ * didTimeout ile ZORLA çalıştırıldıysa) yeni bir idle slot istenir. Sabit
+ * "her N pair'de bir" batch'lemesi yerine bunun tercih edilme sebebi: cihaz/
+ * an'a göre KENDİLİĞİNDEN uyarlanıyor — sayfa geçişi gibi ana thread'in
+ * meşgul olduğu anlarda idle slot'lar zaten kısa/az geliyor (didTimeout
+ * sıklaşır) ve döngü otomatik olarak DAHA SIK yield eder (bugünkünden daha
+ * konservatif); cihaz gerçekten boşken (arka planda/etkileşimsizken) tek
+ * slot'ta birden fazla pair işlenip toplam yield sayısı azalır. Sabit "2-3
+ * pair'de bir" batch'i bu iki durumu ayırt edemez — meşgul anda da aynı
+ * sabit grup boyutunu kullanır, ki tam yaşanan donmanın sebebi bu olabilir.
+ *
+ * requestIdleCallback yoksa (fallback), gerçek bir IdleDeadline yok — bunun
+ * yerine küçük, sabit bir zaman bütçesi (FALLBACK_BUDGET_MS) `performance.now()`
+ * farkıyla taklit edilir; setTimeout(0) ile gerçek bir event-loop turu alınır.
+ */
+interface IdleDeadlineLike {
+  readonly didTimeout: boolean;
+  timeRemaining: () => number;
+}
+
+/** Yeni bir idle slot'ta, timeRemaining() bunun altına düşünce yeni slot istenir. */
+const MIN_REMAINING_MS = 3;
+/** requestIdleCallback yoksa (eski WebView vb.) bir "slot"un taklit edilen bütçesi. */
+const FALLBACK_BUDGET_MS = 8;
+
+function requestIdleSlot(): Promise<IdleDeadlineLike> {
+  return new Promise<IdleDeadlineLike>((resolve) => {
     if (typeof requestIdleCallback !== "undefined") {
-      requestIdleCallback(() => resolve(), { timeout: 50 });
+      requestIdleCallback((deadline) => resolve(deadline), { timeout: 50 });
     } else {
-      setTimeout(resolve, 0);
+      const start = performance.now();
+      setTimeout(() => {
+        resolve({
+          didTimeout: false,
+          timeRemaining: () => Math.max(0, FALLBACK_BUDGET_MS - (performance.now() - start)),
+        });
+      }, 0);
     }
   });
+}
+
+/**
+ * `items` üzerinde `work`'ü sırayla çalıştırır, idle-slot bütçelemesiyle
+ * pair'ler ARASINDA ne zaman yield edileceğine karar verir.
+ *
+ * BİLİNÇLİ TASARIM — İLK öğe hiçbir zaman bir idle slot beklemez: `deadline`
+ * ilk iterasyonda `null` başlar, ve slot isteme kararı işTEN SONRA verilir
+ * (aşağıdaki döngüde `await work(item)` her zaman `deadline` kontrolünden
+ * ÖNCE gelir). Yani ilk öğenin işi eskisi gibi (yieldToEventLoop() dönemi)
+ * KOŞULSUZ hemen başlar, gecikme YOK — dinamik bütçeleme SADECE öğeler
+ * ARASI bekleme kararını değiştiriyor, cycle'ın BAŞLAMA anını değil. (Bu,
+ * bir önceki turda "ilk requestIdleSlot() bekletmesi bilinçli mi, sayfa
+ * geçişinde cycle'ın başlangıcını geciktirir mi" sorusuna yanıt: O TASARIM
+ * bilinçli değildi, gözden kaçmıştı — burada düzeltildi. Artık cycle'ın
+ * başlaması, meşgul bir ana thread'de bile, eski koddaki kadar gecikmesiz.)
+ *
+ * requestIdleSlotFn/isCancelled test edilebilirlik için enjekte edilir —
+ * bkz. tests/integration/score-engine-idle-scheduling.test.ts (requestIdleCallback
+ * mock'lanıp karar dallarının — sabit yüksek/düşük timeRemaining, didTimeout — kaç
+ * kez yeni slot istediği doğrulanıyor, gerçek zamanlama değil karar mantığı test edilir).
+ */
+export async function runWithIdleBudget<T>(
+  items: readonly T[],
+  work: (item: T) => void | Promise<void>,
+  options: {
+    requestIdleSlotFn?: () => Promise<IdleDeadlineLike>;
+    isCancelled?: () => boolean;
+  } = {},
+): Promise<{ yieldCount: number }> {
+  const requestIdleSlotFn = options.requestIdleSlotFn ?? requestIdleSlot;
+  const isCancelled = options.isCancelled ?? (() => false);
+  let deadline: IdleDeadlineLike | null = null;
+  let yieldCount = 0;
+  for (const item of items) {
+    if (isCancelled()) break;
+    await work(item);
+    if (deadline === null || deadline.didTimeout || deadline.timeRemaining() <= MIN_REMAINING_MS) {
+      deadline = await requestIdleSlotFn();
+      yieldCount++;
+    }
+  }
+  return { yieldCount };
 }
 
 // Skip-retry fast path throttle (modül seviyesi — candleStore equality fn'i
@@ -188,8 +271,7 @@ export function useScoreEngine(): void {
     const riskStore = useRiskStore.getState();
 
     void (async () => {
-    for (const pair of PAIRS) {
-      if (cancelled) return;
+    const workPair = (pair: Pair): void => {
       const candles4h = candles[`${pair}_4h`] ?? EMPTY_CANDLES;
       const candles1h = candles[`${pair}_1h`] ?? EMPTY_CANDLES;
       const candles15m = candles[`${pair}_15m`] ?? EMPTY_CANDLES;
@@ -311,9 +393,22 @@ export function useScoreEngine(): void {
         // "never scored" — prevents perpetual re-trigger on data-starved pairs.
         setSkipped(pair as Pair, now);
       }
-      await yieldToEventLoop();
-    }
-    perfLog({ type: "engine_cycle", totalMs: +((performance.now() - engineT0).toFixed(1)), pairs: PAIRS.length });
+    };
+
+    // runWithIdleBudget: ilk pair yield'siz hemen başlar (deadline null →
+    // "hemen çalıştır" dalı), sonraki pair'ler arasında idle-slot bütçesine
+    // göre dinamik yield kararı verilir — bkz. fonksiyon üstü yorum.
+    const { yieldCount } = await runWithIdleBudget(PAIRS, workPair, { isCancelled: () => cancelled });
+    // Eski koddaki "if (cancelled) return;" davranışı korunuyor — cancel
+    // olduysa final perfLog de atlanır (runWithIdleBudget içindeki `break`
+    // bunu kendi başına yapmaz, döngüden çıkıp fonksiyonu normal tamamlar).
+    if (cancelled) return;
+    perfLog({
+      type: "engine_cycle",
+      totalMs: +((performance.now() - engineT0).toFixed(1)),
+      pairs: PAIRS.length,
+      yieldCount,
+    });
     })();
     return () => { cancelled = true; };
   }, [candles, setResult, scorerWeights]);
