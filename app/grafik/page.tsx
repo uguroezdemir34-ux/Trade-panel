@@ -588,24 +588,24 @@ export default function GrafikPage() {
                 resetKey={`${pair}_${timeframe}`}
                 currentPrice={livePrice ?? undefined}
               />
+            {/* AdvancedPositionCard — bilinçli olarak eski konumuna (chart
+                canvas'ının İÇİNDE, absolute) döndürüldü. Bir önceki turda
+                canvas'ın dışına, grafiğin altına taşınmıştı (yapısal olarak
+                mumlarla asla çakışmayan bir çözümdü) — o karardan bilerek
+                vazgeçildi: mumlarla zaman zaman çakışması kabul edilen bir
+                ödün, "boş köşe" heuristiğine tekrar dönülmüyor, sabit
+                top-2 + left-2 yeterli görüldü. left-2 (sol üst) — ilk
+                denemede "fiyat eksenine yakın" ifadesinden right-16
+                seçilmişti, sonra sol üst olarak netleştirildi (en son
+                denenen top-left konumu). max-w-[85%] aynı CSS gerekçeyle
+                (wrapper'ın containing block'u definite genişlikte) korundu.
+                PositionOverlayBar hiç dokunulmadan üstte kaldı. */}
+            {isOverlayActive && (
+              <div className="absolute top-2 left-2 max-w-[85%] pointer-events-none">
+                <AdvancedPositionCard pair={pair} />
+              </div>
+            )}
           </div>
-          {/* AdvancedPositionCard — geri getirildi, ama chart canvas'ının
-              İÇİNDE (absolute, mumların üzerinde) DEĞİL: bu `.relative`
-              wrapper'ın DIŞINDA, normal doküman akışında, grafiğin ALTINDA.
-              Önceki iki deneme (top-right, sonra top-left) sabit piksel
-              köşesiydi — fiyat hareket ettikçe er ya da geç mutlaka bir
-              mumun üzerine biniyordu. Burada artık chart'ın koordinat
-              alanının hiç parçası değil, PositionOverlayBar'ın üstte
-              durması gibi ama altta — yapısal olarak çakışması imkansız.
-              PositionOverlayBar bilinçli olarak KALDI (kısa özet üstte,
-              detaylı kart altta — farklı bilgi yoğunluğu, ikisi birlikte).
-              AdvancedPositionCard'ın kendi iç tasarımına (font, opaklık,
-              SIZE formatlaması, ENTRY/LIQ/SIZE grid'i) dokunulmadı. */}
-          {isOverlayActive && (
-            <div className="mt-2">
-              <AdvancedPositionCard pair={pair} />
-            </div>
-          )}
         </div>
 
         {/* Secondary chart (split view) */}
