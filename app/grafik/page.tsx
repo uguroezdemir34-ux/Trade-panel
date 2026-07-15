@@ -11,7 +11,6 @@ import { useFocusStore } from "@/lib/store/focusStore";
 import { useT } from "@/lib/i18n/context";
 import { ChartControls, type ChartClickMode } from "@/components/grafik/ChartControls";
 import { ChartLegend } from "@/components/grafik/ChartLegend";
-import { PositionOverlayBar } from "@/components/grafik/PositionOverlayBar";
 import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
 import { AdvancedPositionCard } from "@/components/grafik/AdvancedPositionCard";
 import { GuardianPanel } from "@/components/grafik/GuardianPanel";
@@ -489,7 +488,14 @@ export default function GrafikPage() {
         showSr={showSr}
       />
 
-      <PositionOverlayBar pair={pair} />
+      {/* PositionOverlayBar buradan kaldırıldı — AdvancedPositionCard geri
+          geldiği için (chart canvas'ının içinde, LONG/SHORT + PnL $/% +
+          Entry/Liq/Size + kaldıraç hepsini gösteriyor) bu üst şerit aynı
+          bilgiyi tekrar ediyordu. Component dosyası SİLİNMEDİ, sadece bu
+          sayfadaki kullanımı kaldırıldı. Kendi root div'inin dış margin'i
+          yoktu (sadece iç px-3 py-2), bu yüzden kaldırılması boşta kalan
+          bir margin/gap bırakmıyor — ChartLegend ile altındaki blok arası
+          boşluk, ikisinin kendi (değişmeyen) spacing'iyle aynı kalıyor. */}
 
       {/* Active mode indicator + drawn lines count */}
       {(clickMode !== "none" || drawnLines.length > 0) && (
