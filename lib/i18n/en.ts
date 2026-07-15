@@ -987,6 +987,7 @@ export const en: Dictionary = {
       scoreBuckets: "Score Bucket Analysis",
       scoreBucketsDesc: "win rate per range",
       noScoredTrades: "No scored trades yet",
+      noScoreDataNote: "{n} trades excluded from this analysis — imported via OKX SYNC, no score data available.",
       dirBreakdown: "Direction Breakdown",
       noData: "No data",
       exitDist: "Exit Distribution",
@@ -1415,6 +1416,10 @@ export const en: Dictionary = {
     applyUpdates: "Apply {count} update(s)",
     allClear: "No mismatches found",
     lastSync: "Last sync",
+    importOne: "Import",
+    importAll: "Import All ({count})",
+    imported: "✓ Imported",
+    importApproxNote: "Imported trades have entry price/open time approximated from OKX data (not exact).",
   },
 
   copyTrading: {

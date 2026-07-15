@@ -987,6 +987,7 @@ export const tr: Dictionary = {
       scoreBuckets: "Skor Aralığı Analizi",
       scoreBucketsDesc: "aralığa göre kazanma oranı",
       noScoredTrades: "Henüz skorlu işlem yok",
+      noScoreDataNote: "{n} işlem skor verisi olmadığı için (OKX SYNC ile içe aktarıldı) bu analizin dışında tutuldu.",
       dirBreakdown: "Yön Dağılımı",
       noData: "Veri yok",
       exitDist: "Çıkış Dağılımı",
@@ -1415,6 +1416,10 @@ export const tr: Dictionary = {
     applyUpdates: "{count} güncelleme uygula",
     allClear: "Uyumsuzluk bulunamadı",
     lastSync: "Son senkronizasyon",
+    importOne: "İçe Aktar",
+    importAll: "Tümünü İçe Aktar ({count})",
+    imported: "✓ İçe Aktarıldı",
+    importApproxNote: "İçe aktarılan işlemlerde giriş fiyatı/açılış zamanı OKX verisinden yaklaşık olarak türetilir (kesin değil).",
   },
 
   copyTrading: {

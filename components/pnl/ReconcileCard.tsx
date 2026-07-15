@@ -1,7 +1,10 @@
 "use client";
 
+import { useMemo, useState } from "react";
 import { useTradeReconciliation } from "@/lib/hooks/useTradeReconciliation";
+import { useTradesStore } from "@/lib/store/tradesStore";
 import { useT } from "@/lib/i18n/context";
+import type { ReconcileOrphan } from "@/lib/reconcile/reconciler";
 
 function fmtPnl(usd: number): string {
   const sign = usd >= 0 ? "+" : "";
@@ -17,9 +20,38 @@ function fmtDate(ms: number): string {
 export function ReconcileCard() {
   const t = useT();
   const { status, result, errorMsg, syncNow, applyUpdates } = useTradeReconciliation();
+  const importOrphanTrade = useTradesStore((s) => s.importOrphanTrade);
+  const importOrphanTrades = useTradesStore((s) => s.importOrphanTrades);
+  // Zustand'ın kendi trades[]'i "zaten içe aktarıldı mı" için tek gerçek kaynak —
+  // orderId eşleşmesi kalıcı (sync/reload sonrası da doğru), ayrı bir local
+  // Set tutmaya gerek yok. Set hesaplaması useMemo'da — selector'da inline
+  // `new Set(...)` her store bildirimi için gereksiz yeniden hesap/render'a yol açardı.
+  const trades = useTradesStore((s) => s.trades);
+  const importedOrderIds = useMemo(
+    () => new Set(trades.map((t) => t.orderId).filter((id): id is string => id != null)),
+    [trades],
+  );
+  const [importing, setImporting] = useState(false);
 
   const pendingUpdates = result?.matched.filter((m) => m.needsUpdate).length ?? 0;
   const orphanCount = result?.orphans.length ?? 0;
+  const importableOrphans = (result?.orphans ?? []).filter(
+    (o) => o.pair !== null && o.direction !== null && !importedOrderIds.has(o.ordId),
+  );
+
+  function handleImportOne(o: ReconcileOrphan): void {
+    importOrphanTrade(o);
+  }
+
+  function handleImportAll(): void {
+    if (importableOrphans.length === 0) return;
+    setImporting(true);
+    try {
+      importOrphanTrades(importableOrphans);
+    } finally {
+      setImporting(false);
+    }
+  }
 
   return (
     <div className="rounded-lg border border-border bg-bg-card p-4 flex flex-col gap-3">
@@ -120,30 +152,69 @@ export function ReconcileCard() {
       {/* Orphans */}
       {result && result.orphans.length > 0 && (
         <div className="flex flex-col gap-1">
-          <p className="font-mono text-2xs text-text-t4 uppercase tracking-wider">
-            {t("reconcile.orphanOrders")}
-          </p>
-          <div className="max-h-40 overflow-y-auto flex flex-col gap-1">
-            {result.orphans.map((o) => (
-              <div
-                key={o.ordId}
-                className="flex items-center justify-between rounded bg-surface-s1 px-2 py-1"
+          <div className="flex items-center justify-between">
+            <p className="font-mono text-2xs text-text-t4 uppercase tracking-wider">
+              {t("reconcile.orphanOrders")}
+            </p>
+            {importableOrphans.length > 0 && (
+              <button
+                onClick={handleImportAll}
+                disabled={importing}
+                className="rounded px-2 py-0.5 font-mono text-2xs tracking-wider border border-border
+                  text-text-t2 hover:text-text-t1 hover:border-brand transition-colors
+                  disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <span className="font-mono text-2xs text-text-t3">
-                  {o.pair ?? "?"} {o.direction ?? "?"}
-                </span>
-                <span className="font-mono text-2xs text-text-t2">
-                  {fmtPnl(o.pnlUsd)}
-                </span>
-                <span className="font-mono text-2xs text-text-t4">
-                  {fmtDate(o.filledAtMs)}
-                </span>
-              </div>
-            ))}
+                {t("reconcile.importAll", { count: String(importableOrphans.length) })}
+              </button>
+            )}
+          </div>
+          <div className="max-h-40 overflow-y-auto flex flex-col gap-1">
+            {result.orphans.map((o) => {
+              const alreadyImported = importedOrderIds.has(o.ordId);
+              const canImport = o.pair !== null && o.direction !== null;
+              return (
+                <div
+                  key={o.ordId}
+                  className="flex items-center justify-between gap-2 rounded bg-surface-s1 px-2 py-1"
+                >
+                  <span className="font-mono text-2xs text-text-t3 shrink-0">
+                    {o.pair ?? "?"} {o.direction ?? "?"}
+                  </span>
+                  <span className="font-mono text-2xs text-text-t2 shrink-0">
+                    {fmtPnl(o.pnlUsd)}
+                  </span>
+                  <span className="font-mono text-2xs text-text-t4 shrink-0">
+                    {fmtDate(o.filledAtMs)}
+                  </span>
+                  <span className="ml-auto shrink-0">
+                    {alreadyImported ? (
+                      <span className="font-mono text-2xs text-signal-green">
+                        {t("reconcile.imported")}
+                      </span>
+                    ) : canImport ? (
+                      <button
+                        onClick={() => handleImportOne(o)}
+                        className="rounded px-2 py-0.5 font-mono text-2xs tracking-wider border border-border
+                          text-text-t2 hover:text-text-t1 hover:border-brand transition-colors"
+                      >
+                        {t("reconcile.importOne")}
+                      </button>
+                    ) : (
+                      <span className="font-mono text-2xs text-text-t4">—</span>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
           </div>
           <p className="font-mono text-2xs text-text-t4">
             {t("reconcile.orphanHint")}
           </p>
+          {importedOrderIds.size > 0 && (
+            <p className="font-mono text-2xs text-text-t4">
+              {t("reconcile.importApproxNote")}
+            </p>
+          )}
         </div>
       )}
 

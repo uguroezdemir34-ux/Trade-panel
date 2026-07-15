@@ -20,7 +20,7 @@ import type {
   CloseTradeInput,
   TradeStatus,
 } from "@/lib/trades/types";
-import type { ReconcileMatch } from "@/lib/reconcile/reconciler";
+import type { ReconcileMatch, ReconcileOrphan } from "@/lib/reconcile/reconciler";
 import {
   createPendingTrade,
   confirmOpen,
@@ -85,7 +85,7 @@ const tradeSnapshotSchema = z.object({
   takeProfit1: z.number().optional(),
   takeProfit2: z.number().optional(),
   riskAmountUsd: z.number(),
-  source: z.enum(["manual", "bot"]).optional(),
+  source: z.enum(["manual", "bot", "reconcile-import"]).optional(),
   entryContext: entryContextSchema,
   exit: exitInfoSchema.optional(),
   notes: z.string().optional(),
@@ -197,6 +197,34 @@ interface TradesStoreState {
    * For closed trades with P&L delta > $0.01: updates pnlUsd.
    */
   patchFromReconcile: (patches: ReconcileMatch[]) => void;
+
+  /**
+   * OKX SYNC'te bulunan, yerel kaydı olmayan bir kapanış emrini ("orphan")
+   * tradesStore'a closed bir TradeSnapshot olarak içe aktarır — bkz.
+   * lib/reconcile/reconciler.ts ReconcileOrphan.
+   *
+   * OKX'in orders-history uç noktası SADECE kapanış emrini döndürüyor —
+   * açılış emri (entryPrice/openedAt/leverage/stopPrice) bu veride YOK ve
+   * ayrıca sorgulanmıyor. entryPrice, pnlUsd/qty/avgPx'ten cebirsel olarak
+   * GERİYE doğru türetiliyor (fee hariç, yaklaşık) — patchFromReconcile'daki
+   * pnlPct formülüyle aynı yönde. openedAt bilinmediği için filledAtMs sentinel
+   * olarak kullanılıyor (holdingSec doğal olarak 0 çıkar — "bilinmiyor" anlamına
+   * gelir, uydurma bir süre üretilmez). leverage/stopPrice/riskAmountUsd de
+   * bilinmediği için sentinel (riskAmountUsd=0 → rMultiple hiç hesaplanmaz,
+   * omit edilir). entryContext.score/verdict skor motoruna hiç dokunmadan
+   * sentinel değerlerle dolduruluyor (score:0, verdict:"no") — source:
+   * "reconcile-import" bu trade'lerin GERÇEK bir skor kararından gelmediğini
+   * işaretliyor, lib/pnl/calibration.ts bu bayrağı görüp scoreBuckets'tan
+   * hariç tutuyor (skor analizini kirletmesin diye).
+   *
+   * Dedup: aynı ordId zaten trades[].orderId içinde varsa hiçbir şey yapmaz,
+   * null döner (idempotent — "Tümünü İçe Aktar" tekrar tıklanabilir).
+   * pair/direction null ise (OKX instId tanınmadı) içe aktarılamaz, null döner.
+   */
+  importOrphanTrade: (orphan: ReconcileOrphan) => TradeSnapshot | null;
+
+  /** importOrphanTrade'i bir listeye uygular — kaç tanesinin gerçekten eklendiğini döndürür. */
+  importOrphanTrades: (orphans: ReconcileOrphan[]) => number;
 
   /**
    * Dual-layer SL/TP sync — Layer 2 (app side).
@@ -429,6 +457,69 @@ export const useTradesStore = create<TradesStoreState>((set, get) => ({
       saveToStorage(STORAGE_KEY, next);
       set({ trades: next });
     }
+  },
+
+  importOrphanTrade: (orphan) => {
+    if (orphan.pair === null || orphan.direction === null) return null;
+    const current = get().trades;
+    if (current.some((t) => t.orderId === orphan.ordId)) return null; // zaten içe aktarılmış
+
+    const direction = orphan.direction;
+    const qty = orphan.sz;
+    const exitPrice = orphan.avgPx;
+    // Cebirsel geriye türetim (fee hariç, yaklaşık) — patchFromReconcile'daki
+    // pnlPct formülüyle tutarlı: pnlUsd = (exitPrice-entryPrice)*qty*sign
+    const entryPrice =
+      qty > 0
+        ? exitPrice - (orphan.pnlUsd / qty) * (direction === "LONG" ? 1 : -1)
+        : exitPrice;
+    const pnlPct =
+      entryPrice > 0
+        ? ((exitPrice - entryPrice) / entryPrice) * (direction === "LONG" ? 1 : -1) * 100
+        : 0;
+
+    const snap: TradeSnapshot = {
+      id: `import_${orphan.ordId}`,
+      orderId: orphan.ordId,
+      pair: orphan.pair,
+      direction,
+      status: "closed",
+      source: "reconcile-import",
+      // openedAt bilinmiyor — filledAtMs sentinel (holdingSec=0 "bilinmiyor" demek)
+      openedAt: orphan.filledAtMs,
+      entryPrice,
+      qty,
+      leverage: 1, // bilinmiyor — sentinel
+      stopPrice: entryPrice, // bilinmiyor — sentinel (riskAmountUsd=0 olduğu için hiçbir risk hesabını etkilemez)
+      riskAmountUsd: 0,
+      entryContext: {
+        score: 0,
+        verdict: "no",
+        reasonText: "İçe aktarılan işlem — OKX geçmişi, skor verisi yok",
+      },
+      exit: {
+        closedAt: orphan.filledAtMs,
+        exitPrice,
+        reason: "manual", // OKX verisi TP/SL/manuel ayrımını vermiyor — en dürüst varsayılan
+        pnlUsd: orphan.pnlUsd,
+        pnlPct,
+        holdingSec: 0, // openedAt sentinel olduğu için doğal sonuç — uydurma süre yok
+        // rMultiple: riskAmountUsd=0 olduğu için hesaplanamıyor, omit edildi
+      },
+    };
+
+    const next = trimToMax([...current, snap]);
+    saveToStorage(STORAGE_KEY, next);
+    set({ trades: next });
+    return snap;
+  },
+
+  importOrphanTrades: (orphans) => {
+    let count = 0;
+    for (const o of orphans) {
+      if (get().importOrphanTrade(o) !== null) count++;
+    }
+    return count;
   },
 
   updateTradeSlTp: (id, slPrice, tp1Price, tp2Price) => {

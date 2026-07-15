@@ -80,7 +80,13 @@ function WinBar({ rate, count }: { rate: number; count: number }) {
 
 // ── Score Bucket Table ────────────────────────────────────────────────────────
 
-function ScoreBucketSection({ buckets }: { buckets: CalibrationStats["scoreBuckets"] }) {
+function ScoreBucketSection({
+  buckets,
+  noScoreDataCount,
+}: {
+  buckets: CalibrationStats["scoreBuckets"];
+  noScoreDataCount: number;
+}) {
   const t = useT();
   const active = buckets.filter((b) => b.tradeCount > 0);
   const maxCount = Math.max(...buckets.map((b) => b.tradeCount), 1);
@@ -91,6 +97,12 @@ function ScoreBucketSection({ buckets }: { buckets: CalibrationStats["scoreBucke
         <SectionTitle>{t("pnl.parameterAudit.scoreBuckets")}</SectionTitle>
         <span className="text-text-t4 font-mono text-2xs">{t("pnl.parameterAudit.scoreBucketsDesc")}</span>
       </div>
+
+      {noScoreDataCount > 0 && (
+        <div className="mb-2 text-text-t4 font-mono text-2xs">
+          {t("pnl.parameterAudit.noScoreDataNote", { n: noScoreDataCount })}
+        </div>
+      )}
 
       {active.length === 0 ? (
         <EmptyNote label={t("pnl.parameterAudit.noScoredTrades")} />
@@ -407,7 +419,7 @@ export function ParameterAudit({ stats }: Props): React.ReactElement {
       </div>
 
       {/* Score buckets — full width */}
-      <ScoreBucketSection buckets={stats.scoreBuckets} />
+      <ScoreBucketSection buckets={stats.scoreBuckets} noScoreDataCount={stats.noScoreDataCount} />
 
       {/* Direction + Pair — side by side */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

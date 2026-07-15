@@ -49,6 +49,14 @@ export interface FgZone {
 
 export interface CalibrationStats {
   totalTrades: number;
+  /**
+   * source==="reconcile-import" trade sayısı — bunlar OKX SYNC ile içe
+   * aktarılmış, gerçek bir skor motoru kararından GEÇMEMİŞ trade'ler
+   * (bkz. lib/store/tradesStore.ts importOrphanTrade()). scoreBuckets bu
+   * trade'leri hariç tutuyor (sentinel score:0 gerçek düşük skormuş gibi
+   * kirletmesin diye) — totalTrades'e dahiller, sadece scoreBuckets'a değil.
+   */
+  noScoreDataCount: number;
   scoreBuckets: ScoreBucket[];
   directionStats: SegmentStats[];
   pairStats: SegmentStats[];
@@ -99,6 +107,13 @@ export function computeCalibrationStats(
 
   const totalTrades = closed.length;
 
+  // reconcile-import trade'leri gerçek bir skor kararından geçmedi (sentinel
+  // score:0) — scoreBuckets'ı kirletmesinler diye ayrı tutuluyor. Diğer tüm
+  // bölümler (direction/pair/exit/fg/counterTrend) `closed`'ı kullanmaya
+  // devam ediyor — pnl/direction/pair gerçek veri, sadece skor sentinel.
+  const scoredClosed = closed.filter((t) => t.source !== "reconcile-import");
+  const noScoreDataCount = totalTrades - scoredClosed.length;
+
   // ── Score Buckets ──
   const BUCKET_DEFS: { label: string; min: number; max: number }[] = [
     { label: "<80", min: 0, max: 79 },
@@ -109,7 +124,7 @@ export function computeCalibrationStats(
   ];
 
   const scoreBuckets: ScoreBucket[] = BUCKET_DEFS.map(({ label, min, max }) => {
-    const group = bucketTrades(closed, min, max);
+    const group = bucketTrades(scoredClosed, min, max);
     const wins = group.filter((t) => (t.exit?.pnlUsd ?? 0) > 0);
     const totalPnl = group.reduce((s, t) => s + (t.exit?.pnlUsd ?? 0), 0);
     const rValues = group
@@ -205,6 +220,7 @@ export function computeCalibrationStats(
 
   return {
     totalTrades,
+    noScoreDataCount,
     scoreBuckets,
     directionStats,
     pairStats,

@@ -32,6 +32,8 @@ export interface ReconcileOrphan {
   feeUsd: number;
   avgPx: number;
   filledAtMs: number;
+  /** Kapanış emrinin miktarı — tradesStore'a içe aktarırken qty için gerekli. */
+  sz: number;
 }
 
 export interface ReconcileResult {
@@ -96,6 +98,7 @@ export function reconcile(
       feeUsd: o.feeUsd,
       avgPx: o.avgPx,
       filledAtMs: o.filledAtMs,
+      sz: o.sz,
     }));
 
   return { matched, orphans, syncedAt: Date.now() };

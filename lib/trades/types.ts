@@ -109,8 +109,13 @@ export interface TradeSnapshot {
   pair: Pair;
   direction: "LONG" | "SHORT";
   status: TradeStatus;
-  /** Trade kaynağı — bot otomatik emir veya kullanıcı manuel */
-  source?: "manual" | "bot";
+  /**
+   * Trade kaynağı — bot otomatik emir, kullanıcı manuel (uygulama üzerinden),
+   * veya OKX SYNC ile orphan olarak içe aktarılmış (uygulama dışında/manuel
+   * olarak borsada açılmış, entryPrice/openedAt/leverage YAKLAŞIK/bilinmiyor —
+   * bkz. lib/store/tradesStore.ts importOrphanTrade()).
+   */
+  source?: "manual" | "bot" | "reconcile-import";
 
   // Entry
   openedAt: number;
