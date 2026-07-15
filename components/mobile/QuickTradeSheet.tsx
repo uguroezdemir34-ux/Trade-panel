@@ -23,6 +23,7 @@ import { getAdapter } from "@/lib/exchange";
 import { useHaptics } from "@/lib/hooks/useHaptics";
 import { EXECUTION_ENABLED } from "@/lib/config/execution";
 import { useT } from "@/lib/i18n/context";
+import { LiveTradingConsentModal } from "./LiveTradingConsentModal";
 
 const DEFAULT_LEVERAGE = 10;
 const DEFAULT_SL_PCT = 0.02; // %2 varsayılan SL
@@ -37,9 +38,13 @@ export function QuickTradeSheet(): React.ReactElement {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [consentModalOpen, setConsentModalOpen] = useState(false);
 
   const haptics = useHaptics();
   const demoMode = useSettingsStore((s) => s.demoMode);
+  const liveTradingConsentAccepted = useSettingsStore(
+    (s) => s.liveTradingConsentAccepted,
+  );
   const freeBalance = useAccountStore((s) => s.free);
   const openPending = useTradesStore((s) => s.openPending);
   const confirmTradeOpen = useTradesStore((s) => s.confirmTradeOpen);
@@ -63,6 +68,20 @@ export function QuickTradeSheet(): React.ReactElement {
     setError(null);
     setSuccess(false);
   }, [haptics]);
+
+  /**
+   * FAB tıklaması — EXECUTION_ENABLED true olsa bile, kullanıcı-bazlı rıza
+   * (liveTradingConsentAccepted) verilmemişse trade sheet'i AÇMAZ, bunun
+   * yerine rıza modalını açar. Bkz. dosya başı LiveTradingConsentModal yorumu.
+   */
+  const handleFabClick = useCallback(() => {
+    if (!liveTradingConsentAccepted) {
+      haptics.light();
+      setConsentModalOpen(true);
+      return;
+    }
+    handleOpen();
+  }, [liveTradingConsentAccepted, haptics, handleOpen]);
 
   const handleClose = useCallback(() => {
     haptics.light();
@@ -155,6 +174,19 @@ export function QuickTradeSheet(): React.ReactElement {
     confirmTradeOpen,
   ]);
 
+  /**
+   * Gönder butonunun gerçek onClick'i — rıza verilmemişse handleSubmit()'i
+   * HİÇ ÇAĞIRMAZ, rıza modalını açar (bkz. handleFabClick ile aynı desen).
+   */
+  const handleSubmitClick = useCallback(() => {
+    if (!liveTradingConsentAccepted) {
+      haptics.light();
+      setConsentModalOpen(true);
+      return;
+    }
+    void handleSubmit();
+  }, [liveTradingConsentAccepted, haptics, handleSubmit]);
+
   // ESC ile kapat
   useEffect(() => {
     if (!open) return;
@@ -167,23 +199,28 @@ export function QuickTradeSheet(): React.ReactElement {
 
   return (
     <>
-      {/* FAB — sağ alt köşe, bottom nav üstünde — sinyal modda gizle */}
+      {/* FAB — sağ alt köşe, bottom nav üstünde — sinyal modda gizle.
+          Rıza verilmemişse (liveTradingConsentAccepted=false) DEVRE DIŞI
+          bırakılmıyor — tıklanınca rıza modalını açıyor (bkz. handleFabClick) — */}
       {EXECUTION_ENABLED && <button
-        onClick={handleOpen}
+        onClick={handleFabClick}
         className={[
           "fixed z-50 flex items-center justify-center",
           "w-14 h-14 rounded-full shadow-2xl",
-          "bg-brand text-white text-2xl font-bold",
+          "text-2xl font-bold",
           "transition-transform active:scale-95",
           "lg:hidden", // masaüstünde gizle
+          liveTradingConsentAccepted
+            ? "bg-brand text-white"
+            : "bg-surface-2 text-text-t3 border border-border opacity-70",
         ].join(" ")}
         style={{
           bottom: "calc(64px + env(safe-area-inset-bottom) + 16px)",
           right: "16px",
         }}
-        aria-label="Hızlı İşlem"
+        aria-label={liveTradingConsentAccepted ? "Hızlı İşlem" : "Canlı İşlem Rızası Gerekli"}
       >
-        +
+        {liveTradingConsentAccepted ? "+" : "🔒"}
       </button>}
 
       {/* Overlay */}
@@ -364,21 +401,26 @@ export function QuickTradeSheet(): React.ReactElement {
             </div>
           )}
 
-          {/* Gönder butonu */}
+          {/* Gönder butonu — rıza verilmemişse (native disabled DEĞİL,
+              görsel kilitli stil) handleSubmitClick rıza modalını açar */}
           <button
-            onClick={() => void handleSubmit()}
+            onClick={handleSubmitClick}
             disabled={loading || qty <= 0 || currentPrice <= 0}
             className={[
               "w-full py-4 rounded-xl font-mono text-sm font-bold",
               "transition-all active:scale-[0.98]",
-              success
+              !liveTradingConsentAccepted
+                ? "bg-surface-2 text-text-t3 border border-border"
+                : success
                 ? "bg-emerald-500 text-white"
                 : direction === "LONG"
                 ? "bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 text-white"
                 : "bg-rose-500 hover:bg-rose-400 disabled:opacity-40 text-white",
             ].join(" ")}
           >
-            {success
+            {!liveTradingConsentAccepted
+              ? "🔒 Önce Canlı İşlem Rızasını Onaylayın"
+              : success
               ? "✅ İşlem Açıldı"
               : loading
               ? "İşleniyor..."
@@ -395,6 +437,11 @@ export function QuickTradeSheet(): React.ReactElement {
           </p>
         </div>
       </div>
+
+      <LiveTradingConsentModal
+        open={consentModalOpen}
+        onClose={() => setConsentModalOpen(false)}
+      />
     </>
   );
 }

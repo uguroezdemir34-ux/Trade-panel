@@ -63,6 +63,16 @@ const settingsSchema = z.object({
   }).nullable(),
   activeExchange: exchangeSchema,
   discordWebhookUrl: z.string().nullable(),
+  /**
+   * Kullanıcı-bazlı canlı-trade rıza flag'i (Adım 3 — Hukuki Koruma Katmanı).
+   * EXECUTION_ENABLED (lib/config/execution.ts) global/build-time bir kill
+   * switch — bu ise onun ÜZERİNE binen, kullanıcı bazlı bir gate. İkisi de
+   * true olmadan QuickTradeSheet gerçek emir göndermez (bkz. dosya yorumu).
+   * Ayrıca timestamp'li ham kanıt "qx_consent_v1" localStorage key'inde
+   * DisclaimerModal'ın "qx_disclaimer_v1" deseniyle AYNI şekilde tutulur —
+   * bu boolean SADECE UI gate'i, hukuki kanıt o ayrı kayıtta.
+   */
+  liveTradingConsentAccepted: z.boolean(),
 });
 
 export type SettingsData = z.infer<typeof settingsSchema>;
@@ -86,6 +96,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   scorerWeights: null,
   activeExchange: "okx" as ActiveExchange,
   discordWebhookUrl: null,
+  liveTradingConsentAccepted: false,
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -107,6 +118,7 @@ const KEYS = {
   scorerWeights: "scorer_weights",
   activeExchange: "active_exchange",
   discordWebhookUrl: "discord_webhook_url",
+  liveTradingConsentAccepted: "live_trading_consent_accepted",
 } as const;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -129,6 +141,7 @@ interface SettingsStoreState extends SettingsData {
   setAudioAlertsEnabled: (on: boolean) => void;
   setActiveExchange: (e: ActiveExchange) => void;
   setDiscordWebhookUrl: (url: string | null) => void;
+  setLiveTradingConsentAccepted: (on: boolean) => void;
   /** Tüm ayarları varsayılana sıfırla */
   reset: () => void;
   /** localStorage'tan tekrar yükle (SSR sonrası hydrate için) */
@@ -209,6 +222,11 @@ export function loadSettings(): SettingsData {
       KEYS.discordWebhookUrl,
       DEFAULT_SETTINGS.discordWebhookUrl,
       z.string().nullable(),
+    ),
+    liveTradingConsentAccepted: loadFromStorage<boolean>(
+      KEYS.liveTradingConsentAccepted,
+      DEFAULT_SETTINGS.liveTradingConsentAccepted,
+      z.boolean(),
     ),
   };
 }
@@ -297,6 +315,11 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ discordWebhookUrl: url });
   },
 
+  setLiveTradingConsentAccepted: (on) => {
+    saveToStorage(KEYS.liveTradingConsentAccepted, on);
+    set({ liveTradingConsentAccepted: on });
+  },
+
   reset: () => {
     // Sadece state'i sıfırla, localStorage'a yaz
     saveToStorage(KEYS.lastTab, DEFAULT_SETTINGS.lastTab);
@@ -316,6 +339,10 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     saveToStorage(KEYS.scorerWeights, DEFAULT_SETTINGS.scorerWeights);
     saveToStorage(KEYS.activeExchange, DEFAULT_SETTINGS.activeExchange);
     saveToStorage(KEYS.discordWebhookUrl, DEFAULT_SETTINGS.discordWebhookUrl);
+    saveToStorage(
+      KEYS.liveTradingConsentAccepted,
+      DEFAULT_SETTINGS.liveTradingConsentAccepted,
+    );
     set({ ...DEFAULT_SETTINGS });
   },
 

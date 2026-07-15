@@ -32,7 +32,7 @@ Orijinal `panel_v55.51.html` dosyasından Next.js'e migrasyon.
 - **Dil:** TypeScript strict, React 19, Zustand 5, TanStack Query 5, Tailwind CSS 3
 - **Exchange:** OKX (perpetual futures), API proxy via Next.js route handlers
 - **Bildirim:** Telegram VIP kanal (Layer 1: Vercel env vars, Layer 2: browser encrypted)
-- **i18n:** 12 dil — TR (ana), EN, DE, FR, ES, PT, ZH, JA, KO, RU, AR, HI
+- **i18n:** 7 dil — TR (ana), EN, DE, ZH, JA, KO, RU
 
 ---
 
@@ -145,7 +145,10 @@ useLiqFeed()             // OKX+Binance+Bybit liq feed → liqFeedStore
 ## 7. i18n Kuralları
 
 - **Ana çeviri:** `lib/i18n/tr.ts` + `lib/i18n/en.ts`
-- **Diğer 10 dil:** `de fr es pt zh ja ko ru ar hi` — İngilizce ile aynı içerik
+- **Diğer 5 dil:** `de zh ja ko ru` — İngilizce ile aynı içerik (önceki bir
+  sürümde 12 dil/diğer 10 dil olarak belgelenmişti — `lib/i18n/types.ts`daki
+  `Locale`/`SUPPORTED_LOCALES` gerçek kapsamla eşleşmiyordu, düzeltildi;
+  `fr/es/pt/ar/hi.ts` dosyaları hiç var olmadı)
 - Yeni key eklenince hem `en.ts` hem `tr.ts` güncellenir, diğerleri için `sed -i` kullanılır
 - `useT()` hook'u: `const t = useT()` → `t("grafik.ema200")`
 - Bazı sayfalar (ör. `app/karar/page.tsx`) `useT` kullanmaz — Türkçe hardcoded
@@ -353,8 +356,8 @@ myAction: (param) => {
 
 ### i18n key eklemek
 ```bash
-# en.ts ve tr.ts'e manuel ekle, sonra diğer 10 dil için:
-for f in de fr es pt zh ja ko ru ar hi; do
+# en.ts ve tr.ts'e manuel ekle, sonra diğer 5 dil için:
+for f in de zh ja ko ru; do
   sed -i 's/existingKey: "value",/existingKey: "value",\n    newKey: "value",/' lib/i18n/${f}.ts
 done
 ```
