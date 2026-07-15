@@ -433,13 +433,14 @@ export default function GrafikPage() {
       )}
       {isOverlayActive && <GuardianPanel pair={pair} />}
       {isOverlayActive && (
-        // BTC + ETH (ScoreRingV2+MTF ile) + DXY + EQUITY (ScoreRingV2
-        // gerektirmeyen, ayrı basit iki-satır kartlar).
+        // BTC + ETH (ScoreRingV2+MTF ile) + DXY. EQUITY buradan
+        // ChartControls'un zaman dilimi satırına taşındı (şeritte
+        // sıkışıp kırpılıyordu, bkz. EquityMiniCard.tsx yorumu) —
+        // artık isOverlayActive'e bağlı değil, her zaman görünür.
         <div className="flex gap-2 overflow-x-auto py-2 [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
           <ActivePairMiniCard pair="BTC" />
           <ActivePairMiniCard pair="ETH" />
           <DxyMiniCard />
-          <EquityMiniCard />
         </div>
       )}
 
@@ -472,6 +473,7 @@ export default function GrafikPage() {
         showFlow={showFlow}
         onToggleFlow={() => setShowFlow((v) => !v)}
         onSetClickMode={handleSetClickMode}
+        rightSlot={<EquityMiniCard />}
       />
 
       <ChartLegend

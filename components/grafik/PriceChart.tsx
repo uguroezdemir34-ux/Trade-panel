@@ -71,18 +71,17 @@ const COLOR_LIVE     = "#3b82f6";
  * Hex → rgba(...) çevirici — price-line'ların ÇİZGİSİNİ (mumların
  * üzerinden geçen yatay hat) yarı-şeffaf yapmak için kullanılıyor.
  *
- * NOT (araştırma sonucu): fiyat ekseni üzerindeki dolgun renkli etiket
- * kutusunu (ekran görüntüsündeki "LIVE"/"OKX Entry" kutuları) ayrı bir
- * axisLabelColor/axisLabelTextColor opsiyonuyla düzeltmeye çalışıldı —
- * deploy sonrası görsel doğrulamada HİÇBİR etkisi olmadığı görüldü,
- * geri alındı. Kurulu lightweight-charts sürümünün (package.json'da
- * ^4.2.3) gerçek PriceLineOptions API'si bu sandbox'ta doğrulanamadı
- * (node_modules yok; tradingview.github.io, unpkg.com, cdn.jsdelivr.net,
- * raw.githubusercontent.com, registry.npmjs.org — 5 farklı kaynak
- * denendi, hepsi proxy politikası tarafından 403 ile reddedildi).
- * TEKNİK KISIT: eksen etiket kutusunun rengini kontrol eden gerçek API
- * şu an bilinmiyor — bu iş yalnızca gerçek node_modules'e erişimi olan
- * bir ortamda (kütüphanenin kendi .d.ts dosyası okunarak) çözülebilir.
+ * NOT (araştırma sonucu, güncellenmiş): fiyat ekseni üzerindeki dolgun
+ * renkli etiket kutusunun RENGİNİ (axisLabelColor/axisLabelTextColor)
+ * değiştirmek denenmiş, deploy sonrası hiçbir etkisi olmadığı görülüp
+ * geri alınmıştı — bu hâlâ geçerli, o API'nin kurulu sürümde (^4.2.3)
+ * gerçekten var olup olmadığı doğrulanamadı.
+ *
+ * FARKLI bir opsiyon olan axisLabelVisible (boolean, göster/gizle) ise
+ * BAŞKA yerlerde bu dosyada (liq band iç çizgileri, satır ~381/389)
+ * zaten kullanılıp çalıştığı doğrulanmış — LIVE ve OKX/BNB/BBT Entry
+ * çizgilerinin kutuları bu opsiyonla kapatıldı (bkz. ilgili
+ * createPriceLine çağrıları), renk denemesiyle karıştırılmamalı.
  */
 function hexToRgba(hex: string, alpha: number): string {
   const h = hex.replace("#", "");
@@ -690,13 +689,13 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           currentPriceLineRef.current = candle.createPriceLine({
             price: currentPrice,
             color: hexToRgba(COLOR_LIVE, 0.75), lineWidth: 1, lineStyle: 3,
-            axisLabelVisible: true, title: t("grafik.livePriceLabel"),
-            // axisLabelColor/axisLabelTextColor DENENDİ, deploy'da görsel
-            // etkisi olmadığı doğrulandı (kütüphane bu alanları tanımıyor
-            // gibi görünüyor — kurulu lightweight-charts sürümünde
-            // erişilebilir bir kaynaktan doğrulanamadı, geri alındı).
-            // TEKNİK KISIT: fiyat ekseni üzerindeki etiket kutusunun
-            // arkaplan/metin rengini kontrol eden gerçek API şu an bilinmiyor.
+            // axisLabelVisible: false — bu, önceki axisLabelColor/
+            // axisLabelTextColor denemesinden FARKLI bir opsiyon (renk
+            // değil, göster/gizle boolean'ı) — dosyada başka yerlerde
+            // (örn. liq band iç çizgileri, satır ~381/389) zaten kullanılıp
+            // çalıştığı doğrulanmış, aynı kütüphane sürümünde. Kutu tamamen
+            // kalkıyor, sadece kesikli/yarı şeffaf çizginin kendisi kalıyor.
+            axisLabelVisible: false, title: t("grafik.livePriceLabel"),
           });
         } catch { /* ignore */ }
       }
@@ -968,11 +967,11 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           // entry eskiden solid (0) — artık diğerleriyle aynı kesikli (2),
           // mumların üzerinden geçen hat daha az baskın olsun diye.
           lineStyle: 2,
-          axisLabelVisible: true,
-          // axisLabelColor/axisLabelTextColor DENENDİ, deploy'da görsel
-          // etkisi olmadığı doğrulandı — geri alındı (bkz. LIVE line'daki
-          // aynı not). TEKNİK KISIT: fiyat ekseni etiket kutusunun
-          // arkaplan/metin rengini kontrol eden gerçek API şu an bilinmiyor.
+          // Entry ("OKX Entry" / "BNB Entry" / vb.) etiket kutusu LIVE
+          // çizgisininkiyle çakışıp okunmaz hale geliyordu (ekran
+          // görüntüsüyle doğrulandı) — sadece entry için kutu kapatıldı,
+          // SL/TP1/TP2 etiketli kalmaya devam ediyor.
+          axisLabelVisible: tl.kind !== "entry",
           title: tl.label ?? TITLES[tl.kind] ?? tl.kind,
         });
         tradeLinesRef.current.push(line);

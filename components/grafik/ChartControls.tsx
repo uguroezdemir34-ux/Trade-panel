@@ -36,6 +36,8 @@ interface ChartControlsProps {
   onToggleSplit: () => void;
   onToggleFlow: () => void;
   onSetClickMode: (mode: ChartClickMode) => void;
+  /** Zaman dilimi satırının (Row 1) sağındaki boş alana yerleştirilecek opsiyonel içerik — örn. EquityMiniCard. */
+  rightSlot?: React.ReactNode;
 }
 
 const TIMEFRAMES: Timeframe[] = ["1m", "5m", "15m", "1h", "4h", "1d"];
@@ -69,6 +71,7 @@ export function ChartControls({
   onToggleSplit,
   onToggleFlow,
   onSetClickMode,
+  rightSlot,
 }: ChartControlsProps): React.ReactElement {
   const t = useT();
 
@@ -93,6 +96,7 @@ export function ChartControls({
             {tf.toUpperCase()}
           </button>
         ))}
+        {rightSlot && <div className="ml-auto shrink-0">{rightSlot}</div>}
       </div>
 
       {/* Row 2 — Overlays + Tools: tek scroll şeridi (Indicators + toggles + ⚙ birlikte) */}
