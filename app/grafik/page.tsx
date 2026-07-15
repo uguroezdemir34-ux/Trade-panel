@@ -13,7 +13,6 @@ import { ChartControls, type ChartClickMode } from "@/components/grafik/ChartCon
 import { ChartLegend } from "@/components/grafik/ChartLegend";
 import { PositionOverlayBar } from "@/components/grafik/PositionOverlayBar";
 import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
-import { AdvancedPositionCard } from "@/components/grafik/AdvancedPositionCard";
 import { GuardianPanel } from "@/components/grafik/GuardianPanel";
 import { ActivePairMiniCard } from "@/components/grafik/ActivePairMiniCard";
 import { DxyMiniCard } from "@/components/grafik/DxyMiniCard";
@@ -588,26 +587,12 @@ export default function GrafikPage() {
                 resetKey={`${pair}_${timeframe}`}
                 currentPrice={livePrice ?? undefined}
               />
-            {isOverlayActive && (
-              // KONUM: top-right → top-left. Sağ üstte kart sürekli en yeni
-              // (aktif) mumların üzerine biniyordu — sol üst, fiyat
-              // hareketinin henüz "eski/düz" olduğu, chart'ın en az aktif
-              // köşesi (ekran görüntüsünde işaretlendi). Sabitleme yöntemi
-              // DEĞİŞMEDİ: bu hâlâ chart container'a göre absolute konumlu
-              // düz bir HTML overlay div'i — lightweight-charts'ın veri
-              // koordinatına (zaman/fiyat) bağlı bir primitive DEĞİL, bu
-              // yüzden zaten "grafik kaydırılınca/yeniden boyutlanınca mumları
-              // takip etmeye devam etme" riski hiç yoktu — sadece hangi
-              // köşede durduğu değişti.
-              // max-w-[85%]: BİLEREK CARD'IN KENDİSİNE değil, bu wrapper'a
-              // eklendi (aynı gerekçe geçerli — wrapper'ın containing block'u
-              // bu `.relative` div, gerçek/definite genişlik). Sol tarafta
-              // sağdaki gibi fiyat eksenine ayrılmış bir 64px tampon
-              // gerekmiyor, bu yüzden left-2 (küçük kenar boşluğu) yeterli.
-              <div className="absolute top-2 left-2 max-w-[85%] pointer-events-none">
-                <AdvancedPositionCard pair={pair} />
-              </div>
-            )}
+            {/* AdvancedPositionCard buradan kaldırıldı — sabit piksel köşesi
+                (önce top-right, sonra top-left) fiyat hareket ettikçe er ya
+                da geç yine mumların üzerine biniyordu, yapısal olarak kalıcı
+                değildi. Pozisyon özeti artık tamamen PositionOverlayBar'da
+                (chart canvas'ının DIŞINDA, normal doküman akışında — hiçbir
+                zaman muma binemez). Component dosyası silinmedi. */}
           </div>
         </div>
 
