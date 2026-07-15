@@ -14,7 +14,7 @@ import { useEffect, useRef } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
-import { createChannel } from "@/lib/notify/registry";
+import { dispatchNotification } from "@/lib/notify/dispatch";
 
 const CHECK_INTERVAL_MS = 30_000; // 30 saniye
 const COOLDOWN_MS = 15 * 60_000; // aynı trade için 15 dak
@@ -53,20 +53,15 @@ export function useSlProximityAlert(): void {
 
         alertedRef.current.set(trade.id, now);
 
-        const channel = createChannel("telegram");
-        if (!channel.isConfigured()) continue;
-
-        void channel
-          .send({
-            kind: "sl_proximity",
-            pair: trade.pair,
-            direction: trade.direction,
-            entry: price,
-            stopPrice: sl,
-            reasonText: `${(distPct * 100).toFixed(1)}% uzakta`,
-            timestamp: now,
-          })
-          .catch(() => {});
+        void dispatchNotification({
+          kind: "sl_proximity",
+          pair: trade.pair,
+          direction: trade.direction,
+          entry: price,
+          stopPrice: sl,
+          reasonText: `${(distPct * 100).toFixed(1)}% uzakta`,
+          timestamp: now,
+        }).catch(() => {});
       }
     }
 

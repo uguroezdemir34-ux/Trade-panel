@@ -15,12 +15,10 @@
 import { useEffect, useRef } from "react";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
-import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ScoreResult, Verdict } from "@/lib/score/orchestrator";
-import type { TelegramCreds } from "@/lib/store/credentialStore";
 import { atr } from "@/lib/indicators/atr";
 import { adx as computeAdxFn } from "@/lib/indicators/adx";
 import { toIndicatorCandle } from "@/lib/okx/candles";
@@ -28,7 +26,7 @@ import { findSwingLevels } from "@/lib/sr/swing";
 import { computeStructuralStop } from "@/lib/sizer/stop";
 import { computeAdaptiveTPs } from "@/lib/sizer/take-profit";
 import type { NotifyMessage } from "@/lib/notify/types";
-import { sendDiscordMessage } from "@/lib/notify/discord/channel";
+import { dispatchNotification } from "@/lib/notify/dispatch";
 import { useGoSignalLogStore } from "@/lib/store/goSignalLogStore";
 import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
 import { useMacroStore } from "@/lib/store/macroStore";
@@ -40,7 +38,6 @@ const CONFIRM_DELAY_MS   = 5 * 60 * 1000;   // 5 dakika — momentary false-posi
 export function useSignalFirehose(): void {
   const results = useScoreStore((s) => s.results);
   const demoMode = useSettingsStore((s) => s.demoMode);
-  const tgCreds = useCredentialStore((s) => s.telegram);
 
   const prevVerdicts     = useRef<Partial<Record<Pair, Verdict>>>({});
   const lastFiredAt      = useRef<Partial<Record<Pair, number>>>({});
@@ -102,7 +99,7 @@ export function useSignalFirehose(): void {
             oiDivergence,
             triggeredGates: result.triggeredShadowGates,
           });
-          fireSignal(pair, result, tgCreds).catch((err) => {
+          fireSignal(pair, result).catch((err) => {
             console.warn(`[signal-firehose] ${pair} sinyal gönderimi başarısız:`, err);
           });
         }
@@ -110,7 +107,7 @@ export function useSignalFirehose(): void {
 
       prevVerdicts.current[pair] = verdict;
     }
-  }, [results, demoMode, tgCreds, appendGoSignal]);
+  }, [results, demoMode, appendGoSignal]);
 }
 
 // ── Signal hesabı + gönderim ───────────────────────────────────────
@@ -118,7 +115,6 @@ export function useSignalFirehose(): void {
 async function fireSignal(
   pair: Pair,
   result: ScoreResult,
-  tgCreds: TelegramCreds | null,
 ): Promise<void> {
   if (result.direction === "NEUTRAL") return;
 
@@ -189,34 +185,15 @@ async function fireSignal(
     timestamp: Date.now(),
   };
 
-  // Send to Telegram and Discord in parallel
-  const discordUrl = useSettingsStore.getState().discordWebhookUrl;
-
-  await Promise.allSettled([
-    (async () => {
-      try {
-        const payload: Record<string, unknown> = { msg };
-        if (tgCreds) {
-          payload.botToken = tgCreds.botToken;
-          payload.chatId = tgCreds.chatId;
-        }
-        const res = await fetch("/api/telegram/signal", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!res.ok) {
-          const data = (await res.json()) as { error?: string };
-          console.warn("[QUANTIX] Telegram sinyal başarısız:", data.error);
-        }
-      } catch (e) {
-        console.warn("[QUANTIX] Telegram sinyal ağ hatası:", e);
-      }
-    })(),
-    discordUrl
-      ? sendDiscordMessage(discordUrl, msg).catch((e) => {
-          console.warn("[QUANTIX] Discord sinyal hatası:", e);
-        })
-      : Promise.resolve(),
-  ]);
+  // Telegram (Layer 1/2) + Discord + genel Webhook — tek merkezi orkestratör.
+  const dispatchResult = await dispatchNotification(msg);
+  if (dispatchResult.telegram && !dispatchResult.telegram.ok) {
+    console.warn("[QUANTIX] Telegram sinyal başarısız:", dispatchResult.telegram.errorMessage);
+  }
+  if (dispatchResult.discord && !dispatchResult.discord.ok) {
+    console.warn("[QUANTIX] Discord sinyal hatası:", dispatchResult.discord.errorMessage);
+  }
+  if (dispatchResult.webhook && !dispatchResult.webhook.ok) {
+    console.warn("[QUANTIX] Webhook sinyal hatası:", dispatchResult.webhook.errorMessage);
+  }
 }

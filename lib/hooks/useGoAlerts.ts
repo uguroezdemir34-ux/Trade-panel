@@ -11,12 +11,12 @@
 import { useEffect, useRef } from "react";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
-import { useCredentialStore } from "@/lib/store/credentialStore";
-import { sendDiscordMessage } from "@/lib/notify/discord/channel";
+import { dispatchNotification } from "@/lib/notify/dispatch";
 import { browserNotify } from "@/lib/notify/browser";
 import { playGoAlert } from "@/lib/notify/audio";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Verdict, ScoreResult } from "@/lib/score/orchestrator";
+import type { NotifyMessage } from "@/lib/notify/types";
 
 const COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 
@@ -70,45 +70,24 @@ async function sendGoAlert(
   score: ScoreResult["score"],
   direction: "LONG" | "SHORT" | undefined,
 ): Promise<void> {
-  const credState = useCredentialStore.getState();
-  const body: Record<string, unknown> = {
-    msg: {
-      kind: "go_signal",
-      pair,
-      direction,
-      score,
-      reasonText: `Score ${score} — GO threshold crossed`,
-      timestamp: Date.now(),
-    },
+  const msg: NotifyMessage = {
+    kind: "go_signal",
+    pair,
+    direction,
+    score,
+    reasonText: `Score ${score} — GO threshold crossed`,
+    timestamp: Date.now(),
   };
 
-  // Layer 2 — pass browser credentials when env vars not set server-side
-  if (credState.telegram?.botToken) body.botToken = credState.telegram.botToken;
-  if (credState.telegram?.chatId) body.chatId = credState.telegram.chatId;
+  // Telegram (Layer 1/2) + Discord + genel Webhook — tek merkezi orkestratör.
+  await dispatchNotification(msg);
 
-  await fetch("/api/telegram/signal", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  // Web push trigger — fire-and-forget, silent on failure
+  // Web push tetikleyicisi — ayrı bir altyapı (Web Push/VAPID), ChannelName/
+  // NotifyChannel sistemine dahil DEĞİL, bilerek dispatchNotification'a
+  // taşınmadı. Fire-and-forget, silent on failure.
   void fetch("/api/push/trigger", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ pair, score, direction }),
   }).catch(() => { /* ignore */ });
-
-  // Discord webhook — parallel, silent on failure
-  const discordUrl = useSettingsStore.getState().discordWebhookUrl;
-  if (discordUrl) {
-    void sendDiscordMessage(discordUrl, {
-      kind: "go_signal",
-      pair,
-      direction,
-      score,
-      reasonText: `Score ${score} — GO threshold crossed`,
-      timestamp: Date.now(),
-    }).catch(() => { /* ignore */ });
-  }
 }

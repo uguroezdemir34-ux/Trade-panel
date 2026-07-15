@@ -8,14 +8,16 @@
  */
 
 import type { Pair } from "@/lib/constants/pairs";
+import type { TelegramConfig } from "./telegram/config";
 
 // ═══════════════ CHANNEL NAME ═══════════════
 
-export type ChannelName = "telegram" | "discord" | "email";
+export type ChannelName = "telegram" | "discord" | "webhook" | "email";
 
 export const SUPPORTED_CHANNELS: readonly ChannelName[] = [
   "telegram",
   "discord",
+  "webhook",
   "email",
 ];
 
@@ -96,6 +98,16 @@ export interface NotifyChannel {
 
 export interface BaseChannelConfig {
   fetchFn?: typeof fetch;
+  /**
+   * telegram: env yerine bu config kullanılır (Layer 2 client creds).
+   * NOT: registry.ts'in createChannel("telegram") yolu SADECE server-side
+   * anlamlı — Next.js client bundle'ında process.env.TELEGRAM_BOT_TOKEN
+   * hiç resolve olmaz. Client-side dispatch (lib/notify/dispatch.ts) bu
+   * yüzden Telegram için bu değil, /api/telegram/signal route'unu kullanır.
+   */
+  telegramConfigOverride?: TelegramConfig | null;
+  /** discord/webhook: hedef URL — yoksa/boşsa kanal "not configured" sayılır. */
+  webhookUrl?: string | null;
 }
 
 // ═══════════════ HELPER ═══════════════

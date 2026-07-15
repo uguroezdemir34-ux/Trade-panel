@@ -26,7 +26,7 @@ import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useRiskStore } from "@/lib/store/riskStore";
-import { createChannel } from "@/lib/notify/registry";
+import { dispatchNotification } from "@/lib/notify/dispatch";
 import { decideAdherence, type GoSignalCandidate } from "@/lib/risk/position-adoption";
 import { ADHERENCE_CONFIG } from "@/lib/risk/adherence-score";
 import type { Position } from "@/lib/okx/positions";
@@ -113,19 +113,19 @@ function reconcileOpenTrades(livePositions: Position[]): void {
       now,
     });
 
-    // Telegram: reconcile kapanışını bildir
-    const telegram = createChannel("telegram");
-    if (telegram.isImplemented && telegram.isConfigured()) {
-      void telegram.send({
-        kind: "trade_closed",
-        pair: trade.pair,
-        direction: trade.direction,
-        entry: trade.entryPrice,
-        pnl: (exitPrice - trade.entryPrice) * (trade.direction === "SHORT" ? -1 : 1) * trade.qty,
-        reasonText: "Exchange reconciled — position closed on exchange (SL/TP/liq/manual)",
-        timestamp: now,
-      }).catch(() => {/* ignore */});
-    }
+    // Bildirim: reconcile kapanışını Telegram/Discord/Webhook'a bildir —
+    // önceden burada doğrudan createChannel("telegram") çağrılıyordu, bu
+    // client-side ASLA çalışmıyordu (env Layer 1 sırrı client bundle'ına
+    // giremez, bkz. lib/notify/dispatch.ts dosya başı yorumu).
+    void dispatchNotification({
+      kind: "trade_closed",
+      pair: trade.pair,
+      direction: trade.direction,
+      entry: trade.entryPrice,
+      pnl: (exitPrice - trade.entryPrice) * (trade.direction === "SHORT" ? -1 : 1) * trade.qty,
+      reasonText: "Exchange reconciled — position closed on exchange (SL/TP/liq/manual)",
+      timestamp: now,
+    }).catch(() => {/* ignore */});
   }
 }
 

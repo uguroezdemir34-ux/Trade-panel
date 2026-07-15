@@ -63,6 +63,8 @@ const settingsSchema = z.object({
   }).nullable(),
   activeExchange: exchangeSchema,
   discordWebhookUrl: z.string().nullable(),
+  /** Adım 3.2 — genel (TradingView/Zapier/n8n/kendi sunucu) outbound webhook URL'i. */
+  genericWebhookUrl: z.string().nullable(),
   /**
    * Kullanıcı-bazlı canlı-trade rıza flag'i (Adım 3 — Hukuki Koruma Katmanı).
    * EXECUTION_ENABLED (lib/config/execution.ts) global/build-time bir kill
@@ -96,6 +98,7 @@ export const DEFAULT_SETTINGS: SettingsData = {
   scorerWeights: null,
   activeExchange: "okx" as ActiveExchange,
   discordWebhookUrl: null,
+  genericWebhookUrl: null,
   liveTradingConsentAccepted: false,
 };
 
@@ -118,6 +121,7 @@ const KEYS = {
   scorerWeights: "scorer_weights",
   activeExchange: "active_exchange",
   discordWebhookUrl: "discord_webhook_url",
+  genericWebhookUrl: "generic_webhook_url",
   liveTradingConsentAccepted: "live_trading_consent_accepted",
 } as const;
 
@@ -141,6 +145,7 @@ interface SettingsStoreState extends SettingsData {
   setAudioAlertsEnabled: (on: boolean) => void;
   setActiveExchange: (e: ActiveExchange) => void;
   setDiscordWebhookUrl: (url: string | null) => void;
+  setGenericWebhookUrl: (url: string | null) => void;
   setLiveTradingConsentAccepted: (on: boolean) => void;
   /** Tüm ayarları varsayılana sıfırla */
   reset: () => void;
@@ -221,6 +226,11 @@ export function loadSettings(): SettingsData {
     discordWebhookUrl: loadFromStorage<string | null>(
       KEYS.discordWebhookUrl,
       DEFAULT_SETTINGS.discordWebhookUrl,
+      z.string().nullable(),
+    ),
+    genericWebhookUrl: loadFromStorage<string | null>(
+      KEYS.genericWebhookUrl,
+      DEFAULT_SETTINGS.genericWebhookUrl,
       z.string().nullable(),
     ),
     liveTradingConsentAccepted: loadFromStorage<boolean>(
@@ -315,6 +325,11 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     set({ discordWebhookUrl: url });
   },
 
+  setGenericWebhookUrl: (url) => {
+    saveToStorage(KEYS.genericWebhookUrl, url);
+    set({ genericWebhookUrl: url });
+  },
+
   setLiveTradingConsentAccepted: (on) => {
     saveToStorage(KEYS.liveTradingConsentAccepted, on);
     set({ liveTradingConsentAccepted: on });
@@ -339,6 +354,7 @@ export const useSettingsStore = create<SettingsStoreState>((set) => ({
     saveToStorage(KEYS.scorerWeights, DEFAULT_SETTINGS.scorerWeights);
     saveToStorage(KEYS.activeExchange, DEFAULT_SETTINGS.activeExchange);
     saveToStorage(KEYS.discordWebhookUrl, DEFAULT_SETTINGS.discordWebhookUrl);
+    saveToStorage(KEYS.genericWebhookUrl, DEFAULT_SETTINGS.genericWebhookUrl);
     saveToStorage(
       KEYS.liveTradingConsentAccepted,
       DEFAULT_SETTINGS.liveTradingConsentAccepted,

@@ -6,7 +6,13 @@
  */
 
 import { formatDiscordMessage } from "./formatter";
-import type { NotifyMessage, NotifyResult } from "@/lib/notify/types";
+import type {
+  NotifyMessage,
+  NotifyResult,
+  NotifyChannel,
+  ChannelName,
+  BaseChannelConfig,
+} from "@/lib/notify/types";
 
 interface DiscordPayload {
   content: string;
@@ -83,4 +89,35 @@ export async function sendDiscordMessage(
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
+}
+
+/**
+ * DISCORD CHANNEL — NotifyChannel impl, `sendDiscordMessage()`'ı sarar.
+ *
+ * Bu class önceden yoktu — `registry.ts` "discord" isteğini her zaman
+ * `StubChannel`'a yönlendiriyordu, yukarıdaki gerçek `sendDiscordMessage()`
+ * implementasyonu var olmasına rağmen hiç çağrılmıyordu (bkz. ANALYSIS.md /
+ * Adım 3 araştırma raporu). Artık `registry.ts` bunu kullanıyor.
+ */
+export class DiscordChannel implements NotifyChannel {
+  readonly name: ChannelName = "discord";
+  readonly isImplemented = true;
+  private readonly webhookUrl: string | null;
+  private readonly fetchFn: typeof fetch;
+
+  constructor(opts: BaseChannelConfig = {}) {
+    this.webhookUrl = opts.webhookUrl ?? null;
+    this.fetchFn = opts.fetchFn ?? globalThis.fetch.bind(globalThis);
+  }
+
+  isConfigured(): boolean {
+    return !!this.webhookUrl;
+  }
+
+  async send(msg: NotifyMessage): Promise<NotifyResult> {
+    if (!this.webhookUrl) {
+      return { ok: false, channel: this.name, errorMessage: "Discord webhook URL not configured" };
+    }
+    return sendDiscordMessage(this.webhookUrl, msg, this.fetchFn);
+  }
 }

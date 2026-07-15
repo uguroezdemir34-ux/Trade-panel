@@ -9,7 +9,7 @@
 import { useEffect, useRef } from "react";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMarketStore } from "@/lib/store/marketStore";
-import { createChannel } from "@/lib/notify/registry";
+import { dispatchNotification } from "@/lib/notify/dispatch";
 import { browserNotify } from "@/lib/notify/browser";
 
 const CHECK_INTERVAL_MS = 5_000;
@@ -55,18 +55,15 @@ export function useEmergencyStopGuard(): void {
 
         browserNotify("⛔ Acil Stop Uyarısı", `${trade.pair} SL seviyesi aşıldı — borsadan kapatın`);
 
-        const channel = createChannel("telegram");
-        if (channel.isConfigured()) {
-          void channel.send({
-            kind: "sl_proximity",
-            pair: trade.pair,
-            direction: trade.direction,
-            entry: price,
-            stopPrice: sl,
-            reasonText: `⛔ SL İHLALİ — Pozisyonu borsadan manuel kapatın!`,
-            timestamp: now,
-          }).catch(() => {});
-        }
+        void dispatchNotification({
+          kind: "sl_proximity",
+          pair: trade.pair,
+          direction: trade.direction,
+          entry: price,
+          stopPrice: sl,
+          reasonText: `⛔ SL İHLALİ — Pozisyonu borsadan manuel kapatın!`,
+          timestamp: now,
+        }).catch(() => {});
       }
     }
 
