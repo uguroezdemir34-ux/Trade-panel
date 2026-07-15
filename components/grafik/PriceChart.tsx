@@ -234,6 +234,18 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
       wickUpColor: COLOR_UP,
       wickDownColor: COLOR_DOWN,
       borderVisible: false,
+      // Teşhis: ekranda kalan dolgun kırmızı "1884.89" kutusu bizim özel
+      // createPriceLine() çağrılarımızdan (LIVE/Entry, ikisi de zaten
+      // axisLabelVisible: false) GELMİYORDU — bu, lightweight-charts'ın
+      // her seriye varsayılan olarak eklediği kendi yerleşik "son fiyat"
+      // çizgisi/etiketiydi (priceLineVisible/lastValueVisible, ikisi de
+      // varsayılan true). Kanıt: dosyadaki DİĞER TÜM seriler (EMA/volume/
+      // VWAP/RSI/MACD, ör. satır 420, 528, 749...) bunu açıkça false
+      // yapıyor — sadece ana candle serisinde bu override hiç yoktu, o
+      // yüzden kütüphane varsayılanı sızıyordu. Bizim özel LIVE çizgimiz
+      // aynı bilgiyi zaten gösteriyor, bu yüzden tekrar tamamen kapatıldı.
+      priceLineVisible: false,
+      lastValueVisible: false,
     });
     candleRef.current = candle;
 

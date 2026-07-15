@@ -589,27 +589,22 @@ export default function GrafikPage() {
                 currentPrice={livePrice ?? undefined}
               />
             {isOverlayActive && (
-              // right-16 (64px): lightweight-charts sağ fiyat eksenini otomatik
-              // genişlikte çiziyor (borderVisible/minimumWidth override edilmemiş,
-              // bkz. PriceChart.tsx:201 rightPriceScale), gerçek piksel genişliği
-              // runtime'da DOM'dan ölçülüyor — burada sandbox'tan ölçülemedi, 9
-              // paritenin (lib/constants/pairs.ts) en uzun ondalıklı fiyat
-              // gösterimini (örn. SUI'nin $0.7178 gibi 4 ondalıklı hali)
-              // kapsayacak güvenli bir sabit tampon kullanıldı.
-              // NOT (HUD yeniden tasarımı sonrası): bu div'de sadece `right` set
-              // (left YOK, width YOK) — CSS auto-width kutusu sağ kenardan
-              // sabitlenip SOLA doğru büyür. AdvancedPositionCard genişlese/
-              // küçülse bile sağ kenar hep bu 64px'te sabit kalır, fiyat
-              // eksenine olan mesafe değişmez — bu yüzden right-16 değerine
-              // dokunulmadı (bkz. görev raporu).
+              // KONUM: top-right → top-left. Sağ üstte kart sürekli en yeni
+              // (aktif) mumların üzerine biniyordu — sol üst, fiyat
+              // hareketinin henüz "eski/düz" olduğu, chart'ın en az aktif
+              // köşesi (ekran görüntüsünde işaretlendi). Sabitleme yöntemi
+              // DEĞİŞMEDİ: bu hâlâ chart container'a göre absolute konumlu
+              // düz bir HTML overlay div'i — lightweight-charts'ın veri
+              // koordinatına (zaman/fiyat) bağlı bir primitive DEĞİL, bu
+              // yüzden zaten "grafik kaydırılınca/yeniden boyutlanınca mumları
+              // takip etmeye devam etme" riski hiç yoktu — sadece hangi
+              // köşede durduğu değişti.
               // max-w-[85%]: BİLEREK CARD'IN KENDİSİNE değil, bu wrapper'a
-              // eklendi. Wrapper'ın containing block'u bu `.relative` div
-              // (gerçek/definite genişlik — chart genişliği), yüzde burada
-              // güvenle çözülüyor. Aynı yüzdeyi doğrudan AdvancedPositionCard'ın
-              // kök className'ine eklemek CSS açısından döngüsel/tanımsız
-              // olurdu (kartın parent'ı zaten shrink-to-fit, genişliği kendi
-              // içeriğine bağlı) — bkz. görev raporu.
-              <div className="absolute top-2 right-16 max-w-[85%] pointer-events-none">
+              // eklendi (aynı gerekçe geçerli — wrapper'ın containing block'u
+              // bu `.relative` div, gerçek/definite genişlik). Sol tarafta
+              // sağdaki gibi fiyat eksenine ayrılmış bir 64px tampon
+              // gerekmiyor, bu yüzden left-2 (küçük kenar boşluğu) yeterli.
+              <div className="absolute top-2 left-2 max-w-[85%] pointer-events-none">
                 <AdvancedPositionCard pair={pair} />
               </div>
             )}
