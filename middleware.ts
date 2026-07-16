@@ -102,6 +102,25 @@ export default clerkMiddleware(async (auth, req) => {
   // ürünsel olarak da daha doğru — "yetkin yok" yerine "yükselt" gösteriyor.
   if (isBetaGatedRoute(req)) {
     const { sessionClaims } = await auth();
+
+    // [BETA-DEBUG] GEÇİCİ — betaAccess neden tanınmıyor sorununu teşhis
+    // etmek için eklendi, kaynak teşhis edildikten sonra kaldırılacak.
+    // Bu loglar TARAYICI KONSOLUNDA DEĞİL, Vercel Dashboard → proje →
+    // Logs (Runtime/Function Logs, Edge ortamı) sekmesinde görünür —
+    // Edge middleware sunucu tarafında çalışır, kullanıcının local
+    // terminalinde değil.
+    const debugMeta = (sessionClaims as BetaSessionClaims | undefined)?.publicMetadata;
+    console.log("[BETA-DEBUG] path:", req.nextUrl.pathname);
+    console.log("[BETA-DEBUG] sessionClaims (full):", JSON.stringify(sessionClaims, null, 2));
+    console.log("[BETA-DEBUG] publicMetadata:", JSON.stringify(debugMeta, null, 2));
+    console.log(
+      "[BETA-DEBUG] betaAccess raw value:",
+      debugMeta?.betaAccess,
+      "| typeof:",
+      typeof debugMeta?.betaAccess
+    );
+    console.log("[BETA-DEBUG] isBetaAllowed() result:", isBetaAllowed(sessionClaims as BetaSessionClaims | undefined));
+
     if (!isBetaAllowed(sessionClaims as BetaSessionClaims | undefined)) {
       return NextResponse.redirect(new URL("/upgrade", req.url));
     }
