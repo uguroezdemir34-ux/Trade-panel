@@ -14,6 +14,8 @@ interface StripeEvent {
       subscription?: string;
       /** customer.subscription.* event'lerinde dolu — Stripe Subscription.status */
       status?: string;
+      /** checkout.session.completed'de dolu — Stripe Customer ID */
+      customer?: string;
     };
   };
 }
@@ -44,23 +46,35 @@ function verifyStripeSignature(
   }
 }
 
-async function setClerkPlan(userId: string, plan: "pro" | "free"): Promise<void> {
+/**
+ * Clerk publicMetadata'yı MERGE ederek günceller — `/v1/users/{id}/metadata`
+ * (dedike merge endpoint'i). Bilerek plain `PATCH /v1/users/{id}` DEĞİL:
+ * o endpoint public_metadata'yı TAMAMEN DEĞİŞTİRİR (replace), yani örn.
+ * bir kullanıcı Pro'ya yükseldiğinde eski koddaki setClerkPlan() onun
+ * betaAccess flag'ini (veya başka herhangi bir metadata alanını) sessizce
+ * silerdi. Bu fonksiyon her zaman merge endpoint'ini kullanır.
+ */
+async function patchClerkPublicMetadata(userId: string, fields: Record<string, unknown>): Promise<void> {
   const clerkKey = process.env.CLERK_SECRET_KEY;
   if (!clerkKey) throw new Error("CLERK_SECRET_KEY not set");
 
-  const res = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+  const res = await fetch(`https://api.clerk.com/v1/users/${userId}/metadata`, {
     method: "PATCH",
     headers: {
       Authorization: `Bearer ${clerkKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ public_metadata: { plan } }),
+    body: JSON.stringify({ public_metadata: fields }),
   });
 
   if (!res.ok) {
     const err = await res.text();
-    throw new Error(`Clerk update failed: ${err}`);
+    throw new Error(`Clerk metadata update failed: ${err}`);
   }
+}
+
+async function setClerkPlan(userId: string, plan: "pro" | "free"): Promise<void> {
+  await patchClerkPublicMetadata(userId, { plan });
 }
 
 /**
@@ -130,7 +144,13 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case "checkout.session.completed": {
         const userId = event.data.object.metadata?.userId;
-        if (userId) await setClerkPlan(userId, "pro");
+        const customerId = event.data.object.customer;
+        if (userId) {
+          await patchClerkPublicMetadata(userId, {
+            plan: "pro",
+            ...(customerId ? { stripeCustomerId: customerId } : {}),
+          });
+        }
         break;
       }
       case "customer.subscription.deleted": {
