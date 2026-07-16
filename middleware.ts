@@ -88,13 +88,22 @@ export default clerkMiddleware(async (auth, req) => {
 
   // Kapalı beta kapısı — auth.protect() sadece "giriş yapmış mı" kontrol
   // eder; burada AYRICA "giriş yapmış AMA beta/pro değil" durumunu ele
-  // alıyoruz. Ana sayfaya (/) yönlendiriyoruz, /sign-in'e DEĞİL — kullanıcı
-  // zaten kimlik doğrulamasını geçmiş durumda, /sign-in'e göndermek yanıltıcı
-  // olurdu ("çıkış mı yaptım?" izlenimi verir).
+  // alıyoruz.
+  //
+  // PROD KESİNTİSİ POST-MORTEM (bu yorum bilerek kalıcı — aynı hata
+  // tekrarlanmasın diye): İlk sürüm burada "/" adresine yönlendiriyordu.
+  // app/page.tsx ("/") KOŞULSUZ olarak redirect("/karar") yapıyor (önceden
+  // var olan, bu dosyanın kapsamı dışındaki kod) — yani beta erişimi
+  // olmayan bir kullanıcı /karar'a gelince buradan "/"e atılıyor, "/"
+  // anında /karar'a geri atıyor: SONSUZ DÖNGÜ (→ prod'da "içerik yüklenmiyor/
+  // beyaz ekran" olarak gözlemlendi). "/upgrade" bilerek seçildi: (a) kendi
+  // içinde hiçbir redirect yok (app/upgrade/page.tsx sadece client-render
+  // bir bileşen mount ediyor), (b) isBetaGatedRoute listesinde YOK, (c)
+  // ürünsel olarak da daha doğru — "yetkin yok" yerine "yükselt" gösteriyor.
   if (isBetaGatedRoute(req)) {
     const { sessionClaims } = await auth();
     if (!isBetaAllowed(sessionClaims as BetaSessionClaims | undefined)) {
-      return NextResponse.redirect(new URL("/", req.url));
+      return NextResponse.redirect(new URL("/upgrade", req.url));
     }
   }
 

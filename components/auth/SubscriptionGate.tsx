@@ -37,7 +37,12 @@ interface Props {
   children: React.ReactNode;
 }
 
-function isBetaAllowed(user: ClerkUserLike | null): boolean {
+/**
+ * user/publicMetadata okurken TAMAMEN optional-chaining güvenli — `user`
+ * null/undefined olabilir, `publicMetadata` olmayabilir, `betaAccess`/`plan`
+ * hiç set edilmemiş olabilir. Hiçbiri throw etmez, hepsi `undefined`'a düşer.
+ */
+function isBetaAllowed(user: ClerkUserLike | null | undefined): boolean {
   if (user?.publicMetadata?.betaAccess === true) return true;
   const tier = getPlanTier(user);
   return tier === "pro" || tier === "enterprise";
@@ -46,14 +51,26 @@ function isBetaAllowed(user: ClerkUserLike | null): boolean {
 export function SubscriptionGate({ fallback, children }: Props): React.ReactElement | null {
   const { user, isLoaded } = useUserStub();
 
-  // Clerk yapılandırılmamış — tek kullanıcı modu, kısıtlama yok.
+  // Clerk yapılandırılmamış (NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY yok) — tek
+  // kullanıcı modu, kısıtlama BYPASS edilir, children koşulsuz render edilir.
   if (!CLERK_KEY) return <>{children}</>;
 
   // Clerk henüz resolve olmadı — yanlış (kilitli/açık) durumu flashlamamak
   // için hiçbir şey render etme.
   if (!isLoaded) return null;
 
-  if (isBetaAllowed(user)) return <>{children}</>;
+  // Ekstra güvenlik ağı: user/publicMetadata okuması zaten optional-chaining
+  // ile güvenli, ama beklenmedik bir Clerk SDK hatası (örn. bozuk/eksik
+  // metadata şekli) burada yakalanır — throw client tree'yi (ve dolayısıyla
+  // TÜM sayfa içeriğini) çökertip beyaz ekrana düşürmez. Hata durumunda
+  // güvenli varsayılan: erişim YOK (kilitli kart) — sessizce bypass etmek
+  // (children göstermek) yanlış tarafa hata yapardı.
+  try {
+    if (isBetaAllowed(user)) return <>{children}</>;
+  } catch (err) {
+    console.error("[SubscriptionGate] beta erişim kontrolü başarısız, güvenli varsayılana düşülüyor:", err);
+  }
+
   if (fallback) return <>{fallback}</>;
   return <BetaAccessRequiredCard />;
 }
