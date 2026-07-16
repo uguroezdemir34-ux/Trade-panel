@@ -55,6 +55,10 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  // Çentik/gesture-bar'lı cihazlarda env(safe-area-inset-*) değerlerinin
+  // sıfır dönmesini engeller — bu olmadan globals.css'teki safe-area
+  // kuralları hiçbir şey yapmaz.
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({

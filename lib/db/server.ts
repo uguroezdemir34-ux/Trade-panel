@@ -47,16 +47,24 @@ export async function dbSelect<T>(table: string, query: string): Promise<T[]> {
 }
 
 /**
- * UPSERT — insert or update rows. Uses `id` as the conflict key.
- * Safe to call multiple times (idempotent).
+ * UPSERT — insert or update rows. Uses `id` (the table's primary key) as
+ * the conflict key by default. Safe to call multiple times (idempotent).
+ *
+ * @param onConflict Alternate conflict-target column (must have a UNIQUE
+ *   or PK constraint in Postgres) — for tables where the caller doesn't
+ *   supply the PK itself (e.g. a server-generated `id` default), so the
+ *   natural key (an `endpoint`/`token`-style unique column) must be named
+ *   explicitly for PostgREST to detect an existing row.
  */
 export async function dbUpsert<T extends object>(
   table: string,
   rows: T | T[],
+  onConflict?: string,
 ): Promise<void> {
   assertConfig();
   const body = Array.isArray(rows) ? rows : [rows];
-  const res = await fetch(tableUrl(table), {
+  const query = onConflict ? `on_conflict=${onConflict}` : "";
+  const res = await fetch(tableUrl(table, query), {
     method: "POST",
     headers: {
       ...baseHeaders(),

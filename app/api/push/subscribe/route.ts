@@ -1,7 +1,9 @@
 /**
  * POST /api/push/subscribe — Push subscription kaydet / sil.
  *
- * Body: { subscription: PushSubscriptionJSON, action: "subscribe"|"unsubscribe" }
+ * İki şekilde çağrılır:
+ *   Web/PWA:  { subscription: PushSubscriptionJSON, action }
+ *   Capacitor/FCM: { token: string, action }
  * Yetkilendirme: Clerk auth (giriş zorunlu, guest izin verilmez)
  */
 
@@ -17,6 +19,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   let body: {
     subscription?: { endpoint: string; keys: { p256dh: string; auth: string } };
+    token?: string;
     action?: string;
   };
 
@@ -26,22 +29,34 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
 
-  const sub = body.subscription;
+  const { subscription: sub, token } = body;
   const action = body.action ?? "subscribe";
 
-  if (!sub?.endpoint) {
-    return NextResponse.json({ error: "Missing subscription" }, { status: 400 });
+  const identity = sub?.endpoint ?? token;
+  if (!identity) {
+    return NextResponse.json({ error: "Missing subscription or token" }, { status: 400 });
   }
 
   try {
     if (action === "unsubscribe") {
-      await deleteSubscription(sub.endpoint);
-    } else {
+      await deleteSubscription(identity);
+    } else if (sub?.endpoint) {
       await saveSubscription({
-        endpoint: sub.endpoint,
         user_id: userId,
+        platform: "webpush",
+        endpoint: sub.endpoint,
         p256dh: sub.keys.p256dh,
         auth: sub.keys.auth,
+        token: null,
+      });
+    } else if (token) {
+      await saveSubscription({
+        user_id: userId,
+        platform: "fcm",
+        endpoint: null,
+        p256dh: null,
+        auth: null,
+        token,
       });
     }
     return NextResponse.json({ ok: true });

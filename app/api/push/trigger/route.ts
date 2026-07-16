@@ -7,13 +7,15 @@
  * Payload (opsiyonel):
  *   { kind, title, body, pair, direction, score, url }
  *
- * Subscription'da p256dh + auth varsa RFC 8291 ile şifrelenir.
- * 410/404 dönen expired subscription'lar otomatik silinir.
+ * webpush aboneliklerinde p256dh + auth varsa RFC 8291 ile şifrelenir.
+ * fcm aboneliklerinde Firebase HTTP v1 API'ye gönderilir (bkz. lib/push/fcm.ts).
+ * Expired/unregistered subscription'lar (410/404, FCM UNREGISTERED) otomatik silinir.
  */
 
 import { NextRequest, NextResponse } from "next/server";
 import { getAllSubscriptions, deleteSubscription } from "@/lib/push/db";
 import { loadVapidConfig, sendPushToEndpoint } from "@/lib/push/vapid";
+import { loadFcmConfig, sendFcmToToken } from "@/lib/push/fcm";
 
 export interface PushTriggerPayload {
   kind?: string;
@@ -33,9 +35,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
-  const config = loadVapidConfig();
-  if (!config) {
-    return NextResponse.json({ ok: true, sent: 0, note: "VAPID not configured" });
+  const vapidConfig = loadVapidConfig();
+  const fcmConfig = loadFcmConfig();
+  if (!vapidConfig && !fcmConfig) {
+    return NextResponse.json({ ok: true, sent: 0, note: "Neither VAPID nor FCM configured" });
   }
 
   // Payload parse (body olmayabilir)
@@ -46,18 +49,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     /* body yok veya geçersiz JSON — boş ping ile devam et */
   }
 
+  const title = reqPayload.title ?? buildTitle(reqPayload.kind, reqPayload.pair, reqPayload.direction);
+  const body = reqPayload.body ?? buildBody(reqPayload.kind, reqPayload.score);
+  const url = reqPayload.url ?? "/karar";
+
   const notifyJson = JSON.stringify({
-    title:
-      reqPayload.title ??
-      buildTitle(reqPayload.kind, reqPayload.pair, reqPayload.direction),
-    body:
-      reqPayload.body ??
-      buildBody(reqPayload.kind, reqPayload.score),
+    title,
+    body,
     kind: reqPayload.kind ?? "go_signal",
     pair: reqPayload.pair,
     direction: reqPayload.direction,
     score: reqPayload.score,
-    url: reqPayload.url ?? "/karar",
+    url,
   });
 
   const subscriptions = await getAllSubscriptions().catch(() => []);
@@ -70,9 +73,22 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   await Promise.allSettled(
     subscriptions.map(async (sub) => {
+      if (sub.platform === "fcm") {
+        if (!fcmConfig || !sub.token) return;
+        const result = await sendFcmToToken(sub.token, fcmConfig, {
+          title,
+          body,
+          data: { url, kind: reqPayload.kind ?? "go_signal" },
+        });
+        if (result.ok) sent++;
+        else if (result.unregistered) expired.push(sub.token);
+        return;
+      }
+
+      if (!vapidConfig || !sub.endpoint) return;
       const result = await sendPushToEndpoint(
         sub.endpoint,
-        config,
+        vapidConfig,
         sub.p256dh && sub.auth
           ? { plaintext: notifyJson, p256dh: sub.p256dh, auth: sub.auth }
           : null,
@@ -85,9 +101,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }),
   );
 
-  // Expired subscription'ları temizle
+  // Expired/unregistered subscription'ları temizle
   await Promise.allSettled(
-    expired.map((endpoint) => deleteSubscription(endpoint)),
+    expired.map((identity) => deleteSubscription(identity)),
   );
 
   return NextResponse.json({ ok: true, sent, expired: expired.length });

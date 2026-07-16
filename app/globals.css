@@ -261,11 +261,16 @@
 html,
 body {
   height: 100%;
+  /* Capacitor WebView'da "pull-to-refresh"/rubber-band kaydırması native
+     olmayan, web sayfası hissi veriyordu — kapatıldı. */
+  overscroll-behavior: none;
 }
 
 /* Panel'in temel reset davranışı */
 * {
   -webkit-tap-highlight-color: transparent;
+  /* Çift-dokunuşta zoom / 300ms tap gecikmesini engeller — native app hissi. */
+  touch-action: manipulation;
 }
 
 /*

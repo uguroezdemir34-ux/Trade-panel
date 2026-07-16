@@ -58,6 +58,7 @@ import { useEmergencyStopGuard } from "@/lib/hooks/useEmergencyStopGuard";
 import { useSlProximityAlert } from "@/lib/hooks/useSlProximityAlert";
 import { usePriorityAlerts } from "@/lib/hooks/usePriorityAlerts";
 import { useCapacitorApp } from "@/lib/hooks/useCapacitorApp";
+import { useCapacitorPush } from "@/lib/hooks/useCapacitorPush";
 import { useGoSignalOutcomeTracker } from "@/lib/hooks/useGoSignalOutcomeTracker";
 import { QuickTradeSheet } from "@/components/mobile/QuickTradeSheet";
 import { DisclaimerModal } from "./DisclaimerModal";
@@ -152,6 +153,8 @@ export function AppShell({
   usePwaSetup();
   // Capacitor native lifecycle — back button, StatusBar, SplashScreen
   useCapacitorApp();
+  // Capacitor native push (FCM) — web'de no-op, bkz. hook doc
+  useCapacitorPush();
   // GO sinyal sonrası 15dk/1sa fiyat hareketi takibi
   useGoSignalOutcomeTracker();
 
@@ -199,7 +202,13 @@ export function AppShell({
   }, [authLoaded, userId]);
 
   return (
-    <div className="bg-bg text-text-t1 min-h-screen">
+    <div
+      className="bg-bg text-text-t1 min-h-screen"
+      style={{
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      }}
+    >
       <ThemeSync />
       <DevicePerfSync />
       <DisclaimerModal />
