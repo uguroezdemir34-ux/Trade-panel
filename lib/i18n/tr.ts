@@ -550,6 +550,12 @@ export const tr: Dictionary = {
       upgradeBtn: "PRO'YA YÜKSELİN →",
       manageBilling: "Faturayı Yönet →",
     },
+    accountStatus: {
+      title: "Hesap",
+      signedIn: "Giriş yapıldı",
+      signedOut: "Giriş yapılmadı",
+      signInBtn: "Giriş Yap",
+    },
   },
 
   placeholder: {

@@ -586,6 +586,12 @@ volumeSection: "VOLUME",
       upgradeBtn: "UPGRADE TO PRO →",
       manageBilling: "Manage Billing →",
     },
+    accountStatus: {
+      title: "Account",
+      signedIn: "Signed in",
+      signedOut: "Not signed in",
+      signInBtn: "Sign In",
+    },
   },
 
   placeholder: {
