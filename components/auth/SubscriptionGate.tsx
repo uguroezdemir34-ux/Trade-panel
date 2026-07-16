@@ -70,21 +70,6 @@ export function SubscriptionGate({ fallback, children }: Props): React.ReactElem
   // için hiçbir şey render etme.
   if (!isLoaded) return null;
 
-  // [BETA-DEBUG] GEÇİCİ — betaAccess neden tanınmıyor sorununu teşhis
-  // etmek için eklendi, kaynak teşhis edildikten sonra kaldırılacak.
-  // Bu loglar TARAYICI DevTools konsolunda görünür (client component) —
-  // middleware.ts'teki [BETA-DEBUG] loglarından FARKLI bir yerde: bu
-  // dosya Clerk'in canlı frontend API'sinden `useUser()` ile okuyor,
-  // session token/JWT claim'ine bağlı değil.
-  console.log("[BETA-DEBUG][SubscriptionGate] user:", user);
-  console.log("[BETA-DEBUG][SubscriptionGate] user?.publicMetadata:", user?.publicMetadata);
-  console.log(
-    "[BETA-DEBUG][SubscriptionGate] betaAccess raw value:",
-    user?.publicMetadata?.betaAccess,
-    "| typeof:",
-    typeof user?.publicMetadata?.betaAccess
-  );
-
   // Ekstra güvenlik ağı: user/publicMetadata okuması zaten optional-chaining
   // ile güvenli, ama beklenmedik bir Clerk SDK hatası (örn. bozuk/eksik
   // metadata şekli) burada yakalanır — throw client tree'yi (ve dolayısıyla

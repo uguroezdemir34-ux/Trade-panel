@@ -143,13 +143,6 @@ export default clerkMiddleware(async (auth, req) => {
     const { userId } = await auth();
     const meta = userId ? await fetchPublicMetadata(userId) : null;
 
-    // [BETA-DEBUG] GEÇİCİ — session-claims'ten canlı Clerk API fetch'ine
-    // geçildikten sonra hâlâ sorun sürerse teşhis için. Vercel Dashboard →
-    // proje → Logs (Runtime/Function Logs, Edge ortamı) sekmesinde görünür.
-    console.log("[BETA-DEBUG] path:", req.nextUrl.pathname, "| userId:", userId);
-    console.log("[BETA-DEBUG] live publicMetadata (Clerk REST API):", JSON.stringify(meta, null, 2));
-    console.log("[BETA-DEBUG] isBetaAllowed() result:", isBetaAllowed(meta));
-
     if (!isBetaAllowed(meta)) {
       return NextResponse.redirect(new URL("/upgrade", req.url));
     }
