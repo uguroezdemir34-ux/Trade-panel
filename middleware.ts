@@ -31,14 +31,25 @@ const isPublicRoute = createRouteMatcher([
 const isBetaGatedRoute = createRouteMatcher(["/karar(.*)", "/pnl(.*)", "/grafik(.*)", "/portfolyo(.*)"]);
 
 interface BetaSessionClaims {
-  publicMetadata?: { betaAccess?: boolean; plan?: string };
+  publicMetadata?: { betaAccess?: unknown; plan?: unknown };
+}
+
+/**
+ * Clerk session token claim'leri serialize edilirken betaAccess bazı
+ * Clerk şablon/claim varyasyonlarında boolean `true` yerine string
+ * `"true"`/`"1"` olarak gelebiliyor — tip toleranslı okunuyor, kaynağı
+ * ne olursa olsun "pozitif" sayılan tüm temsiller kabul edilir.
+ */
+function isTruthyFlag(value: unknown): boolean {
+  return value === true || value === "true" || value === 1 || value === "1";
 }
 
 function isBetaAllowed(sessionClaims: BetaSessionClaims | undefined): boolean {
   const meta = sessionClaims?.publicMetadata;
   if (!meta) return false;
-  if (meta.betaAccess === true) return true;
-  return meta.plan === "pro" || meta.plan === "enterprise";
+  if (isTruthyFlag(meta.betaAccess)) return true;
+  const plan = typeof meta.plan === "string" ? meta.plan.toLowerCase() : undefined;
+  return plan === "pro" || plan === "enterprise";
 }
 
 /**

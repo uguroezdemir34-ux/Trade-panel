@@ -38,12 +38,23 @@ interface Props {
 }
 
 /**
+ * Clerk frontend API'sinden gelen publicMetadata'da betaAccess bazı
+ * durumlarda boolean `true` yerine string `"true"`/`"1"` olarak
+ * saklanmış/dönmüş olabilir (Dashboard'dan elle JSON girişi, ya da
+ * SDK/serileştirme farkı) — tip toleranslı okunuyor, middleware.ts'teki
+ * isTruthyFlag() ile aynı mantık.
+ */
+function isTruthyFlag(value: unknown): boolean {
+  return value === true || value === "true" || value === 1 || value === "1";
+}
+
+/**
  * user/publicMetadata okurken TAMAMEN optional-chaining güvenli — `user`
  * null/undefined olabilir, `publicMetadata` olmayabilir, `betaAccess`/`plan`
  * hiç set edilmemiş olabilir. Hiçbiri throw etmez, hepsi `undefined`'a düşer.
  */
 function isBetaAllowed(user: ClerkUserLike | null | undefined): boolean {
-  if (user?.publicMetadata?.betaAccess === true) return true;
+  if (isTruthyFlag(user?.publicMetadata?.betaAccess)) return true;
   const tier = getPlanTier(user);
   return tier === "pro" || tier === "enterprise";
 }
