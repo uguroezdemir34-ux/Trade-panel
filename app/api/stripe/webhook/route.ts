@@ -1,10 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import { dbSelect, dbUpsert, isDbConfigured } from "@/lib/db/server";
 
 // Stripe sends raw body — disable Next.js body parsing
 export const runtime = "nodejs";
 
 interface StripeEvent {
+  id: string;
   type: string;
   data: {
     object: {
@@ -61,6 +63,50 @@ async function setClerkPlan(userId: string, plan: "pro" | "free"): Promise<void>
   }
 }
 
+/**
+ * invoice.payment_failed event'inin Invoice objesinde metadata doğrudan
+ * yok — sahibini bulmak için ilişkili Subscription'ı REST ile çekiyoruz
+ * (subscription oluşturulurken metadata.userId orada set edilmişti, bkz.
+ * app/api/stripe/checkout/route.ts → subscription_data[metadata][userId]).
+ */
+async function getSubscriptionUserId(subscriptionId: string, stripeKey: string): Promise<string | null> {
+  const res = await fetch(`https://api.stripe.com/v1/subscriptions/${subscriptionId}`, {
+    headers: { Authorization: `Basic ${Buffer.from(`${stripeKey}:`).toString("base64")}` },
+  });
+  if (!res.ok) return null;
+  const sub = (await res.json()) as { metadata?: { userId?: string } };
+  return sub.metadata?.userId ?? null;
+}
+
+/**
+ * IDEMPOTENCY — Stripe aynı event'i birden fazla kez teslim edebilir (ağ
+ * hatası, retry). event.id'yi stripe_events tablosunda işaretleyip ikinci
+ * teslimatı atlıyoruz. Supabase yapılandırılmamışsa kontrol sessizce
+ * atlanır — best-effort bir koruma, hard bir bağımlılık değil.
+ */
+async function alreadyProcessed(eventId: string): Promise<boolean> {
+  if (!isDbConfigured()) return false;
+  try {
+    const rows = await dbSelect<{ event_id: string }>(
+      "stripe_events",
+      `event_id=eq.${eventId}&select=event_id`,
+    );
+    return rows.length > 0;
+  } catch (err) {
+    console.error("[stripe webhook] idempotency kontrolü başarısız, işleniyor gibi devam:", err);
+    return false;
+  }
+}
+
+async function markProcessed(eventId: string, eventType: string): Promise<void> {
+  if (!isDbConfigured()) return;
+  try {
+    await dbUpsert("stripe_events", { event_id: eventId, event_type: eventType });
+  } catch (err) {
+    console.error("[stripe webhook] idempotency kaydı yazılamadı:", err);
+  }
+}
+
 export async function POST(req: NextRequest) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
   if (!webhookSecret) {
@@ -75,6 +121,10 @@ export async function POST(req: NextRequest) {
   }
 
   const event = JSON.parse(rawBody) as StripeEvent;
+
+  if (await alreadyProcessed(event.id)) {
+    return NextResponse.json({ received: true, duplicate: true });
+  }
 
   try {
     switch (event.type) {
@@ -102,6 +152,20 @@ export async function POST(req: NextRequest) {
         }
         break;
       }
+      case "invoice.payment_failed": {
+        // Kart reddi / başarısız yenileme — kullanıcıyı hemen free'ye çek.
+        // Stripe kendi Smart Retries döngüsünü ayrıca çalıştırır; ödeme
+        // sonradan başarılı olursa customer.subscription.updated (status:
+        // active) planı zaten pro'ya geri yazar — burada kalıcı bir "ban"
+        // yok, sadece ödeme düzelene kadar kısıtlı erişim.
+        const subscriptionId = event.data.object.subscription;
+        const stripeKey = process.env.STRIPE_SECRET_KEY;
+        if (subscriptionId && stripeKey) {
+          const userId = await getSubscriptionUserId(subscriptionId, stripeKey);
+          if (userId) await setClerkPlan(userId, "free");
+        }
+        break;
+      }
       default:
         // Unhandled event types — acknowledge and move on
         break;
@@ -111,5 +175,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Handler failed" }, { status: 500 });
   }
 
+  await markProcessed(event.id, event.type);
   return NextResponse.json({ received: true });
 }

@@ -15,6 +15,8 @@ import {
   handleOkxProxy,
   loadServerConfigFromEnv,
 } from "@/lib/okx/server-handler";
+import { auth } from "@/lib/auth/serverStubs";
+import { checkOkxRateLimit } from "@/lib/rate-limit";
 
 function buildOkxPath(req: NextRequest): string {
   // URL: /api/okx/api/v5/market/candles?instId=...
@@ -24,7 +26,25 @@ function buildOkxPath(req: NextRequest): string {
   return afterProxy + (url.search ?? "");
 }
 
+/**
+ * Rate-limit anahtarı: giriş yapmış kullanıcı için Clerk userId (mobil
+ * operatör NAT'ları/paylaşımlı IP'ler yüzünden IP güvenilmez), public/
+ * unauthenticated market-data okumaları için (middleware.ts'te bu path'ler
+ * isPublicRoute listesinde) X-Forwarded-For'a düşülür.
+ */
+async function rateLimitIdentifier(req: NextRequest): Promise<string> {
+  const { userId } = await auth();
+  if (userId) return userId;
+  return req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "anonymous";
+}
+
 export async function GET(req: NextRequest): Promise<NextResponse> {
+  const identifier = await rateLimitIdentifier(req);
+  const { success } = await checkOkxRateLimit(identifier);
+  if (!success) {
+    return NextResponse.json({ ok: false, err: "RATE_LIMITED" }, { status: 429 });
+  }
+
   const path = buildOkxPath(req);
   const isDemo = req.headers.get("X-OKX-Mode") === "demo";
   const config = loadServerConfigFromEnv(process.env);
@@ -43,6 +63,12 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const identifier = await rateLimitIdentifier(req);
+  const { success } = await checkOkxRateLimit(identifier);
+  if (!success) {
+    return NextResponse.json({ ok: false, err: "RATE_LIMITED" }, { status: 429 });
+  }
+
   let parsed: { isDemo?: boolean; body?: unknown; clientCreds?: { key: string; secret: string; pass: string } | null };
   try {
     parsed = await req.json();
