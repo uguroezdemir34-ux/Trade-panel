@@ -16,40 +16,68 @@ const isPublicRoute = createRouteMatcher([
 
 /**
  * KAPALI BETA KAPISI — Adım 4.1. Bu 4 sayfa, giriş yapmış olmak YETMEZ,
- * ayrıca publicMetadata.betaAccess===true VEYA plan pro/enterprise olmalı.
+ * ayrıca publicMetadata.betaAccess===true (veya "true"/1/"1") VEYA plan
+ * pro/enterprise olmalı.
  *
- * ⚠️ ÇALIŞTIRILMADAN ÖNCE ZORUNLU Clerk Dashboard adımı: Clerk, varsayılan
- * olarak publicMetadata'yı session token'a (dolayısıyla sessionClaims'e)
- * DAHIL ETMEZ — Dashboard → Sessions → Customize session token'a şu claim'i
- * eklemeden bu middleware sessionClaims.publicMetadata'yı HER ZAMAN
- * `undefined` görür:
- *     { "publicMetadata": "{{user.public_metadata}}" }
- * Bu adım atlanırsa isBetaAllowed() aşağıda HER kullanıcı için (beta
- * üyeleri DAHİL) false döner — yani bu 4 sayfa HERKESTEN kapanır, sadece
- * yetkisizlerden değil. Deploy etmeden önce bu ayarı yapın.
+ * ÖNCEKİ SÜRÜM sessionClaims.publicMetadata (JWT claim) okuyordu — bu,
+ * Clerk Dashboard'da ayrı bir "Customize session token" adımı gerektiriyordu
+ * ve üretimde /api/debug/beta-claims ile doğrulandı: bu adım hiç etkili
+ * olmuyordu (sessionClaims.publicMetadata sürekli `null`). Üstelik
+ * session-claims'ten TAMAMEN bağımsız olan currentUser().publicMetadata de
+ * aynı anda boş çıktı — yani mesele sadece JWT claim eksikliği değildi, veri
+ * o an gerçekten hiç set edilmemişti. Bu sürüm artık session claim'lere hiç
+ * bağımlı değil — userId'yi auth()'tan alıp Clerk'in REST API'sinden
+ * publicMetadata'yı DOĞRUDAN, her istekte taze çekiyor.
+ *
+ * TRADE-OFF: bu, her beta-gated route isteğinde (navigasyon başına, Next.js
+ * prefetch'leri dahil) bir Clerk API round-trip'i ekliyor — session-claims
+ * yaklaşımının sıfır-ekstra-istek avantajı kayboluyor. Kapalı beta'nın
+ * düşük trafik hacminde kabul edilebilir; ölçek büyürse ayrı bir
+ * cache/session-claims turu gerekebilir.
  */
 const isBetaGatedRoute = createRouteMatcher(["/karar(.*)", "/pnl(.*)", "/grafik(.*)", "/portfolyo(.*)"]);
 
-interface BetaSessionClaims {
-  publicMetadata?: { betaAccess?: unknown; plan?: unknown };
+interface RawPublicMetadata {
+  betaAccess?: unknown;
+  plan?: unknown;
 }
 
 /**
- * Clerk session token claim'leri serialize edilirken betaAccess bazı
- * Clerk şablon/claim varyasyonlarında boolean `true` yerine string
- * `"true"`/`"1"` olarak gelebiliyor — tip toleranslı okunuyor, kaynağı
- * ne olursa olsun "pozitif" sayılan tüm temsiller kabul edilir.
+ * Clerk publicMetadata'da betaAccess bazı durumlarda boolean `true` yerine
+ * string `"true"`/`"1"` olarak saklanmış olabilir (Dashboard'dan elle JSON
+ * girişi ya da API/serileştirme farkı) — tip toleranslı okunuyor.
  */
 function isTruthyFlag(value: unknown): boolean {
   return value === true || value === "true" || value === 1 || value === "1";
 }
 
-function isBetaAllowed(sessionClaims: BetaSessionClaims | undefined): boolean {
-  const meta = sessionClaims?.publicMetadata;
+function isBetaAllowed(meta: RawPublicMetadata | null): boolean {
   if (!meta) return false;
   if (isTruthyFlag(meta.betaAccess)) return true;
   const plan = typeof meta.plan === "string" ? meta.plan.toLowerCase() : undefined;
   return plan === "pro" || plan === "enterprise";
+}
+
+/**
+ * Clerk'in REST API'sinden kullanıcının publicMetadata'sını DOĞRUDAN çeker
+ * — session token/JWT claim'lerine hiç bakmaz, her zaman taze veri döner.
+ * CLERK_SECRET_KEY eksikse veya istek başarısızsa `null` döner (erişim YOK
+ * varsayılanına düşer — bkz. isBetaAllowed).
+ */
+async function fetchPublicMetadata(userId: string): Promise<RawPublicMetadata | null> {
+  const clerkKey = process.env.CLERK_SECRET_KEY;
+  if (!clerkKey) return null;
+
+  try {
+    const res = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+      headers: { Authorization: `Bearer ${clerkKey}` },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as { public_metadata?: RawPublicMetadata };
+    return data.public_metadata ?? null;
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -112,27 +140,17 @@ export default clerkMiddleware(async (auth, req) => {
   // bir bileşen mount ediyor), (b) isBetaGatedRoute listesinde YOK, (c)
   // ürünsel olarak da daha doğru — "yetkin yok" yerine "yükselt" gösteriyor.
   if (isBetaGatedRoute(req)) {
-    const { sessionClaims } = await auth();
+    const { userId } = await auth();
+    const meta = userId ? await fetchPublicMetadata(userId) : null;
 
-    // [BETA-DEBUG] GEÇİCİ — betaAccess neden tanınmıyor sorununu teşhis
-    // etmek için eklendi, kaynak teşhis edildikten sonra kaldırılacak.
-    // Bu loglar TARAYICI KONSOLUNDA DEĞİL, Vercel Dashboard → proje →
-    // Logs (Runtime/Function Logs, Edge ortamı) sekmesinde görünür —
-    // Edge middleware sunucu tarafında çalışır, kullanıcının local
-    // terminalinde değil.
-    const debugMeta = (sessionClaims as BetaSessionClaims | undefined)?.publicMetadata;
-    console.log("[BETA-DEBUG] path:", req.nextUrl.pathname);
-    console.log("[BETA-DEBUG] sessionClaims (full):", JSON.stringify(sessionClaims, null, 2));
-    console.log("[BETA-DEBUG] publicMetadata:", JSON.stringify(debugMeta, null, 2));
-    console.log(
-      "[BETA-DEBUG] betaAccess raw value:",
-      debugMeta?.betaAccess,
-      "| typeof:",
-      typeof debugMeta?.betaAccess
-    );
-    console.log("[BETA-DEBUG] isBetaAllowed() result:", isBetaAllowed(sessionClaims as BetaSessionClaims | undefined));
+    // [BETA-DEBUG] GEÇİCİ — session-claims'ten canlı Clerk API fetch'ine
+    // geçildikten sonra hâlâ sorun sürerse teşhis için. Vercel Dashboard →
+    // proje → Logs (Runtime/Function Logs, Edge ortamı) sekmesinde görünür.
+    console.log("[BETA-DEBUG] path:", req.nextUrl.pathname, "| userId:", userId);
+    console.log("[BETA-DEBUG] live publicMetadata (Clerk REST API):", JSON.stringify(meta, null, 2));
+    console.log("[BETA-DEBUG] isBetaAllowed() result:", isBetaAllowed(meta));
 
-    if (!isBetaAllowed(sessionClaims as BetaSessionClaims | undefined)) {
+    if (!isBetaAllowed(meta)) {
       return NextResponse.redirect(new URL("/upgrade", req.url));
     }
   }
