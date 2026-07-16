@@ -10,9 +10,14 @@ interface StripeEvent {
     object: {
       metadata?: { userId?: string };
       subscription?: string;
+      /** customer.subscription.* event'lerinde dolu — Stripe Subscription.status */
+      status?: string;
     };
   };
 }
+
+/** Stripe subscription durumları → hangi Clerk plan'ına eşleniyor. */
+const ACTIVE_SUBSCRIPTION_STATUSES = new Set(["active", "trialing"]);
 
 function verifyStripeSignature(
   rawBody: string,
@@ -82,6 +87,19 @@ export async function POST(req: NextRequest) {
         // Subscription canceled — downgrade to free
         const userId = event.data.object.metadata?.userId;
         if (userId) await setClerkPlan(userId, "free");
+        break;
+      }
+      case "customer.subscription.updated": {
+        // Trial → active, past_due, unpaid, paused vb. durum geçişleri.
+        // active/trialing → pro; her şey diğer her şey (past_due/unpaid/
+        // canceled/incomplete_expired/paused) → free. checkout.session.completed
+        // ile YARIŞ RİSKİ YOK — ikisi de aynı sonuca (pro) yazıyor, idempotent.
+        const userId = event.data.object.metadata?.userId;
+        const status = event.data.object.status;
+        if (userId && status) {
+          const plan = ACTIVE_SUBSCRIPTION_STATUSES.has(status) ? "pro" : "free";
+          await setClerkPlan(userId, plan);
+        }
         break;
       }
       default:

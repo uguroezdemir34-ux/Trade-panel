@@ -15,6 +15,33 @@ const isPublicRoute = createRouteMatcher([
 ]);
 
 /**
+ * KAPALI BETA KAPISI — Adım 4.1. Bu 4 sayfa, giriş yapmış olmak YETMEZ,
+ * ayrıca publicMetadata.betaAccess===true VEYA plan pro/enterprise olmalı.
+ *
+ * ⚠️ ÇALIŞTIRILMADAN ÖNCE ZORUNLU Clerk Dashboard adımı: Clerk, varsayılan
+ * olarak publicMetadata'yı session token'a (dolayısıyla sessionClaims'e)
+ * DAHIL ETMEZ — Dashboard → Sessions → Customize session token'a şu claim'i
+ * eklemeden bu middleware sessionClaims.publicMetadata'yı HER ZAMAN
+ * `undefined` görür:
+ *     { "publicMetadata": "{{user.public_metadata}}" }
+ * Bu adım atlanırsa isBetaAllowed() aşağıda HER kullanıcı için (beta
+ * üyeleri DAHİL) false döner — yani bu 4 sayfa HERKESTEN kapanır, sadece
+ * yetkisizlerden değil. Deploy etmeden önce bu ayarı yapın.
+ */
+const isBetaGatedRoute = createRouteMatcher(["/karar(.*)", "/pnl(.*)", "/grafik(.*)", "/portfolyo(.*)"]);
+
+interface BetaSessionClaims {
+  publicMetadata?: { betaAccess?: boolean; plan?: string };
+}
+
+function isBetaAllowed(sessionClaims: BetaSessionClaims | undefined): boolean {
+  const meta = sessionClaims?.publicMetadata;
+  if (!meta) return false;
+  if (meta.betaAccess === true) return true;
+  return meta.plan === "pro" || meta.plan === "enterprise";
+}
+
+/**
  * CSP NONCE — her istekte rastgele, tek kullanımlık bir değer. layout.tsx'teki
  * iki inline <script>'e (theme FOUC + dev-debug overlay) bu nonce enjekte
  * edilir, CSP de sadece BU nonce'a sahip inline script'lere izin verir.
@@ -57,6 +84,18 @@ function buildCsp(nonce: string): string {
 export default clerkMiddleware(async (auth, req) => {
   if (!isPublicRoute(req)) {
     await auth.protect();
+  }
+
+  // Kapalı beta kapısı — auth.protect() sadece "giriş yapmış mı" kontrol
+  // eder; burada AYRICA "giriş yapmış AMA beta/pro değil" durumunu ele
+  // alıyoruz. Ana sayfaya (/) yönlendiriyoruz, /sign-in'e DEĞİL — kullanıcı
+  // zaten kimlik doğrulamasını geçmiş durumda, /sign-in'e göndermek yanıltıcı
+  // olurdu ("çıkış mı yaptım?" izlenimi verir).
+  if (isBetaGatedRoute(req)) {
+    const { sessionClaims } = await auth();
+    if (!isBetaAllowed(sessionClaims as BetaSessionClaims | undefined)) {
+      return NextResponse.redirect(new URL("/", req.url));
+    }
   }
 
   const nonce = generateNonce();
