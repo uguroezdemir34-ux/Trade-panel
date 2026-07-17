@@ -17,15 +17,16 @@
  * marketStore.prices'ı (zaten useMarketStream ile canlı besleniyor),
  * equityIndexStore'u (SPY/QQQ/UUP/DIA → "S&P 500"/"NASDAQ"/"DXY"/"DOW"
  * olarak gösterilir, useEquityIndexPoller AppShell'de ayrıca besliyor),
- * macroStore'u (usdtD/usdtDChange24h → "USDT.D", useMacroPoller besliyor)
- * ve commodityStore'u (Altın/Gümüş/Brent → useCommodityPoller AppShell'de
- * besliyor, /api/global-ticker'dan — S&P/NASDAQ/DXY o route'ta da var ama
- * BİLEREK yok sayılıyor, equityIndexStore'la mükerrer/çelişkili rozet
- * olmasın diye, bkz. useCommodityPoller.ts header'ı) okur — bu dosya kendi
- * fetch/poller'ını yapmaz, salt tüketici. Snapshot null'sa (poller ilk
- * cycle'ı bitirmedi / key yok / Finnhub hatası / henüz dominance fetch
- * edilmedi) o öğe tamamen render edilmez, kripto şeridini etkilemez. Pair
- * tipine hiç girmez, skor motoruna hiç dokunmaz (commodityStore de dahil —
+ * macroStore'u (usdtD/usdtDChange24h → "USDT.D", useMacroPoller besliyor),
+ * commodityStore'u VE stockTickerStore'u (Altın/Gümüş/Brent + AAPL/NVDA/TSLA
+ * → useMarketExtrasPoller AppShell'de besliyor, tek /api/global-ticker
+ * fetch'inden — S&P/NASDAQ/DOW/DXY o route'ta BİLEREK hiç çekilmiyor,
+ * equityIndexStore'la mükerrer/çelişkili rozet olmasın diye, bkz.
+ * useMarketExtrasPoller.ts header'ı) okur — bu dosya kendi fetch/poller'ını
+ * yapmaz, salt tüketici. Snapshot null'sa (poller ilk cycle'ı bitirmedi /
+ * key yok / kaynak hatası / henüz dominance fetch edilmedi) o öğe tamamen
+ * render edilmez, kripto şeridini etkilemez. Pair tipine hiç girmez, skor
+ * motoruna hiç dokunmaz (commodityStore/stockTickerStore dahil —
  * equityIndexStore'un aksine skor motoruna GİRMİYOR, salt kozmetik).
  *
  * Sticky pozisyon: NewsFeedBanner'ın (ayrı dosya, ayrı sayfa kapsamı —
@@ -46,6 +47,7 @@ import { useMarketStore } from "@/lib/store/marketStore";
 import { useEquityIndexStore, type EquityIndexSnapshot } from "@/lib/store/equityIndexStore";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { useCommodityStore, type CommoditySymbol, type CommoditySnapshot } from "@/lib/store/commodityStore";
+import { useStockTickerStore, type StockSymbol, type StockSnapshot } from "@/lib/store/stockTickerStore";
 import { useT, useLocale } from "@/lib/i18n/context";
 import { formatTickPrice, formatPercent } from "@/lib/i18n/format";
 
@@ -53,6 +55,12 @@ const COMMODITY_LABELS: { key: CommoditySymbol; label: string }[] = [
   { key: "gold", label: "GOLD" },
   { key: "silver", label: "SILVER" },
   { key: "brent", label: "BRENT" },
+];
+
+const STOCK_LABELS: { key: StockSymbol; label: string }[] = [
+  { key: "aapl", label: "AAPL" },
+  { key: "nvda", label: "NVDA" },
+  { key: "tsla", label: "TSLA" },
 ];
 
 // SPY/QQQ/UUP/DIA teknik proxy sembolleri — kullanıcıya gerçek endeks adlarıyla
@@ -75,6 +83,9 @@ function TickerTapeImpl(): React.ReactElement {
   const gold = useCommodityStore((s) => s.gold);
   const silver = useCommodityStore((s) => s.silver);
   const brent = useCommodityStore((s) => s.brent);
+  const aapl = useStockTickerStore((s) => s.aapl);
+  const nvda = useStockTickerStore((s) => s.nvda);
+  const tsla = useStockTickerStore((s) => s.tsla);
   const locale = useLocale();
   const t = useT();
 
@@ -82,6 +93,12 @@ function TickerTapeImpl(): React.ReactElement {
     gold,
     silver,
     brent,
+  };
+
+  const stockSnapshots: Record<StockSymbol, StockSnapshot | null> = {
+    aapl,
+    nvda,
+    tsla,
   };
 
   const equitySnapshots: Record<"spy" | "qqq" | "uup" | "dow", EquityIndexSnapshot | null> = {
@@ -162,6 +179,28 @@ function TickerTapeImpl(): React.ReactElement {
         // Poller henüz ilk cycle'ı tamamlamadıysa / route hatasıysa snap
         // null olur — öğe tamamen render edilmez, şeridin geri kalanını
         // etkilemez (equity index item'larıyla aynı savunmacı desen).
+        if (!snap) return null;
+        const chg = snap.changePct;
+        const chgColor =
+          chg === null ? "text-text-t4" : chg >= 0 ? "text-signal-up" : "text-signal-down";
+        const arrow = chg === null ? "" : chg >= 0 ? "▲" : "▼";
+
+        return (
+          <span key={`${keyPrefix}-${key}`} className="flex shrink-0 items-center gap-1.5">
+            <span className="text-text-t2 font-bold">{label}</span>
+            {/* snap.price Yahoo'dan zaten 'en-US' formatlı string olarak geliyor
+                (bkz. app/api/global-ticker/route.ts) — formatTickPrice'a sokulmuyor. */}
+            <span className="text-text-t1">{snap.price}</span>
+            <span className={chgColor}>
+              {chg === null ? "—" : `${arrow} ${formatPercent(Math.abs(chg), locale)}`}
+            </span>
+          </span>
+        );
+      })}
+      {STOCK_LABELS.map(({ key, label }) => {
+        const snap = stockSnapshots[key];
+        // Aynı savunmacı desen — poller ilk cycle'ı bitirmediyse / route
+        // hatasıysa snap null olur, öğe render edilmez.
         if (!snap) return null;
         const chg = snap.changePct;
         const chgColor =

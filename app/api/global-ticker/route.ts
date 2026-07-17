@@ -1,8 +1,14 @@
 /**
- * /api/global-ticker — S&P 500, NASDAQ, Altın, Gümüş, DXY, Brent (Yahoo
+ * /api/global-ticker — Altın, Gümüş, Brent, AAPL, NVDA, TSLA (Yahoo
  * Finance, gayri-resmi chart endpoint). 60sn sunucu-tarafı cache — bkz.
  * app/api/news/route.ts'teki aynı in-memory cache deseni (Next.js fetch
  * Data Cache'i — `next: { revalidate }` — yerine bilerek).
+ *
+ * S&P 500/NASDAQ/DOW/DXY BİLEREK YOK — equityIndexStore/useEquityIndexPoller
+ * zaten bunları farklı bir kaynaktan (SPY/QQQ/DIA/UUP proxy'leri) çekip
+ * skor motoruna da besliyor (composeScoreInput). Önceki sürümde bu route
+ * ^GSPC/^IXIC/DXY'i de çekiyordu ama useMarketExtrasPoller onları hiç
+ * kullanmıyordu (mükerrer rozet riski) — gereksiz Yahoo çağrısı kaldırıldı.
  */
 
 import { NextResponse } from 'next/server';
@@ -24,12 +30,12 @@ export async function GET() {
   }
 
   const assets = [
-    { symbol: '^GSPC', name: 'S&P 500' },
-    { symbol: '^IXIC', name: 'NASDAQ' },
     { symbol: 'GC=F', name: 'GOLD' },
     { symbol: 'SI=F', name: 'SILVER' },
-    { symbol: 'DX-Y.NYB', name: 'DXY' },
-    { symbol: 'BZ=F', name: 'BRENT' }
+    { symbol: 'BZ=F', name: 'BRENT' },
+    { symbol: 'AAPL', name: 'AAPL' },
+    { symbol: 'NVDA', name: 'NVDA' },
+    { symbol: 'TSLA', name: 'TSLA' }
   ];
 
   try {
@@ -53,8 +59,8 @@ export async function GET() {
           return {
             name: asset.name,
             price: price.toLocaleString('en-US', {
-              minimumFractionDigits: asset.name === 'DXY' || asset.name === 'SILVER' ? 3 : 2,
-              maximumFractionDigits: asset.name === 'DXY' || asset.name === 'SILVER' ? 3 : 2
+              minimumFractionDigits: asset.name === 'SILVER' ? 3 : 2,
+              maximumFractionDigits: asset.name === 'SILVER' ? 3 : 2
             }),
             change: change.toFixed(2),
             isPositive: change >= 0
