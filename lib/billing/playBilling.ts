@@ -27,6 +27,12 @@
  * örüntü son derece tutarlı (definitions.d.ts'teki her response tipinde
  * aynı sıralama).
  *
+ * SUNUCU DOĞRULAMASI: purchaseToken/orderId elde edildikten SONRA
+ * `/api/billing/verify-google`'a (bkz. o route'un header'ı) açıkça POST
+ * atılır — plugin'in kendi `setGoogleVerificationDetails` auto-callback
+ * mekanizmasına bilerek güvenilmiyor (native tarafın hangi formatta POST
+ * attığı doğrulanamadı). Bu, tamamen bizim kontrolümüzdeki bir sözleşme.
+ *
  * Native olmayan ortamda (web/PWA) her iki fonksiyon da no-op/boş döner —
  * uygulama içi satın alma sadece Android native app'te (Google Play Billing
  * politikası kararı gereği) sunuluyor, web'de kullanıcı Stripe'a yönlendirilir
@@ -55,14 +61,44 @@ export interface PurchaseResult {
   /** Backend doğrulaması (Google Play Developer API) için zorunlu. */
   purchaseToken: string;
   orderId: string;
+  /**
+   * `/api/billing/verify-google` çağrısı başarılı oldu mu (yani kullanıcının
+   * Clerk plan'ı "pro"ya güncellendi mi)? `false` ise satın alma Google
+   * tarafında GERÇEKLEŞTİ ama backend henüz haberdar değil — UI, kullanıcıya
+   * "satın alma tamamlandı, birkaç dakika içinde aktive olacak" gibi bir
+   * mesaj gösterip arka planda tekrar denemeli/desteğe yönlendirmeli.
+   */
+  verified: boolean;
 }
 
-// Sunucu tarafı makbuz doğrulama endpoint'i — henüz yazılmadı, ayrı bir
-// görev (Google Play Developer API + service account kurulumu gerektiriyor).
-// Bu satır olmadan da satın alma akışı çalışır/tamamlanır, sadece plugin'in
-// kendi sunucu-taraflı doğrulama entegrasyonu devre dışı kalır.
 const GOOGLE_VERIFY_ENDPOINT = "/api/billing/verify-google";
 const ANDROID_APPLICATION_ID = "com.quantixos.trading"; // bkz. capacitor.config.ts appId
+
+/**
+ * Google'ın kendi doğrulamasından (purchases.subscriptions.get) SONRA
+ * çalışır — bu sadece bizim backend'imize "artık pro'sun" dedirtme adımı.
+ * Ağ hatası/backend hatası olursa throw ETMEZ, `false` döner — arayan taraf
+ * (buySubscription) satın almanın kendisini yine de başarılı saymalı,
+ * sadece `verified: false` işaretlemeli.
+ */
+async function verifyPurchaseWithServer(result: Omit<PurchaseResult, "verified">): Promise<boolean> {
+  try {
+    const res = await fetch(GOOGLE_VERIFY_ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        purchaseToken: result.purchaseToken,
+        productId: result.productId,
+      }),
+    });
+    if (!res.ok) return false;
+    const data = (await res.json()) as { verified?: boolean };
+    return data.verified === true;
+  } catch (err) {
+    console.error("[playBilling] server verification failed:", err);
+    return false;
+  }
+}
 
 let _products: BillingProduct[] = [];
 let _verificationConfigured = false;
@@ -122,11 +158,13 @@ export async function initializeBilling(): Promise<BillingProduct[]> {
 
 /**
  * Native Google Play satın alma popover'ını açar, kullanıcı ödemeyi
- * tamamlayana kadar (en fazla 5dk) bekler, sonra gerçek purchaseToken/
- * orderId'yi getLatestTransaction() ile çeker. Bunlar backend'e (Google Play
- * Developer API ile makbuz doğrulaması yapacak bir route'a, henüz yazılmadı)
- * gönderilmeli. Kullanıcı vazgeçer/hata olursa/zaman aşımına uğrarsa `null`
- * döner.
+ * tamamlayana kadar (en fazla 5dk) bekler, gerçek purchaseToken/orderId'yi
+ * getLatestTransaction() ile çeker, sonra bunları /api/billing/verify-google
+ * ile backend'e doğrulatır (bkz. verifyPurchaseWithServer). Kullanıcı
+ * vazgeçer/hata olursa/zaman aşımına uğrarsa `null` döner — ama backend
+ * doğrulaması başarısız olursa (ağ hatası vb.) `null` DÖNMEZ, satın alma
+ * Google tarafında zaten gerçekleşti; bunun yerine `verified: false` ile
+ * dönen sonuç işaretlenir (bkz. PurchaseResult.verified).
  */
 export async function buySubscription(sku: BillingProductId): Promise<PurchaseResult | null> {
   if (!isNativePlatform()) return null;
@@ -172,11 +210,14 @@ export async function buySubscription(sku: BillingProductId): Promise<PurchaseRe
       return null;
     }
 
-    return {
+    const partial = {
       productId: latest.data.productIdentifier,
       purchaseToken: latest.data.purchaseToken,
       orderId: latest.data.transactionId,
     };
+    const verified = await verifyPurchaseWithServer(partial);
+
+    return { ...partial, verified };
   } catch (err) {
     console.error("[playBilling] buySubscription failed:", err);
     return null;
