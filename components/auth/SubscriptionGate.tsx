@@ -26,6 +26,7 @@
  * kapısı, ince-taneli özellik bazlı kısıtlama (hasFeature()) ayrı bir tur.
  */
 
+import { useEffect, useState } from "react";
 import { useUserStub } from "@/lib/auth/stubs";
 import { getPlanTier, type ClerkUserLike, type FeatureKey } from "@/lib/auth/subscription";
 
@@ -86,7 +87,32 @@ export function SubscriptionGate({ fallback, children }: Props): React.ReactElem
   return <BetaAccessRequiredCard />;
 }
 
+/**
+ * Signed-in ama beta onayı olmayan kullanıcı için — eğer bu kullanıcının
+ * e-postası waitlist tablosunda kayıtlıysa, jenerik "erişim yok" mesajı
+ * yerine gerçek sıra numarasını gösterir (bkz. app/api/waitlist/status).
+ * Kayıt yoksa (örn. eski bir beta test kullanıcısı, waitlist akışından
+ * hiç geçmemiş) jenerik mesaj korunur — fetch başarısız/boş dönerse de
+ * aynı fallback, hiçbir zaman kırık bir UI göstermez.
+ */
 function BetaAccessRequiredCard(): React.ReactElement {
+  const [position, setPosition] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/waitlist/status")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { position?: number | null } | null) => {
+        if (!cancelled && data?.position) setPosition(data.position);
+      })
+      .catch(() => {
+        /* sessizce jenerik mesaja düş */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <div className="rounded-lg border border-amber-500/30 bg-amber-950/10 p-4">
       <div className="flex items-start gap-3">
@@ -95,10 +121,17 @@ function BetaAccessRequiredCard(): React.ReactElement {
           <p className="font-mono text-xs font-bold uppercase tracking-widest text-amber-400">
             Kapalı Beta Erişimi Gerekli
           </p>
-          <p className="mt-1 font-mono text-xs leading-relaxed text-text-t3">
-            Bu özellik şu an sadece kapalı beta grubu üyelerine veya Pro/Enterprise
-            abonelerine açık.
-          </p>
+          {position ? (
+            <p className="mt-1 font-mono text-xs leading-relaxed text-text-t3">
+              Kayıtlı e-postanızla <span className="text-amber-400">#{position.toLocaleString("en-US")}</span>{" "}
+              sırasındasınız — sıra size gelmek üzere!
+            </p>
+          ) : (
+            <p className="mt-1 font-mono text-xs leading-relaxed text-text-t3">
+              Bu özellik şu an sadece kapalı beta grubu üyelerine veya Pro/Enterprise
+              abonelerine açık.
+            </p>
+          )}
         </div>
       </div>
     </div>
