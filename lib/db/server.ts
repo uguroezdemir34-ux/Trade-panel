@@ -79,6 +79,30 @@ export async function dbUpsert<T extends object>(
 }
 
 /**
+ * UPDATE — partial-column update on rows matching the given query. Unlike
+ * dbUpsert (INSERT ... ON CONFLICT), this is a genuine SQL UPDATE — safe to
+ * call with a subset of columns even when other NOT NULL columns (without a
+ * DEFAULT) exist on the table, since no candidate INSERT row is ever built.
+ * @example dbUpdate("waitlist", { status: "approved" }, "email=eq.foo@bar.com")
+ */
+export async function dbUpdate<T extends object>(
+  table: string,
+  patch: Partial<T>,
+  query: string,
+): Promise<void> {
+  assertConfig();
+  const res = await fetch(tableUrl(table, query), {
+    method: "PATCH",
+    headers: { ...baseHeaders(), Prefer: "return=minimal" },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Supabase UPDATE failed (${res.status}): ${err}`);
+  }
+}
+
+/**
  * DELETE — delete rows matching the given query.
  * @example dbDelete("trades", "user_id=eq.user_123&status=eq.pending")
  */

@@ -12,7 +12,7 @@
  * metadata'sını o an senkronize eder (self-healing, bkz. middleware.ts).
  */
 
-import { dbSelect, dbUpsert } from "@/lib/db/server";
+import { dbSelect, dbUpdate } from "@/lib/db/server";
 import { findClerkUserIdByEmail, patchClerkPublicMetadata } from "@/lib/clerk/metadata";
 
 export interface ApproveResult {
@@ -30,7 +30,7 @@ export async function approveWaitlistEmail(email: string): Promise<ApproveResult
   );
   if (rows.length === 0) return { ok: false, clerkSynced: false };
 
-  await dbUpsert("waitlist", { email: normalized, status: "approved" }, "email");
+  await dbUpdate("waitlist", { status: "approved" }, `email=eq.${encodeURIComponent(normalized)}`);
 
   try {
     const userId = await findClerkUserIdByEmail(normalized);
