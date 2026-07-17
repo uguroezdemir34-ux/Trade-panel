@@ -1,17 +1,23 @@
 import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth/serverStubs";
+import { WaitlistScreen } from "@/components/auth/WaitlistScreen";
 
 /**
- * Root sayfa — varsayılan tab'e yönlendirme.
+ * Root sayfa.
  *
- * Panel'de "lastTab" localStorage'tan okunup gösteriliyordu. Server-side
- * render'da localStorage erişimi yok; bu yüzden basit yaklaşım:
- *   - Her zaman /karar'a redirect
- *   - Client'ta lastTab varsa, settingsStore.rehydrate sonrası BottomNav
- *     zaten o sayfayı highlight ediyor — kullanıcı manuel olarak değiştirebilir.
+ * Giriş yapmış (Clerk session'ı olan) kullanıcı → /karar'a redirect
+ * (eski davranış, korunuyor — beta/plan kontrolü zaten middleware.ts'in
+ * isBetaGatedRoute mantığında ayrıca yapılıyor, burada tekrarlanmıyor).
  *
- * Alternatif (Faz 2 sonraki paket): cookie ile server-side lastTab okuma.
- * Şimdilik basit tutuyoruz.
+ * Giriş yapmamış ziyaretçi → redirect YOK, doğrudan <WaitlistScreen/>
+ * render edilir. "/" zaten middleware.ts'in isPublicRoute listesinde —
+ * Clerk session'ı olmadan da serbestçe erişilebiliyor, bu yüzden burada
+ * ekstra bir middleware değişikliği gerekmedi.
  */
-export default function HomePage() {
-  redirect("/karar");
+export default async function HomePage() {
+  const { userId } = await auth();
+  if (userId) {
+    redirect("/karar");
+  }
+  return <WaitlistScreen />;
 }

@@ -11,6 +11,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/cron(.*)",
   "/api/macro(.*)",
   "/api/global-ticker(.*)",
+  "/api/waitlist(.*)",
   "/api/okx/api/v5/market/(.*)",
   "/api/okx/api/v5/public/(.*)",
 ]);
@@ -132,11 +133,17 @@ export default clerkMiddleware(async (auth, req) => {
   //
   // PROD KESİNTİSİ POST-MORTEM (bu yorum bilerek kalıcı — aynı hata
   // tekrarlanmasın diye): İlk sürüm burada "/" adresine yönlendiriyordu.
-  // app/page.tsx ("/") KOŞULSUZ olarak redirect("/karar") yapıyor (önceden
-  // var olan, bu dosyanın kapsamı dışındaki kod) — yani beta erişimi
-  // olmayan bir kullanıcı /karar'a gelince buradan "/"e atılıyor, "/"
-  // anında /karar'a geri atıyor: SONSUZ DÖNGÜ (→ prod'da "içerik yüklenmiyor/
-  // beyaz ekran" olarak gözlemlendi). "/upgrade" bilerek seçildi: (a) kendi
+  // app/page.tsx ("/") o zaman KOŞULSUZ olarak redirect("/karar") yapıyordu
+  // — yani beta erişimi olmayan bir kullanıcı /karar'a gelince buradan
+  // "/"e atılıyor, "/" anında /karar'a geri atıyor: SONSUZ DÖNGÜ (→ prod'da
+  // "içerik yüklenmiyor/beyaz ekran" olarak gözlemlendi). GÜNCEL DURUM
+  // (WaitlistScreen eklendikten sonra): app/page.tsx artık "/"i KOŞULSUZ
+  // redirect etmiyor — sadece Clerk session'ı OLAN kullanıcıyı /karar'a
+  // yönlendiriyor, session'ı olmayana WaitlistScreen render ediyor. Yani
+  // döngü riski hâlâ GEÇERLİ ama daralmış: eğer bu blok "/" adresine
+  // yönlendirseydi, sadece giriş yapmış-ama-beta-olmayan kullanıcılar için
+  // aynı döngü tekrar oluşurdu (session'ı olduğu için "/" onu yine
+  // /karar'a atar). "/upgrade" bilerek seçildi: (a) kendi
   // içinde hiçbir redirect yok (app/upgrade/page.tsx sadece client-render
   // bir bileşen mount ediyor), (b) isBetaGatedRoute listesinde YOK, (c)
   // ürünsel olarak da daha doğru — "yetkin yok" yerine "yükselt" gösteriyor.

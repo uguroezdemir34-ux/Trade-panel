@@ -3,50 +3,63 @@
 /**
  * WAITLIST SCREEN — kapalı beta'ya giriş kapısı, premium/mobil-öncelikli.
  *
- * ⚠️ MOCK VERİ — henüz hiçbir backend'e bağlı değil. "Joined" state'indeki
- * sıra numarası ve referral kodu SADECE İSTEMCİDE üretiliyor (generateMock*
- * fonksiyonları), hiçbir e-posta kaydedilmiyor, gerçek bir kuyruk/referral
- * takip sistemi yok. Gerçek kullanıcılara gösterilmeden önce (a) e-postayı
- * gerçekten saklayan bir API route (Supabase'e yeni bir `waitlist` tablosu
- * gibi) ve (b) gerçek referral sayımı eklenmeli — aksi halde kullanıcıya
- * sahte bir sosyal kanıt/kuyruk pozisyonu gösterilmiş olur.
- *
- * Henüz hiçbir route'a bağlanmadı — sadece bileşen. Nereye mount edileceği
- * (mevcut SubscriptionGate/BetaAccessRequiredCard akışının yerine mi,
- * yoksa ondan önce ayrı bir adım mı) ayrı bir karar.
+ * app/api/waitlist/register'a POST atar — gerçek Supabase `waitlist`
+ * tablosuna kaydeder, sıra numarası (position) gerçek DB id'sidir (mock
+ * değil). Henüz hiçbir route'a mount edilmedi — sadece bileşen. Referral
+ * link'teki `?ref=` parametresini okuyup `referredBy` olarak göndermek
+ * ayrı bir adım (routing kararına bağlı, henüz yapılmadı).
  */
 
 import { useState } from "react";
+import Link from "next/link";
 import { QuantixLogo } from "@/components/brand/QuantixLogo";
 
 type WaitlistState = "initial" | "joined";
 
-function generateMockPosition(): number {
-  return Math.floor(4000 + Math.random() * 2000);
-}
-
-function generateMockReferralCode(): string {
-  return Math.random().toString(36).slice(2, 8).toUpperCase();
+interface JoinedInfo {
+  position: number;
+  referralCode: string;
 }
 
 export function WaitlistScreen(): React.ReactElement {
   const [state, setState] = useState<WaitlistState>("initial");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [position] = useState(generateMockPosition);
-  const [referralCode] = useState(generateMockReferralCode);
+  const [joined, setJoined] = useState<JoinedInfo | null>(null);
 
-  const referralLink = `quantixos.com/invite/${referralCode}`;
+  const referralLink = joined ? `quantixos.com/invite/${joined.referralCode}` : "";
 
-  function handleSubmit(e: React.FormEvent): void {
+  async function handleSubmit(e: React.FormEvent): Promise<void> {
     e.preventDefault();
     if (!email.trim() || !email.includes("@")) {
       setError("Please enter a valid email address.");
       return;
     }
     setError(null);
-    setState("joined");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/waitlist/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = (await res.json()) as {
+        position?: number;
+        referralCode?: string;
+        error?: string;
+      };
+      if (!res.ok || !data.position || !data.referralCode) {
+        throw new Error(data.error ?? "Registration failed. Please try again.");
+      }
+      setJoined({ position: data.position, referralCode: data.referralCode });
+      setState("joined");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Something went wrong. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleCopy(): Promise<void> {
@@ -120,20 +133,21 @@ export function WaitlistScreen(): React.ReactElement {
               {error && <p className="text-left text-xs text-red-400">{error}</p>}
               <button
                 type="submit"
-                className="w-full rounded-lg bg-[#10B981] px-4 py-3 text-sm font-bold tracking-wide text-[#0D0E12] transition-all hover:brightness-110 active:scale-[0.98]"
+                disabled={loading}
+                className="w-full rounded-lg bg-[#10B981] px-4 py-3 text-sm font-bold tracking-wide text-[#0D0E12] transition-all hover:brightness-110 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                Join Waitlist 🚀
+                {loading ? "Joining…" : "Join Waitlist 🚀"}
               </button>
             </form>
 
-            <button
-              type="button"
+            <Link
+              href="/sign-in"
               className="text-xs font-medium text-gray-500 underline-offset-4 transition-colors hover:text-[#00F0FF] hover:underline"
             >
               Already have an invite code? Login
-            </button>
+            </Link>
           </div>
-        ) : (
+        ) : joined === null ? null : (
           <div className="flex w-full animate-[waitlist-fade-in_0.4s_ease-out] flex-col items-center gap-6 text-center">
             <div className="flex flex-col items-center gap-1">
               <span className="text-xs font-medium tracking-widest text-gray-500 uppercase">
@@ -143,7 +157,7 @@ export function WaitlistScreen(): React.ReactElement {
                 className="font-mono text-4xl font-black text-[#10B981]"
                 style={{ textShadow: "0 0 20px rgba(16,185,129,0.5)" }}
               >
-                #{position.toLocaleString("en-US")}
+                #{joined.position.toLocaleString("en-US")}
               </span>
             </div>
 
@@ -165,12 +179,12 @@ export function WaitlistScreen(): React.ReactElement {
               </div>
             </div>
 
-            <button
-              type="button"
+            <Link
+              href="/sign-in"
               className="text-xs font-medium text-gray-500 underline-offset-4 transition-colors hover:text-[#00F0FF] hover:underline"
             >
               Already have an invite code? Login
-            </button>
+            </Link>
           </div>
         )}
       </div>
