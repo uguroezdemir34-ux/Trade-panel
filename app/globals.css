@@ -511,6 +511,13 @@ textarea {
   .ticker-tape-track { animation: none !important; }
 }
 
+/* WaitlistScreen state geçişi — sadece transform+opacity (aynı GPU-dostu
+   ilke, animasyon kütüphanesi eklemeden "smooth transition" sağlar). */
+@keyframes waitlist-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* === Hero card dış kabuk — nötr karanlık metal çerçeve ===
    --border-strong tokeni: dark=58 58 58, light=136 136 152.
    Kart gövdesi bg-card tokenından, çerçeve sadece kenarda. */
