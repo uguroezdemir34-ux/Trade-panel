@@ -21,33 +21,46 @@
 -- güvenli: erişim yok, hata değil).
 -- ═══════════════════════════════════════════════════════════════════
 
+-- NOT — CANLIDA UYGULARKEN ÖĞRENİLDİ: bu tablolar bu session'dan önce
+-- kurulmuş olabilir, bazı politikalar zaten var olabilir — tüm
+-- CREATE POLICY'ler bilerek DROP POLICY IF EXISTS ile önden korunuyor,
+-- script kaç kere çalıştırılırsa çalıştırılsın hatasız tamamlanır.
+
 -- ── trades ────────────────────────────────────────────────────────
 ALTER TABLE trades ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "trades_select_own" ON trades;
 CREATE POLICY "trades_select_own" ON trades
   FOR SELECT USING (user_id = auth.jwt()->>'sub');
 
+DROP POLICY IF EXISTS "trades_insert_own" ON trades;
 CREATE POLICY "trades_insert_own" ON trades
   FOR INSERT WITH CHECK (user_id = auth.jwt()->>'sub');
 
+DROP POLICY IF EXISTS "trades_update_own" ON trades;
 CREATE POLICY "trades_update_own" ON trades
   FOR UPDATE USING (user_id = auth.jwt()->>'sub');
 
+DROP POLICY IF EXISTS "trades_delete_own" ON trades;
 CREATE POLICY "trades_delete_own" ON trades
   FOR DELETE USING (user_id = auth.jwt()->>'sub');
 
 -- ── push_subscriptions ───────────────────────────────────────────
 ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "push_subscriptions_select_own" ON push_subscriptions;
 CREATE POLICY "push_subscriptions_select_own" ON push_subscriptions
   FOR SELECT USING (user_id = auth.jwt()->>'sub');
 
+DROP POLICY IF EXISTS "push_subscriptions_insert_own" ON push_subscriptions;
 CREATE POLICY "push_subscriptions_insert_own" ON push_subscriptions
   FOR INSERT WITH CHECK (user_id = auth.jwt()->>'sub');
 
+DROP POLICY IF EXISTS "push_subscriptions_update_own" ON push_subscriptions;
 CREATE POLICY "push_subscriptions_update_own" ON push_subscriptions
   FOR UPDATE USING (user_id = auth.jwt()->>'sub');
 
+DROP POLICY IF EXISTS "push_subscriptions_delete_own" ON push_subscriptions;
 CREATE POLICY "push_subscriptions_delete_own" ON push_subscriptions
   FOR DELETE USING (user_id = auth.jwt()->>'sub');
 
@@ -62,6 +75,7 @@ CREATE POLICY "push_subscriptions_delete_own" ON push_subscriptions
 -- politika yoksa erişim yok).
 ALTER TABLE go_signals ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "go_signals_select_authenticated" ON go_signals;
 CREATE POLICY "go_signals_select_authenticated" ON go_signals
   FOR SELECT USING (auth.role() = 'authenticated' OR auth.role() = 'service_role');
 

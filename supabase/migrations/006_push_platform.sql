@@ -26,16 +26,25 @@ ALTER TABLE push_subscriptions ALTER COLUMN auth DROP NOT NULL;
 
 ALTER TABLE push_subscriptions ADD PRIMARY KEY (id);
 
+-- Constraint eklemeleri DROP ... IF EXISTS ile önden korunuyor — script
+-- kaç kere çalıştırılırsa çalıştırılsın hatasız tamamlanır (canlıda
+-- uygulanırken 004'teki policy'lerin zaten var olduğu görülmüştü, aynı
+-- ihtiyat burada da uygulandı).
+ALTER TABLE push_subscriptions DROP CONSTRAINT IF EXISTS push_subscriptions_endpoint_unique;
 ALTER TABLE push_subscriptions
   ADD CONSTRAINT push_subscriptions_endpoint_unique UNIQUE (endpoint);
+
+ALTER TABLE push_subscriptions DROP CONSTRAINT IF EXISTS push_subscriptions_token_unique;
 ALTER TABLE push_subscriptions
   ADD CONSTRAINT push_subscriptions_token_unique UNIQUE (token);
 
+ALTER TABLE push_subscriptions DROP CONSTRAINT IF EXISTS push_subscriptions_platform_check;
 ALTER TABLE push_subscriptions
   ADD CONSTRAINT push_subscriptions_platform_check
     CHECK (platform IN ('webpush', 'fcm'));
 
 -- webpush satırında endpoint+p256dh+auth dolu olmalı; fcm satırında token.
+ALTER TABLE push_subscriptions DROP CONSTRAINT IF EXISTS push_subscriptions_platform_fields_check;
 ALTER TABLE push_subscriptions
   ADD CONSTRAINT push_subscriptions_platform_fields_check CHECK (
     (platform = 'webpush' AND endpoint IS NOT NULL AND p256dh IS NOT NULL AND auth IS NOT NULL)
