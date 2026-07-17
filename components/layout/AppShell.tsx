@@ -43,6 +43,7 @@ import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
 import { useOrderBookPoller } from "@/lib/hooks/useOrderBookPoller";
 import { useNewsPoller } from "@/lib/hooks/useNewsPoller";
 import { useEquityIndexPoller } from "@/lib/hooks/useEquityIndexPoller";
+import { useCommodityPoller } from "@/lib/hooks/useCommodityPoller";
 import { NewsFeedBanner } from "./NewsFeedBanner";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useWeeklyMonthlyPnlTracker } from "@/lib/hooks/useWeeklyMonthlyPnlTracker";
@@ -127,6 +128,7 @@ export function AppShell({
   useOrderBookPoller(4_000); // t+4s — Anomali Işığı Faz 2 (order book duvarı), 3dk cadence
   useNewsPoller(5_000);      // t+5s — Haber Akışı (RSS+Finnhub haber sentiment), 20dk cadence
   useEquityIndexPoller(6_000); // t+6s — S&P/Nasdaq/DXY proxy (SPY/QQQ/UUP), 5dk cadence, veri katmanı (UI henüz yok)
+  useCommodityPoller(7_000); // t+7s — Altın/Gümüş/Brent (Yahoo), 3dk cadence, TickerTape'i besler
   // Günlük P&L takip → drawdown protokol tier güncelle (güvenlik kritik)
   useDailyPnlTracker();
   // Haftalık/aylık kümülatif P&L takip (UTC hafta/ay sınırı) → Portfolyo sayfası kartları
