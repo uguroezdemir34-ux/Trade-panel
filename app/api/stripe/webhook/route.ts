@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { dbSelect, dbUpsert, isDbConfigured } from "@/lib/db/server";
+import { patchClerkPublicMetadata } from "@/lib/clerk/metadata";
 
 // Stripe sends raw body — disable Next.js body parsing
 export const runtime = "nodejs";
@@ -43,33 +44,6 @@ function verifyStripeSignature(
     return crypto.timingSafeEqual(Buffer.from(expected, "hex"), Buffer.from(v1, "hex"));
   } catch {
     return false;
-  }
-}
-
-/**
- * Clerk publicMetadata'yı MERGE ederek günceller — `/v1/users/{id}/metadata`
- * (dedike merge endpoint'i). Bilerek plain `PATCH /v1/users/{id}` DEĞİL:
- * o endpoint public_metadata'yı TAMAMEN DEĞİŞTİRİR (replace), yani örn.
- * bir kullanıcı Pro'ya yükseldiğinde eski koddaki setClerkPlan() onun
- * betaAccess flag'ini (veya başka herhangi bir metadata alanını) sessizce
- * silerdi. Bu fonksiyon her zaman merge endpoint'ini kullanır.
- */
-async function patchClerkPublicMetadata(userId: string, fields: Record<string, unknown>): Promise<void> {
-  const clerkKey = process.env.CLERK_SECRET_KEY;
-  if (!clerkKey) throw new Error("CLERK_SECRET_KEY not set");
-
-  const res = await fetch(`https://api.clerk.com/v1/users/${userId}/metadata`, {
-    method: "PATCH",
-    headers: {
-      Authorization: `Bearer ${clerkKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ public_metadata: fields }),
-  });
-
-  if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`Clerk metadata update failed: ${err}`);
   }
 }
 

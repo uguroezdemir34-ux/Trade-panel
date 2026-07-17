@@ -1,8 +1,12 @@
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
+import { dbSelect, isDbConfigured } from "@/lib/db/server";
+import { patchClerkPublicMetadata } from "@/lib/clerk/metadata";
+import { isAdminUserId } from "@/lib/auth/admin";
 
 const isPublicRoute = createRouteMatcher([
   "/",
+  "/invite(.*)",
   "/privacy(.*)",
   "/terms(.*)",
   "/sign-in(.*)",
@@ -39,6 +43,9 @@ const isPublicRoute = createRouteMatcher([
  */
 const isBetaGatedRoute = createRouteMatcher(["/karar(.*)", "/pnl(.*)", "/grafik(.*)", "/portfolyo(.*)"]);
 
+const isAdminApiRoute = createRouteMatcher(["/api/admin(.*)"]);
+const isAdminPageRoute = createRouteMatcher(["/admin(.*)"]);
+
 interface RawPublicMetadata {
   betaAccess?: unknown;
   plan?: unknown;
@@ -60,25 +67,63 @@ function isBetaAllowed(meta: RawPublicMetadata | null): boolean {
   return plan === "pro" || plan === "enterprise";
 }
 
+interface ClerkUserInfo {
+  publicMetadata: RawPublicMetadata | null;
+  email: string | null;
+}
+
 /**
- * Clerk'in REST API'sinden kullanıcının publicMetadata'sını DOĞRUDAN çeker
- * — session token/JWT claim'lerine hiç bakmaz, her zaman taze veri döner.
- * CLERK_SECRET_KEY eksikse veya istek başarısızsa `null` döner (erişim YOK
- * varsayılanına düşer — bkz. isBetaAllowed).
+ * Clerk'in REST API'sinden kullanıcının publicMetadata'sını VE birincil
+ * email'ini DOĞRUDAN çeker — session token/JWT claim'lerine hiç bakmaz,
+ * her zaman taze veri döner. Email, waitlist fallback kontrolü için lazım
+ * (bkz. trySyncApprovedWaitlist) — ayrı bir Clerk çağrısı yerine aynı
+ * response'tan okunuyor. CLERK_SECRET_KEY eksikse veya istek başarısızsa
+ * ikisi de `null` döner (erişim YOK varsayılanına düşer — bkz. isBetaAllowed).
  */
-async function fetchPublicMetadata(userId: string): Promise<RawPublicMetadata | null> {
+async function fetchClerkUserInfo(userId: string): Promise<ClerkUserInfo> {
   const clerkKey = process.env.CLERK_SECRET_KEY;
-  if (!clerkKey) return null;
+  if (!clerkKey) return { publicMetadata: null, email: null };
 
   try {
     const res = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
       headers: { Authorization: `Bearer ${clerkKey}` },
     });
-    if (!res.ok) return null;
-    const data = (await res.json()) as { public_metadata?: RawPublicMetadata };
-    return data.public_metadata ?? null;
+    if (!res.ok) return { publicMetadata: null, email: null };
+    const data = (await res.json()) as {
+      public_metadata?: RawPublicMetadata;
+      email_addresses?: { id: string; email_address: string }[];
+      primary_email_address_id?: string;
+    };
+    const primaryEmail =
+      data.email_addresses?.find((e) => e.id === data.primary_email_address_id)
+        ?.email_address ?? data.email_addresses?.[0]?.email_address ?? null;
+    return { publicMetadata: data.public_metadata ?? null, email: primaryEmail };
   } catch {
-    return null;
+    return { publicMetadata: null, email: null };
+  }
+}
+
+/**
+ * WAITLIST FALLBACK — kullanıcı Clerk'te betaAccess almamış olabilir ama
+ * admin onu waitlist'te hesap açmadan ÖNCE onaylamış olabilir (bkz.
+ * lib/waitlist/approve.ts). Bu durumda burada tespit edilip Clerk
+ * metadata'sı o an senkronize edilir (self-healing) — sonraki isteklerde
+ * bu ekstra Supabase sorgusuna gerek kalmaz, isBetaAllowed() doğrudan
+ * Clerk metadata üzerinden hızlı geçer. Sadece `!isBetaAllowed(...)`
+ * durumunda çağrılır — zaten onaylı kullanıcılar için ekstra maliyeti yok.
+ */
+async function trySyncApprovedWaitlist(userId: string, email: string): Promise<boolean> {
+  if (!isDbConfigured()) return false;
+  try {
+    const rows = await dbSelect<{ status: string }>(
+      "waitlist",
+      `email=eq.${encodeURIComponent(email.toLowerCase())}&select=status`,
+    );
+    if (rows.length === 0 || rows[0].status !== "approved") return false;
+    await patchClerkPublicMetadata(userId, { betaAccess: true });
+    return true;
+  } catch {
+    return false;
   }
 }
 
@@ -149,10 +194,30 @@ export default clerkMiddleware(async (auth, req) => {
   // ürünsel olarak da daha doğru — "yetkin yok" yerine "yükselt" gösteriyor.
   if (isBetaGatedRoute(req)) {
     const { userId } = await auth();
-    const meta = userId ? await fetchPublicMetadata(userId) : null;
+    const info = userId ? await fetchClerkUserInfo(userId) : { publicMetadata: null, email: null };
 
-    if (!isBetaAllowed(meta)) {
+    let allowed = isBetaAllowed(info.publicMetadata);
+    if (!allowed && userId && info.email) {
+      allowed = await trySyncApprovedWaitlist(userId, info.email);
+    }
+
+    if (!allowed) {
       return NextResponse.redirect(new URL("/upgrade", req.url));
+    }
+  }
+
+  // ADMIN KAPISI — /admin (sayfa) ve /api/admin (API) sadece
+  // ADMIN_USER_IDS env var'ındaki Clerk userId'lerine açık (bkz.
+  // lib/auth/admin.ts). API route'ları zaten kendi 403'ünü kendi de
+  // döner — bu, Edge seviyesinde erken-reddetme (route handler'a hiç
+  // girmeden), ikinci bir savunma katmanı.
+  if (isAdminApiRoute(req) || isAdminPageRoute(req)) {
+    const { userId } = await auth();
+    if (!isAdminUserId(userId)) {
+      if (isAdminApiRoute(req)) {
+        return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+      return NextResponse.redirect(new URL("/karar", req.url));
     }
   }
 

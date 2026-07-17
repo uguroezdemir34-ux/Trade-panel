@@ -5,9 +5,10 @@
  *
  * app/api/waitlist/register'a POST atar — gerçek Supabase `waitlist`
  * tablosuna kaydeder, sıra numarası (position) gerçek DB id'sidir (mock
- * değil). Henüz hiçbir route'a mount edilmedi — sadece bileşen. Referral
- * link'teki `?ref=` parametresini okuyup `referredBy` olarak göndermek
- * ayrı bir adım (routing kararına bağlı, henüz yapılmadı).
+ * değil). `/` (app/page.tsx) ve `/invite/[code]` (app/invite/[code]/page.tsx)
+ * tarafından mount ediliyor — ikincisi `referredBy` prop'unu geçerek
+ * referral zincirini gerçek kılıyor (bkz. app/api/waitlist/register'daki
+ * maybeAutoApproveReferrer — 3 davette otomatik onay).
  */
 
 import { useState } from "react";
@@ -21,7 +22,12 @@ interface JoinedInfo {
   referralCode: string;
 }
 
-export function WaitlistScreen(): React.ReactElement {
+interface Props {
+  /** /invite/[code]'den gelir — kayıt olurken waitlist.referred_by'a yazılır. */
+  referredBy?: string;
+}
+
+export function WaitlistScreen({ referredBy }: Props): React.ReactElement {
   const [state, setState] = useState<WaitlistState>("initial");
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -43,7 +49,7 @@ export function WaitlistScreen(): React.ReactElement {
       const res = await fetch("/api/waitlist/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim() }),
+        body: JSON.stringify({ email: email.trim(), referredBy }),
       });
       const data = (await res.json()) as {
         position?: number;
