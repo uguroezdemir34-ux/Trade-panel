@@ -28,6 +28,7 @@
 
 import { useEffect, useState } from "react";
 import { useUserStub } from "@/lib/auth/stubs";
+import { useT } from "@/lib/i18n/context";
 import { getPlanTier, type ClerkUserLike, type FeatureKey } from "@/lib/auth/subscription";
 
 const CLERK_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
@@ -96,6 +97,7 @@ export function SubscriptionGate({ fallback, children }: Props): React.ReactElem
  * aynı fallback, hiçbir zaman kırık bir UI göstermez.
  */
 function BetaAccessRequiredCard(): React.ReactElement {
+  const t = useT();
   const [position, setPosition] = useState<number | null>(null);
 
   useEffect(() => {
@@ -132,6 +134,16 @@ function BetaAccessRequiredCard(): React.ReactElement {
               abonelerine açık.
             </p>
           )}
+          {/* isBetaAllowed false olduğunda buraya SADECE betaAccess'i olmayan
+              free-tier kullanıcılar düşer — pro/enterprise zaten yukarıda
+              geçer. Dolayısıyla Pro'ya geçmek burada her zaman geçerli bir
+              aksiyon, yanlış yönlendirme riski yok. */}
+          <a
+            href="/upgrade"
+            className="mt-3 inline-block rounded bg-brand px-3 py-2 font-mono text-xs text-white tracking-widest hover:bg-brand/90 transition-colors"
+          >
+            {t("auth.planStatus.upgradeBtn")}
+          </a>
         </div>
       </div>
     </div>
