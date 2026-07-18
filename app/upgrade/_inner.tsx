@@ -10,6 +10,8 @@ const PRO_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? "";
 
 type FeatureRow = {
   labelKey: string;
+  /** Ana etiketin altında küçük/soluk ikinci satır (opsiyonel) */
+  detailKey?: string;
   free: string | boolean;
   pro: string | boolean;
   enterprise: string | boolean;
@@ -66,7 +68,7 @@ function UpgradePageInner() {
     { labelKey: "auth.upgrade.featureScoring",    free: true,  pro: true, enterprise: true },
     { labelKey: "auth.upgrade.featureChart",      free: true,  pro: true, enterprise: true },
     { labelKey: "auth.upgrade.featureMarket",     free: true,  pro: true, enterprise: true },
-    { labelKey: "auth.upgrade.featureFullAccess", free: false, pro: true, enterprise: true },
+    { labelKey: "auth.upgrade.featureFullAccess", detailKey: "auth.upgrade.featureFullAccessDetail", free: false, pro: true, enterprise: true },
   ];
 
   return (
@@ -203,7 +205,14 @@ function UpgradePageInner() {
             key={row.labelKey}
             className={`grid grid-cols-4 ${i % 2 === 0 ? "bg-surface-s1/20" : ""} border-b border-border/50 last:border-0`}
           >
-            <div className="p-3 font-mono text-xs text-text-t3">{t(row.labelKey as Parameters<typeof t>[0])}</div>
+            <div className="p-3 font-mono text-xs text-text-t3">
+              {t(row.labelKey as Parameters<typeof t>[0])}
+              {row.detailKey && (
+                <p className="mt-0.5 font-mono text-2xs text-text-t4">
+                  {t(row.detailKey as Parameters<typeof t>[0])}
+                </p>
+              )}
+            </div>
             <div className="p-3 flex justify-center items-center"><Cell value={row.free} /></div>
             <div className="p-3 flex justify-center items-center"><Cell value={row.pro} /></div>
             <div className="p-3 flex justify-center items-center"><Cell value={row.enterprise} /></div>
