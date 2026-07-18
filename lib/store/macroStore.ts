@@ -15,10 +15,9 @@
  */
 
 import { create } from "zustand";
-import { fetchFearGreed, fetchBtcDominance } from "@/lib/macro/fetch";
+import { fetchFearGreed } from "@/lib/macro/fetch";
 import {
   getFgInfo,
-  getDominancePhase,
   getMarketSummary,
 } from "@/lib/macro/regime";
 import {
@@ -39,6 +38,7 @@ import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type {
   FgInfo,
   DominanceInfo,
+  DominancePhase,
   MarketSummary,
 } from "@/lib/macro/types";
 
@@ -138,7 +138,7 @@ interface MacroStoreState {
 
   // Actions
   refreshFg: (fetchFn?: typeof fetch) => Promise<void>;
-  refreshDominance: (fetchFn?: typeof fetch) => Promise<void>;
+  refreshDominance: () => Promise<void>;
   refreshFunding: (fetchFn?: typeof fetch) => Promise<void>;
   refreshOpenInterest: (fetchFn?: typeof fetch) => Promise<void>;
   refreshMarketCap: () => Promise<void>;
@@ -219,25 +219,49 @@ export const useMacroStore = create<MacroStoreState>((set, get) => {
     }
   },
 
-  refreshDominance: async (fetchFn) => {
+  // /api/macro/dom sunucu-tarafı proxy'sinden çeker — CoinGecko'ya doğrudan
+  // tarayıcıdan gitmez (bkz. o route'un header'ı: CORS sorunu + rate limit
+  // riski önlenir). Önceden fetchBtcDominance() burada DOĞRUDAN çağrılıyordu
+  // (window.fetch → api.coingecko.com), bu route zaten inşa edilmişken hiç
+  // kullanılmıyordu — CORS hatası sessizce yutulup (0,0) fallback'e düşüyordu,
+  // kart hep "no_data" gösteriyordu. refreshMarketCap()'in zaten kullandığı
+  // aynı desen (kendi proxy route'undan fetch).
+  refreshDominance: async () => {
     if (get().domLoading) return;
     set({ domLoading: true });
     try {
       const now = Date.now();
-      const r = await fetchBtcDominance(now, fetchFn);
-      const info = getDominancePhase(r.btcD, r.usdtD);
+      const res = await fetch("/api/macro/dom");
+      if (!res.ok) throw new Error("dom fetch failed");
+      const json = (await res.json()) as {
+        btcD: number;
+        usdtD: number;
+        ethD: number;
+        btcDChange24h: number;
+        ethDChange24h: number;
+        usdtDChange24h: number;
+        phase: DominancePhase;
+        phaseLabel: string;
+        fetchedAt: number;
+      };
+      const info: DominanceInfo = {
+        btcD: json.btcD,
+        usdtD: json.usdtD,
+        phase: json.phase,
+        label: json.phaseLabel,
+      };
       const fgValue = get().fgValue;
       set({
-        btcD: r.btcD,
-        usdtD: r.usdtD,
-        ethD: r.ethD,
-        btcDChange24h: r.btcDChange24h,
-        ethDChange24h: r.ethDChange24h,
-        usdtDChange24h: r.usdtDChange24h,
+        btcD: json.btcD,
+        usdtD: json.usdtD,
+        ethD: json.ethD,
+        btcDChange24h: json.btcDChange24h,
+        ethDChange24h: json.ethDChange24h,
+        usdtDChange24h: json.usdtDChange24h,
         dominance: info,
         domFetchedAt: now,
         domLoading: false,
-        marketSummary: recomputeSummary(fgValue, r.usdtD),
+        marketSummary: recomputeSummary(fgValue, json.usdtD),
       });
     } catch {
       set({ domLoading: false });
@@ -344,7 +368,7 @@ export const useMacroStore = create<MacroStoreState>((set, get) => {
   refreshAll: async (fetchFn) => {
     await Promise.all([
       get().refreshFg(fetchFn),
-      get().refreshDominance(fetchFn),
+      get().refreshDominance(),
       get().refreshFunding(fetchFn),
       get().refreshOpenInterest(fetchFn),
       get().refreshMarketCap(),
