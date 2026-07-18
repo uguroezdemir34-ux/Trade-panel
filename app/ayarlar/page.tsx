@@ -18,6 +18,7 @@ import { ScorerWeightsCard } from "@/components/ayarlar/ScorerWeightsCard";
 import { BinanceCredsCard } from "@/components/ayarlar/BinanceCredsCard";
 import { BybitCredsCard } from "@/components/ayarlar/BybitCredsCard";
 import { GateioCredsCard } from "@/components/ayarlar/GateioCredsCard";
+import { KucoinCredsCard } from "@/components/ayarlar/KucoinCredsCard";
 import { PwaCard } from "@/components/ayarlar/PwaCard";
 import { DiscordWebhookCard } from "@/components/ayarlar/DiscordWebhookCard";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
@@ -80,6 +81,7 @@ export default function AyarlarPage() {
           </div>
           <BybitCredsCard />
           <GateioCredsCard />
+          <KucoinCredsCard />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <TelegramTestCard />
             <DiscordWebhookCard />

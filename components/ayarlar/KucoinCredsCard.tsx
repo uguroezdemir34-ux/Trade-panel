@@ -1,0 +1,153 @@
+"use client";
+
+import { useState } from "react";
+import { useCredentialStore } from "@/lib/store/credentialStore";
+import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useT } from "@/lib/i18n/context";
+import { EXECUTION_ENABLED } from "@/lib/config/execution";
+import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
+import { usePinLockStore } from "@/lib/store/pinLockStore";
+
+export function KucoinCredsCard(): React.ReactElement {
+  return (
+    <SubscriptionGate feature="multiExchange">
+      <KucoinCredsCardInner />
+    </SubscriptionGate>
+  );
+}
+
+function KucoinCredsCardInner(): React.ReactElement {
+  const t = useT();
+  const kucoinFutures = useCredentialStore((s) => s.kucoinFutures);
+  const setKucoinFutures = useCredentialStore((s) => s.setKucoinFutures);
+  const activeExchange = useSettingsStore((s) => s.activeExchange);
+  const setActiveExchange = useSettingsStore((s) => s.setActiveExchange);
+
+  const [key, setKey] = useState("");
+  const [secret, setSecret] = useState("");
+  const [passphrase, setPassphrase] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const unlocked = usePinLockStore((s) => s.unlocked);
+
+  async function handleSave() {
+    if (!key.trim() || !secret.trim() || !passphrase.trim()) return;
+    setSaving(true);
+    await setKucoinFutures({ key: key.trim(), secret: secret.trim(), passphrase: passphrase.trim() });
+    setSaving(false);
+    setSaved(true);
+    setKey("");
+    setSecret("");
+    setPassphrase("");
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  async function handleClear() {
+    await setKucoinFutures(null);
+    if (activeExchange === "kucoin") setActiveExchange("okx");
+  }
+
+  const isActive = activeExchange === "kucoin";
+
+  return (
+    <div
+      className={[
+        "rounded-lg border p-4 transition-colors",
+        isActive ? "border-orange-500/60 bg-orange-950/10" : "border-border bg-bg-card",
+      ].join(" ")}
+    >
+      {/* Header + exchange selector */}
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="font-mono text-sm font-semibold text-text-t1">
+            {t("settings.kucoinCreds.title")}
+          </p>
+          <p className="mt-0.5 font-mono text-xs text-text-t3">
+            {t("settings.kucoinCreds.subtitle")}
+          </p>
+          {!EXECUTION_ENABLED && (
+            <p className="mt-1 font-mono text-[10px] text-amber-400/70">
+              {t("settings.signalModeBalanceOnly")}
+            </p>
+          )}
+        </div>
+        {kucoinFutures && (
+          <button
+            type="button"
+            onClick={() => setActiveExchange(isActive ? "okx" : "kucoin")}
+            className={[
+              "rounded px-3 py-1 font-mono text-xs font-semibold transition-colors",
+              isActive
+                ? "bg-orange-500/20 text-orange-400 border border-orange-500/40"
+                : "bg-surface-2 text-text-t3 border border-border",
+            ].join(" ")}
+          >
+            {isActive ? t("settings.kucoinCreds.active") : t("settings.kucoinCreds.setActive")}
+          </button>
+        )}
+      </div>
+
+      {/* Status */}
+      {kucoinFutures ? (
+        <div className="mt-3 flex items-center justify-between rounded border border-green-500/30 bg-green-950/20 px-3 py-2">
+          <span className="font-mono text-xs text-green-400">
+            ✓ {t("settings.kucoinCreds.saved")}
+          </span>
+          <button
+            type="button"
+            onClick={handleClear}
+            className="font-mono text-xs text-text-t3 hover:text-red-400 transition-colors"
+          >
+            {t("settings.kucoinCreds.clear")}
+          </button>
+        </div>
+      ) : (
+        <div className="mt-3 space-y-2">
+          <input
+            type="text"
+            placeholder={t("settings.kucoinCreds.keyPlaceholder")}
+            value={key}
+            onChange={(e) => setKey(e.target.value)}
+            autoComplete="off"
+            className="w-full rounded border border-border bg-bg px-3 py-2 font-mono text-xs text-text-t1 placeholder:text-text-t3 focus:border-brand focus:outline-none"
+          />
+          <input
+            type="password"
+            placeholder={t("settings.kucoinCreds.secretPlaceholder")}
+            value={secret}
+            onChange={(e) => setSecret(e.target.value)}
+            autoComplete="new-password"
+            className="w-full rounded border border-border bg-bg px-3 py-2 font-mono text-xs text-text-t1 placeholder:text-text-t3 focus:border-brand focus:outline-none"
+          />
+          <input
+            type="password"
+            placeholder={t("settings.kucoinCreds.passphrasePlaceholder")}
+            value={passphrase}
+            onChange={(e) => setPassphrase(e.target.value)}
+            autoComplete="new-password"
+            className="w-full rounded border border-border bg-bg px-3 py-2 font-mono text-xs text-text-t1 placeholder:text-text-t3 focus:border-brand focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={!unlocked || saving || !key.trim() || !secret.trim() || !passphrase.trim()}
+            className="w-full rounded bg-brand py-2 font-mono text-xs font-semibold text-white disabled:opacity-40 hover:opacity-90 transition-opacity"
+          >
+            {!unlocked
+              ? "🔒 PIN Kilidini Açın"
+              : saved
+                ? "✓ " + t("settings.kucoinCreds.saveSuccess")
+                : t("settings.kucoinCreds.save")}
+          </button>
+        </div>
+      )}
+
+      {/* Note */}
+      <div className="mt-3 rounded border border-orange-500/30 bg-orange-950/20 p-2">
+        <p className="font-mono text-xs text-orange-400">
+          ⚠ {t("settings.kucoinCreds.note")}
+        </p>
+      </div>
+    </div>
+  );
+}

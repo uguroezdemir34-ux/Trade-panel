@@ -21,6 +21,7 @@ import { fetchPositions } from "@/lib/okx/positions";
 import { fetchBinancePositions } from "@/lib/binance/positions";
 import { fetchBybitPositions } from "@/lib/bybit/positions";
 import { fetchGateioPositions } from "@/lib/gateio/positions";
+import { fetchKucoinPositions } from "@/lib/kucoin/positions";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
@@ -43,7 +44,7 @@ export function usePositionPoller(delayMs = 0): void {
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function fetchAll(): Promise<void> {
-    const { okxProd, bnbFutures, bybitFutures, gateioFutures } = useCredentialStore.getState();
+    const { okxProd, bnbFutures, bybitFutures, gateioFutures, kucoinFutures } = useCredentialStore.getState();
     const exchange = useSettingsStore.getState().activeExchange;
 
     let positions: Position[] | null = null;
@@ -53,6 +54,8 @@ export function usePositionPoller(delayMs = 0): void {
       positions = await fetchBybitPositions(bybitFutures);
     } else if (exchange === "gateio") {
       positions = await fetchGateioPositions(gateioFutures);
+    } else if (exchange === "kucoin") {
+      positions = await fetchKucoinPositions(kucoinFutures);
     } else {
       positions = await fetchPositions(okxProd);
     }
