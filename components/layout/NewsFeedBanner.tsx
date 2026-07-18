@@ -111,6 +111,16 @@ export function NewsFeedBanner(): React.ReactElement | null {
         title={current.title}
       >
         {current.title}
+        {/* Dış link ipucu — tıklanabilirlik önceden görsel olarak hiç
+            belli değildi (kullanıcı tesadüfen keşfetmişti). lucide-react
+            kurulu değil (bkz. PositionAccordion.tsx'teki aynı gerekçe) —
+            basit Unicode ok karakteri, kod tabanının geri kalanındaki
+            yerleşik "→"/"✕" deseniyle tutarlı. target="_blank" zaten
+            mevcuttu (yeni sekmede açılır, QUANTIX OS sekmesi arkada kalır)
+            — bu değişiklik sadece görünürlük ekliyor. */}
+        <span className="text-text-t4 ml-1 inline-block" aria-hidden="true">
+          ↗
+        </span>
       </a>
       <span className="text-text-t4 ml-auto hidden shrink-0 sm:inline">
         {t("newsFeed.disclaimer")}
