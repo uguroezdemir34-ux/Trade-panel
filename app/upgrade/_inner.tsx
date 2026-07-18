@@ -63,15 +63,10 @@ function UpgradePageInner() {
   }
 
   const features: FeatureRow[] = [
-    { labelKey: "auth.upgrade.featureScoring",  free: true,              pro: true,                    enterprise: true },
-    { labelKey: "auth.upgrade.featureChart",    free: true,              pro: true,                    enterprise: true },
-    { labelKey: "auth.upgrade.featureMarket",   free: true,              pro: true,                    enterprise: true },
-    { labelKey: "auth.upgrade.featureBacktest", free: false,             pro: true,                    enterprise: true },
-    { labelKey: "auth.upgrade.featurePnl",      free: false,             pro: true,                    enterprise: true },
-    { labelKey: "auth.upgrade.featureTelegram", free: false,             pro: true,                    enterprise: true },
-    { labelKey: "auth.upgrade.featureWeights",  free: false,             pro: true,                    enterprise: true },
-    { labelKey: "auth.upgrade.featureRisk",     free: false,             pro: true,                    enterprise: true },
-    { labelKey: "auth.upgrade.featurePairs",    free: t("auth.upgrade.pairs3"), pro: t("auth.upgrade.pairs15"), enterprise: t("auth.upgrade.pairsUnlimited") },
+    { labelKey: "auth.upgrade.featureScoring",    free: true,  pro: true, enterprise: true },
+    { labelKey: "auth.upgrade.featureChart",      free: true,  pro: true, enterprise: true },
+    { labelKey: "auth.upgrade.featureMarket",     free: true,  pro: true, enterprise: true },
+    { labelKey: "auth.upgrade.featureFullAccess", free: false, pro: true, enterprise: true },
   ];
 
   return (
