@@ -203,19 +203,21 @@ function UpgradePageInner() {
         {features.map((row, i) => (
           <div
             key={row.labelKey}
-            className={`grid grid-cols-4 ${i % 2 === 0 ? "bg-surface-s1/20" : ""} border-b border-border/50 last:border-0`}
+            className={`${i % 2 === 0 ? "bg-surface-s1/20" : ""} border-b border-border/50 last:border-0`}
           >
-            <div className="p-3 font-mono text-xs text-text-t3">
-              {t(row.labelKey as Parameters<typeof t>[0])}
-              {row.detailKey && (
-                <p className="mt-0.5 font-mono text-2xs text-text-t4">
-                  {t(row.detailKey as Parameters<typeof t>[0])}
-                </p>
-              )}
+            <div className="grid grid-cols-4">
+              <div className="p-3 font-mono text-xs text-text-t3">{t(row.labelKey as Parameters<typeof t>[0])}</div>
+              <div className="p-3 flex justify-center items-center"><Cell value={row.free} /></div>
+              <div className="p-3 flex justify-center items-center"><Cell value={row.pro} /></div>
+              <div className="p-3 flex justify-center items-center"><Cell value={row.enterprise} /></div>
             </div>
-            <div className="p-3 flex justify-center items-center"><Cell value={row.free} /></div>
-            <div className="p-3 flex justify-center items-center"><Cell value={row.pro} /></div>
-            <div className="p-3 flex justify-center items-center"><Cell value={row.enterprise} /></div>
+            {row.detailKey && (
+              // Grid'in dışında, tam satır genişliğinde — dar 1. sütuna
+              // sıkışıp kelime ortadan bölünmesin diye (bkz. TR "Ağırlıkları").
+              <p className="px-3 pb-3 -mt-1 font-mono text-2xs text-text-t4">
+                {t(row.detailKey as Parameters<typeof t>[0])}
+              </p>
+            )}
           </div>
         ))}
       </div>
