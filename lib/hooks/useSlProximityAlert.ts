@@ -62,6 +62,20 @@ export function useSlProximityAlert(): void {
           reasonText: `${(distPct * 100).toFixed(1)}% uzakta`,
           timestamp: now,
         }).catch(() => {});
+
+        // Web push — dispatchNotification'ın kapsamadığı ayrı bir altyapı
+        // (bkz. useGoAlerts.ts aynı desen). Fire-and-forget, sessiz hata.
+        void fetch("/api/push/trigger", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "sl_proximity",
+            pair: trade.pair,
+            direction: trade.direction,
+            title: `⚠️ SL Yaklaşıyor — ${trade.pair}`,
+            body: `${trade.direction} ${trade.pair} — SL'e ${(distPct * 100).toFixed(1)}% uzakta`,
+          }),
+        }).catch(() => {});
       }
     }
 

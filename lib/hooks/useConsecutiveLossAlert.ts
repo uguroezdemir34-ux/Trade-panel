@@ -93,4 +93,12 @@ async function sendLossAlert(streak: number, threshold: number): Promise<void> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
+
+  // Web push — dispatchNotification'ın kapsamadığı ayrı bir altyapı
+  // (bkz. useGoAlerts.ts aynı desen). Fire-and-forget, sessiz hata.
+  void fetch("/api/push/trigger", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ kind: "consecutive_loss", body: reasonText }),
+  }).catch(() => {});
 }
