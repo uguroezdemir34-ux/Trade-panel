@@ -121,9 +121,9 @@ function UpgradePageInner() {
       {/* Plan cards */}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
         {/* Free */}
-        <div className={`relative rounded-lg border p-4 flex flex-col gap-3 ${currentTier === "free" ? "border-brand/50 bg-brand/5" : "border-border bg-bg-card"}`}>
+        <div className={`rounded-lg border p-4 flex flex-col gap-3 ${currentTier === "free" ? "border-brand/50 bg-brand/5" : "border-border bg-bg-card"}`}>
           {currentTier === "free" && (
-            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-brand text-white font-mono text-2xs px-2 py-0.5 rounded-full tracking-wider">
+            <span className="w-fit self-center rounded-full bg-brand px-2 py-0.5 font-mono text-2xs tracking-wider text-white">
               {t("auth.upgrade.current")}
             </span>
           )}
@@ -141,8 +141,8 @@ function UpgradePageInner() {
         </div>
 
         {/* Pro */}
-        <div className={`relative rounded-lg border p-4 flex flex-col gap-3 ${currentTier === "pro" ? "border-brand/50 bg-brand/5" : "border-brand/30 bg-brand/5"}`}>
-          <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-brand text-white font-mono text-2xs px-2 py-0.5 rounded-full tracking-wider">
+        <div className={`rounded-lg border p-4 flex flex-col gap-3 ${currentTier === "pro" ? "border-brand/50 bg-brand/5" : "border-brand/30 bg-brand/5"}`}>
+          <span className="w-fit self-center rounded-full bg-brand px-2 py-0.5 font-mono text-2xs tracking-wider text-white">
             {currentTier === "pro" ? t("auth.upgrade.current") : t("auth.upgrade.popular")}
           </span>
           <div>
@@ -172,9 +172,9 @@ function UpgradePageInner() {
         </div>
 
         {/* Enterprise */}
-        <div className={`relative rounded-lg border p-4 flex flex-col gap-3 ${currentTier === "enterprise" ? "border-brand/50 bg-brand/5" : "border-border bg-bg-card"}`}>
+        <div className={`rounded-lg border p-4 flex flex-col gap-3 ${currentTier === "enterprise" ? "border-brand/50 bg-brand/5" : "border-border bg-bg-card"}`}>
           {currentTier === "enterprise" && (
-            <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-brand text-white font-mono text-2xs px-2 py-0.5 rounded-full tracking-wider">
+            <span className="w-fit self-center rounded-full bg-brand px-2 py-0.5 font-mono text-2xs tracking-wider text-white">
               {t("auth.upgrade.current")}
             </span>
           )}
