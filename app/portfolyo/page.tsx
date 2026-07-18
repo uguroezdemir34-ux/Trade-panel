@@ -6,15 +6,13 @@ import RiskPage from "@/app/risk/page";
 import PnlPage from "@/app/pnl/page";
 import { PortfolioOverviewCard } from "@/components/portfolio/PortfolioOverviewCard";
 import { GoSignalLog } from "@/components/karar/GoSignalLog";
-import { CopyTradingCard } from "@/components/copy-trading/CopyTradingCard";
 
-type SubTab = "risk" | "pnl" | "sinyaller" | "takip";
+type SubTab = "risk" | "pnl" | "sinyaller";
 
 const SUB_TABS: { id: SubTab; labelKey: string }[] = [
   { id: "risk", labelKey: "nav.risk" },
   { id: "pnl", labelKey: "nav.pnl" },
   { id: "sinyaller", labelKey: "portfolio.signalsTab" },
-  { id: "takip", labelKey: "portfolio.copyTab" },
 ];
 
 export default function PortfolyoPage() {
@@ -66,11 +64,6 @@ export default function PortfolyoPage() {
                 </div>
               </div>
             } />
-          </div>
-        )}
-        {active === "takip" && (
-          <div className="p-4">
-            <CopyTradingCard />
           </div>
         )}
       </div>

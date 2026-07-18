@@ -579,7 +579,6 @@ export const tr: Dictionary = {
       riskMult: "Risk Çarpanı",
       tradesCount: "{w}/{t} işlem",
     },
-    copyTab: "Takip",
     var: {
       title: "Portföy VaR",
       var95: "1-Günlük VaR (%95)",
@@ -1426,29 +1425,6 @@ export const tr: Dictionary = {
     importAll: "Tümünü İçe Aktar ({count})",
     imported: "✓ İçe Aktarıldı",
     importApproxNote: "İçe aktarılan işlemlerde giriş fiyatı/açılış zamanı OKX verisinden yaklaşık olarak türetilir (kesin değil).",
-  },
-
-  copyTrading: {
-    title: "Master Trader Takibi",
-    description: "Seçtiğimiz master trader'ın işlemlerini borsanın kopyalama sistemi üzerinden otomatik olarak takip edebilirsiniz. Bu bölüm bilgilendirme ve yönlendirme amaçlıdır.",
-    disclaimer: "Bu özellik bir yatırım tavsiyesi değildir. Geçmiş performans gelecekteki sonuçları garanti etmez. Kaldıraçlı işlemler yüksek risk içerir.",
-    okxHeading: "OKX Copy Trading",
-    okxStep1: "OKX uygulamasını açın ve hesabınıza giriş yapın.",
-    okxStep2: "Alt menüden 'Trade' → 'Copy Trading' bölümüne gidin.",
-    okxStep3: "'Takip Et' butonuna tıklayın ve parametreleri gözden geçirin.",
-    okxStep4: "Takip miktarınızı belirleyin ve onaylayın.",
-    okxButton: "OKX'te Takip Et →",
-    binanceHeading: "Binance Copy Trading",
-    binanceStep1: "Binance uygulamasını açın ve hesabınıza giriş yapın.",
-    binanceStep2: "Ana menüden 'Copy Trading' bölümüne gidin.",
-    binanceStep3: "Trader profilini inceleyin ve 'Kopyala' butonuna tıklayın.",
-    binanceStep4: "Yatırım miktarını ayarlayın ve pozisyonları onaylayın.",
-    binanceButton: "Binance'te Takip Et →",
-    notConfigured: "Henüz yapılandırılmadı",
-    profileTitle: "Trader Profili",
-    profileActiveSince: "Aktif",
-    profileTrades: "İşlem",
-    profileNoTrades: "Henüz kapalı işlem yok — işlem yaptıkça profil dolacak.",
   },
 
   newsFeed: {

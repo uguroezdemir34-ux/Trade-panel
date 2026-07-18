@@ -579,7 +579,6 @@ export const en: Dictionary = {
       riskMult: "Risk Mult.",
       tradesCount: "{w}/{t} trades",
     },
-    copyTab: "Follow",
     var: {
       title: "Portfolio VaR",
       var95: "1-Day VaR (95%)",
@@ -1426,29 +1425,6 @@ export const en: Dictionary = {
     importAll: "Import All ({count})",
     imported: "✓ Imported",
     importApproxNote: "Imported trades have entry price/open time approximated from OKX data (not exact).",
-  },
-
-  copyTrading: {
-    title: "Master Trader Follow",
-    description: "Automatically follow the trades of our selected master trader via the exchange's copy trading system. This section is for information and guidance purposes.",
-    disclaimer: "This feature is not investment advice. Past performance does not guarantee future results. Leveraged trading carries high risk.",
-    okxHeading: "OKX Copy Trading",
-    okxStep1: "Open the OKX app and log into your account.",
-    okxStep2: "Go to 'Trade' → 'Copy Trading' from the bottom menu.",
-    okxStep3: "Click 'Follow' and review the parameters.",
-    okxStep4: "Set your follow amount and confirm.",
-    okxButton: "Follow on OKX →",
-    binanceHeading: "Binance Copy Trading",
-    binanceStep1: "Open the Binance app and log into your account.",
-    binanceStep2: "Go to 'Copy Trading' from the main menu.",
-    binanceStep3: "Review the trader profile and click 'Copy'.",
-    binanceStep4: "Set your investment amount and confirm positions.",
-    binanceButton: "Follow on Binance →",
-    notConfigured: "Not configured yet",
-    profileTitle: "Trader Profile",
-    profileActiveSince: "Active since",
-    profileTrades: "Trades",
-    profileNoTrades: "No closed trades yet — profile will populate as you trade.",
   },
 
   newsFeed: {

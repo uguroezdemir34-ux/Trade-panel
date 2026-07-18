@@ -1,5 +1,5 @@
 /**
- * MARKET UTILS + MACRO CACHE + TRAIL PERSISTENCE + PREFLIGHT TESTS
+ * MARKET UTILS + MACRO CACHE + PREFLIGHT TESTS
  *
  * classifyFundingRate: 5 tier, tüm boundary değerleri (0.01%/0.005% eşikleri)
  *
@@ -11,13 +11,11 @@
  * cacheClear: tüm kayıtları siler
  * cacheSize: boyut takibi
  *
- * trailKey: demo/prod format
- * migrateOldTrailKey: eski key→yeni, zaten migrate→false, yoksa false,
- *   bozuk storage→false (sessiz)
- * saveTrails: boş trails, bozuk storage→false
- * loadTrails: boş storage, bozuk JSON→boş, yon eksik kayıt→atla
- *
  * runPreflightChecks: 4 kontrol sırası, tüm fail kararları, passed=true
+ *
+ * (Trail persistence testleri — trailKey/migrateOldTrailKey/saveTrails/
+ * loadTrails — kaldırıldı: otomatik trailing yönetimi kalıcı olarak
+ * çıkarıldı, bkz. ROADMAP.md Adım 3.)
  */
 
 import { describe, it, expect, beforeEach } from "vitest";
@@ -32,12 +30,6 @@ import {
   cacheClear,
   cacheSize,
 } from "@/lib/macro/cache";
-import {
-  trailKey,
-  migrateOldTrailKey,
-  saveTrails,
-  loadTrails,
-} from "@/lib/trailing/persistence";
 import {
   runPreflightChecks,
 } from "@/lib/orchestrator/preflight";
@@ -204,129 +196,6 @@ describe("macro cache", () => {
     cacheSet("k", "new", NOW, 60_000);
     expect(cacheGet("k", NOW)).toBe("new");
     expect(cacheSize()).toBe(1);
-  });
-});
-
-// ─────────────────────────────────────────────────────────────
-// trailKey
-// ─────────────────────────────────────────────────────────────
-
-describe("trailKey()", () => {
-  it("prod mode", () => {
-    expect(trailKey(false)).toBe("ug52_trails_prod");
-  });
-
-  it("demo mode", () => {
-    expect(trailKey(true)).toBe("ug52_trails_demo");
-  });
-});
-
-// ─────────────────────────────────────────────────────────────
-// migrateOldTrailKey
-// ─────────────────────────────────────────────────────────────
-
-describe("migrateOldTrailKey()", () => {
-  function makeStorage(initial: Record<string, string> = {}) {
-    const store = { ...initial };
-    return {
-      getItem: (k: string) => store[k] ?? null,
-      setItem: (k: string, v: string) => { store[k] = v; },
-      removeItem: (k: string) => { delete store[k]; },
-      _store: store,
-    };
-  }
-
-  it("eski key var, yeni yok → migrate eder, true döner", () => {
-    const s = makeStorage({ ug52_trails: '{"BTC":{}}' });
-    const r = migrateOldTrailKey(s);
-    expect(r).toBe(true);
-    expect(s._store["ug52_trails_prod"]).toBe('{"BTC":{}}');
-    expect(s._store["ug52_trails"]).toBeUndefined();
-  });
-
-  it("eski key yok → false", () => {
-    const s = makeStorage();
-    expect(migrateOldTrailKey(s)).toBe(false);
-  });
-
-  it("zaten migrate edilmiş (prod key var) → false", () => {
-    const s = makeStorage({
-      ug52_trails: '{"BTC":{}}',
-      ug52_trails_prod: '{"ETH":{}}',
-    });
-    expect(migrateOldTrailKey(s)).toBe(false);
-    expect(s._store["ug52_trails"]).toBeDefined(); // silinmedi
-  });
-
-  it("storage hata → false (sessiz)", () => {
-    const broken = {
-      getItem: () => { throw new Error("storage error"); },
-      setItem: () => {},
-      removeItem: () => {},
-    };
-    expect(migrateOldTrailKey(broken)).toBe(false);
-  });
-});
-
-// ─────────────────────────────────────────────────────────────
-// saveTrails / loadTrails
-// ─────────────────────────────────────────────────────────────
-
-describe("saveTrails()", () => {
-  it("boş trails → storage'a yazar, true döner", () => {
-    const store: Record<string, string> = {};
-    const s = {
-      getItem: (k: string) => store[k] ?? null,
-      setItem: (k: string, v: string) => { store[k] = v; },
-      removeItem: (k: string) => { delete store[k]; },
-    };
-    const r = saveTrails({}, s, false);
-    expect(r).toBe(true);
-    expect(store["ug52_trails_prod"]).toBe("{}");
-  });
-
-  it("bozuk storage → false döner", () => {
-    const broken = {
-      getItem: () => null,
-      setItem: () => { throw new Error("quota"); },
-      removeItem: () => {},
-    };
-    expect(saveTrails({}, broken, false)).toBe(false);
-  });
-});
-
-describe("loadTrails()", () => {
-  function makeStorage(data: Record<string, string> = {}) {
-    return {
-      getItem: (k: string) => data[k] ?? null,
-      setItem: () => {},
-      removeItem: () => {},
-    };
-  }
-
-  it("boş storage → boş obje", () => {
-    const r = loadTrails(makeStorage(), false);
-    expect(Object.keys(r)).toHaveLength(0);
-  });
-
-  it("bozuk JSON → boş obje (sessiz)", () => {
-    const r = loadTrails(makeStorage({ ug52_trails_prod: "BOZUK{{{" }), false);
-    expect(Object.keys(r)).toHaveLength(0);
-  });
-
-  it("yon eksik kayıt → atlanır", () => {
-    const data = JSON.stringify({ "BTC-USDT-SWAP": { aktif_stop: null } }); // yon yok
-    const r = loadTrails(makeStorage({ ug52_trails_prod: data }), false);
-    expect(Object.keys(r)).toHaveLength(0);
-  });
-
-  it("demo=true → demo key kullanır", () => {
-    const store: Record<string, string> = {};
-    store["ug52_trails_demo"] = JSON.stringify({
-      "BTC-USDT-SWAP": { yon: "LONG", en_iyi_fiyat: null, aktif_stop: null, cikis_tetiklendi: false },
-    });
-    const r = loadTrails(makeStorage(store), true);
-    expect("BTC-USDT-SWAP" in r).toBe(true);
   });
 });
 

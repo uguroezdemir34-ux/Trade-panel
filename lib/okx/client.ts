@@ -5,8 +5,8 @@
  * proxy'mize istek atar (`/api/okx/...`), server tarafı imzalayıp OKX'e
  * gönderir.
  *
- * Faz 1b paket #2'deki `TrailingManager.deps.cancelAlgoOrders` ve
- * `closePosition` bağımlılıkları buradan implement edilecek.
+ * Faz 1b paket #2'deki `cancelAlgoOrders`/`closePosition` bağımlılıkları
+ * buradan implement edilecek (manuel pozisyon kapatma akışı için).
  *
  * Panel paralel: `okxFetch`/`okxPost` ile aynı imza, ama gerçek HTTP yapısı
  * farklı (browser → kendi server → OKX, eskisi browser → OKX direkt).
@@ -16,10 +16,7 @@ import type { ParsedOkxResponse } from "./schemas";
 import type { OkxMethod } from "./auth";
 
 export interface OkxClientOptions {
-  /**
-   * Demo mode okuyucu — runtime'da TrailingManager.deps.isDemoMode ile
-   * aynı kaynaktan beslenir.
-   */
+  /** Demo mode okuyucu — runtime'da settingsStore ile aynı kaynaktan beslenir. */
   isDemoMode: () => boolean;
   /** Test override için */
   fetchImpl?: typeof fetch;

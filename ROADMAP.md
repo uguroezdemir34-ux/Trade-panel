@@ -10,7 +10,7 @@
 
 ## ADIM 3: SaaS ve Sinyal Dönüşüm Altyapısı (Regülasyon Uyumu)
 - Sorun: Doğrudan otomatik trade botu çalıştırmak finansal otoritelerin lisanslama ve ceza radarına takılır.
-- Çözüm: Doğrudan trade execution'ı varsayılan olarak kapalı tutup, sistemin TV Webhook / Telegram / Email üreten bir "Karar Destek Sistemi" (SaaS) olarak konumlandırılması sağlanacaktır.
+- Çözüm: Otomatik execution, copy trading ve otomatik trailing yönetimi kalıcı olarak kaldırıldı — sistem salt analiz/sinyal platformu; TV Webhook / Telegram / Email üreten bir "Karar Destek Sistemi" (SaaS) olarak konumlandırılmıştır. Manuel emir açma (QuickTradeSheet, kullanıcının kendi tıklamasıyla) ayrı tutulur ve yalnızca web tarayıcıda sunulur — native mobil istemcide de devre dışıdır (bkz. Google Play Financial Features risk azaltma kararı).
 
 ## ADIM 4: ICP Tanımlama ve Kapalı Beta Yayını (Fiyatlandırma & Satış)
 - Sorun: Gelişmiş ürünün kime, hangi fiyatlama modeliyle satılacağının belirsizliği.
