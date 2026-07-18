@@ -10,6 +10,15 @@
  *   - SL otomatik hesaplama (default %2)
  *   - Haptic feedback + loading state
  *   - Demo mod desteği
+ *
+ * NATIVE ANDROID APP'TE DEVRE DIŞI: Google Play'in Financial Features
+ * incelemesi riskini azaltmak için (bkz. proje durum raporu, Temmuz 2026)
+ * emir açma sadece web tarayıcıda sunuluyor — Capacitor native shell'de
+ * (isNativePlatform()===true) FAB hiç render edilmiyor, handleSubmit de
+ * ayrıca bir savunma katmanı olarak erken çıkış yapıyor. Web sürümü
+ * (quantixos.com, tarayıcıdan) EXECUTION_ENABLED açıkken tam işlevsel
+ * kalmaya devam ediyor — kısıtlama sadece Play Store dağıtımlı native
+ * APK'ya özel.
  */
 
 import { useState, useCallback, useEffect } from "react";
@@ -22,6 +31,7 @@ import { useTradesStore } from "@/lib/store/tradesStore";
 import { getAdapter } from "@/lib/exchange";
 import { useHaptics } from "@/lib/hooks/useHaptics";
 import { EXECUTION_ENABLED } from "@/lib/config/execution";
+import { isNativePlatform } from "@/lib/mobile/platform";
 import { useT } from "@/lib/i18n/context";
 import { LiveTradingConsentModal } from "./LiveTradingConsentModal";
 
@@ -39,6 +49,12 @@ export function QuickTradeSheet(): React.ReactElement {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [consentModalOpen, setConsentModalOpen] = useState(false);
+  // SSR'da her zaman false (bkz. lib/mobile/platform.ts) — hydration
+  // mismatch olmasın diye mount sonrası client'ta bir kez okunuyor.
+  const [isNative, setIsNative] = useState(false);
+  useEffect(() => {
+    setIsNative(isNativePlatform());
+  }, []);
 
   const haptics = useHaptics();
   const demoMode = useSettingsStore((s) => s.demoMode);
@@ -109,6 +125,9 @@ export function QuickTradeSheet(): React.ReactElement {
       setError(t("settings.signalModeActive"));
       return;
     }
+    // İkinci savunma katmanı — FAB zaten native'de hiç render edilmiyor,
+    // ama bu fonksiyon başka bir yoldan çağrılırsa da emir açılmasın.
+    if (isNativePlatform()) return;
     if (loading || qty <= 0 || currentPrice <= 0) return;
     haptics.heavy();
     setLoading(true);
@@ -201,8 +220,10 @@ export function QuickTradeSheet(): React.ReactElement {
     <>
       {/* FAB — sağ alt köşe, bottom nav üstünde — sinyal modda gizle.
           Rıza verilmemişse (liveTradingConsentAccepted=false) DEVRE DIŞI
-          bırakılmıyor — tıklanınca rıza modalını açıyor (bkz. handleFabClick) — */}
-      {EXECUTION_ENABLED && <button
+          bırakılmıyor — tıklanınca rıza modalını açıyor (bkz. handleFabClick).
+          Native Android app'te (isNative) hiç render edilmiyor — emir açma
+          sadece web tarayıcıda sunuluyor, bkz. dosya başı yorumu. */}
+      {EXECUTION_ENABLED && !isNative && <button
         onClick={handleFabClick}
         className={[
           "fixed z-50 flex items-center justify-center",

@@ -25,16 +25,17 @@ import {
 } from "@/lib/sizer/position-pnl";
 import { getActiveTrailingManager } from "@/lib/trailing/managerRef";
 import { useScoreStore } from "@/lib/store/scoreStore";
+import { isNativePlatform } from "@/lib/mobile/platform";
 import type { TrailUiDurum } from "@/lib/trailing/manager";
 import type { Position } from "@/lib/okx/positions";
 
 export function PositionCard({
   position,
-  onClose,
+  onClose: onCloseProp,
   isClosing,
-  onScaleIn,
-  onScaleOut,
-  onUpdateSlTp,
+  onScaleIn: onScaleInProp,
+  onScaleOut: onScaleOutProp,
+  onUpdateSlTp: onUpdateSlTpProp,
   tradeSl,
   tradeTp1,
   tradeTp2,
@@ -56,6 +57,19 @@ export function PositionCard({
   const locale = useLocale();
   const tick = useMarketStore((s) => s.prices[position.pair]);
   const scoreResult = useScoreStore((s) => s.results[position.pair]);
+
+  // Native Android app'te (Play Store dağıtımı) pozisyon kapatma/scale-in-out/
+  // SL-TP güncelleme HİÇBİR ZAMAN sunulmuyor — parent bu handler'ları web için
+  // ileride bağlasa bile burada otomatik devre dışı kalır (bkz. QuickTradeSheet.tsx
+  // aynı desen, "Google Play Financial Features" riskini azaltma kararı).
+  const [isNative, setIsNative] = useState(false);
+  useEffect(() => {
+    setIsNative(isNativePlatform());
+  }, []);
+  const onClose = isNative ? undefined : onCloseProp;
+  const onScaleIn = isNative ? undefined : onScaleInProp;
+  const onScaleOut = isNative ? undefined : onScaleOutProp;
+  const onUpdateSlTp = isNative ? undefined : onUpdateSlTpProp;
 
   const [trailDurum, setTrailDurum] = useState<TrailUiDurum | null>(null);
   const trailIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
