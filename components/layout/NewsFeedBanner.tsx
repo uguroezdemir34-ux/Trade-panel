@@ -117,8 +117,11 @@ export function NewsFeedBanner(): React.ReactElement | null {
             basit Unicode ok karakteri, kod tabanının geri kalanındaki
             yerleşik "→"/"✕" deseniyle tutarlı. target="_blank" zaten
             mevcuttu (yeni sekmede açılır, QUANTIX OS sekmesi arkada kalır)
-            — bu değişiklik sadece görünürlük ekliyor. */}
-        <span className="text-text-t4 ml-1 inline-block" aria-hidden="true">
+            — bu değişiklik sadece görünürlük ekliyor. İlk sürümde text-t4
+            (soluk gri) + varsayılan boyuttu, fark edilmiyordu — link'in
+            kendi rengiyle (text-text-t2, hover'da text-text-t1) eşleşecek
+            + text-sm ile bir tık büyütüldü. */}
+        <span className="text-text-t2 ml-1 inline-block text-sm" aria-hidden="true">
           ↗
         </span>
       </a>
