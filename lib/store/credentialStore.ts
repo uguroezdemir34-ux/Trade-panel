@@ -29,6 +29,11 @@ export interface BybitCreds {
   secret: string;
 }
 
+export interface GateioCreds {
+  key: string;
+  secret: string;
+}
+
 export interface TelegramCreds {
   botToken: string;
   chatId: string;
@@ -40,12 +45,14 @@ interface CredentialStoreState {
   telegram: TelegramCreds | null;
   bnbFutures: BinanceCreds | null;
   bybitFutures: BybitCreds | null;
+  gateioFutures: GateioCreds | null;
   _loaded: boolean;
   setOkxProd: (c: OkxCreds | null) => Promise<void>;
   setOkxDemo: (c: OkxCreds | null) => Promise<void>;
   setTelegram: (c: TelegramCreds | null) => Promise<void>;
   setBnbFutures: (c: BinanceCreds | null) => Promise<void>;
   setBybitFutures: (c: BybitCreds | null) => Promise<void>;
+  setGateioFutures: (c: GateioCreds | null) => Promise<void>;
   load: () => Promise<void>;
   /**
    * `load()`'un `_loaded` guard'ını atlayıp storage'ı yeniden okur — Master
@@ -78,6 +85,7 @@ const K = {
   telegram: "creds_telegram",
   bnbFutures: "creds_bnb_futures",
   bybitFutures: "creds_bybit_futures",
+  gateioFutures: "creds_gateio_futures",
 } as const;
 
 const bnbSchema = z
@@ -94,18 +102,26 @@ const bybitSchema = z
   })
   .nullable();
 
+const gateioSchema = z
+  .object({
+    key: z.string().min(1),
+    secret: z.string().min(1),
+  })
+  .nullable();
+
 /** `load()` ve `reload()`'un paylaştığı okuma mantığı — bkz. `reload()` yorumu. */
 async function readAllAndSet(
   set: (partial: Partial<CredentialStoreState>) => void,
 ): Promise<void> {
-  const [okxProd, okxDemo, telegram, bnbFutures, bybitFutures] = await Promise.all([
+  const [okxProd, okxDemo, telegram, bnbFutures, bybitFutures, gateioFutures] = await Promise.all([
     loadSecure(K.okxProd, null, { schema: okxSchema }),
     loadSecure(K.okxDemo, null, { schema: okxSchema }),
     loadSecure(K.telegram, null, { schema: tgSchema }),
     loadSecure(K.bnbFutures, null, { schema: bnbSchema }),
     loadSecure(K.bybitFutures, null, { schema: bybitSchema }),
+    loadSecure(K.gateioFutures, null, { schema: gateioSchema }),
   ]);
-  set({ okxProd, okxDemo, telegram, bnbFutures, bybitFutures, _loaded: true });
+  set({ okxProd, okxDemo, telegram, bnbFutures, bybitFutures, gateioFutures, _loaded: true });
 }
 
 export const useCredentialStore = create<CredentialStoreState>((set) => ({
@@ -114,6 +130,7 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
   telegram: null,
   bnbFutures: null,
   bybitFutures: null,
+  gateioFutures: null,
   _loaded: false,
 
   setOkxProd: async (c) => {
@@ -141,6 +158,11 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
     await saveSecure(K.bybitFutures, c);
   },
 
+  setGateioFutures: async (c) => {
+    set({ gateioFutures: c });
+    await saveSecure(K.gateioFutures, c);
+  },
+
   load: async () => {
     // Guard: skip if already loaded (idempotent — safe for StrictMode double-invocation)
     if (useCredentialStore.getState()._loaded) return;
@@ -158,7 +180,15 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
       saveSecure(K.telegram, null),
       saveSecure(K.bnbFutures, null),
       saveSecure(K.bybitFutures, null),
+      saveSecure(K.gateioFutures, null),
     ]);
-    set({ okxProd: null, okxDemo: null, telegram: null, bnbFutures: null, bybitFutures: null });
+    set({
+      okxProd: null,
+      okxDemo: null,
+      telegram: null,
+      bnbFutures: null,
+      bybitFutures: null,
+      gateioFutures: null,
+    });
   },
 }));
