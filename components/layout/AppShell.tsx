@@ -44,7 +44,7 @@ import { useOrderBookPoller } from "@/lib/hooks/useOrderBookPoller";
 import { useNewsPoller } from "@/lib/hooks/useNewsPoller";
 import { useEquityIndexPoller } from "@/lib/hooks/useEquityIndexPoller";
 import { useMarketExtrasPoller } from "@/lib/hooks/useMarketExtrasPoller";
-import { NewsFeedBanner } from "./NewsFeedBanner";
+import { NewsFeedBanner, NewsFeedCTA } from "./NewsFeedBanner";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useWeeklyMonthlyPnlTracker } from "@/lib/hooks/useWeeklyMonthlyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
@@ -218,6 +218,7 @@ export function AppShell({
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
       <AppHeader />
       <NewsFeedBanner />
+      <NewsFeedCTA />
       <AlarmToastContainer />
       <main className="app-main mx-auto max-w-screen-2xl px-4 pt-4 lg:px-6">
         {children}

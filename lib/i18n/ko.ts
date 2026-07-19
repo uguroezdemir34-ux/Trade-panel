@@ -1368,6 +1368,8 @@ toolCursor: "Cursor",
     timeDaysAgo: "{n}d ago",
     impactPrefix: "Impact:",
     impactSuffix: "(rule-based)",
+    ctaTitle: "News",
+    ctaSubtitle: "Full List",
     calendar: {
       title: "Economic Calendar",
       fomc: "Fed Rate Decision (FOMC)",

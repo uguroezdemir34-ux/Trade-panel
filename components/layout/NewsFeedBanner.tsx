@@ -158,27 +158,54 @@ export function NewsFeedBanner(): React.ReactElement | null {
           ↗
         </span>
       </a>
-      {/*
-        Hit-area >= 44x44dp (Apple HIG) / 48x48dp (Material): p-3 (12px)
-        ikonun (h-6 w-6 = 24px) her yönüne eklenince 48x48'e ulaşır (24px
-        ikon, önceki 20px'lik sürümden daha güçlü bir görsel ipucu verir).
-        -my-3 bu dikey padding'in banner'ın kendi yüksekliğini büyütmesini
-        engeller (yatay padding'in flex genişliğine etkisi önemsiz, negate
-        edilmedi — ml-auto ile aynı property'yi (margin-left) hedefleyip
-        çakışmasın diye sadece dikey negate edildi).
-      */}
-      <Link
-        href="/haberler"
-        aria-label={t("newsFeed.viewAll")}
-        title={t("newsFeed.viewAll")}
-        className="text-text-t3 hover:text-text-t1 ml-auto -my-3 flex shrink-0 items-center gap-1 p-3 transition-colors"
-      >
-        <NewspaperIcon className="h-6 w-6 shrink-0" />
-        <span className="hidden sm:inline">{t("newsFeed.viewAll")}</span>
-      </Link>
-      <span className="text-text-t4 hidden shrink-0 sm:inline">
+      {/* Tekil "Tümünü Gör" linki NewsFeedCTA'ya taşındı (tam genişlikte
+          kart, banner'ın hemen altında) — burada artık sadece disclaimer
+          sağa yaslı kalıyor. */}
+      <span className="text-text-t4 ml-auto hidden shrink-0 sm:inline">
         {t("newsFeed.disclaimer")}
       </span>
+    </div>
+  );
+}
+
+/**
+ * Ticker banner'ın hemen altında tam genişlikte "Haberler" CTA kartı —
+ * küçük ikon+metin linkinin yerini aldı (daha görünür/tıklanabilir).
+ * NewsFeedBanner ile aynı dosyada (NewspaperIcon'u paylaşıyor), ama
+ * AppShell'de ayrı bir component olarak mount edilir — kendi pathname
+ * mantığı var: /haberler sayfasındayken zaten oradasın, kendine link
+ * vermek gereksiz olurdu, o yüzden orada gizli. /grafik'te de banner'la
+ * aynı gerekçeyle (dikey alan kazanımı) gizli.
+ */
+export function NewsFeedCTA(): React.ReactElement | null {
+  const items = useNewsStore((s) => s.items);
+  const t = useT();
+  const pathname = usePathname();
+
+  if (pathname === "/haberler" || pathname === "/grafik" || items.length === 0) return null;
+
+  return (
+    <div className="mx-auto max-w-screen-2xl px-4 pt-3 lg:px-6">
+      <Link
+        href="/haberler"
+        className="border-signal-blue/50 bg-bg-card hover:border-signal-blue flex items-center gap-3 rounded-xl border-2 p-3 transition-colors"
+        style={{ boxShadow: "0 0 16px 1px rgb(var(--signal-blue) / 0.30)" }}
+      >
+        <span className="border-signal-blue/40 bg-soft-blue text-signal-blue flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border">
+          <NewspaperIcon className="h-6 w-6" />
+        </span>
+        <span className="flex flex-1 flex-col">
+          <span className="text-text-t1 font-mono text-sm font-bold tracking-widest uppercase">
+            {t("newsFeed.ctaTitle")}
+          </span>
+          <span className="text-text-t3 font-mono text-[10px] tracking-widest uppercase">
+            {t("newsFeed.ctaSubtitle")}
+          </span>
+        </span>
+        <span className="text-signal-blue shrink-0 text-lg" aria-hidden="true">
+          ›
+        </span>
+      </Link>
     </div>
   );
 }

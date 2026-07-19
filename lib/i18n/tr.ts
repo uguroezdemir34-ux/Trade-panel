@@ -1489,6 +1489,8 @@ export const tr: Dictionary = {
     timeDaysAgo: "{n}g önce",
     impactPrefix: "Etki:",
     impactSuffix: "(kural bazlı)",
+    ctaTitle: "Haberler",
+    ctaSubtitle: "Tam Liste",
     calendar: {
       title: "Ekonomik Takvim",
       fomc: "Fed Faiz Kararı (FOMC)",
