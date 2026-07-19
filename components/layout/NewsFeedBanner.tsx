@@ -33,26 +33,28 @@
  * tepesinden banner'ın alt kenarına kadar KÜMÜLATİF mesafe — AppHeader +
  * banner toplamı) tutar. Sadece kendi yüksekliğini yazsaydık, TickerTape
  * bunu doğrudan `top` yapınca AppHeader'ın yüksekliğini atlayıp header'ın
- * altına/banner'ın üstüne çakışarak yerleşirdi. line-clamp-2 nedeniyle
- * banner 1/2 satır arasında yükseklik değiştirdiğinde ResizeObserver
+ * altına/banner'ın üstüne çakışarak yerleşirdi. line-clamp-3 nedeniyle
+ * banner 1-3 satır arasında yükseklik değiştirdiğinde ResizeObserver
  * otomatik tetiklenir.
  */
 
 import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { useNewsStore } from "@/lib/store/newsStore";
 import { useT } from "@/lib/i18n/context";
 import type { NewsSentiment } from "@/lib/news/types";
 
 const ROTATE_MS = 8_000;
 
-const SENTIMENT_I18N_KEY: Record<NewsSentiment, string> = {
+/** app/haberler/page.tsx ile paylaşılır — aynı renk/etiket eşlemesini tekrarlamamak için export edildi. */
+export const SENTIMENT_I18N_KEY: Record<NewsSentiment, string> = {
   positive: "newsFeed.positive",
   negative: "newsFeed.negative",
   neutral: "newsFeed.neutral",
 };
 
-const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
+export const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
   positive: "text-signal-green bg-soft-green",
   negative: "text-signal-red bg-soft-red",
   neutral: "text-text-t3 bg-text-t3/10",
@@ -107,7 +109,7 @@ export function NewsFeedBanner(): React.ReactElement | null {
         href={current.url}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-text-t2 hover:text-text-t1 line-clamp-2 whitespace-normal break-words transition-colors"
+        className="text-text-t2 hover:text-text-t1 line-clamp-3 whitespace-normal break-words transition-colors"
         title={current.title}
       >
         {current.title}
@@ -125,7 +127,15 @@ export function NewsFeedBanner(): React.ReactElement | null {
           ↗
         </span>
       </a>
-      <span className="text-text-t4 ml-auto hidden shrink-0 sm:inline">
+      <Link
+        href="/haberler"
+        className="text-text-t3 hover:text-text-t1 ml-auto flex shrink-0 items-center gap-1 transition-colors"
+        title={t("newsFeed.viewAll")}
+      >
+        <span aria-hidden="true">📰</span>
+        <span className="hidden sm:inline">{t("newsFeed.viewAll")}</span>
+      </Link>
+      <span className="text-text-t4 hidden shrink-0 sm:inline">
         {t("newsFeed.disclaimer")}
       </span>
     </div>

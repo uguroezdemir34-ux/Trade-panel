@@ -1479,5 +1479,13 @@ export const tr: Dictionary = {
     negative: "Negatif",
     neutral: "Nötr",
     disclaimer: "Otomatik bir sinyal değil — sadece bilgilendirme amaçlı",
+    viewAll: "Tümünü Gör",
+    pageTitle: "Haber Akışı",
+    filterAll: "Tümü",
+    empty: "Henüz haber yok",
+    timeJustNow: "Az önce",
+    timeMinutesAgo: "{n}dk önce",
+    timeHoursAgo: "{n}sa önce",
+    timeDaysAgo: "{n}g önce",
   },
 };
