@@ -40,6 +40,11 @@ export interface KucoinCreds {
   passphrase: string;
 }
 
+export interface MexcCreds {
+  key: string;
+  secret: string;
+}
+
 export interface TelegramCreds {
   botToken: string;
   chatId: string;
@@ -53,6 +58,7 @@ interface CredentialStoreState {
   bybitFutures: BybitCreds | null;
   gateioFutures: GateioCreds | null;
   kucoinFutures: KucoinCreds | null;
+  mexcFutures: MexcCreds | null;
   _loaded: boolean;
   setOkxProd: (c: OkxCreds | null) => Promise<void>;
   setOkxDemo: (c: OkxCreds | null) => Promise<void>;
@@ -61,6 +67,7 @@ interface CredentialStoreState {
   setBybitFutures: (c: BybitCreds | null) => Promise<void>;
   setGateioFutures: (c: GateioCreds | null) => Promise<void>;
   setKucoinFutures: (c: KucoinCreds | null) => Promise<void>;
+  setMexcFutures: (c: MexcCreds | null) => Promise<void>;
   load: () => Promise<void>;
   /**
    * `load()`'un `_loaded` guard'ını atlayıp storage'ı yeniden okur — Master
@@ -95,6 +102,7 @@ const K = {
   bybitFutures: "creds_bybit_futures",
   gateioFutures: "creds_gateio_futures",
   kucoinFutures: "creds_kucoin_futures",
+  mexcFutures: "creds_mexc_futures",
 } as const;
 
 const bnbSchema = z
@@ -126,11 +134,18 @@ const kucoinSchema = z
   })
   .nullable();
 
+const mexcSchema = z
+  .object({
+    key: z.string().min(1),
+    secret: z.string().min(1),
+  })
+  .nullable();
+
 /** `load()` ve `reload()`'un paylaştığı okuma mantığı — bkz. `reload()` yorumu. */
 async function readAllAndSet(
   set: (partial: Partial<CredentialStoreState>) => void,
 ): Promise<void> {
-  const [okxProd, okxDemo, telegram, bnbFutures, bybitFutures, gateioFutures, kucoinFutures] = await Promise.all([
+  const [okxProd, okxDemo, telegram, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, mexcFutures] = await Promise.all([
     loadSecure(K.okxProd, null, { schema: okxSchema }),
     loadSecure(K.okxDemo, null, { schema: okxSchema }),
     loadSecure(K.telegram, null, { schema: tgSchema }),
@@ -138,8 +153,9 @@ async function readAllAndSet(
     loadSecure(K.bybitFutures, null, { schema: bybitSchema }),
     loadSecure(K.gateioFutures, null, { schema: gateioSchema }),
     loadSecure(K.kucoinFutures, null, { schema: kucoinSchema }),
+    loadSecure(K.mexcFutures, null, { schema: mexcSchema }),
   ]);
-  set({ okxProd, okxDemo, telegram, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, _loaded: true });
+  set({ okxProd, okxDemo, telegram, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, mexcFutures, _loaded: true });
 }
 
 export const useCredentialStore = create<CredentialStoreState>((set) => ({
@@ -150,6 +166,7 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
   bybitFutures: null,
   gateioFutures: null,
   kucoinFutures: null,
+  mexcFutures: null,
   _loaded: false,
 
   setOkxProd: async (c) => {
@@ -187,6 +204,11 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
     await saveSecure(K.kucoinFutures, c);
   },
 
+  setMexcFutures: async (c) => {
+    set({ mexcFutures: c });
+    await saveSecure(K.mexcFutures, c);
+  },
+
   load: async () => {
     // Guard: skip if already loaded (idempotent — safe for StrictMode double-invocation)
     if (useCredentialStore.getState()._loaded) return;
@@ -206,6 +228,7 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
       saveSecure(K.bybitFutures, null),
       saveSecure(K.gateioFutures, null),
       saveSecure(K.kucoinFutures, null),
+      saveSecure(K.mexcFutures, null),
     ]);
     set({
       okxProd: null,
@@ -215,6 +238,7 @@ export const useCredentialStore = create<CredentialStoreState>((set) => ({
       bybitFutures: null,
       gateioFutures: null,
       kucoinFutures: null,
+      mexcFutures: null,
     });
   },
 }));

@@ -9,6 +9,7 @@
  *   bybit   → Bybit /v5/account/wallet-balance
  *   gateio  → Gate.io /api/v4/futures/usdt/accounts
  *   kucoin  → KuCoin /api/v1/account-overview
+ *   mexc    → MEXC /api/v1/private/account/assets
  */
 
 import { useEffect, useRef } from "react";
@@ -20,6 +21,7 @@ import { fetchBinanceBalance } from "@/lib/binance/balance";
 import { fetchBybitBalance } from "@/lib/bybit/balance";
 import { fetchGateioBalance } from "@/lib/gateio/balance";
 import { fetchKucoinBalance } from "@/lib/kucoin/balance";
+import { fetchMexcBalance } from "@/lib/mexc/balance";
 
 const POLL_INTERVAL_MS = 60_000;
 
@@ -31,7 +33,7 @@ export function useBalancePoller(delayMs = 0): void {
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function poll(): Promise<void> {
-    const { okxProd, okxDemo, bnbFutures, bybitFutures, gateioFutures, kucoinFutures } = useCredentialStore.getState();
+    const { okxProd, okxDemo, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, mexcFutures } = useCredentialStore.getState();
     const { demoMode, activeExchange } = useSettingsStore.getState();
 
     let result;
@@ -43,6 +45,8 @@ export function useBalancePoller(delayMs = 0): void {
       result = await fetchGateioBalance(gateioFutures);
     } else if (activeExchange === "kucoin") {
       result = await fetchKucoinBalance(kucoinFutures);
+    } else if (activeExchange === "mexc") {
+      result = await fetchMexcBalance(mexcFutures);
     } else {
       const clientCreds = demoMode ? okxDemo : okxProd;
       result = await fetchBalanceDetailed(demoMode, clientCreds);

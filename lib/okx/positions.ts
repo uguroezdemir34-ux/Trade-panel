@@ -53,7 +53,7 @@ export interface Position {
   /** Pozisyon açılış zamanı */
   cTime: number;
   /** Kaynak borsa — grafik etiketi ve UI ayırımı için */
-  source: "okx" | "binance" | "bybit" | "gateio" | "kucoin";
+  source: "okx" | "binance" | "bybit" | "gateio" | "kucoin" | "mexc";
 }
 
 const positionRowSchema = z.object({

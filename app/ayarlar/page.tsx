@@ -19,6 +19,7 @@ import { BinanceCredsCard } from "@/components/ayarlar/BinanceCredsCard";
 import { BybitCredsCard } from "@/components/ayarlar/BybitCredsCard";
 import { GateioCredsCard } from "@/components/ayarlar/GateioCredsCard";
 import { KucoinCredsCard } from "@/components/ayarlar/KucoinCredsCard";
+import { MexcCredsCard } from "@/components/ayarlar/MexcCredsCard";
 import { PwaCard } from "@/components/ayarlar/PwaCard";
 import { DiscordWebhookCard } from "@/components/ayarlar/DiscordWebhookCard";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
@@ -82,6 +83,7 @@ export default function AyarlarPage() {
           <BybitCredsCard />
           <GateioCredsCard />
           <KucoinCredsCard />
+          <MexcCredsCard />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <TelegramTestCard />
             <DiscordWebhookCard />
