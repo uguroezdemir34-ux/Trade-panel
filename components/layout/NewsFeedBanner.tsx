@@ -60,6 +60,37 @@ export const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
   neutral: "text-text-t3 bg-text-t3/10",
 };
 
+/**
+ * "Tümünü Gör" linkinin ikonu — orijinal, elle çizilmiş bir gazete/makale
+ * glifi. lucide-react bu projede kurulu değil (package.json'da doğrulandı,
+ * npm install bu sandbox'ta engelli — CLAUDE.md §3) ve bu sandbox'ın dış ağ
+ * politikası lucide'ın gerçek "Newspaper" ikonunun tam SVG path verisini
+ * doğrulamak için gereken fetch'leri de engelliyor (bkz. PositionAccordion.
+ * tsx'teki TrendingUpIcon — orada path verisi doğrulanabilmişti, burada
+ * doğrulanamadı) — yanlış hatırlanan path verisiyle bozuk bir ikon
+ * riske girmek yerine, aynı stroke stilini (currentColor, 2px, yuvarlak
+ * uçlar) kullanan basit/orijinal bir glif tercih edildi.
+ */
+function NewspaperIcon({ className }: { className?: string }): React.ReactElement {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className={className}
+      aria-hidden="true"
+    >
+      <rect x="3" y="4" width="18" height="16" rx="2" />
+      <line x1="7" y1="8" x2="17" y2="8" />
+      <line x1="7" y1="12" x2="17" y2="12" />
+      <line x1="7" y1="16" x2="13" y2="16" />
+    </svg>
+  );
+}
+
 export function NewsFeedBanner(): React.ReactElement | null {
   const items = useNewsStore((s) => s.items);
   const t = useT();
@@ -127,12 +158,22 @@ export function NewsFeedBanner(): React.ReactElement | null {
           ↗
         </span>
       </a>
+      {/*
+        Hit-area >= 44x44dp (Apple HIG) / 48x48dp (Material): p-3 (12px)
+        ikonun (h-6 w-6 = 24px) her yönüne eklenince 48x48'e ulaşır (24px
+        ikon, önceki 20px'lik sürümden daha güçlü bir görsel ipucu verir).
+        -my-3 bu dikey padding'in banner'ın kendi yüksekliğini büyütmesini
+        engeller (yatay padding'in flex genişliğine etkisi önemsiz, negate
+        edilmedi — ml-auto ile aynı property'yi (margin-left) hedefleyip
+        çakışmasın diye sadece dikey negate edildi).
+      */}
       <Link
         href="/haberler"
-        className="text-text-t3 hover:text-text-t1 ml-auto flex shrink-0 items-center gap-1 transition-colors"
+        aria-label={t("newsFeed.viewAll")}
         title={t("newsFeed.viewAll")}
+        className="text-text-t3 hover:text-text-t1 ml-auto -my-3 flex shrink-0 items-center gap-1 p-3 transition-colors"
       >
-        <span aria-hidden="true">📰</span>
+        <NewspaperIcon className="h-6 w-6 shrink-0" />
         <span className="hidden sm:inline">{t("newsFeed.viewAll")}</span>
       </Link>
       <span className="text-text-t4 hidden shrink-0 sm:inline">
