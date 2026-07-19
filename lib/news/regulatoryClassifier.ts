@@ -31,12 +31,13 @@ function matchesAny(title: string, keywords: readonly string[]): boolean {
 }
 
 const REGULATORY_CATEGORY_KEYWORDS: readonly string[] = [
-  "sec", "cftc", "regulation", "regulatory", "mica", "compliance",
-  "license", "licensing", "lawsuit", "sues", "sued", "charged", "charges",
-  "indicted", "ban", "banned", "restricts", "delay", "delayed", "postpone",
-  "postpones", "listing", "lists", "delist", "delisting", "framework",
-  "legislation", "bill", "congress", "senate", "court", "ruling",
-  "settlement", "fine", "fined", "penalty", "etf approval",
+  "sec", "cftc", "regulation", "regulatory", "regulator", "regulators",
+  "mica", "compliance", "license", "licensing", "lawsuit", "sues", "sued",
+  "charged", "charges", "indicted", "ban", "banned", "restricts", "delay",
+  "delayed", "postpone", "postpones", "listing", "lists", "delist",
+  "delisting", "framework", "legislation", "bill", "congress", "senate",
+  "court", "ruling", "settlement", "fine", "fined", "penalty",
+  "etf approval", "sanction", "sanctions",
 ];
 
 /** Haber "regülasyon/listeleme" kategorisine giriyor mu? */
@@ -52,6 +53,7 @@ const IMPACT_RULES: ReadonlyArray<{ keywords: readonly string[]; impact: NewsSen
   { keywords: ["listing", "lists"], impact: "positive" },
   { keywords: ["lawsuit", "sues", "sued", "charged", "charges", "indicted"], impact: "negative" },
   { keywords: ["ban", "banned", "restricts"], impact: "negative" },
+  { keywords: ["sanction", "sanctions"], impact: "negative" },
   { keywords: ["delay", "delayed", "postpone", "postpones", "rejects", "rejected"], impact: "negative" },
   { keywords: ["approval", "approved", "approves", "etf approval"], impact: "positive" },
 ];
