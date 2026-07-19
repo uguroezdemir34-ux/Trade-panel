@@ -1490,6 +1490,10 @@ export const tr: Dictionary = {
     impactSuffix: "(kural bazlı)",
     ctaTitle: "Haberler",
     ctaSubtitle: "Tam Liste",
+    trend: {
+      ariaLabel: "Son 24 saat haber duygu trendi",
+      insufficientData: "Yetersiz veri",
+    },
     calendar: {
       title: "Ekonomik Takvim",
       fomc: "Fed Faiz Kararı (FOMC)",

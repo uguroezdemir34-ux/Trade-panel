@@ -1369,6 +1369,10 @@ toolCursor: "Cursor",
     impactSuffix: "(rule-based)",
     ctaTitle: "News",
     ctaSubtitle: "Full List",
+    trend: {
+      ariaLabel: "Last 24h news sentiment trend",
+      insufficientData: "Insufficient data",
+    },
     calendar: {
       title: "Economic Calendar",
       fomc: "Fed Rate Decision (FOMC)",

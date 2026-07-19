@@ -38,11 +38,16 @@
  * otomatik tetiklenir.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { useNewsStore } from "@/lib/store/newsStore";
 import { useT } from "@/lib/i18n/context";
+import {
+  computeSentimentTrend,
+  hasSufficientTrendData,
+  type SentimentTrendBucket,
+} from "@/lib/news/sentimentTrend";
 import type { NewsSentiment } from "@/lib/news/types";
 
 const ROTATE_MS = 8_000;
@@ -96,6 +101,70 @@ function NewspaperIcon({ className }: { className?: string }): React.ReactElemen
       <line x1="7" y1="8" x2="17" y2="8" />
       <line x1="7" y1="12" x2="17" y2="12" />
       <line x1="7" y1="16" x2="13" y2="16" />
+    </svg>
+  );
+}
+
+const SPARK_W = 64;
+const SPARK_H = 28;
+
+/**
+ * "Sentiment Trend" mini-grafiği — son 24 saat, saatlik net (pozitif-negatif)
+ * skoru. Chart kütüphanesi (recharts/Chart.js vb.) bu projede kurulu değil
+ * (package.json'da doğrulandı) — Sparkline.tsx (components/grafik/) zaten
+ * aynı "küçük alan → inline SVG, yeni bağımlılık yok" kararını veriyordu,
+ * o dosyayı DOĞRUDAN kullanmadım çünkü o min/max normalize eder ve sıfır
+ * çizgisi kavramı yok (pozitif/negatif dengesi için ortada sabit bir sıfır
+ * ekseni gerekiyor) — burada amaca özel, simetrik (maxAbs bazlı) bir ölçek
+ * kullanan ayrı, küçük bir çizim var.
+ *
+ * Çağıran taraf hasSufficientTrendData() ile önce kontrol etmeli — burada
+ * "yeterli veri yok" durumu ele alınmaz, sadece çizim yapar.
+ */
+function SentimentTrendSparkline({
+  buckets,
+}: {
+  buckets: readonly SentimentTrendBucket[];
+}): React.ReactElement {
+  const nets = buckets.map((b) => b.net);
+  const maxAbs = Math.max(1, ...nets.map((n) => Math.abs(n)));
+  const midY = SPARK_H / 2;
+  const amplitude = midY - 2; // 2px üst/alt pay
+
+  const points = nets
+    .map((n, i) => {
+      const x = (i / (nets.length - 1)) * SPARK_W;
+      const y = midY - (n / maxAbs) * amplitude;
+      return `${x.toFixed(1)},${y.toFixed(1)}`;
+    })
+    .join(" ");
+
+  const lastNet = nets[nets.length - 1];
+  const strokeColor =
+    lastNet > 0
+      ? "rgb(var(--signal-green))"
+      : lastNet < 0
+        ? "rgb(var(--signal-red))"
+        : "rgb(var(--text-t3))";
+
+  return (
+    <svg width={SPARK_W} height={SPARK_H} viewBox={`0 0 ${SPARK_W} ${SPARK_H}`} fill="none">
+      <line
+        x1={0}
+        y1={midY}
+        x2={SPARK_W}
+        y2={midY}
+        stroke="rgb(var(--border))"
+        strokeWidth={1}
+        strokeDasharray="2 2"
+      />
+      <polyline
+        points={points}
+        stroke={strokeColor}
+        strokeWidth={1.5}
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }
@@ -200,10 +269,27 @@ export function NewsFeedBanner(): React.ReactElement | null {
  * seçti, "5 sekme yeterli, kalabalıklaştırır"). Kontrol kaldırıldı,
  * artık items boşken de kart görünür kalıyor (o durumda /haberler
  * kendi "Henüz haber yok" boş durumunu gösterir).
+ *
+ * "Sentiment Trend" mini-grafiği: son 24 saat, saatlik net (pozitif-negatif)
+ * skoru — computeSentimentTrend() useMemo([items]) ile hesaplanır, nowMs
+ * bir dependency DEĞİL (Date.now() sadece items referansı değiştiğinde,
+ * yani her poll'da — 20dk'da bir — taze okunur, her render'da değil). Bir
+ * önceki bug turundaki hatayı (60sn'lik ayrı bir tick'in gereksiz yeniden
+ * hesaplama tetiklemesi) burada tekrarlamamak bilinçli — saatlik
+ * bucket'ların zaten 20dk'lık poll cadence'inin (useNewsPoller) üstünde
+ * çözünürlüğü var, items her poll'da yeni referansla geldiğinde otomatik
+ * tazeleniyor. Yeterli veri yoksa (hasSufficientTrendData false — items
+ * boş, son 24 saatte hiç haber yok, veya sadece 1-2 bucket'ta sinyal var)
+ * grafik yerine sabit genişlikte "—" gösterilir — UYDURMA VERİ/RASTGELE
+ * ÇİZGİ YOK (PerformancePanel'deki aynı disiplin).
  */
 export function NewsFeedCTA(): React.ReactElement | null {
+  const items = useNewsStore((s) => s.items);
   const t = useT();
   const pathname = usePathname();
+
+  const trendBuckets = useMemo(() => computeSentimentTrend(items, Date.now()), [items]);
+  const showTrend = hasSufficientTrendData(trendBuckets);
 
   if (pathname === HABERLER_PATH || pathname === "/grafik") return null;
 
@@ -225,6 +311,23 @@ export function NewsFeedCTA(): React.ReactElement | null {
             {t("newsFeed.ctaSubtitle")}
           </span>
         </span>
+        {showTrend ? (
+          <span
+            className="shrink-0"
+            role="img"
+            aria-label={t("newsFeed.trend.ariaLabel")}
+            title={t("newsFeed.trend.ariaLabel")}
+          >
+            <SentimentTrendSparkline buckets={trendBuckets} />
+          </span>
+        ) : (
+          <span
+            className="text-text-t4 flex w-16 shrink-0 items-center justify-center font-mono text-xs"
+            title={t("newsFeed.trend.insufficientData")}
+          >
+            —
+          </span>
+        )}
         <span className="text-signal-blue shrink-0 text-lg" aria-hidden="true">
           ›
         </span>
