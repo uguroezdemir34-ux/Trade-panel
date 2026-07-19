@@ -137,17 +137,24 @@ export default function HaberlerPage(): React.ReactElement {
                 className="border-border bg-bg-card hover:border-text-t3 flex flex-col gap-1.5 rounded-lg border p-3 transition-colors"
               >
                 <div className="flex items-start justify-between gap-2">
+                  {/* Impact (dar/kural-bazlı) ile genel sentiment (geniş/gevşek NLP)
+                      çelişebilir — kullanıcı onayıyla: çakışmada Impact kazanır,
+                      sentiment gizlenir (tek rozet, kullanıcıya "hangisine
+                      güveneyim" sorusu bırakmaz). Dar-kapsamlı + açıkça
+                      "(kural bazlı)" etiketli olan, geniş-kapsamlı olana göre
+                      önceliklidir. */}
                   <div className="flex shrink-0 flex-col items-start gap-1">
-                    <span
-                      className={`rounded px-1.5 py-0.5 text-[10px] leading-none ${SENTIMENT_CLASS[item.sentiment]}`}
-                    >
-                      {t(SENTIMENT_I18N_KEY[item.sentiment])}
-                    </span>
-                    {impact !== null && (
+                    {impact !== null ? (
                       <span
                         className={`rounded px-1.5 py-0.5 text-[10px] leading-none whitespace-nowrap ${SENTIMENT_CLASS[impact]}`}
                       >
                         {t("newsFeed.impactPrefix")} {t(SENTIMENT_I18N_KEY[impact])} {t("newsFeed.impactSuffix")}
+                      </span>
+                    ) : (
+                      <span
+                        className={`rounded px-1.5 py-0.5 text-[10px] leading-none ${SENTIMENT_CLASS[item.sentiment]}`}
+                      >
+                        {t(SENTIMENT_I18N_KEY[item.sentiment])}
                       </span>
                     )}
                   </div>

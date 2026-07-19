@@ -122,7 +122,10 @@ export function NewsFeedBanner(): React.ReactElement | null {
   }, [items.length]);
 
   // /grafik dikey alan kazanımı — chart sayfasında header'la birlikte gizlenir.
-  if (pathname === "/grafik" || items.length === 0) return null;
+  // /haberler'de de gizli — bug taramasında bulundu: NewsFeedCTA zaten "buradasın"
+  // gerekçesiyle orada gizleniyordu, ticker bu kuraldan muaf tutulmuştu ve
+  // aynı sayfada altındaki tam listeyle aynı başlıkları tekrarlıyordu.
+  if (pathname === "/grafik" || pathname === "/haberler" || items.length === 0) return null;
 
   const current = items[index % items.length];
 
