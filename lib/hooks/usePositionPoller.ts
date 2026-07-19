@@ -23,6 +23,7 @@ import { fetchBybitPositions } from "@/lib/bybit/positions";
 import { fetchGateioPositions } from "@/lib/gateio/positions";
 import { fetchKucoinPositions } from "@/lib/kucoin/positions";
 import { fetchMexcPositions } from "@/lib/mexc/positions";
+import { fetchKrakenPositions } from "@/lib/kraken/positions";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
@@ -45,7 +46,7 @@ export function usePositionPoller(delayMs = 0): void {
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function fetchAll(): Promise<void> {
-    const { okxProd, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, mexcFutures } = useCredentialStore.getState();
+    const { okxProd, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, mexcFutures, krakenFutures } = useCredentialStore.getState();
     const exchange = useSettingsStore.getState().activeExchange;
 
     let positions: Position[] | null = null;
@@ -59,6 +60,8 @@ export function usePositionPoller(delayMs = 0): void {
       positions = await fetchKucoinPositions(kucoinFutures);
     } else if (exchange === "mexc") {
       positions = await fetchMexcPositions(mexcFutures);
+    } else if (exchange === "kraken") {
+      positions = await fetchKrakenPositions(krakenFutures);
     } else {
       positions = await fetchPositions(okxProd);
     }
