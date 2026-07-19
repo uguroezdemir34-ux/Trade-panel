@@ -1487,5 +1487,14 @@ export const en: Dictionary = {
     timeMinutesAgo: "{n}m ago",
     timeHoursAgo: "{n}h ago",
     timeDaysAgo: "{n}d ago",
+    impactPrefix: "Impact:",
+    impactSuffix: "(rule-based)",
+    calendar: {
+      title: "Economic Calendar",
+      fomc: "Fed Rate Decision (FOMC)",
+      cpi: "CPI (Inflation)",
+      nfp: "Nonfarm Payrolls (NFP)",
+      empty: "No upcoming scheduled events",
+    },
   },
 };

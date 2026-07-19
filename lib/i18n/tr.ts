@@ -1487,5 +1487,14 @@ export const tr: Dictionary = {
     timeMinutesAgo: "{n}dk önce",
     timeHoursAgo: "{n}sa önce",
     timeDaysAgo: "{n}g önce",
+    impactPrefix: "Etki:",
+    impactSuffix: "(kural bazlı)",
+    calendar: {
+      title: "Ekonomik Takvim",
+      fomc: "Fed Faiz Kararı (FOMC)",
+      cpi: "TÜFE (CPI)",
+      nfp: "Tarım Dışı İstihdam (NFP)",
+      empty: "Yaklaşan planlı etkinlik yok",
+    },
   },
 };
