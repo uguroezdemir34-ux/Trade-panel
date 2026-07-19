@@ -81,6 +81,19 @@ export default function HaberlerPage(): React.ReactElement {
     return items.filter((item) => item.sentiment === filter);
   }, [items, filter]);
 
+  // Sınıflandırma (regex taraması) filtered değişince bir kez hesaplanır —
+  // bug taramasında bulundu: eskiden render'ın içinde inline çağrılıyordu,
+  // bu yüzden takvim geri sayımını güncelleyen 60sn'lik nowMs tick'i bile
+  // (filtered/items hiç değişmediği halde) tüm listeyi yeniden sınıflandırıyordu.
+  const classifiedItems = useMemo(
+    () =>
+      filtered.map((item) => ({
+        item,
+        impact: isRegulatoryOrListingNews(item.title) ? classifyMarketImpact(item.title) : null,
+      })),
+    [filtered],
+  );
+
   return (
     <div className="flex flex-col gap-4 p-4">
       <h1 className="text-text-t1 font-mono text-sm tracking-widest">{t("newsFeed.pageTitle")}</h1>
@@ -121,13 +134,11 @@ export default function HaberlerPage(): React.ReactElement {
         ))}
       </div>
 
-      {filtered.length === 0 ? (
+      {classifiedItems.length === 0 ? (
         <p className="text-text-t3 font-mono text-xs">{t("newsFeed.empty")}</p>
       ) : (
         <div className="flex flex-col gap-2">
-          {filtered.map((item) => {
-            const isRegulatory = isRegulatoryOrListingNews(item.title);
-            const impact = isRegulatory ? classifyMarketImpact(item.title) : null;
+          {classifiedItems.map(({ item, impact }) => {
             return (
               <a
                 key={item.id}

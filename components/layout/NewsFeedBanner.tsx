@@ -47,6 +47,15 @@ import type { NewsSentiment } from "@/lib/news/types";
 
 const ROTATE_MS = 8_000;
 
+/**
+ * Tek kaynak — NewsFeedBanner'ın gizleme kontrolünde, NewsFeedCTA'nın
+ * gizleme kontrolünde VE Link href'inde aynı path'e referans veriliyor.
+ * Ham string literal üç yerde tekrarlanırsa biri /haberler yeniden
+ * adlandırılınca sessizce senkron dışı kalabilirdi (bug taramasında
+ * bulundu) — tek yerden değiştirilsin diye sabite çıkarıldı.
+ */
+const HABERLER_PATH = "/haberler";
+
 /** app/haberler/page.tsx ile paylaşılır — aynı renk/etiket eşlemesini tekrarlamamak için export edildi. */
 export const SENTIMENT_I18N_KEY: Record<NewsSentiment, string> = {
   positive: "newsFeed.positive",
@@ -125,7 +134,7 @@ export function NewsFeedBanner(): React.ReactElement | null {
   // /haberler'de de gizli — bug taramasında bulundu: NewsFeedCTA zaten "buradasın"
   // gerekçesiyle orada gizleniyordu, ticker bu kuraldan muaf tutulmuştu ve
   // aynı sayfada altındaki tam listeyle aynı başlıkları tekrarlıyordu.
-  if (pathname === "/grafik" || pathname === "/haberler" || items.length === 0) return null;
+  if (pathname === "/grafik" || pathname === HABERLER_PATH || items.length === 0) return null;
 
   const current = items[index % items.length];
 
@@ -179,18 +188,29 @@ export function NewsFeedBanner(): React.ReactElement | null {
  * mantığı var: /haberler sayfasındayken zaten oradasın, kendine link
  * vermek gereksiz olurdu, o yüzden orada gizli. /grafik'te de banner'la
  * aynı gerekçeyle (dikey alan kazanımı) gizli.
+ *
+ * DİKKAT — items.length'e BAĞLI DEĞİL (NewsFeedBanner'dan farklı):
+ * banner göstereceği bir headline olmadan render edemez ama bu kart
+ * statik metin/ikon, hiçbir habere ihtiyacı yok. Bug taramasında
+ * bulundu: eskiden banner'la aynı items.length===0 kontrolünü
+ * kopyalamıştı — sonucu, soğuk açılışta (useNewsPoller'ın ilk fetch'i
+ * henüz dönmeden) veya haber kaynakları o oturumda tamamen başarısız
+ * olduğunda uygulamada /haberler'e giden HİÇBİR UI yolu kalmıyordu
+ * (alt menüde de sekmesi yok — kullanıcı bilerek 6. sekme eklememeyi
+ * seçti, "5 sekme yeterli, kalabalıklaştırır"). Kontrol kaldırıldı,
+ * artık items boşken de kart görünür kalıyor (o durumda /haberler
+ * kendi "Henüz haber yok" boş durumunu gösterir).
  */
 export function NewsFeedCTA(): React.ReactElement | null {
-  const items = useNewsStore((s) => s.items);
   const t = useT();
   const pathname = usePathname();
 
-  if (pathname === "/haberler" || pathname === "/grafik" || items.length === 0) return null;
+  if (pathname === HABERLER_PATH || pathname === "/grafik") return null;
 
   return (
     <div className="mx-auto max-w-screen-2xl px-4 pt-3 lg:px-6">
       <Link
-        href="/haberler"
+        href={HABERLER_PATH}
         className="border-signal-blue/50 bg-bg-card hover:border-signal-blue flex items-center gap-3 rounded-xl border-2 p-3 transition-colors"
         style={{ boxShadow: "0 0 16px 1px rgb(var(--signal-blue) / 0.30)" }}
       >

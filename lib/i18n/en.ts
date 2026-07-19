@@ -1479,7 +1479,6 @@ export const en: Dictionary = {
     negative: "Negative",
     neutral: "Neutral",
     disclaimer: "Not an automated signal — informational only",
-    viewAll: "View All",
     pageTitle: "News Feed",
     filterAll: "All",
     empty: "No news yet",
