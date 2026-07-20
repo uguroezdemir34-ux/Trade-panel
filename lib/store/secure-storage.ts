@@ -46,10 +46,15 @@
  *   localStorage değeri: "ENC1:<base64(IV + ciphertext)>"
  *   "ENC1:" prefiksi: sürüm marker, şifreli veri ile düz JSON'ı ayırt eder.
  *
- * Graceful recovery:
- *   Şifre çözme herhangi bir sebeple başarısız olursa (yanlış/eksik key,
- *   bozuk veri, eski format, KİLİTLİ durum) → localStorage kaydı silinir
- *   (varsa), `defaultValue` döner. Sistem çökmez.
+ * Graceful recovery — İKİ FARKLI DURUM, İKİ FARKLI DAVRANIŞ (bug taramasında
+ * ayrıştırıldı — önceden ikisi de aynı şekilde ele alınıp veri siliniyordu):
+ *   - KİLİTLİ durum (PIN bu oturumda henüz girilmedi): GEÇİCİ bir durum,
+ *     veri bozuk DEĞİL — localStorage'a hiç dokunulmaz, sadece `defaultValue`
+ *     döner. `unlock()` + `reload()` sonrası veri yine okunabilir.
+ *   - GERÇEK decrypt hatası (yanlış anahtar İÇERİĞİ, bozuk ciphertext, eski
+ *     format, şema doğrulama hatası): localStorage kaydı silinir (varsa),
+ *     `defaultValue` döner, Console'a uyarı bırakılır.
+ *   Her iki durumda da sistem çökmez.
  *
  * Saf olmayan fonksiyonlar: localStorage/crypto erişir.
  * Test enjeksiyonu: `cryptoKey` parametresi ile DI sağlanır.
@@ -418,7 +423,28 @@ export async function loadSecure<T>(
     }
   }
 
-  // Şifreli format → çöz
+  // KİLİTLİ DURUM — decrypt hiç denenmeden, YAPISAL olarak ayrı ele alınır.
+  // Bug taramasında bulundu: önceden bu kontrol yoktu, getOrCreateSessionKey()
+  // "LOCKED" hatasıyla throw ediyordu ve bu, aşağıdaki genel catch bloğuna
+  // düşüp GERÇEK decrypt hatasıyla (yanlış anahtar İÇERİĞİ, bozuk ciphertext)
+  // AYNI şekilde ele alınıyordu — ikisinde de kayıt siliniyordu. Sonuç: PIN
+  // henüz bu oturumda girilmemişken (ki bu, AppShell'in her açılışta
+  // koşulsuz çağırdığı credentialStore.load() için normal bir durum) çağrılan
+  // her loadSecure() TÜM kayıtlı API anahtarlarını kalıcı olarak siliyordu.
+  //
+  // Hata mesajı/tipine bakarak ayrım yapmak (catch içinde "bu LOCKED mıydı"
+  // diye kontrol etmek) kırılgan olurdu — bunun yerine isUnlocked() ile
+  // decrypt denemesinden ÖNCE, yapısal olarak kontrol ediyoruz. DI
+  // (opts.cryptoKey, sadece testlerde) bu kontrolü atlar — test her zaman
+  // kendi anahtarını sağlar, "oturum kilidi" kavramıyla ilgilenmez.
+  if (!opts.cryptoKey && !isUnlocked()) {
+    return defaultValue; // localStorage'a HİÇ DOKUNULMADI — veri korunuyor
+  }
+
+  // Şifreli format → çöz. Buraya sadece gerçek bir CryptoKey mevcutken
+  // girilir (yukarıdaki kilit kontrolünü geçti VEYA test DI'ı var) — yani
+  // buradaki başarısızlık artık GERÇEK bir decrypt hatası, "kilit açık değil"
+  // değil.
   try {
     const cryptoKey =
       opts.cryptoKey ?? (await getOrCreateSessionKey());
@@ -427,6 +453,7 @@ export async function loadSecure<T>(
     if (opts.schema) {
       const result = opts.schema.safeParse(decrypted);
       if (!result.success) {
+        console.warn(`[secure-storage] "${key}" şifre çözüldü ama şema doğrulaması başarısız — kayıt siliniyor.`);
         window.localStorage.removeItem(fullKey);
         return defaultValue;
       }
@@ -435,7 +462,16 @@ export async function loadSecure<T>(
 
     return decrypted as T;
   } catch {
-    // Anahtar uyumsuzluğu, bozuk veri — sil ve default'a dön
+    // Gerçek decrypt hatası — anahtar (PIN'den türetilmiş veya DI) bu
+    // ciphertext'i çözemedi (AEAD tag mismatch) ya da veri gerçekten bozuk.
+    // Kullanıcı hiç bilgilendirilmeden veri kaybetmesin diye en azından
+    // Console'a net bir uyarı bırakılıyor (kullanıcı kararı — sessiz silme
+    // yerine bari iz bırakılsın).
+    console.warn(
+      `[secure-storage] "${key}" için şifre çözme başarısız — kayıt siliniyor. ` +
+        `Olası nedenler: yanlış PIN'den türetilmiş bir anahtarla decrypt denemesi, ` +
+        `ya da bozuk/eski format veri.`,
+    );
     try {
       window.localStorage.removeItem(fullKey);
     } catch {

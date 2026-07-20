@@ -598,6 +598,55 @@ describe("Master PIN — unlock()/lock()/isUnlocked()", () => {
     expect(saveResult).toBe(false);
   });
 
+  // ── Bug taraması: "kilitli" ile "gerçekten bozuk/yanlış anahtar" ayrımı ──
+  // Önceden ikisi de aynı catch bloğuna düşüp localStorage kaydını
+  // siliyordu — sonuç: PIN henüz girilmemişken (uygulama boot'unda normal
+  // bir durum) çağrılan her loadSecure() kayıtlı TÜM API anahtarlarını
+  // kalıcı olarak siliyordu (bkz. AppShell.tsx'in koşulsuz credentialStore.
+  // load() çağrısı). Aşağıdaki iki test bu ayrımı doğrudan doğrular.
+
+  it("KİLİTLİYKEN var olan şifreli kayıt SİLİNMEZ — sadece defaultValue döner", async () => {
+    // Gerçek (herhangi bir) anahtarla önceden şifrelenmiş veri simülasyonu —
+    // hangi anahtarla şifrelendiği önemli değil, çünkü kilitliyken decrypt
+    // HİÇ DENENMEMELİ.
+    const someKey = await generateSessionKey();
+    const encrypted = await encryptValue(someKey, { apiKey: "sk_live_should_survive" });
+    mockStorage.setItem(STORAGE_PREFIX + "okx_prod_locked", encrypted);
+
+    expect(isUnlocked()).toBe(false); // beforeEach zaten kilitli başlatıyor
+    const loaded = await loadSecure("okx_prod_locked", null);
+    expect(loaded).toBeNull(); // defaultValue döndü
+
+    // KRİTİK ASSERTION — bug'ın tam kalbi: kayıt hâlâ orada, silinmedi.
+    const raw = mockStorage.getItem(STORAGE_PREFIX + "okx_prod_locked");
+    expect(raw).not.toBeNull();
+    expect(raw).toBe(encrypted);
+
+    // Ve unlock() sonrası (doğru anahtarla) veri hâlâ okunabilir olmalı.
+    // NOT: someKey PIN'den türetilmediği için gerçek unlock() bunu
+    // çözemez — burada sadece "silinmedi" iddiasını, verinin cryptoKey DI
+    // ile hâlâ okunabilir olduğunu göstererek teyit ediyoruz.
+    const stillReadable = await loadSecure("okx_prod_locked", null, { cryptoKey: someKey });
+    expect(stillReadable).toEqual({ apiKey: "sk_live_should_survive" });
+  });
+
+  it("KİLİT AÇIKKEN gerçekten yanlış/uyumsuz bir anahtarla decrypt başarısız olursa kayıt SİLİNİR (regresyon değil)", async () => {
+    // Bu test, düzeltmenin AŞIRIYA kaçmadığını (yani artık "hiçbir zaman
+    // silme" davranışına dönüşmediğini) doğrular — gerçek bir decrypt
+    // hatasında eski davranış (temizle + default dön) korunmalı.
+    const rightKey = await generateSessionKey();
+    const wrongKey = await generateSessionKey();
+    const encrypted = await encryptValue(rightKey, { apiKey: "sk_live_should_be_wiped" });
+    mockStorage.setItem(STORAGE_PREFIX + "okx_prod_wrongkey", encrypted);
+
+    // cryptoKey DI ile "kilit açık ama anahtar yanlış" senaryosu simüle
+    // ediliyor — isUnlocked() kontrolünü bilerek atlıyor (DI böyle
+    // tasarlandı), yani gerçek bir decrypt denemesine giriyor.
+    const loaded = await loadSecure("okx_prod_wrongkey", null, { cryptoKey: wrongKey });
+    expect(loaded).toBeNull();
+    expect(mockStorage.getItem(STORAGE_PREFIX + "okx_prod_wrongkey")).toBeNull(); // silindi
+  });
+
   it("ilk unlock() — yeni PIN kurulumu, isNewSetup:true", async () => {
     const result = await unlock("1234");
     expect(result.ok).toBe(true);
