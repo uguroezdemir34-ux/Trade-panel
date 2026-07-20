@@ -20,11 +20,19 @@
 
 import { NextResponse } from "next/server";
 import { PAIRS } from "@/lib/constants/pairs";
-import { computeAllSignals } from "@/lib/server/signalEngine";
+import type { Pair } from "@/lib/constants/pairs";
+import { computeAllSignals, fetch24hTickers } from "@/lib/server/signalEngine";
 import { loadTelegramConfigFromEnv } from "@/lib/notify/telegram/config";
 import { sendTelegramMessage } from "@/lib/notify/telegram/client";
 import { escapeMarkdownV2, bold } from "@/lib/notify/telegram/escape";
-import { insertGoSignal } from "@/lib/db/goSignals";
+import {
+  insertGoSignal,
+  getSignalsPendingOutcome,
+  writeSignalOutcome,
+  type OutcomeField,
+  type PendingOutcomeSignal,
+} from "@/lib/db/goSignals";
+import { directionalMovePct, isAdverseMove } from "@/lib/signals/outcomeTracking";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -40,6 +48,45 @@ function formatPrice(n: number): string {
   if (n >= 100) return `$${n.toFixed(2)}`;
   if (n >= 0.01) return `$${n.toFixed(4)}`;
   return `$${n.toFixed(8)}`; // SHIB/FET gibi çok küçük fiyatlar için
+}
+
+// Sunucu tarafı outcome penceresi — client'taki dar pencereden (15-20dk,
+// 60-65dk) KASITLI OLARAK daha geniş: bu cron saatte bir çalışıyor (2-cron
+// Hobby plan limiti nedeniyle ayrı, sık çalışan bir cron eklenmedi —
+// kullanıcı onayıyla). Bkz. lib/db/goSignals.ts + supabase/migrations/008.
+const OUTCOME_15M_MIN_MS = 15 * 60_000;
+const OUTCOME_15M_MAX_MS = 75 * 60_000;
+const OUTCOME_1H_MIN_MS = 60 * 60_000;
+const OUTCOME_1H_MAX_MS = 120 * 60_000;
+
+/** Bekleyen sinyal listesini tickers Map'iyle işler, yazılan kayıt sayısını döner. */
+async function processOutcomeBatch(
+  pending: PendingOutcomeSignal[],
+  field: OutcomeField,
+  tickers: Map<Pair, { last: number; chg24hPct: number }>,
+  nowMs: number,
+): Promise<number> {
+  let written = 0;
+  for (const sig of pending) {
+    // sig.pair DB'den geliyor (string) ama go_signals'a sadece bu sistemin
+    // kendisi PAIRS listesinden yazıyor — Pair union'ına daraltmak güvenli.
+    const currentPrice = tickers.get(sig.pair as Pair)?.last;
+    if (!currentPrice || currentPrice <= 0 || sig.triggerPrice <= 0) continue;
+    try {
+      const movePct = ((currentPrice - sig.triggerPrice) / sig.triggerPrice) * 100;
+      const movePctDir = directionalMovePct(sig.triggerPrice, currentPrice, sig.direction);
+      await writeSignalOutcome(sig.id, field, {
+        movePct,
+        price: currentPrice,
+        isAdverse: isAdverseMove(movePctDir),
+        capturedAtMs: nowMs,
+      });
+      written++;
+    } catch (err) {
+      console.error(`[CRON signal-check] outcome${field} write failed for ${sig.id}:`, err);
+    }
+  }
+  return written;
 }
 
 function buildSignalMessage(
@@ -120,11 +167,30 @@ export async function GET(req: Request): Promise<NextResponse> {
     }
   }
 
+  // ── Outcome check: fill in outcome15m/outcome1h for past signals ──
+  // (non-fatal — whole block wrapped so a Supabase hiccup never fails the
+  // Telegram/score-check work above, which already completed by this point)
+  let outcomesWritten = 0;
+  try {
+    const [pending15m, pending1h] = await Promise.all([
+      getSignalsPendingOutcome("15m", startMs, OUTCOME_15M_MIN_MS, OUTCOME_15M_MAX_MS),
+      getSignalsPendingOutcome("1h", startMs, OUTCOME_1H_MIN_MS, OUTCOME_1H_MAX_MS),
+    ]);
+
+    if (pending15m.length > 0 || pending1h.length > 0) {
+      const tickers = await fetch24hTickers(PAIRS);
+      outcomesWritten += await processOutcomeBatch(pending15m, "15m", tickers, startMs);
+      outcomesWritten += await processOutcomeBatch(pending1h, "1h", tickers, startMs);
+    }
+  } catch (err) {
+    console.error(`[CRON signal-check] outcome check failed:`, err);
+  }
+
   const elapsedMs = Date.now() - startMs;
 
   console.log(
     `[CRON signal-check] ${signals.length} pairs checked, ${newSignals.length} new GO signals,` +
-      ` ${telegramSent} sent, ${dbWritten} db written, ${errors.length} errors, ${elapsedMs}ms`,
+      ` ${telegramSent} sent, ${dbWritten} db written, ${outcomesWritten} outcomes written, ${errors.length} errors, ${elapsedMs}ms`,
   );
 
   return NextResponse.json({
@@ -135,6 +201,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     telegramSent,
     telegramFailed,
     dbWritten,
+    outcomesWritten,
     errors: errors.map((e) => ({ pair: e.pair, error: e.error })),
     elapsedMs,
     ...(verbose && {

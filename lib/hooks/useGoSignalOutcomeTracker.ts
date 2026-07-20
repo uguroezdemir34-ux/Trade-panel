@@ -3,9 +3,7 @@
 import { useEffect } from "react";
 import { useGoSignalLogStore } from "@/lib/store/goSignalLogStore";
 import { useMarketStore } from "@/lib/store/marketStore";
-
-// Sinyal yönünün tersine %0.5+ hareket = adverse
-const ADVERSE_THRESHOLD_PCT = 0.5;
+import { directionalMovePct, isAdverseMove } from "@/lib/signals/outcomeTracking";
 
 // 15 dakika outcome: 15–20 dakika penceresi
 const WIN_15M_MIN = 15 * 60_000;
@@ -41,9 +39,8 @@ export function useGoSignalOutcomeTracker(): void {
 
         const movePct =
           ((currentPrice - entry.triggerPriceAtGo) / entry.triggerPriceAtGo) * 100;
-        // Yön bazlı hareket: LONG için pozitif = iyi, SHORT için negatif = iyi
-        const movePctDir = entry.direction === "LONG" ? movePct : -movePct;
-        const isAdverse = movePctDir < -ADVERSE_THRESHOLD_PCT;
+        const movePctDir = directionalMovePct(entry.triggerPriceAtGo, currentPrice, entry.direction);
+        const isAdverse = isAdverseMove(movePctDir);
 
         if (!entry.outcome15m && elapsed >= WIN_15M_MIN && elapsed <= WIN_15M_MAX) {
           updateOutcome(entry.pair, entry.ts, "outcome15m", {

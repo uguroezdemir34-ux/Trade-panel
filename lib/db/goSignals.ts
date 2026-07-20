@@ -6,7 +6,7 @@
  * Import only from Next.js route handlers (never from "use client").
  */
 
-import { dbSelect, dbUpsert, isDbConfigured } from "./server";
+import { dbSelect, dbUpdate, dbUpsert, isDbConfigured } from "./server";
 import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
 
 const TABLE = "go_signals";
@@ -59,6 +59,18 @@ interface GoSignalRow {
   sub_vwap: number;
   sub_funding: number;
   sub_macro: number;
+  // Opsiyonel — insertGoSignal (toRow) bunları hiç göndermez, PostgREST'in
+  // merge-duplicates upsert'i payload'da olmayan kolonlara dokunmaz. Böylece
+  // bir sinyal aynı id ile tekrar upsert edilirse (dedup retry), daha önce
+  // signal-check'in yazdığı outcome verisi YANLIŞLIKLA null'a düşmez.
+  outcome_15m_move_pct?: number | null;
+  outcome_15m_price?: number | null;
+  outcome_15m_is_adverse?: boolean | null;
+  outcome_15m_captured_at?: string | null;
+  outcome_1h_move_pct?: number | null;
+  outcome_1h_price?: number | null;
+  outcome_1h_is_adverse?: boolean | null;
+  outcome_1h_captured_at?: string | null;
 }
 
 function toRow(input: GoSignalInput): GoSignalRow {
@@ -132,4 +144,80 @@ export async function getRecentGoSignals(
     `pair=eq.${encodeURIComponent(pair)}&signal_ts=gte.${sinceMs}&order=signal_ts.desc&limit=10`,
   );
   return rows.map((r) => ({ direction: r.direction, signalTs: r.signal_ts }));
+}
+
+export type OutcomeField = "15m" | "1h";
+
+export interface PendingOutcomeSignal {
+  id: string;
+  pair: string;
+  direction: string;
+  triggerPrice: number;
+  signalTs: number;
+}
+
+/**
+ * signal_ts'i [nowMs - maxAgeMs, nowMs - minAgeMs] aralığında olan VE ilgili
+ * outcome_*_captured_at'ı henüz null olan sinyalleri döner — bkz.
+ * migration 008 header'ı: sunucu saatte bir çalıştığı için client'taki dar
+ * pencere (15-20dk) yerine geniş bir tolerans penceresi kullanılır
+ * (app/api/cron/signal-check/route.ts'te 15-75dk / 60-120dk).
+ *
+ * limit=200: tek cron çalışmasında makul bir üst sınır, migration sonrası
+ * ilk çalışmalarda birikmiş eski sinyaller varsa bile route'un
+ * maxDuration=10s bütçesini aşırı zorlamaz.
+ */
+export async function getSignalsPendingOutcome(
+  field: OutcomeField,
+  nowMs: number,
+  minAgeMs: number,
+  maxAgeMs: number,
+): Promise<PendingOutcomeSignal[]> {
+  if (!isDbConfigured()) return [];
+  const capturedCol = field === "15m" ? "outcome_15m_captured_at" : "outcome_1h_captured_at";
+  const rows = await dbSelect<GoSignalRow>(
+    TABLE,
+    `signal_ts=gte.${nowMs - maxAgeMs}&signal_ts=lte.${nowMs - minAgeMs}` +
+      `&${capturedCol}=is.null&select=id,pair,direction,trigger_price,signal_ts&limit=200`,
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    pair: r.pair,
+    direction: r.direction,
+    triggerPrice: r.trigger_price,
+    signalTs: r.signal_ts,
+  }));
+}
+
+export interface SignalOutcomeWrite {
+  /** Yön-bazlı DEĞİL, ham fiyat hareketi — client'taki GoSignalOutcome.movePct ile aynı semantik */
+  movePct: number;
+  price: number;
+  isAdverse: boolean;
+  capturedAtMs: number;
+}
+
+/** Tek bir sinyalin outcome'unu yazar (PATCH — diğer kolonlara dokunmaz). */
+export async function writeSignalOutcome(
+  id: string,
+  field: OutcomeField,
+  data: SignalOutcomeWrite,
+): Promise<void> {
+  if (!isDbConfigured()) return;
+  const capturedAtIso = new Date(data.capturedAtMs).toISOString();
+  const patch: Partial<GoSignalRow> =
+    field === "15m"
+      ? {
+          outcome_15m_move_pct: data.movePct,
+          outcome_15m_price: data.price,
+          outcome_15m_is_adverse: data.isAdverse,
+          outcome_15m_captured_at: capturedAtIso,
+        }
+      : {
+          outcome_1h_move_pct: data.movePct,
+          outcome_1h_price: data.price,
+          outcome_1h_is_adverse: data.isAdverse,
+          outcome_1h_captured_at: capturedAtIso,
+        };
+  await dbUpdate<GoSignalRow>(TABLE, patch, `id=eq.${encodeURIComponent(id)}`);
 }
