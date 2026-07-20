@@ -6,7 +6,7 @@
  *   4. Gelişmiş offline cache stratejisi
  */
 
-const CACHE = "quantix-v2";
+const CACHE = "quantix-v3";
 const OFFLINE_PAGE = "/offline";
 const PRECACHE = ["/", "/manifest.json"];
 
@@ -41,6 +41,20 @@ self.addEventListener("fetch", (event) => {
 
   // API + WS → network only
   if (url.pathname.startsWith("/api/") || url.protocol === "wss:") return;
+
+  // Auth (Clerk) sayfaları → HER ZAMAN network-only, SW hiç müdahale etmez.
+  // Bulgu: bu route'lar daha önce hiçbir istisnası olmayan genel "sayfa"
+  // stale-while-revalidate koluna düşüyordu ("cache varsa ANINDA sun, arka
+  // planda güncelle") — eski/bozuk bir cache girişi (ör. Next.js'in RSC
+  // payload fetch'lerinden biri, tam HTML yerine yanlışlıkla cache'lenmiş
+  // olabilir) kullanıcıyı sisteme sokmayan boş bir form göstermeye devam
+  // edebiliyordu, "temizleyip ikinci girişte düzgün açılıyor" semptomu bunu
+  // doğruluyordu. Bir giriş formunun anında offline açılmasının hiçbir UX
+  // faydası yok, riski ise gerçek — bu yüzden kanıt beklenmeden düzeltildi.
+  // /sign-in ve /sign-up catch-all route'lar ([[...sign-in]], routing="path")
+  // — MFA/SSO-callback/şifre sıfırlama gibi alt-adımlar da prefix eşleşmesiyle
+  // kapsanıyor.
+  if (url.pathname.startsWith("/sign-in") || url.pathname.startsWith("/sign-up")) return;
 
   // Next.js static: cache-first
   if (
