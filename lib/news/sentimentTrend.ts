@@ -75,3 +75,30 @@ export function hasSufficientTrendData(buckets: readonly SentimentTrendBucket[])
   const signalBuckets = buckets.filter((b) => b.positive > 0 || b.negative > 0).length;
   return signalBuckets >= SENTIMENT_TREND_MIN_BUCKETS;
 }
+
+export type SentimentTrendLabel = "bullish" | "bearish" | "neutral";
+
+export interface SentimentTrendSummary {
+  /** 24 saatlik penceredeki toplam haber (pozitif+negatif+nötr) — SOURCES */
+  totalCount: number;
+  /** 24 bucket'ın net değerlerinin toplamı, tam sayı — SCORE (ondalık hassasiyet iddia edilmez) */
+  netSum: number;
+  /** Kalibrasyon/eşik gerektirmez — sadece netSum'un işareti okunur */
+  label: SentimentTrendLabel;
+}
+
+/**
+ * SOURCES + SCORE özeti — kullanıcı onayıyla VOL kasıtlı olarak yok (gerçek
+ * bir baseline, ör. son 7 günün ortalama saatlik hacmi, olmadan "High/Low"
+ * etiketi fabrikasyon olurdu — ayrı bir iş, geçmiş veri saklama gerektirir).
+ */
+export function summarizeSentimentTrend(buckets: readonly SentimentTrendBucket[]): SentimentTrendSummary {
+  let totalCount = 0;
+  let netSum = 0;
+  for (const bucket of buckets) {
+    totalCount += bucket.positive + bucket.negative + bucket.neutral;
+    netSum += bucket.net;
+  }
+  const label: SentimentTrendLabel = netSum > 0 ? "bullish" : netSum < 0 ? "bearish" : "neutral";
+  return { totalCount, netSum, label };
+}

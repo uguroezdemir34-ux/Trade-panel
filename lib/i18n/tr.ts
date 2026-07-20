@@ -1493,6 +1493,10 @@ export const tr: Dictionary = {
     trend: {
       ariaLabel: "Son 24 saat haber duygu trendi",
       insufficientData: "Yetersiz veri",
+      bullish: "Boğa",
+      bearish: "Ayı",
+      neutral: "Nötr",
+      sourcesCount: "{n} haber",
     },
     calendar: {
       title: "Ekonomik Takvim",

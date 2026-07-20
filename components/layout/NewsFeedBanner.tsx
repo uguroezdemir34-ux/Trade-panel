@@ -46,7 +46,9 @@ import { useT } from "@/lib/i18n/context";
 import {
   computeSentimentTrend,
   hasSufficientTrendData,
+  summarizeSentimentTrend,
   type SentimentTrendBucket,
+  type SentimentTrendLabel,
 } from "@/lib/news/sentimentTrend";
 import type { NewsSentiment } from "@/lib/news/types";
 
@@ -283,6 +285,18 @@ export function NewsFeedBanner(): React.ReactElement | null {
  * grafik yerine sabit genişlikte "—" gösterilir — UYDURMA VERİ/RASTGELE
  * ÇİZGİ YOK (PerformancePanel'deki aynı disiplin).
  */
+const TREND_LABEL_I18N_KEY: Record<SentimentTrendLabel, string> = {
+  bullish: "newsFeed.trend.bullish",
+  bearish: "newsFeed.trend.bearish",
+  neutral: "newsFeed.trend.neutral",
+};
+
+const TREND_LABEL_COLOR_CLASS: Record<SentimentTrendLabel, string> = {
+  bullish: "text-signal-green",
+  bearish: "text-signal-red",
+  neutral: "text-text-t3",
+};
+
 export function NewsFeedCTA(): React.ReactElement | null {
   const items = useNewsStore((s) => s.items);
   const t = useT();
@@ -290,6 +304,9 @@ export function NewsFeedCTA(): React.ReactElement | null {
 
   const trendBuckets = useMemo(() => computeSentimentTrend(items, Date.now()), [items]);
   const showTrend = hasSufficientTrendData(trendBuckets);
+  // O(24) toplama — trendBuckets zaten memoize, ayrıca sarmalamaya
+  // gerek yok (classifyMarketImpact'in regex taraması gibi pahalı değil).
+  const summary = summarizeSentimentTrend(trendBuckets);
 
   if (pathname === HABERLER_PATH || pathname === "/grafik") return null;
 
@@ -303,7 +320,7 @@ export function NewsFeedCTA(): React.ReactElement | null {
         <span className="border-signal-blue/40 bg-soft-blue text-signal-blue flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border">
           <NewspaperIcon className="h-6 w-6" />
         </span>
-        <span className="flex flex-1 flex-col">
+        <span className="flex min-w-0 flex-1 flex-col">
           <span className="text-text-t1 font-mono text-sm font-bold tracking-widest uppercase">
             {t("newsFeed.ctaTitle")}
           </span>
@@ -312,13 +329,22 @@ export function NewsFeedCTA(): React.ReactElement | null {
           </span>
         </span>
         {showTrend ? (
-          <span
-            className="shrink-0"
-            role="img"
-            aria-label={t("newsFeed.trend.ariaLabel")}
-            title={t("newsFeed.trend.ariaLabel")}
-          >
-            <SentimentTrendSparkline buckets={trendBuckets} />
+          <span className="flex shrink-0 flex-col items-end gap-0.5">
+            <span role="img" aria-label={t("newsFeed.trend.ariaLabel")} title={t("newsFeed.trend.ariaLabel")}>
+              <SentimentTrendSparkline buckets={trendBuckets} />
+            </span>
+            {/* Tek satır kompakt özet — mockup'taki masaüstü 3-sütun (Sources/
+                Score/Vol) düzeni mobil kart genişliğine sığmaz. VOL kasıtlı
+                olarak yok (bkz. summarizeSentimentTrend header'ı — gerçek
+                baseline olmadan High/Low fabrikasyon olurdu). SCORE ondalık
+                gösterilmez (netSum zaten tam sayı toplamı, sahte hassasiyet
+                iddia edilmez), sadece işaretine göre Boğa/Ayı/Nötr etiketi. */}
+            <span
+              className={`font-mono text-[9px] whitespace-nowrap tracking-wide ${TREND_LABEL_COLOR_CLASS[summary.label]}`}
+            >
+              {summary.netSum > 0 ? `+${summary.netSum}` : summary.netSum} {t(TREND_LABEL_I18N_KEY[summary.label])}
+              <span className="text-text-t4"> · {t("newsFeed.trend.sourcesCount", { n: summary.totalCount })}</span>
+            </span>
           </span>
         ) : (
           <span

@@ -1293,6 +1293,10 @@ toolCursor: "Курсор",
     trend: {
       ariaLabel: "Last 24h news sentiment trend",
       insufficientData: "Insufficient data",
+      bullish: "Bullish",
+      bearish: "Bearish",
+      neutral: "Neutral",
+      sourcesCount: "{n} news",
     },
     calendar: {
       title: "Economic Calendar",
