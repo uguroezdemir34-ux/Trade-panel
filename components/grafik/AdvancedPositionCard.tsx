@@ -33,7 +33,7 @@ import { usePositionStore } from "@/lib/store/positionStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { computeLiveUpl, computeRoe } from "@/lib/sizer/position-pnl";
-import { formatPrice, formatPercent, formatCoinAmount } from "@/lib/i18n/format";
+import { formatPrice, formatPercent } from "@/lib/i18n/format";
 
 interface Props {
   pair: string;
@@ -144,15 +144,17 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
         )}
 
         <div className={`rounded border ${theme === "light" ? "border-slate-300" : "border-border/50"} bg-surface-s2 px-1.5 py-1 text-center`}>
-          <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Size</div>
-          {/* Birim + yuvarlama: formatCoinAmount (lib/i18n/format.ts) — PositionCard.tsx
-              ve CloseConfirmModal.tsx'te zaten kullanılan AYNI yardımcı, ctVal
-              çarpımından (RealSize = sz * ctVal) gelen ham float artığını
-              (örn. 4.04099999999999) 4 ondalığa temizliyor. Yeni bir
-              toFixed()/parse mantığı YAZILMADI, tek bir formatlama noktası
-              kullanıldı — position.pair hâlâ aynı kaynak, ayrıca taşınmadı. */}
+          <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Size (USDT)</div>
+          {/* Coin miktarı (formatCoinAmount) yerine USDT notional gösteriliyor —
+              görev kararı: Entry/PnL zaten USDT, coin miktarı bu üçlü içinde
+              tutarsız bir birim oluşturuyordu. position.notional zaten
+              lib/okx/positions.ts'te OKX'in kendi notionalUsd alanından
+              geliyor (yoksa size*markPx fallback'i) — burada yeniden
+              hesaplanmadı, tek doğruluk kaynağı korundu. formatPrice
+              kullanıldı — Entry/PnL ile AYNI para birimi formatlayıcısı,
+              yeni bir formatUsd() yazılmadı (zaten var olanı kullan). */}
           <div className="text-sm font-bold tabular-nums text-text-t1">
-            {formatCoinAmount(position.size, position.pair, locale)}
+            {formatPrice(position.notional, locale)}
           </div>
         </div>
       </div>
