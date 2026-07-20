@@ -113,8 +113,13 @@ export function parseCandleResponse(raw: unknown): Candle[] | null {
   return candles;
 }
 
-/** HTTP fetch arayüzü (test mock'u için) */
-export type FetchFn = (url: string) => Promise<{
+/**
+ * HTTP fetch arayüzü (test mock'u için). `init` opsiyonel — mevcut test
+ * mock'ları (tek parametreli) hâlâ geçerli (positions.ts'in demo/prod
+ * modu X-OKX-Mode header'ıyla ayırt etmesi için eklendi, geriye dönük
+ * uyumlu).
+ */
+export type FetchFn = (url: string, init?: RequestInit) => Promise<{
   ok: boolean;
   json: () => Promise<unknown>;
 }>;

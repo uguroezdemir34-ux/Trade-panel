@@ -268,6 +268,7 @@ async function fetchAlgoMap(
  * @param fetchFn HTTP fetch (default global)
  */
 export async function fetchPositions(
+  isDemo: boolean,
   clientCreds?: { key: string; secret: string; pass: string } | null,
   fetchFn?: FetchFn,
 ): Promise<Position[] | null> {
@@ -284,10 +285,15 @@ export async function fetchPositions(
       res = await fetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isDemo: false, clientCreds }),
+        body: JSON.stringify({ isDemo, clientCreds }),
       });
     } else {
-      res = await fn(url);
+      // fetchBalanceDetailed'daki (lib/okx/balance.ts) aynı X-OKX-Mode
+      // deseni — bug taramasında bulundu: bu fonksiyon isDemo'yu hiç kabul
+      // etmiyordu, POST dalı sabit `false` gönderiyordu, GET dalında hiç
+      // header yoktu — demoMode açıkken bile pozisyonlar hep prod hesabından
+      // çekiliyordu (bkz. lib/hooks/usePositionPoller.ts).
+      res = await fn(url, { headers: { "X-OKX-Mode": isDemo ? "demo" : "prod" } });
     }
     if (!res.ok) return null;
     const raw = await res.json() as Record<string, unknown>;

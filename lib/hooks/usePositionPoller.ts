@@ -46,8 +46,8 @@ export function usePositionPoller(delayMs = 0): void {
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function fetchAll(): Promise<void> {
-    const { okxProd, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, mexcFutures, krakenFutures } = useCredentialStore.getState();
-    const exchange = useSettingsStore.getState().activeExchange;
+    const { okxProd, okxDemo, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, mexcFutures, krakenFutures } = useCredentialStore.getState();
+    const { activeExchange: exchange, demoMode } = useSettingsStore.getState();
 
     let positions: Position[] | null = null;
     if (exchange === "binance") {
@@ -63,7 +63,11 @@ export function usePositionPoller(delayMs = 0): void {
     } else if (exchange === "kraken") {
       positions = await fetchKrakenPositions(krakenFutures);
     } else {
-      positions = await fetchPositions(okxProd);
+      // AccountBalanceCard/useBalancePoller'daki aynı demoMode ? okxDemo :
+      // okxProd deseni — bug taramasında bulundu: burada hiç uygulanmıyordu,
+      // demo modda bile pozisyonlar hep prod hesabından çekiliyordu.
+      const clientCreds = demoMode ? okxDemo : okxProd;
+      positions = await fetchPositions(demoMode, clientCreds);
     }
 
     if (positions === null) return;
