@@ -111,26 +111,22 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
         </div>
       </div>
 
-      {/* Entry / Liq / Size — dashboard grid.
+      {/* Entry / Liq / Size — dikey şerit (önceden yan yana grid-cols-3'tü).
           NOT: değer text'leri önceden hardcoded text-white idi — light
           temada açık bg-surface-s2 arkaplana karşı neredeyse görünmez
           oluyordu. text-text-t1 (tema-farkında token, projenin geri
           kalanında zaten kullanılıyor) ile değiştirildi — gerçek kontrast
           düzeltmesi bu, sadece kenarlık/gölge eklemek yetmezdi.
 
-          Taşma düzeltmesi: grid-cols-3 Tailwind'de minmax(0,1fr) demek —
-          kolonlar wrapper'ın max-w-[85%] kısıtı altında içeriğin doğal
-          genişliğinin ALTINA küçülebiliyor. formatCoinAmount() eklenince
-          SIZE değeri uzadı ("4.0410 ETH"), text-lg + whitespace-nowrap
-          kombinasyonu kolon sınırını aşıp bir sonraki kolonun üstüne
-          taşıyordu (ekran görüntüsüyle doğrulandı). İki değişiklik:
-          (1) text-lg → text-sm, üç değer de daha az yatay yer kaplıyor;
-          (2) whitespace-nowrap üç değer div'inden de kaldırıldı — sığmayan
-          nadir durumda (çok uzun coin adı vb.) kesilip komşu kutuya taşmak
-          yerine kendi kutusu içinde 2. satıra sarsın, hiçbir zaman bilgi
-          kaybı (truncate) olmasın. Etiketler (ENTRY/LIQ/SIZE) zaten kısa
-          sabit kelimeler, whitespace-nowrap'ta bırakıldı. */}
-      <div className="grid grid-cols-3 gap-1.5">
+          grid-cols-3 → flex-col: yan yana 3 sütun, kartın toplam genişliğini
+          3 kutunun toplamı kadar zorluyordu ve chart canvas'ının üzerine
+          yatay olarak biniyordu (mumları/EMA çizgilerini kapatıyordu, ekran
+          görüntüsüyle doğrulandı). Dikey istifte kart genişliği artık en
+          geniş TEK kutunun genişliği kadar (ör. "19.8000 LINK") — üç kutunun
+          toplamından çok daha dar, chart'ın orta/sağ kısmı boşalıyor. Her
+          kutu zaten kendi içinde etiket-üstte/değer-altta (iki satır),
+          bu değişmedi — sadece kutular arası dizilim yön değiştirdi. */}
+      <div className="flex flex-col gap-1.5">
         <div className={`rounded border ${theme === "light" ? "border-slate-300" : "border-border/50"} bg-surface-s2 px-1.5 py-1 text-center`}>
           <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Entry</div>
           <div className="text-sm font-bold tabular-nums text-text-t1">
