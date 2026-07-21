@@ -32,6 +32,7 @@ import {
   type OutcomeField,
   type PendingOutcomeSignal,
 } from "@/lib/db/goSignals";
+import { insertScoreHistoryBatch, type ScoreHistoryInput } from "@/lib/db/scoreHistory";
 import { directionalMovePct, isAdverseMove } from "@/lib/signals/outcomeTracking";
 
 export const runtime = "nodejs";
@@ -167,6 +168,42 @@ export async function GET(req: Request): Promise<NextResponse> {
     }
   }
 
+  // ── DB write: persist a raw score snapshot for EVERY pair, GO/WAIT/NO
+  // fark etmeksizin (go_signals'ın aksine — o sadece GO geçişlerini tutar).
+  // Skor hesaplama mantığına dokunulmuyor, `signals` zaten computeAllSignals()
+  // tarafından hesaplanmış — burada sadece o mevcut sonuç ek olarak
+  // score_history'ye yazılıyor. Hata durumlarını (sig.error) atlıyoruz —
+  // onlarda sub/regime/baseScore hiç yok (computeServerSignal'ın catch
+  // dalı sadece pair/verdict/direction/score/price döner, bkz. signalEngine.ts).
+  // Tek Supabase isteği (batch upsert) — ~9 pair için loop yerine tek
+  // POST, 10sn cron bütçesini (Hobby plan) gereksiz zorlamaz.
+  let scoreHistoryWritten = 0;
+  try {
+    const historyRows: ScoreHistoryInput[] = signals
+      .filter((s) => !s.error && s.sub !== undefined && s.baseScore !== undefined)
+      .map((s) => ({
+        pair: s.pair,
+        direction: s.direction,
+        verdict: s.verdict,
+        score: s.score,
+        baseScore: s.baseScore as number,
+        effectiveThreshold: s.effectiveThreshold,
+        price: s.price,
+        signalTs: s.signalTs ?? startMs,
+        regime: s.regime,
+        sweepBonus: s.sweepBonus ?? 0,
+        regimeBonus: s.regimeBonus ?? 0,
+        overextFlags: s.overextFlags ?? 0,
+        blocks: s.blocks ?? [],
+        softBlocks: s.softBlocks ?? [],
+        sub: s.sub,
+      }));
+    await insertScoreHistoryBatch(historyRows);
+    scoreHistoryWritten = historyRows.length;
+  } catch (err) {
+    console.error(`[CRON signal-check] score_history write failed:`, err);
+  }
+
   // ── Outcome check: fill in outcome15m/outcome1h for past signals ──
   // (non-fatal — whole block wrapped so a Supabase hiccup never fails the
   // Telegram/score-check work above, which already completed by this point)
@@ -190,7 +227,8 @@ export async function GET(req: Request): Promise<NextResponse> {
 
   console.log(
     `[CRON signal-check] ${signals.length} pairs checked, ${newSignals.length} new GO signals,` +
-      ` ${telegramSent} sent, ${dbWritten} db written, ${outcomesWritten} outcomes written, ${errors.length} errors, ${elapsedMs}ms`,
+      ` ${telegramSent} sent, ${dbWritten} db written, ${scoreHistoryWritten} score_history written,` +
+      ` ${outcomesWritten} outcomes written, ${errors.length} errors, ${elapsedMs}ms`,
   );
 
   return NextResponse.json({
@@ -201,6 +239,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     telegramSent,
     telegramFailed,
     dbWritten,
+    scoreHistoryWritten,
     outcomesWritten,
     errors: errors.map((e) => ({ pair: e.pair, error: e.error })),
     elapsedMs,

@@ -73,13 +73,21 @@ export interface ServerSignalResult {
   price: number;
   error?: string;
   debugInputs?: { fg: number; fundingRate: number | null; oiVelocityScore: number };
-  // Sub-scores and signal metadata (populated on GO verdicts for DB logging)
+  // Sub-scores and signal metadata — verdict'ten BAĞIMSIZ, computeServerSignal
+  // başarılı her pair için doldurur (sadece error path'te undefined kalır).
+  // Önceden burada "populated on GO verdicts" yazıyordu — computeServerSignal'ın
+  // kendisi hiç verdict'e göre dallanmadığı için bu YANLIŞTI (score_history
+  // eklenirken fark edildi, düzeltildi): go_signals'a yazan cron kodu sadece
+  // newSignals'ı filtrelediği için pratikte öyle GÖRÜNÜYORDU, ama alan aslında
+  // WAIT/NO'da da hep dolu — score_history bunu şimdi gerçekten kullanıyor.
   signalTs?: number;
   sub?: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number; funding: number; macro: number };
+  baseScore?: number;
   effectiveThreshold?: number;
   regime?: string;
   sweepBonus?: number;
   regimeBonus?: number;
+  overextFlags?: number;
   blocks?: string[];
   softBlocks?: string[];
   pullbackActive?: boolean;
@@ -185,10 +193,12 @@ async function fetchAndScore(pair: Pair): Promise<{
   oiVelocityResult: OiVelocityResult | null;
   signalTs: number;
   sub: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number; funding: number; macro: number };
+  baseScore: number;
   effectiveThreshold: number;
   regime: string;
   sweepBonus: number;
   regimeBonus: number;
+  overextFlags: number;
   blocks: string[];
   softBlocks: string[];
   pullbackActive: boolean;
@@ -307,10 +317,12 @@ async function fetchAndScore(pair: Pair): Promise<{
     oiVelocityResult,
     signalTs: latest.ts,
     sub: result.sub,
+    baseScore: result.baseScore,
     effectiveThreshold: result.effectiveThreshold,
     regime: result.regime,
     sweepBonus: result.sweepBonus,
     regimeBonus: result.regimeBonus,
+    overextFlags: result.overextFlags,
     blocks: result.blocks,
     softBlocks: result.softBlocks,
     pullbackActive: result.pullbackActive,
@@ -397,10 +409,12 @@ export async function computeServerSignal(pair: Pair): Promise<ServerSignalResul
       },
       signalTs: current.signalTs,
       sub: current.sub,
+      baseScore: current.baseScore,
       effectiveThreshold: current.effectiveThreshold,
       regime: current.regime,
       sweepBonus: current.sweepBonus,
       regimeBonus: current.regimeBonus,
+      overextFlags: current.overextFlags,
       blocks: current.blocks,
       softBlocks: current.softBlocks,
       pullbackActive: current.pullbackActive,
