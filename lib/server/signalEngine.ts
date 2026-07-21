@@ -88,6 +88,10 @@ export interface ServerSignalResult {
   sweepBonus?: number;
   regimeBonus?: number;
   overextFlags?: number;
+  /** detectSRLevels()'in ham (ölçeklenmemiş) cezası — lib/sr/detect.ts, max -30 */
+  srModifierRaw?: number;
+  /** Skora gerçekte eklenen değer — srModifierRaw × SR_SCALE_FACTOR (lib/score/version.ts) */
+  srModifierApplied?: number;
   blocks?: string[];
   softBlocks?: string[];
   pullbackActive?: boolean;
@@ -199,6 +203,8 @@ async function fetchAndScore(pair: Pair): Promise<{
   sweepBonus: number;
   regimeBonus: number;
   overextFlags: number;
+  srModifierRaw: number;
+  srModifierApplied: number;
   blocks: string[];
   softBlocks: string[];
   pullbackActive: boolean;
@@ -323,6 +329,8 @@ async function fetchAndScore(pair: Pair): Promise<{
     sweepBonus: result.sweepBonus,
     regimeBonus: result.regimeBonus,
     overextFlags: result.overextFlags,
+    srModifierRaw: srResult.modifier,
+    srModifierApplied: result.srModifier,
     blocks: result.blocks,
     softBlocks: result.softBlocks,
     pullbackActive: result.pullbackActive,
@@ -415,6 +423,8 @@ export async function computeServerSignal(pair: Pair): Promise<ServerSignalResul
       sweepBonus: current.sweepBonus,
       regimeBonus: current.regimeBonus,
       overextFlags: current.overextFlags,
+      srModifierRaw: current.srModifierRaw,
+      srModifierApplied: current.srModifierApplied,
       blocks: current.blocks,
       softBlocks: current.softBlocks,
       pullbackActive: current.pullbackActive,

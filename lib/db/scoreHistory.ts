@@ -30,6 +30,10 @@ export interface ScoreHistoryInput {
   sweepBonus: number;
   regimeBonus: number;
   overextFlags: number;
+  /** detectSRLevels()'in ham (ölçeklenmemiş) cezası — lib/sr/detect.ts, max -30 */
+  srModifierRaw: number | undefined;
+  /** Skora gerçekte eklenen değer — srModifierRaw × SR_SCALE_FACTOR */
+  srModifierApplied: number | undefined;
   blocks: string[];
   softBlocks: string[];
   sub: {
@@ -56,6 +60,8 @@ interface ScoreHistoryRow {
   sweep_bonus: number;
   regime_bonus: number;
   overext_flags: number;
+  sr_modifier_raw: number | null;
+  sr_modifier_applied: number | null;
   blocks: string[];
   soft_blocks: string[];
   price: number;
@@ -85,6 +91,8 @@ function toRow(input: ScoreHistoryInput): ScoreHistoryRow {
     sweep_bonus: input.sweepBonus,
     regime_bonus: input.regimeBonus,
     overext_flags: input.overextFlags,
+    sr_modifier_raw: input.srModifierRaw ?? null,
+    sr_modifier_applied: input.srModifierApplied ?? null,
     blocks: input.blocks,
     soft_blocks: input.softBlocks,
     price: input.price,

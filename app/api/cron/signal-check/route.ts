@@ -194,6 +194,8 @@ export async function GET(req: Request): Promise<NextResponse> {
         sweepBonus: s.sweepBonus ?? 0,
         regimeBonus: s.regimeBonus ?? 0,
         overextFlags: s.overextFlags ?? 0,
+        srModifierRaw: s.srModifierRaw,
+        srModifierApplied: s.srModifierApplied,
         blocks: s.blocks ?? [],
         softBlocks: s.softBlocks ?? [],
         sub: s.sub,
