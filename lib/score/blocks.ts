@@ -202,6 +202,78 @@ export function checkVwapExtreme(
   return null;
 }
 
+/** detectSRLevels()'in (lib/sr/detect.ts) nearest_resistance/nearest_support
+ *  alanlarıyla yapısal olarak uyumlu — o modülden type import EDİLMEDİ
+ *  (lib/score ↔ lib/sr kasıtlı ayrık, bkz. ScoreInput.srModifier: sadece
+ *  ölçeklenmiş sayı geçer, ham detay hiç orchestrator.ts'e girmezdi —
+ *  bu blok için ilk kez ham detay (distance_pct + strength) gerekiyor). */
+export interface SrProximity {
+  distance_pct: number;
+  strength: number;
+}
+
+export interface SrHardBlockInput {
+  direction: Direction;
+  rsi: number | null;
+  nearestResistance: SrProximity | null;
+  nearestSupport: SrProximity | null;
+  /** detectSRLevels()'in kendi breakout override'ı (meta.breakoutOverride) —
+   *  hacim teyitli bir kırılım o seviyeyi zaten geçtiyse, checkBbOutOfBand()'ın
+   *  volBreakoutActive parametresiyle AYNI mantıkla bu hard block de iptal olur. */
+  breakoutOverride: boolean;
+}
+
+/** checkRsiExtreme()'in TEMEL (rejim-gevşetilmemiş) eşikleri — blocks.ts'teki
+ *  regimeRelax mantığı burada BİLEREK yok sayılıyor: bu blok tam olarak
+ *  "güçlü trend rejiminde RSI eşiği gevşer + fiyat zaten dirence yapışmış"
+ *  riskini yakalamak için var (chat'teki araştırmadan çıktı) — o gevşemeyi
+ *  burada da uygularsak, yakalamak istediğimiz senaryonun ta kendisini
+ *  kaçırırdık. Kullanıcı kararı: sabit 75/25, rejime bakılmaksızın. */
+const SR_HARD_BLOCK_RSI_OVERBOUGHT = 75;
+const SR_HARD_BLOCK_RSI_OVERSOLD = 25;
+
+/**
+ * S/R + RSI kombine hard block — YENİ (panel'de yoktu, bu chat'teki
+ * araştırmadan çıktı): detectSRLevels()/calcPenalty() (lib/sr/detect.ts)
+ * zaten dirence/desteğe yakınlığı hesaplayıp soft bir puan cezası
+ * (srModifier) uyguluyordu, ama SR_SCALE_FACTOR=0.15 ile o ceza max
+ * ~4.5/100 puana düşüyordu — pratikte kararı neredeyse hiç etkilemiyordu.
+ *
+ * İKİ koşul BİRLİKTE sağlanmalı (kullanıcı kararı — sadece biri yeterli
+ * değil, mevcut puan sistemi o durumda olduğu gibi işlemeye devam eder):
+ *   1. S/R yakınlığı — calcPenalty()'nin EN SIKI dilimiyle BİREBİR aynı
+ *      eşik: mesafe ≤%0.5 VE strength≥3 (×1.5 çarpanı, "en güçlü seviye").
+ *   2. RSI aşırı bölgede — SABİT 75/25 (yukarıdaki not, regime relax yok).
+ *
+ * İkisi birden sağlanırsa srModifier'a EK olarak (onu değiştirmeden)
+ * doğrudan NO'ya düşürür.
+ */
+export function checkSrHardBlock(input: SrHardBlockInput): string | null {
+  const { direction, rsi, nearestResistance, nearestSupport, breakoutOverride } = input;
+  if (breakoutOverride) return null;
+  if (rsi === null) return null;
+
+  if (
+    direction === "LONG" &&
+    nearestResistance &&
+    rsi > SR_HARD_BLOCK_RSI_OVERBOUGHT &&
+    nearestResistance.distance_pct <= 0.5 &&
+    nearestResistance.strength >= 3
+  ) {
+    return `🚫 S/R+RSI hard block: RSI aşırı alım (${rsi.toFixed(0)}) + güçlü direnç ${nearestResistance.distance_pct.toFixed(2)}% mesafede (strength ${nearestResistance.strength})`;
+  }
+  if (
+    direction === "SHORT" &&
+    nearestSupport &&
+    rsi < SR_HARD_BLOCK_RSI_OVERSOLD &&
+    nearestSupport.distance_pct <= 0.5 &&
+    nearestSupport.strength >= 3
+  ) {
+    return `🚫 S/R+RSI hard block: RSI aşırı satım (${rsi.toFixed(0)}) + güçlü destek ${nearestSupport.distance_pct.toFixed(2)}% mesafede (strength ${nearestSupport.strength})`;
+  }
+  return null;
+}
+
 export function checkVolumeLow(volRatio: number | null): string | null {
   if (volRatio === null) return null;
   return volRatio < 0.7

@@ -43,6 +43,8 @@ import {
   checkRsiExtreme,
   checkBbOutOfBand,
   checkVwapExtreme,
+  checkSrHardBlock,
+  type SrProximity,
   checkVolumeLow,
   checkFundingExtreme,
   checkTimeQuality,
@@ -201,6 +203,21 @@ export interface ScoreInput {
    * scorePrevBar()'ın zaten hesapladığı değer.
    */
   prevVerdict?: Verdict | null;
+
+  /**
+   * S/R hard block (checkSrHardBlock, bkz. blocks.ts) için ham detay —
+   * srModifier ile AYNI detectSRLevels() çağrısından gelir ama caller
+   * (useScoreEngine.ts / signalEngine.ts) direction hesaplandıktan SONRA
+   * srModifier'ı nasıl override-spread ediyorsa (composeScoreInput'un
+   * kendisi bu alanları hiç bilmez, chicken-and-egg: detectSRLevels()
+   * direction'a bağımlı, direction composeScoreInput'un ÇIKTISINA bağımlı)
+   * bunlar da AYNI şekilde son computeScore() çağrısına spread ile eklenir.
+   * undefined → gate atlanır (btcNearSR/atrRatio ile aynı "opsiyonel dış
+   * girdi" deseni).
+   */
+  srNearestResistance?: SrProximity | null;
+  srNearestSupport?: SrProximity | null;
+  srBreakoutOverride?: boolean;
 }
 
 export interface ScorerWeights {
@@ -297,6 +314,7 @@ export interface ScoreReasons {
   pullback?: string;
   pullbackThreshold?: string;
   hysteresis?: string;
+  srHardBlock?: string;
 }
 
 export interface ScoreResult {
@@ -527,6 +545,17 @@ export function computeScore(input: ScoreInput): ScoreResult {
   for (const b of bbBlocks) blocks.push(b);
   const vwapBlock = checkVwapExtreme(vwap, px);
   if (vwapBlock) blocks.push(vwapBlock);
+  const srHardBlockMsg = checkSrHardBlock({
+    direction,
+    rsi,
+    nearestResistance: input.srNearestResistance ?? null,
+    nearestSupport: input.srNearestSupport ?? null,
+    breakoutOverride: input.srBreakoutOverride ?? false,
+  });
+  if (srHardBlockMsg) {
+    blocks.push(srHardBlockMsg);
+    reasons.srHardBlock = srHardBlockMsg;
+  }
   const volBlock = checkVolumeLow(volRatio);
   if (volBlock) blocks.push(volBlock);
   const fundingBlock = checkFundingExtreme(fundingRate);

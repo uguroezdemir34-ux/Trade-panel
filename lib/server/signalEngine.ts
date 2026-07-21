@@ -299,6 +299,8 @@ async function fetchAndScore(pair: Pair): Promise<{
   } as DirectionInput);
   const srResult = detectSRLevels(c4hInd, c1hInd, composed.px, direction, composed.volRatio);
   const srModifier = srResult.modifier * SR_SCALE_FACTOR;
+  // checkSrHardBlock (lib/score/blocks.ts) için ham detay — useScoreEngine.ts
+  // (client) ile BİREBİR aynı desen, aynı srResult'tan, ek hesap yok.
 
   const mtfResult = computeMtfTrend(pair, candles1h, candles4h, candles1d);
   // Hysteresis: bir önceki bar'ın verdict'i. scorePrevBar() zaten burada gereken
@@ -307,7 +309,16 @@ async function fetchAndScore(pair: Pair): Promise<{
   // (verimlilik yan etkisi: composeScoreInput+computeScore'un ikinci kez
   // tekrarlanması önleniyor).
   const prevVerdict = scorePrevBar(candles1h, candles4h, candles1d, pair, fg, fundingRate);
-  const result = computeScore({ ...composed, srModifier, scorerWeights: null, mtfResult, prevVerdict });
+  const result = computeScore({
+    ...composed,
+    srModifier,
+    srNearestResistance: srResult.levels.nearest_resistance,
+    srNearestSupport: srResult.levels.nearest_support,
+    srBreakoutOverride: srResult.meta.breakoutOverride,
+    scorerWeights: null,
+    mtfResult,
+    prevVerdict,
+  });
 
   return {
     candles1h,
