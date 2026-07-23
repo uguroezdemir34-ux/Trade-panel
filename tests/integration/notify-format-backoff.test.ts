@@ -16,6 +16,7 @@
  *
  * ws/backoff:
  *   getReconnectDelay: retryCount ≤ 0, ≤ FAST, exponential, max cap
+ *   applyJitter: ±%20 aralığında, deterministik değil (range-based assertion)
  */
 
 import { describe, it, expect } from "vitest";
@@ -36,7 +37,7 @@ import {
   formatPercent,
   formatTime,
 } from "@/lib/i18n/format";
-import { getReconnectDelay } from "@/lib/ws/backoff";
+import { getReconnectDelay, applyJitter } from "@/lib/ws/backoff";
 
 // ─────────────────────────────────────────────────────────────
 // escapeMarkdownV2
@@ -432,5 +433,37 @@ describe("getReconnectDelay()", () => {
     for (let i = 5; i <= 30; i++) {
       expect(getReconnectDelay(i)).toBeLessThanOrEqual(30000);
     }
+  });
+});
+
+// ─────────────────────────────────────────────────────────────
+// ws/backoff — applyJitter
+// ─────────────────────────────────────────────────────────────
+
+describe("applyJitter()", () => {
+  it("her zaman [0.8×, 1.2×] aralığında (100 örnek, geniş bir delay yelpazesinde)", () => {
+    for (const delayMs of [2000, 3000, 4500, 6750, 15000, 30000]) {
+      for (let i = 0; i < 100; i++) {
+        const jittered = applyJitter(delayMs);
+        expect(jittered).toBeGreaterThanOrEqual(Math.round(delayMs * 0.8));
+        expect(jittered).toBeLessThanOrEqual(Math.round(delayMs * 1.2));
+      }
+    }
+  });
+
+  it("deterministik DEĞİL — art arda çağrılar aynı değeri döndürmeyebilir", () => {
+    const delayMs = 6750;
+    const samples = new Set(Array.from({ length: 30 }, () => applyJitter(delayMs)));
+    // 30 örnekte en az 2 farklı değer bekleniyor — tamamen sabit kalması
+    // (jitter'ın hiç uygulanmadığı bir regresyon) neredeyse imkansız olurdu.
+    expect(samples.size).toBeGreaterThan(1);
+  });
+
+  it("0 girdisi için 0 döner (0×her şey=0)", () => {
+    expect(applyJitter(0)).toBe(0);
+  });
+
+  it("tam sayı döner (yuvarlanmış)", () => {
+    expect(Number.isInteger(applyJitter(4500))).toBe(true);
   });
 });

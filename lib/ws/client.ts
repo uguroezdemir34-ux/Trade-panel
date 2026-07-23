@@ -25,7 +25,7 @@ import type {
 import { WS_CONSTANTS } from "./types";
 import { parseAnyMessage } from "./messages";
 import { getFirstEndpoint, getNextEndpoint } from "./urls";
-import { getReconnectDelay } from "./backoff";
+import { getReconnectDelay, applyJitter } from "./backoff";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { OkxTradeRaw } from "@/lib/orderflow/types";
 
@@ -276,7 +276,10 @@ export class OkxWsClient {
     this.cancelReconnect();
     const newRetries = this.state.retries + 1;
     this.state.retries = newRetries;
-    const delay = getReconnectDelay(newRetries);
+    // applyJitter: ±%20 — birden fazla client/sekme aynı network kesintisinden
+    // aynı anda etkilenip aynı deterministik gecikmeyle yeniden bağlanmaya
+    // çalışmasın diye (bkz. backoff.ts'teki jitter notu).
+    const delay = applyJitter(getReconnectDelay(newRetries));
     this.reconnectTimer = this.timers.setTimeout(() => {
       this.reconnectTimer = null;
       this.connect();

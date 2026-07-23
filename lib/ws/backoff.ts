@@ -40,3 +40,32 @@ export function getReconnectDelay(retryCount: number): number {
     Math.pow(WS_CONSTANTS.BACKOFF_FACTOR, step - 1);
   return Math.min(WS_CONSTANTS.MAX_RECONNECT_MS, Math.round(delay));
 }
+
+/** ±%20 (simetrik, "equal-ish" çarpımsal jitter). */
+const JITTER_RATIO = 0.2;
+
+/**
+ * getReconnectDelay()'in DIŞINDA, ayrı bir katman — kasıtlı olarak
+ * getReconnectDelay()'in kendisine dokunulmadı: bu fonksiyon deterministik
+ * (tests/integration/notify-format-backoff.test.ts tam sayı eşitliğiyle
+ * test ediyor, `toBe(2000)` gibi — jitter'ı doğrudan içine koysak o
+ * testlerin hepsi kırılırdı). "Decorrelated jitter" (AWS'in önerdiği,
+ * önceki gecikmeyi state olarak taşıyan varyant) burada BİLEREK
+ * kullanılmadı — getReconnectDelay() saf/stateless bir fonksiyon,
+ * önceki gecikmeyi hatırlamıyor; onu stateful hale getirmek çok daha
+ * invaziv bir mimari değişiklik olurdu. Bunun yerine "full jitter" de
+ * değil (0..delay arası tam rastgelelik min-2000ms garantisini bozardı,
+ * neredeyse anında yeniden bağlanma denemesine yol açabilirdi — tam
+ * önlemeye çalıştığımız "thundering herd"in bir başka türü). Basit,
+ * simetrik ±%20 çarpımsal jitter en az invaziv seçenek: saf, state'siz,
+ * mevcut min/max sabitlerini kabaca koruyor (örn. 30000 tavanı jitter
+ * sonrası ~24000-36000 arasına yayılıyor — bu kasıtlı, tavan artık
+ * getReconnectDelay()'in DEĞİL bu fonksiyonun garantisi).
+ *
+ * @param delayMs getReconnectDelay()'in (veya benzer bir sabit gecikmenin) çıktısı
+ * @returns delayMs × [0.8, 1.2] arası, en yakın tam sayıya yuvarlanmış
+ */
+export function applyJitter(delayMs: number): number {
+  const factor = 1 + (Math.random() * 2 - 1) * JITTER_RATIO;
+  return Math.round(delayMs * factor);
+}
