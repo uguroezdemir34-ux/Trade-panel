@@ -111,6 +111,8 @@ import { PairSignalHistory } from "@/components/karar/PairSignalHistory";
 import { PairTradeStats } from "@/components/karar/PairTradeStats";
 import { WalletSummaryBar } from "@/components/karar/WalletSummaryBar";
 import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
+import { useOrderBookPoller } from "@/lib/hooks/useOrderBookPoller";
+import { useMarketExtrasPoller } from "@/lib/hooks/useMarketExtrasPoller";
 import { CoinIcon } from "@/components/karar/CoinIcon";
 import { ScoreRingV2 } from "@/components/karar/ScoreRingV2";
 import { MarketPulseWidget } from "@/components/karar/MarketPulseWidget";
@@ -136,6 +138,16 @@ export default function KararPage() {
     (success) => { setIsStale(false); if (!success) setStaleFailed(true); },
     ()        => { setIsStale(true);  setStaleFailed(false); },
   );
+
+  // AppShell'den TAŞINDI (bug taramasında bulundu) — orada global mount
+  // edilip hook içinde pathname kontrolü yapılıyordu, ama AppShell hiç
+  // unmount olmadığı için bu gerçek mount/unmount değildi: her /karar
+  // giriş-çıkış-giriş'i, hook'un içindeki 4-7sn'lik sabit gecikmeyi
+  // zombi gibi yeniden tetikliyordu. Artık burada gerçek component
+  // mount/unmount'a bağlılar — hook'ların kendi pathname kontrolü de
+  // bu yüzden kaldırıldı (gereksizleşti, bkz. o dosyaların kendi diff'i).
+  useOrderBookPoller(4_000);
+  useMarketExtrasPoller(7_000);
   const [pairGroup, setPairGroup] = useState<PairGroup>("all");
   const [sortByScore, setSortByScore] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);

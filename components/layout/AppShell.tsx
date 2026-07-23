@@ -40,10 +40,8 @@ import { useGoAlerts } from "@/lib/hooks/useGoAlerts";
 import { useScoreHistory } from "@/lib/hooks/useScoreHistory";
 import { useBalancePoller } from "@/lib/hooks/useBalancePoller";
 import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
-import { useOrderBookPoller } from "@/lib/hooks/useOrderBookPoller";
 import { useNewsPoller } from "@/lib/hooks/useNewsPoller";
 import { useEquityIndexPoller } from "@/lib/hooks/useEquityIndexPoller";
-import { useMarketExtrasPoller } from "@/lib/hooks/useMarketExtrasPoller";
 import { NewsFeedBanner, NewsFeedCTA } from "./NewsFeedBanner";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useWeeklyMonthlyPnlTracker } from "@/lib/hooks/useWeeklyMonthlyPnlTracker";
@@ -125,10 +123,16 @@ export function AppShell({
   usePositionPoller(1_000); // t+1s
   useBalancePoller(2_000);  // t+2s
   useMacroPoller(3_000);    // t+3s — en yavaş değişen veri, en son
-  useOrderBookPoller(4_000); // t+4s — Anomali Işığı Faz 2 (order book duvarı), 3dk cadence
   useNewsPoller(5_000);      // t+5s — Haber Akışı (RSS+Finnhub haber sentiment), 20dk cadence
   useEquityIndexPoller(6_000); // t+6s — S&P/Nasdaq/DXY proxy (SPY/QQQ/UUP), 5dk cadence, veri katmanı (UI henüz yok)
-  useMarketExtrasPoller(7_000); // t+7s — Altın/Gümüş/Brent + AAPL/NVDA/TSLA (Yahoo), 3dk cadence, TickerTape'i besler
+  // useOrderBookPoller/useMarketExtrasPoller BURADAN kaldırıldı — app/karar/page.tsx'e
+  // taşındı (bug taramasında bulundu: burada "global mount + hook içi pathname
+  // kontrolü" ile route-gating YAPILMIYORDU, sadece her route değişiminde effect'i
+  // yeniden tetekleyip erkenden çıkılıyordu — AppShell hiç unmount olmadığı için
+  // gerçek mount/unmount hiç gerçekleşmiyordu. /karar'a her giriş-çıkış-giriş,
+  // 4-7sn'lik sabit gecikmeyi zombi gibi yeniden tetikliyordu. Artık page.tsx'te
+  // gerçek component mount/unmount'a bağlılar, hook içindeki pathname kontrolü de
+  // bu yüzden kaldırıldı (gereksizleşti).
   // Günlük P&L takip → drawdown protokol tier güncelle (güvenlik kritik)
   useDailyPnlTracker();
   // Haftalık/aylık kümülatif P&L takip (UTC hafta/ay sınırı) → Portfolyo sayfası kartları

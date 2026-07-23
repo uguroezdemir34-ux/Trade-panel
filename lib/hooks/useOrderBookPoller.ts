@@ -17,7 +17,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
 import { PAIRS } from "@/lib/constants/pairs";
 import { fetchOrderBook } from "@/lib/okx/orderbook";
 import { computeOrderBookImbalance } from "@/lib/market/orderbook-imbalance";
@@ -29,24 +28,23 @@ const MAX_CONCURRENT = 3;
 const STAGGER_MS = 250;
 
 /**
- * Route-gated: sadece /karar'dayken çalışır — orderBookStore'un üç
- * tüketicisi de (app/karar/page.tsx, SqueezeRadarBanner, FlowAlignmentRow)
- * grep ile doğrulandı, sadece /karar'da render ediliyor. Bug taramasında
- * bulundu: önceden AppShell'de global mount edildiği için diğer 8+ sayfada
- * da gereksiz yere çalışıyordu (kullanıcı onayıyla, sadece bu iki poller
- * için — candle/position/news poller'ları benzer bir kısıtlamayı
- * KALDIRAMAZ, bkz. o hook'ların kendi dosyaları — reconciliation/Telegram/
- * global ticker bağımlılıkları var).
+ * app/karar/page.tsx'te mount edilir (orderBookStore'un üç tüketicisi de —
+ * app/karar/page.tsx, SqueezeRadarBanner, FlowAlignmentRow — grep ile
+ * doğrulandı, sadece /karar'da render ediliyor). Önceden AppShell'de global
+ * mount edilip burada bir `usePathname()` kontrolüyle "route-gate" edilmeye
+ * çalışılmıştı — ama AppShell hiç unmount olmadığı için bu gerçek bir
+ * mount/unmount değildi, sadece her route değişiminde effect'i yeniden
+ * tetekleyip erkenden çıkıyordu (bug taramasında bulundu: /karar'a her
+ * giriş-çıkış-giriş, aşağıdaki delayMs'i zombi gibi yeniden tetikliyordu).
+ * Artık page.tsx'e taşındığı için React'in doğal mount/unmount'u yeterli,
+ * pathname kontrolü kaldırıldı.
  */
 export function useOrderBookPoller(delayMs = 0): void {
   const setImbalance = useOrderBookStore((s) => s.setImbalance);
-  const pathname = usePathname();
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (pathname !== "/karar") return;
-
     async function pollAll(): Promise<void> {
       const tasks = PAIRS.map((pair) => async () => {
         const snap = await fetchOrderBook(pair, 20);
@@ -67,5 +65,5 @@ export function useOrderBookPoller(delayMs = 0): void {
     };
   // delayMs is a mount-time constant, safe to omit from deps
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setImbalance, pathname]);
+  }, [setImbalance]);
 }

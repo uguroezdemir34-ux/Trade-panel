@@ -22,7 +22,6 @@
  */
 
 import { useEffect, useRef } from "react";
-import { usePathname } from "next/navigation";
 import { useCommodityStore, type CommoditySymbol } from "@/lib/store/commodityStore";
 import { useStockTickerStore, type StockSymbol } from "@/lib/store/stockTickerStore";
 
@@ -47,21 +46,22 @@ interface GlobalTickerAsset {
   isPositive: boolean;
 }
 
-// Route-gated: sadece /karar'dayken çalışır — tek tüketicisi TickerTape
-// (app/karar/page.tsx'te render ediliyor, grep ile doğrulandı, başka hiçbir
-// sayfa commodityStore/stockTickerStore'u okumuyor). Bug taramasında
-// bulundu: önceden AppShell'de global mount edildiği için diğer 8+ sayfada
-// da gereksiz yere çalışıyordu.
+// app/karar/page.tsx'te mount edilir — tek tüketicisi TickerTape (grep ile
+// doğrulandı, başka hiçbir sayfa commodityStore/stockTickerStore'u okumuyor).
+// Önceden AppShell'de global mount edilip burada bir `usePathname()`
+// kontrolüyle "route-gate" edilmeye çalışılmıştı — ama AppShell hiç unmount
+// olmadığı için bu gerçek bir mount/unmount değildi, sadece her route
+// değişiminde effect'i yeniden tetekleyip erkenden çıkıyordu (bug
+// taramasında bulundu: /karar'a her giriş-çıkış-giriş, aşağıdaki delayMs'i
+// zombi gibi yeniden tetikliyordu). Artık page.tsx'e taşındığı için React'in
+// doğal mount/unmount'u yeterli, pathname kontrolü kaldırıldı.
 export function useMarketExtrasPoller(delayMs = 0): void {
   const setCommodity = useCommodityStore((s) => s.setCommodity);
   const setStock = useStockTickerStore((s) => s.setStock);
-  const pathname = usePathname();
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (pathname !== "/karar") return;
-
     async function poll(): Promise<void> {
       try {
         const res = await fetch("/api/global-ticker");
@@ -108,5 +108,5 @@ export function useMarketExtrasPoller(delayMs = 0): void {
     };
   // delayMs is a mount-time constant, safe to omit from deps
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [setCommodity, setStock, pathname]);
+  }, [setCommodity, setStock]);
 }
