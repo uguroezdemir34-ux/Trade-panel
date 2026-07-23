@@ -13,7 +13,7 @@
  *   kraken  → Kraken /derivatives/api/v3/accounts
  */
 
-import { useEffect, useRef } from "react";
+import { useStaggeredPoller } from "@/lib/hooks/useStaggeredPoller";
 import { useAccountStore } from "@/lib/store/accountStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCredentialStore } from "@/lib/store/credentialStore";
@@ -31,8 +31,6 @@ export function useBalancePoller(delayMs = 0): void {
   const setBalance = useAccountStore((s) => s.setBalance);
   const setBalanceFetchError = useAccountStore((s) => s.setBalanceFetchError);
   const credsLoaded = useCredentialStore((s) => s._loaded);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function poll(): Promise<void> {
     const { okxProd, okxDemo, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, mexcFutures, krakenFutures } = useCredentialStore.getState();
@@ -63,17 +61,8 @@ export function useBalancePoller(delayMs = 0): void {
     }
   }
 
-  useEffect(() => {
-    if (!credsLoaded) return;
-
-    startTimerRef.current = setTimeout(() => {
-      void poll();
-      timerRef.current = setInterval(() => void poll(), POLL_INTERVAL_MS);
-    }, delayMs);
-    return () => {
-      if (startTimerRef.current) clearTimeout(startTimerRef.current);
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [credsLoaded]);
+  // Resume-jitter (visibilitychange, 0-2sn) dahil — bkz. useStaggeredPoller.ts
+  // header'ı. usePositionPoller.ts ile birlikte, en sık poll eden iki hook
+  // buna geçirildi ilk turda; diğerleri kademeli olarak genişletilecek.
+  useStaggeredPoller(poll, POLL_INTERVAL_MS, { delayMs, enabled: credsLoaded });
 }

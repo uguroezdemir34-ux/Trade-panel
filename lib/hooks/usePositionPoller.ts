@@ -16,7 +16,7 @@
  *   ilk poller döngüsünde yanlışlıkla kapatılmaması için.
  */
 
-import { useEffect, useRef } from "react";
+import { useStaggeredPoller } from "@/lib/hooks/useStaggeredPoller";
 import { fetchPositions } from "@/lib/okx/positions";
 import { fetchBinancePositions } from "@/lib/binance/positions";
 import { fetchBybitPositions } from "@/lib/bybit/positions";
@@ -42,8 +42,6 @@ const MIN_OPEN_AGE_MS = 30_000;
 export function usePositionPoller(delayMs = 0): void {
   const setPositions = usePositionStore((s) => s.setPositions);
   const credsLoaded = useCredentialStore((s) => s._loaded);
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   async function fetchAll(): Promise<void> {
     const { okxProd, okxDemo, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, mexcFutures, krakenFutures } = useCredentialStore.getState();
@@ -77,19 +75,10 @@ export function usePositionPoller(delayMs = 0): void {
     void adoptNewPositions(positions);
   }
 
-  useEffect(() => {
-    if (!credsLoaded) return;
-
-    startTimerRef.current = setTimeout(() => {
-      void fetchAll();
-      timerRef.current = setInterval(() => void fetchAll(), POLL_INTERVAL_MS);
-    }, delayMs);
-    return () => {
-      if (startTimerRef.current) clearTimeout(startTimerRef.current);
-      if (timerRef.current) clearInterval(timerRef.current);
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [credsLoaded]);
+  // Resume-jitter (visibilitychange, 0-2sn) dahil — bkz. useStaggeredPoller.ts
+  // header'ı. Bu, en sık poll eden iki hook'tan (bkz. useBalancePoller.ts)
+  // biri, kademeli olarak diğerlerine genişletilecek (kullanıcı kararı).
+  useStaggeredPoller(fetchAll, POLL_INTERVAL_MS, { delayMs, enabled: credsLoaded });
 }
 
 /**
