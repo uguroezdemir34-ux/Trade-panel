@@ -194,11 +194,11 @@ export function PositionCard({
             <span>{isLong ? "▲" : "▼"}</span>
             <span>{t(isLong ? "direction.long" : "direction.short")}</span>
           </span>
-          <span className="text-text-t4 font-mono text-2xs tracking-wider">
+          <span className="text-text-t2 font-mono text-xs tracking-wider">
             {position.leverage}x
           </span>
           {/* Margin mode badge */}
-          <span className="text-text-t4 font-mono text-2xs border border-border/50 rounded px-1 py-0.5 uppercase tracking-wider">
+          <span className="text-text-t2 font-mono text-xs border border-border/50 rounded px-1 py-0.5 uppercase tracking-wider">
             {position.mgnMode}
           </span>
           {scoreResult && (
@@ -216,7 +216,7 @@ export function PositionCard({
             </span>
           )}
         </div>
-        <span className="text-text-t4 font-mono text-2xs tracking-wider">
+        <span className="text-text-t2 font-mono text-xs tracking-wider">
           {holdingText}
         </span>
       </div>
@@ -227,7 +227,7 @@ export function PositionCard({
           <div className={`overflow-hidden text-ellipsis whitespace-nowrap font-mono text-2xl font-bold tabular-nums ${uplColor}`}>
             {formatPercent(roe, locale, true)}
           </div>
-          <div className="text-text-t3 font-mono text-2xs tracking-wider">
+          <div className="text-text-t2 font-mono text-xs tracking-wider">
             ROE
           </div>
         </div>
@@ -236,7 +236,7 @@ export function PositionCard({
             {liveUpl >= 0 ? "+" : ""}
             {formatPrice(liveUpl, locale)}
           </div>
-          <div className="text-text-t3 font-mono text-2xs tracking-wider">
+          <div className="text-text-t2 font-mono text-xs tracking-wider">
             {t("position.upl")}
           </div>
         </div>
@@ -670,11 +670,11 @@ function Stat({
 }) {
   return (
     <div>
-      <div className="text-text-t3 font-mono text-2xs tracking-wider">
+      <div className="text-text-t2 font-mono text-xs tracking-wider">
         {label}
       </div>
       <div className="text-text-t1 mt-0.5 overflow-hidden text-ellipsis whitespace-nowrap font-mono tabular-nums">{value}</div>
-      {sub && <div className="text-text-t4 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-2xs">{sub}</div>}
+      {sub && <div className="text-text-t2 overflow-hidden text-ellipsis whitespace-nowrap font-mono text-xs">{sub}</div>}
     </div>
   );
 }
@@ -707,14 +707,14 @@ function SlTpStat({
   const pct = value && currentPx ? pctFromCurrent(value, currentPx) : null;
   return (
     <div>
-      <div className={`font-mono text-2xs tracking-wider ${dimmed ? "text-text-t4" : "text-text-t3"}`}>
+      <div className={`font-mono text-xs tracking-wider ${dimmed ? "text-text-t3" : "text-text-t2"}`}>
         {label}
       </div>
       <div className={`mt-0.5 font-mono tabular-nums text-xs ${value ? color : "text-text-t4"}`}>
         {value ? formatPrice(value, locale) : fallback}
       </div>
       {pct && (
-        <div className="font-mono text-2xs text-text-t4 tabular-nums">{pct}</div>
+        <div className="font-mono text-xs text-text-t2 tabular-nums">{pct}</div>
       )}
       {riskUsd != null && riskUsd > 0 && (
         <div className="font-mono text-2xs text-signal-red/70 tabular-nums">~${riskUsd.toFixed(1)}</div>

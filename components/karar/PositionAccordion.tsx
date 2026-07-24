@@ -263,7 +263,7 @@ export function PositionAccordion(): React.ReactElement | null {
 
                   {/* Satır 1: Pozisyon Büyüklüğü / Kullanılan Teminat / Likidasyon */}
                   <div>
-                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                    <div className="font-mono text-xs text-text-t2 tracking-wider uppercase mb-0.5">
                       {t("portfolio.wallet.posSize")}
                     </div>
                     <div className="font-mono text-xs font-semibold text-text-t1 tabular-nums">
@@ -271,7 +271,7 @@ export function PositionAccordion(): React.ReactElement | null {
                     </div>
                   </div>
                   <div>
-                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                    <div className="font-mono text-xs text-text-t2 tracking-wider uppercase mb-0.5">
                       {t("portfolio.wallet.usedMargin")}
                     </div>
                     <div className="font-mono text-xs font-semibold text-text-t1 tabular-nums">
@@ -279,7 +279,7 @@ export function PositionAccordion(): React.ReactElement | null {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                    <div className="font-mono text-xs text-text-t2 tracking-wider uppercase mb-0.5">
                       {t("portfolio.wallet.liqPriceLabel")}
                     </div>
                     <div
@@ -292,7 +292,7 @@ export function PositionAccordion(): React.ReactElement | null {
 
                   {/* Satır 2: Giriş / Mark / ROE */}
                   <div>
-                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                    <div className="font-mono text-xs text-text-t2 tracking-wider uppercase mb-0.5">
                       {t("position.entry")}
                     </div>
                     <div className="font-mono text-xs text-text-t1 tabular-nums">
@@ -300,7 +300,7 @@ export function PositionAccordion(): React.ReactElement | null {
                     </div>
                   </div>
                   <div>
-                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                    <div className="font-mono text-xs text-text-t2 tracking-wider uppercase mb-0.5">
                       {t("position.mark")}
                     </div>
                     <div className="font-mono text-xs text-text-t1 tabular-nums">
@@ -308,7 +308,7 @@ export function PositionAccordion(): React.ReactElement | null {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                    <div className="font-mono text-xs text-text-t2 tracking-wider uppercase mb-0.5">
                       {t("position.roe")}
                     </div>
                     <div className="font-mono text-xs font-semibold tabular-nums" style={{ color: pnlColor }}>
@@ -318,7 +318,7 @@ export function PositionAccordion(): React.ReactElement | null {
 
                   {/* Satır 3: TP / SL */}
                   <div title={t("position.tp")}>
-                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                    <div className="font-mono text-xs text-text-t2 tracking-wider uppercase mb-0.5">
                       {t("position.takeProfit")}
                     </div>
                     {pos.tpTriggerPx !== null && pos.entryPx > 0 ? (
@@ -326,7 +326,7 @@ export function PositionAccordion(): React.ReactElement | null {
                         <div className="font-mono text-xs font-semibold tabular-nums" style={{ color: EMERALD }}>
                           ${fmtPx(pos.tpTriggerPx)}
                         </div>
-                        <div className="font-mono text-2xs tabular-nums text-text-t4">
+                        <div className="font-mono text-xs tabular-nums text-text-t2">
                           {signed(safeDiv(pos.tpTriggerPx - pos.entryPx, pos.entryPx) * 100)}%
                         </div>
                         {pos.markPx > 0 && (
@@ -340,7 +340,7 @@ export function PositionAccordion(): React.ReactElement | null {
                     )}
                   </div>
                   <div title={t("position.sl")}>
-                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                    <div className="font-mono text-xs text-text-t2 tracking-wider uppercase mb-0.5">
                       {t("position.stopLoss")}
                     </div>
                     {pos.slTriggerPx !== null && pos.entryPx > 0 ? (
@@ -348,7 +348,7 @@ export function PositionAccordion(): React.ReactElement | null {
                         <div className="font-mono text-xs font-semibold tabular-nums" style={{ color: CRIMSON }}>
                           ${fmtPx(pos.slTriggerPx)}
                         </div>
-                        <div className="font-mono text-2xs tabular-nums text-text-t4">
+                        <div className="font-mono text-xs tabular-nums text-text-t2">
                           {signed(safeDiv(pos.slTriggerPx - pos.entryPx, pos.entryPx) * 100)}%
                         </div>
                         {pos.markPx > 0 && (
@@ -365,7 +365,7 @@ export function PositionAccordion(): React.ReactElement | null {
 
                   {/* Satır 4: R Multiple / Süre */}
                   <div>
-                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                    <div className="font-mono text-xs text-text-t2 tracking-wider uppercase mb-0.5">
                       {t("position.rMultiple")}
                     </div>
                     {(() => {
@@ -380,7 +380,7 @@ export function PositionAccordion(): React.ReactElement | null {
                     })()}
                   </div>
                   <div>
-                    <div className="font-mono text-2xs text-text-t4 tracking-wider uppercase mb-0.5">
+                    <div className="font-mono text-xs text-text-t2 tracking-wider uppercase mb-0.5">
                       {t("position.duration")}
                     </div>
                     <div className="font-mono text-xs text-text-t1 tabular-nums">

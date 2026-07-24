@@ -30,7 +30,7 @@ export function AccountSummaryBar(): React.ReactElement {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {/* Bakiye */}
         <div>
-          <div className="font-mono text-2xs text-text-t4 tracking-widest uppercase">Bakiye</div>
+          <div className="font-mono text-xs text-text-t2 tracking-widest uppercase">Bakiye</div>
           <div translate="no" className="font-mono text-sm font-bold tabular-nums text-text-t1 mt-0.5">
             ${balanceTotal > 0 ? balanceTotal.toLocaleString("en-US", { maximumFractionDigits: 0 }) : "—"}
           </div>
@@ -38,7 +38,7 @@ export function AccountSummaryBar(): React.ReactElement {
 
         {/* Margin kullanımı */}
         <div>
-          <div className="font-mono text-2xs text-text-t4 tracking-widest uppercase">Margin</div>
+          <div className="font-mono text-xs text-text-t2 tracking-widest uppercase">Margin</div>
           <div translate="no" className="font-mono text-sm font-bold tabular-nums text-text-t1 mt-0.5">
             {usedMarginPct > 0 ? `${usedMarginPct.toFixed(1)}%` : "—"}
           </div>
@@ -52,7 +52,7 @@ export function AccountSummaryBar(): React.ReactElement {
 
         {/* Günlük / Haftalık P&L */}
         <div>
-          <div className="font-mono text-2xs text-text-t4 tracking-widest uppercase">Günlük / Haftalık</div>
+          <div className="font-mono text-xs text-text-t2 tracking-widest uppercase">Günlük / Haftalık</div>
           <div className="flex items-baseline gap-2 mt-0.5">
             <div className="flex flex-col">
               <span translate="no" className={`font-mono text-sm font-bold tabular-nums ${dailyColor}`}>
@@ -72,12 +72,12 @@ export function AccountSummaryBar(): React.ReactElement {
 
         {/* Drawdown tier */}
         <div>
-          <div className="font-mono text-2xs text-text-t4 tracking-widest uppercase">Protokol</div>
+          <div className="font-mono text-xs text-text-t2 tracking-widest uppercase">Protokol</div>
           <span className={`inline-block mt-0.5 rounded border px-2 py-0.5 font-mono text-2xs font-bold tracking-widest ${tier.color} ${tier.bg}`}>
             {tier.label}
           </span>
           {protocol.tier !== "normal" && (
-            <div className="font-mono text-2xs text-text-t4 mt-0.5">×{protocol.multiplier.toFixed(2)}</div>
+            <div className="font-mono text-xs text-text-t2 mt-0.5">×{protocol.multiplier.toFixed(2)}</div>
           )}
         </div>
       </div>

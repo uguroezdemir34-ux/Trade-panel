@@ -79,7 +79,7 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
         >
           {isLong ? "LONG" : "SHORT"}
         </span>
-        <span className="whitespace-nowrap text-xs text-text-t3">{position.leverage}×</span>
+        <span className="whitespace-nowrap text-xs text-text-t2">{position.leverage}×</span>
       </div>
 
       {/* PnL — HUD odak noktası (text-4xl → text-2xl: kart artık grafiğin
@@ -129,7 +129,7 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
           bu değişmedi — sadece kutular arası dizilim yön değiştirdi. */}
       <div className="flex flex-col gap-1.5">
         <div className={`rounded border ${theme === "light" ? "border-slate-300" : "border-border/50"} bg-surface-s2 px-1.5 py-1 text-center`}>
-          <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Entry</div>
+          <div className="whitespace-nowrap text-xs uppercase tracking-wider text-text-t2">Entry</div>
           <div className="text-sm font-bold tabular-nums text-text-t1">
             {formatPrice(position.entryPx, locale)}
           </div>
@@ -145,7 +145,7 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
         )}
 
         <div className={`rounded border ${theme === "light" ? "border-slate-300" : "border-border/50"} bg-surface-s2 px-1.5 py-1 text-center`}>
-          <div className="whitespace-nowrap text-[9px] uppercase tracking-wider text-text-t4">Size (USDT)</div>
+          <div className="whitespace-nowrap text-xs uppercase tracking-wider text-text-t2">Size (USDT)</div>
           {/* Coin miktarı (formatCoinAmount) yerine USDT notional gösteriliyor —
               görev kararı: Entry/PnL zaten USDT, coin miktarı bu üçlü içinde
               tutarsız bir birim oluşturuyordu. position.notional zaten

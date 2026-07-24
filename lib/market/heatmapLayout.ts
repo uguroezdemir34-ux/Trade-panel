@@ -42,8 +42,17 @@ function colorClassFor(result: ScoreResult): string {
   if (result.verdict === "go" && result.direction === "SHORT") {
     return "text-signal-red bg-soft-red";
   }
-  if (result.direction === "LONG") return "text-signal-green/70 bg-soft-green/50";
-  if (result.direction === "SHORT") return "text-signal-red/70 bg-soft-red/50";
+  // NOT (kontrast bug fix): "/50" opacity modifier kaldırıldı — bg-soft-green/
+  // bg-soft-red zaten tailwind.config.ts'te SABİT 8% alpha ile tanımlı
+  // (`<alpha-value>` placeholder'ı yok), bu yüzden "/50" Tailwind'de
+  // color-mix() üzerinden bu ZATEN-şeffaf rengi bir kez daha seyreltiyordu
+  // (~4% efektif alpha — light modda neredeyse görünmez, kullanıcı ekran
+  // görüntüsüyle bildirdi). globals.css'teki light-mode override'ı
+  // (`.bg-soft-green`/`.bg-soft-red` → 12% alpha, zaten AA için ayarlı)
+  // sadece BARE class'ı hedefliyor, "/50" varyantını hiç yakalamıyordu.
+  // Bare class kullanmak hem bug'ı çözüyor hem mevcut override'ı aktive ediyor.
+  if (result.direction === "LONG") return "text-signal-green/70 bg-soft-green";
+  if (result.direction === "SHORT") return "text-signal-red/70 bg-soft-red";
   // "heatmap-cell-neutral" — sadece cyber-terminal temasında kontrast artırımı
   // hedefi (bkz. globals.css), diğer temalarda ek bir etkisi yok.
   return "text-text-t3 bg-text-t3/10 heatmap-cell-neutral";

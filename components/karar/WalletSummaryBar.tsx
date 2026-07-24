@@ -73,14 +73,14 @@ export function WalletSummaryBar() {
 
         {/* Toplam Özsermaye */}
         <div className="flex flex-col gap-0.5 min-w-0">
-          <span className="font-mono text-2xs text-text-t4 tracking-widest uppercase truncate">
+          <span className="font-mono text-xs text-text-t2 tracking-widest uppercase truncate">
             {t("portfolio.overview.totalEquity")}
           </span>
           <span className="font-mono text-sm font-bold text-text-t1 tabular-nums">
             {noData ? "—" : `$${fmt(balanceTotal)}`}
           </span>
           {!noData && (
-            <span className="font-mono text-2xs text-text-t4 tabular-nums">
+            <span className="font-mono text-xs text-text-t2 tabular-nums">
               {t("portfolio.overview.free")} ${fmt(balanceFree)}
             </span>
           )}
@@ -89,7 +89,7 @@ export function WalletSummaryBar() {
         {/* Teminat Kullanım Barı */}
         <div className="flex flex-col gap-0.5 min-w-0">
           <div className="flex items-center justify-between gap-1">
-            <span className="font-mono text-2xs text-text-t4 tracking-widest uppercase truncate">
+            <span className="font-mono text-xs text-text-t2 tracking-widest uppercase truncate">
               {t("portfolio.wallet.marginUsed")}
             </span>
             {!noData && (
@@ -113,7 +113,7 @@ export function WalletSummaryBar() {
 
         {/* Günlük Toplam P&L */}
         <div className="flex flex-col gap-0.5 min-w-0 items-end text-right">
-          <span className="font-mono text-2xs text-text-t4 tracking-widest uppercase truncate">
+          <span className="font-mono text-xs text-text-t2 tracking-widest uppercase truncate">
             {t("portfolio.wallet.dailyTotal")}
           </span>
           <span
