@@ -12,7 +12,7 @@
  * Import only from Next.js route handlers (never from "use client").
  */
 
-import { dbUpsert, isDbConfigured } from "./server";
+import { dbSelect, dbUpsert, isDbConfigured } from "./server";
 import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
 
 const TABLE = "score_history";
@@ -130,4 +130,91 @@ export async function insertScoreHistoryBatch(inputs: ScoreHistoryInput[]): Prom
     return;
   }
   await dbUpsert(TABLE, inputs.map(toRow));
+}
+
+export interface ScoreHistorySnapshot {
+  pair: string;
+  direction: string;
+  verdict: string;
+  score: number;
+  baseScore: number;
+  price: number;
+  signalTs: number;
+  regime: string | null;
+  blocks: string[];
+  softBlocks: string[];
+  sub: {
+    trend: number;
+    adx: number;
+    rsi: number;
+    vol: number;
+    bb: number;
+    vwap: number;
+    funding: number;
+    macro: number;
+  };
+}
+
+/** atMs etrafında ne kadar geniş bir pencereden satır çekilecek — cron
+ *  saatte bir yazdığı için birkaç saatlik bir pencere yeterli marj bırakır. */
+const NEAR_WINDOW_MS = 3 * 60 * 60 * 1000;
+const NEAR_ROWS_LIMIT = 50;
+
+/**
+ * atMs'e (pozisyon açılış zamanı, position.cTime) en yakın score_history
+ * satırını döner. PostgREST ABS()-tabanlı "en yakın" sıralamayı desteklemiyor
+ * — bir zaman penceresi çekilip en yakın satır JS'te seçilir.
+ *
+ * Pencerede hiç satır yoksa (Supabase yapılandırılmamış VEYA gerçekten veri
+ * yoksa — örn. pozisyon score_history'nin devreye girmesinden önce açıldıysa)
+ * null döner. Fabricate ETMEZ — caller (app/api/ai/position-check/route.ts)
+ * bunu "giriş anı verisi yok" olarak açıkça ele almalı, sahte bir snapshot
+ * üretmemeli.
+ */
+export async function getScoreHistoryNear(
+  pair: string,
+  atMs: number,
+): Promise<ScoreHistorySnapshot | null> {
+  if (!isDbConfigured()) return null;
+
+  const rows = await dbSelect<ScoreHistoryRow>(
+    TABLE,
+    `pair=eq.${encodeURIComponent(pair)}` +
+      `&signal_ts=gte.${atMs - NEAR_WINDOW_MS}&signal_ts=lte.${atMs + NEAR_WINDOW_MS}` +
+      `&order=signal_ts.desc&limit=${NEAR_ROWS_LIMIT}`,
+  );
+  if (rows.length === 0) return null;
+
+  let nearest = rows[0];
+  let bestDiff = Math.abs(nearest.signal_ts - atMs);
+  for (const row of rows) {
+    const diff = Math.abs(row.signal_ts - atMs);
+    if (diff < bestDiff) {
+      nearest = row;
+      bestDiff = diff;
+    }
+  }
+
+  return {
+    pair: nearest.pair,
+    direction: nearest.direction,
+    verdict: nearest.verdict,
+    score: nearest.score,
+    baseScore: nearest.base_score,
+    price: nearest.price,
+    signalTs: nearest.signal_ts,
+    regime: nearest.regime,
+    blocks: nearest.blocks,
+    softBlocks: nearest.soft_blocks,
+    sub: {
+      trend: nearest.sub_trend,
+      adx: nearest.sub_adx,
+      rsi: nearest.sub_rsi,
+      vol: nearest.sub_volume,
+      bb: nearest.sub_bb,
+      vwap: nearest.sub_vwap,
+      funding: nearest.sub_funding,
+      macro: nearest.sub_macro,
+    },
+  };
 }

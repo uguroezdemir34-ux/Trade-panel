@@ -727,6 +727,13 @@ export const tr: Dictionary = {
     },
   },
 
+  aiCheck: {
+    button: "AI'ya Sor",
+    loading: "Analiz ediliyor...",
+    error: "Şu an analiz yapılamadı, tekrar dene.",
+    noEntryNote: "Giriş anı verisi mevcut değil, sadece güncel duruma göre bilgi veriliyor.",
+  },
+
   performance: {
     title: "PERFORMANS",
     insufficientData: "Yetersiz veri — henüz kapanmış işlem yok",

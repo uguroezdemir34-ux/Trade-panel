@@ -727,6 +727,13 @@ export const en: Dictionary = {
     },
   },
 
+  aiCheck: {
+    button: "Ask AI",
+    loading: "Analyzing...",
+    error: "Analysis unavailable right now, try again.",
+    noEntryNote: "No entry-time data available — showing current status only.",
+  },
+
   performance: {
     title: "PERFORMANCE",
     insufficientData: "Insufficient data — no closed trades yet",

@@ -7,6 +7,7 @@ import { usePositionStore } from "@/lib/store/positionStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useFocusStore } from "@/lib/store/focusStore";
 import { useT } from "@/lib/i18n/context";
+import { AiCheckButton } from "./AiCheckButton";
 import type { Pair } from "@/lib/constants/pairs";
 
 // lucide-react bu projede kurulu değil (package.json'da doğrulandı,
@@ -376,6 +377,8 @@ export function PositionAccordion(): React.ReactElement | null {
                   <div /> {/* 3. kolon boş — simetri */}
 
                 </div>
+
+                <AiCheckButton position={pos} />
               </div>
             )}
           </div>

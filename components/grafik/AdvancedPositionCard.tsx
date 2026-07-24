@@ -34,6 +34,7 @@ import { useMarketStore } from "@/lib/store/marketStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { computeLiveUpl, computeRoe } from "@/lib/sizer/position-pnl";
 import { formatPrice, formatPercent } from "@/lib/i18n/format";
+import { AiCheckButton } from "@/components/karar/AiCheckButton";
 
 interface Props {
   pair: string;
@@ -158,6 +159,8 @@ export function AdvancedPositionCard({ pair }: Props): React.ReactElement | null
           </div>
         </div>
       </div>
+
+      <AiCheckButton position={position} />
     </div>
   );
 }
