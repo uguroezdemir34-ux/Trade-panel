@@ -1,6 +1,4 @@
 import type { Position } from "@/lib/okx/positions";
-import type { Pair } from "@/lib/constants/pairs";
-import { PAIRS } from "@/lib/constants/pairs";
 
 interface MexcPositionRow {
   /** "BTC_USDT" (Gate.io ile aynı alt çizgili stil) */
@@ -26,10 +24,8 @@ interface MexcProxyResponse {
   message?: string;
 }
 
-function extractPair(symbol: string): Pair | null {
-  const base = symbol.split("_")[0];
-  if ((PAIRS as readonly string[]).includes(base)) return base as Pair;
-  return null;
+function extractPair(symbol: string): string {
+  return symbol.split("_")[0];
 }
 
 function num(s: string | number | undefined, fallback = 0): number {

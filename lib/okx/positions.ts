@@ -13,8 +13,6 @@
  */
 
 import { z } from "zod";
-import type { Pair } from "@/lib/constants/pairs";
-import { PAIRS } from "@/lib/constants/pairs";
 import type { FetchFn } from "./candles";
 import { ensureCtValMap, getRealSize } from "./contractSize";
 
@@ -22,8 +20,10 @@ import { ensureCtValMap, getRealSize } from "./contractSize";
 export interface Position {
   /** "BTC-USDT-SWAP" */
   instId: string;
-  /** "BTC" | "ETH" */
-  pair: Pair;
+  /** Borsa sembolünden çıkarılan taban parite (ör. "BTC"). PAIRS listesinde
+   *  olması ZORUNLU DEĞİL — skorlanmayan bir paritede pozisyon açılmışsa ham
+   *  sembol burada olur (bkz. lib/constants/pairs.ts → isSupportedPair()). */
+  pair: string;
   /** "long" | "short" | "net" */
   posSide: "long" | "short" | "net";
   /** Yön (sayısal pos > 0 LONG, < 0 SHORT, net=0 NEUTRAL) */
@@ -99,11 +99,16 @@ function deriveDirection(
   return "NEUTRAL";
 }
 
-/** instId → Pair (sadece desteklenenler) */
-function extractPair(instId: string): Pair | null {
-  const sym = instId.split("-")[0];
-  if (PAIRS.includes(sym as Pair)) return sym as Pair;
-  return null;
+/**
+ * instId → taban sembol. ÖNCEDEN PAIRS'te olmayanları null döndürüp
+ * pozisyonu tamamen atıyordu — bu, guardrail (kaldıraç/SL ihlali tespiti)
+ * dahil, desteklenmeyen bir paritede açılan pozisyonun panelde HİÇ
+ * görünmemesine yol açıyordu (chat'te netleştirildi, bkz. isSupportedPair()
+ * kullanan çağıranlar: skor/AI-check kısmı bunu kendi ayrı kontrolüyle ele
+ * alıyor, ama pozisyonun kendisi ve guardrail artık her zaman görüyor).
+ */
+function extractPair(instId: string): string {
+  return instId.split("-")[0];
 }
 
 /** Tek pozisyon row'unu parse et */

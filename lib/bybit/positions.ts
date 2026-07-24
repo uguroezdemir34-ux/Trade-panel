@@ -1,6 +1,4 @@
 import type { Position } from "@/lib/okx/positions";
-import type { Pair } from "@/lib/constants/pairs";
-import { PAIRS } from "@/lib/constants/pairs";
 
 interface BybitPositionRow {
   symbol: string;
@@ -29,10 +27,8 @@ function stripUsdtSuffix(symbol: string): string {
   return symbol.endsWith("USDT") ? symbol.slice(0, -4) : symbol;
 }
 
-function extractPair(symbol: string): Pair | null {
-  const base = stripUsdtSuffix(symbol);
-  if ((PAIRS as readonly string[]).includes(base)) return base as Pair;
-  return null;
+function extractPair(symbol: string): string {
+  return stripUsdtSuffix(symbol);
 }
 
 function num(s: string | undefined, fallback = 0): number {

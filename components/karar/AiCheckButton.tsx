@@ -25,8 +25,8 @@ import { useScoreStore } from "@/lib/store/scoreStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { computeRoe } from "@/lib/sizer/position-pnl";
 import { useT } from "@/lib/i18n/context";
+import { isSupportedPair } from "@/lib/constants/pairs";
 import type { Position } from "@/lib/okx/positions";
-import type { Pair } from "@/lib/constants/pairs";
 
 const SUCCESS_COOLDOWN_MS = 90_000; // route.ts'teki COOLDOWN_MS ile aynı
 const ERROR_RETRY_COOLDOWN_MS = 10_000; // hata sonrası daha kısa — kullanıcı hemen tekrar deneyebilsin
@@ -56,8 +56,15 @@ interface ApiResponse {
 
 export function AiCheckButton({ position }: { position: Position }): React.ReactElement | null {
   const t = useT();
-  const scoreResult = useScoreStore((s) => s.results[position.pair as Pair]);
+  const scoreResult = useScoreStore((s) => s.results[position.pair]);
   const livePrice = useMarketStore((s) => s.prices[position.pair]?.last ?? null);
+  // WS sadece skorlanan paritelere abone (bkz. lib/store/marketStore.ts
+  // başı) — desteklenmeyen bir paritede livePrice hiçbir zaman dolmaz, bu
+  // durumda borsanın 10sn'de bir çektiği markPx'e (usePositionPoller
+  // snapshot'ı) düşülür. Zaten desteklenmeyen paritede bu component altta
+  // erken return ediyor, ama supported bir paritede de WS henüz ilk tick'i
+  // atmamışsa aynı fallback devreye girer.
+  const currentPrice = livePrice ?? position.markPx;
 
   const [phase, setPhase] = useState<Phase>("idle");
   const [result, setResult] = useState<ResultData | null>(null);
@@ -83,12 +90,25 @@ export function AiCheckButton({ position }: { position: Position }): React.React
     return () => clearTimeout(timer);
   }, [cooldownUntil]);
 
-  if (!scoreResult || position.direction === "NEUTRAL" || livePrice === null) return null;
+  if (position.direction === "NEUTRAL") return null;
+
+  // PAIRS dışı bir paritede pozisyon açılmışsa (bkz. lib/okx/positions.ts
+  // extractPair() — artık filtrelenmiyor, panelde görünüyor) skor hiç
+  // hesaplanmaz — sessizce gizlemek yerine açıkça "desteklenmiyor" diyoruz.
+  if (!isSupportedPair(position.pair)) {
+    return (
+      <div className="mt-2 font-mono text-2xs italic text-text-t4">
+        {t("aiCheck.notSupported")}
+      </div>
+    );
+  }
+
+  if (!scoreResult) return null;
 
   async function handleClick(): Promise<void> {
     setPhase("loading");
     try {
-      const roe = computeRoe(position, livePrice);
+      const roe = computeRoe(position, currentPrice);
       const res = await fetch("/api/ai/position-check", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -96,7 +116,7 @@ export function AiCheckButton({ position }: { position: Position }): React.React
           pair: position.pair,
           direction: position.direction,
           entryCTime: position.cTime,
-          currentPrice: livePrice,
+          currentPrice,
           currentPnlPct: roe,
           currentSnapshot: {
             score: scoreResult.score,

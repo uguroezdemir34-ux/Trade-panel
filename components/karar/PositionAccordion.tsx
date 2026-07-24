@@ -8,7 +8,7 @@ import { useScoreStore } from "@/lib/store/scoreStore";
 import { useFocusStore } from "@/lib/store/focusStore";
 import { useT } from "@/lib/i18n/context";
 import { AiCheckButton } from "./AiCheckButton";
-import type { Pair } from "@/lib/constants/pairs";
+import { isSupportedPair } from "@/lib/constants/pairs";
 
 // lucide-react bu projede kurulu değil (package.json'da doğrulandı,
 // npm install bu sandbox'ta engelli — CLAUDE.md §3) — lucide'ın
@@ -96,18 +96,21 @@ function qxScoreColor(score: number | null, posDir: "LONG" | "SHORT" | "NEUTRAL"
   return CRIMSON;
 }
 
-function QxScoreBadge({ pair, posDir }: { pair: Pair; posDir: "LONG" | "SHORT" | "NEUTRAL" }) {
+function QxScoreBadge({ pair, posDir }: { pair: string; posDir: "LONG" | "SHORT" | "NEUTRAL" }) {
+  const t = useT();
+  const scored = isSupportedPair(pair);
   const result = useScoreStore((s) => s.results[pair]);
   const score  = result?.score ?? null;
-  const color  = qxScoreColor(score, posDir);
+  const color  = scored ? qxScoreColor(score, posDir) : GREY;
   return (
     <div
       className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-mono shrink-0"
       style={{ border: `1px solid ${color}38`, background: `${color}0e` }}
+      title={scored ? undefined : t("position.notScored")}
     >
       <span className="text-[9px] font-bold tracking-widest" style={{ color }}>QX</span>
       <span className="text-[10px] font-bold tabular-nums" style={{ color }}>
-        {score !== null ? Math.round(score) : "—"}
+        {!scored ? "N/A" : score !== null ? Math.round(score) : "—"}
       </span>
       <span
         className="inline-block w-1.5 h-1.5 rounded-full shrink-0"
@@ -194,7 +197,7 @@ export function PositionAccordion(): React.ReactElement | null {
                 <span>{pos.leverage}x</span>
               </div>
 
-              <QxScoreBadge pair={pos.pair as Pair} posDir={pos.direction} />
+              <QxScoreBadge pair={pos.pair} posDir={pos.direction} />
 
               <div className="flex items-center gap-1.5 ml-auto shrink-0">
                 <span
@@ -208,28 +211,38 @@ export function PositionAccordion(): React.ReactElement | null {
                 </span>
               </div>
 
-              <span
-                role="button"
-                tabIndex={0}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setFocus(pos.pair as Pair);
-                  router.push("/grafik");
-                }}
-                onKeyDown={(e) => {
-                  if (e.key !== "Enter" && e.key !== " ") return;
-                  e.stopPropagation();
-                  e.preventDefault();
-                  setFocus(pos.pair as Pair);
-                  router.push("/grafik");
-                }}
-                className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-mono text-2xs font-semibold text-emerald-400 ml-1 shrink-0 transition-colors hover:bg-emerald-500/20 hover:border-emerald-500/50 active:bg-emerald-500/25"
-                title={t("position.goToChart")}
-                aria-label={t("position.goToChart")}
-              >
-                <TrendingUpIcon className="h-3 w-3 shrink-0" />
-                {t("position.goToChart")}
-              </span>
+              {/* Grafiğe git — sadece skorlanan (PAIRS'te olan) paritelerde
+                  anlamlı: /grafik candle/skor verisini sadece PAIRS için
+                  çekiyor, desteklenmeyen bir pariteye yönlendirmek boş bir
+                  grafik açardı. */}
+              {(() => {
+                if (!isSupportedPair(pos.pair)) return null;
+                const chartPair = pos.pair;
+                return (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFocus(chartPair);
+                      router.push("/grafik");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.stopPropagation();
+                      e.preventDefault();
+                      setFocus(chartPair);
+                      router.push("/grafik");
+                    }}
+                    className="inline-flex items-center gap-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 font-mono text-2xs font-semibold text-emerald-400 ml-1 shrink-0 transition-colors hover:bg-emerald-500/20 hover:border-emerald-500/50 active:bg-emerald-500/25"
+                    title={t("position.goToChart")}
+                    aria-label={t("position.goToChart")}
+                  >
+                    <TrendingUpIcon className="h-3 w-3 shrink-0" />
+                    {t("position.goToChart")}
+                  </span>
+                );
+              })()}
 
               <span
                 className="font-mono text-base text-text-t4 ml-1 shrink-0 transition-transform duration-200"

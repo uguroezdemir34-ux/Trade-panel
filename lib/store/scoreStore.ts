@@ -16,9 +16,14 @@ interface ScoreStoreState {
    *  null      = hesaplandı ama candle yetersiz — "atlandı" sentinel
    *  ScoreResult = geçerli skor
    */
-  results: Partial<Record<Pair, ScoreResult | null>>;
+  // Anahtar bilerek string (Pair değil) — position.pair: string ile cast'siz
+  // indekslenebilsin diye (bkz. marketStore.ts'teki aynı gerekçe). Yazma
+  // tarafı (setResult/setSkipped) hep Pair ile çağrılıyor, PAIRS dışındaki
+  // pariteler için burada hiçbir zaman bir satır OLUŞMAYACAK — sadece
+  // okuma tarafının cast gerektirmemesi için tip genişletildi.
+  results: Partial<Record<string, ScoreResult | null>>;
   /** Hesaplama zamanı */
-  computedAt: Partial<Record<Pair, number>>;
+  computedAt: Partial<Record<string, number>>;
   /** Hesaplama devam ediyor mu */
   computing: boolean;
 

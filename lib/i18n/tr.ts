@@ -689,6 +689,7 @@ export const tr: Dictionary = {
     rMultiple: "R ÇARPANI",
     duration: "SÜRE",
     goToChart: "Grafiğe git",
+    notScored: "Bu parite skorlanan pariteler listesinde değil",
     noSlSet: "SL yok",
     noTpSet: "TP yok",
     liqPrice: "LIQ",
@@ -732,6 +733,7 @@ export const tr: Dictionary = {
     loading: "Analiz ediliyor...",
     error: "Şu an analiz yapılamadı, tekrar dene.",
     noEntryNote: "Giriş anı verisi mevcut değil, sadece güncel duruma göre bilgi veriliyor.",
+    notSupported: "Bu parite skorlanmıyor — AI karşılaştırması yapılamıyor.",
   },
 
   performance: {

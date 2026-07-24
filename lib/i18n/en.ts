@@ -689,6 +689,7 @@ export const en: Dictionary = {
     rMultiple: "R MULTIPLE",
     duration: "DURATION",
     goToChart: "Go to chart",
+    notScored: "This pair isn't in the scored pair list",
     noSlSet: "no SL",
     noTpSet: "no TP",
     liqPrice: "LIQ",
@@ -732,6 +733,7 @@ export const en: Dictionary = {
     loading: "Analyzing...",
     error: "Analysis unavailable right now, try again.",
     noEntryNote: "No entry-time data available — showing current status only.",
+    notSupported: "This pair isn't scored — AI comparison isn't available.",
   },
 
   performance: {

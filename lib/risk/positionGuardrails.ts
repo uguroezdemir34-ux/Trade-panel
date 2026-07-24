@@ -21,10 +21,17 @@
  *
  * Kaldıraç kontrolü TÜM borsalarda çalışır (leverage alanı hepsinde
  * gerçek veri, grep ile doğrulandı).
+ *
+ * KAPSAM DÜZELTMESİ (chat'te tespit edildi): Bu fonksiyonun kendisi hiçbir
+ * zaman pair'e göre filtre uygulamıyordu — ama üstündeki fetchPositions()/
+ * fetchBinancePositions()/... (lib/<exchange>/positions.ts) PAIRS dışı
+ * (skorlanmayan) bir paritedeki pozisyonu ÖNCEDEN tamamen atıyordu, bu
+ * fonksiyona hiç ulaşmıyordu — yani guardrail'in kör bir noktası vardı.
+ * extractPair()'daki PAIRS filtresi kaldırıldı, artık her borsada açık
+ * HER pozisyon buraya ulaşıyor.
  */
 
 import type { Position } from "@/lib/okx/positions";
-import type { Pair } from "@/lib/constants/pairs";
 
 /** İleride settingsStore'a taşınabilir (kullanıcı-ayarlanabilir) — şimdilik
  *  sabit, kullanıcı kararı: tam ayarlar UI'ı bu görevin kapsamına göre
@@ -47,7 +54,9 @@ export interface PositionViolation {
    *  pozisyon HEM kaldıraç HEM SL ihlali edebilir, iki ayrı satır gerekir). */
   key: string;
   kind: ViolationKind;
-  pair: Pair;
+  /** string — PAIRS dışı bir paritede de ihlal tespit edilebilir (bkz.
+   *  lib/okx/positions.ts extractPair() artık PAIRS filtresi uygulamıyor). */
+  pair: string;
   direction: "LONG" | "SHORT";
   leverage: number;
   maxLeverage?: number;

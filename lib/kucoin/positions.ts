@@ -1,6 +1,4 @@
 import type { Position } from "@/lib/okx/positions";
-import type { Pair } from "@/lib/constants/pairs";
-import { PAIRS } from "@/lib/constants/pairs";
 
 interface KucoinPositionRow {
   /** "XBTUSDTM", "ETHUSDTM", ... */
@@ -35,11 +33,9 @@ interface KucoinProxyResponse {
  */
 const TICKER_OVERRIDES: Record<string, string> = { XBT: "BTC" };
 
-function extractPair(symbol: string): Pair | null {
+function extractPair(symbol: string): string {
   const base = symbol.endsWith("USDTM") ? symbol.slice(0, -5) : symbol;
-  const mapped = TICKER_OVERRIDES[base] ?? base;
-  if ((PAIRS as readonly string[]).includes(mapped)) return mapped as Pair;
-  return null;
+  return TICKER_OVERRIDES[base] ?? base;
 }
 
 function num(s: string | number | undefined, fallback = 0): number {

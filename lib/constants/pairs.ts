@@ -11,3 +11,13 @@ export const PAIRS = [
 ] as const;
 
 export type Pair = (typeof PAIRS)[number];
+
+/**
+ * Borsadan gelen ham bir sembolün skorlanan pariteler arasında olup olmadığını
+ * kontrol eder. Position.pair artık string (bkz. lib/okx/positions.ts) —
+ * borsada açık her pozisyon panelde GÖRÜNÜR (guardrail dahil), ama sadece
+ * bu kontrolden geçenler skor/AI-karşılaştırma alır.
+ */
+export function isSupportedPair(pair: string): pair is Pair {
+  return (PAIRS as readonly string[]).includes(pair);
+}

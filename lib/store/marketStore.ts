@@ -18,6 +18,13 @@ import { create } from "zustand";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Tick, ConnectionState } from "@/lib/ws/types";
 
+// prices/tickCount/lastKnownGood ANAHTARLARI bilerek string (Pair değil) —
+// PAIRS dışı bir paritede pozisyon açıldığında positionStore/guardrail artık
+// bunu görüyor (bkz. lib/okx/positions.ts extractPair()), o pozisyonun
+// UI'daki price lookup'ları (position.pair: string) burayı Pair cast'i
+// olmadan indeksleyebilsin diye. WS zaten sadece PAIRS'e abone olduğu için
+// pratikte bu anahtarların değeri hep Pair olacak — bu sadece tip uyumu.
+
 /** Geçerli son tick + cache zamanı */
 export interface LastKnownGoodEntry {
   tick: Tick;
@@ -27,17 +34,17 @@ export interface LastKnownGoodEntry {
 
 interface MarketStoreState {
   /** Pair → en son tick (snapshot) */
-  prices: Partial<Record<Pair, Tick>>;
+  prices: Partial<Record<string, Tick>>;
   /** WS bağlantı durumu */
   connection: ConnectionState;
   /** Pair bazlı tick sayacı (debug/health monitor için) */
-  tickCount: Partial<Record<Pair, number>>;
+  tickCount: Partial<Record<string, number>>;
   /**
    * Son bilinen geçerli fiyat — WS/REST kesilse bile kısa süre
    * kullanılabilecek en son onaylı tick kaydı.
    * pushTick her çağrıldığında güncellenir; reset() sıfırlamaz.
    */
-  lastKnownGood: Partial<Record<Pair, LastKnownGoodEntry>>;
+  lastKnownGood: Partial<Record<string, LastKnownGoodEntry>>;
 
   // Actions
   /** Yeni tick geldi — store'u güncelle */

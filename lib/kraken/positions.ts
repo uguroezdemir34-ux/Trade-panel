@@ -1,6 +1,4 @@
 import type { Position } from "@/lib/okx/positions";
-import type { Pair } from "@/lib/constants/pairs";
-import { PAIRS } from "@/lib/constants/pairs";
 
 interface KrakenPositionRow {
   side: string; // "long" | "short"
@@ -39,14 +37,16 @@ function num(s: number | string | undefined, fallback = 0): number {
  * ISO 4217 kripto konvansiyonu, KuCoin'deki XBT ile aynı) doğrulandı.
  * Quote para birimi "USD" olarak varsayılıyor (Kraken'in perpetual ana
  * ürünü USD-marjlı, USDT değil — bkz. dosya başı yorumu).
+ *
+ * NOT: PAIRS-desteklenirlik kontrolü BİLEREK burada YOK — desteklenmeyen
+ * bir paritede pozisyon açılmışsa ham sembol yine döner, panelde görünür
+ * ve guardrail onu da kapsar (bkz. lib/constants/pairs.ts → isSupportedPair()).
  */
-function extractPair(symbol: string): Pair | null {
+function extractPair(symbol: string): string | null {
   if (!symbol.startsWith("PF_")) return null;
   const rest = symbol.slice(3);
   const base = rest.endsWith("USD") ? rest.slice(0, -3) : rest;
-  const mapped = base === "XBT" ? "BTC" : base;
-  if ((PAIRS as readonly string[]).includes(mapped)) return mapped as Pair;
-  return null;
+  return base === "XBT" ? "BTC" : base;
 }
 
 /**
