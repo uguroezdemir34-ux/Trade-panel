@@ -99,20 +99,32 @@ export interface VpinConfig {
 }
 
 /**
- * Default VPIN config (BTC için).
- * Günlük ortalama BTC perpetual hacmi ~$20-50B → 1/50 = $400-1B per bucket
- * Çok büyük bucket → seyrek hesaplama; çok küçük → gürültü.
+ * Default VPIN config (BTC için) — vol24h yoksa devreye giren fallback.
  *
- * Pragmatik: $50M per bucket → günde ~400-1000 bucket (BTC için)
- * Window 50 bucket → ortalama 2-3 saat'lik flow
+ * DÜZELTME (chat'te ölçüldü, /api/scan/universe?pairs=1): Önceki $50M
+ * değeri "günlük ~$20-50B" varsayımına dayanıyordu — bu rakam borsalar-arası
+ * TOPLAM hacimdi, tek borsanın (OKX, bu sistemin veri kaynağı) değil.
+ * Gerçek ölçüm: OKX'te BTC-USDT-SWAP 24s hacmi ~$6.15B. DAILY_BUCKETS_TARGET
+ * (lib/store/tradeFeedStore.ts, =500) ile tutarlı olması için:
+ * $6.15B / 500 ≈ $12.3M → $12M'e yuvarlandı.
+ *
+ * Window 50 bucket, D=500 ile ≈2.4 saatlik flow (bkz. tradeFeedStore.ts'teki
+ * DAILY_BUCKETS_TARGET yorumu — bu iki dosya artık tutarlı).
  */
 export const DEFAULT_VPIN_CONFIG: VpinConfig = {
-  bucketSizeUsd: 50_000_000, // $50M
+  bucketSizeUsd: 12_000_000, // $12M
   windowSize: 50,
 };
 
 /**
- * ETH için config (BTC'nin 0.25'i).
+ * ETH için config.
+ *
+ * NOT: Bu değer önceden "BTC'nin 0.25'i" olarak türetilmiş görünüyordu —
+ * o gerekçe artık geçersiz (BTC $50M'den $12M'e düzeltildi, bkz.
+ * DEFAULT_VPIN_CONFIG). Ama ölçüm (chat'te, /api/scan/universe?pairs=1)
+ * ETH'nin gerçek dinamik bucket'ının (vol24h/500) zaten ~$12.6M çıktığını
+ * gösterdi — yani bu $12.5M rastlantısal olarak doğru kalibre, BTC'den
+ * türetilerek değil. Değiştirilmedi.
  */
 export const ETH_VPIN_CONFIG: VpinConfig = {
   bucketSizeUsd: 12_500_000, // $12.5M

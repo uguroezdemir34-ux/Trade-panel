@@ -33,8 +33,24 @@ import { getDefaultConfig, type VpinState } from "@/lib/orderflow/vpin";
 import { useMarketStore } from "@/lib/store/marketStore";
 
 // Dinamik bucket clamp sınırları
-const BUCKET_MIN_USD = 100_000;      // $100K — tek trade'in gürültü yapmaması için
-const BUCKET_MAX_USD = 300_000_000;  // $300M — bkz. DAILY_BUCKETS_TARGET notu
+//
+// BUCKET_MIN_USD ($100K): "tek trade'in gürültü yapmaması için" — bu 9
+// pariteden 5'i (LINK/AVAX/NEAR/BNB/SUI) İÇİN GERÇEKTEN devreye giriyor,
+// ölçüldü (chat'te, /api/scan/universe?pairs=1): bu paritelerin
+// vol24h/500'ü $43K-$88K arası çıkıyor, hepsi tabana yapışıyor — yani
+// pencereleri D=500'ün hedeflediği 2.4 saat değil, ~5-6.5 saat oluyor.
+// Bu bir bug DEĞİL — bu paritelerin gerçek hacmi $100K'lık bucket'ı
+// haklı çıkaracak kadar düşük, taban onları KORUYOR. İleride "neden bu
+// 5 coin'in VPIN'i BTC/ETH'den daha yavaş güncelleniyor" sorusunun
+// cevabı budur.
+//
+// BUCKET_MAX_USD ($100M): ölçümde (BTC $12.3M, ETH $12.6M — ikisi de
+// tavanın çok altında) hiçbir paritede tavana değmedi, $300M'e
+// yükseltilmesi gereksizdi (eski $20-50B/gün varsayımına dayanıyordu,
+// o yanlıştı — bkz. lib/orderflow/vpin.ts DEFAULT_VPIN_CONFIG notu).
+// $100M'e geri alındı.
+const BUCKET_MIN_USD = 100_000;
+const BUCKET_MAX_USD = 100_000_000;
 
 /**
  * Günde hedeflenen bucket sayısı — dolayısıyla dinamik bucket'ın divisor'ı
@@ -47,8 +63,7 @@ const BUCKET_MAX_USD = 300_000_000;  // $300M — bkz. DAILY_BUCKETS_TARGET notu
  * tam 1 günlük pencere; windowSize=50 bu yüzden 50, kaza değil, tutarlı bir
  * seçimdi — bkz. lib/orderflow/vpin.ts DEFAULT_VPIN_CONFIG/ETH_VPIN_CONFIG).
  * Asıl bug SADECE lib/ws/messages.ts'teki vol24h ölçek hatasıydı (coin-adedi,
- * USD değil) — o düzeltilince D=50 ile BTC bucket'ı ~$300-600M çıkar,
- * BUCKET_MAX_USD eski tavanına ($100M) yapışırdı.
+ * USD değil).
  *
  * 500'e BİLİNÇLİ SAPMA — akademik sadakat değil, ürün kararı: Easley VPIN
  * E-mini S&P vadelilerinde GÜNLÜK ölçekte toksik akış ölçmek için tasarlandı.
@@ -56,16 +71,18 @@ const BUCKET_MAX_USD = 300_000_000;  // $300M — bkz. DAILY_BUCKETS_TARGET notu
  * pencerelerinde değerlendiriliyor — 1 günlük pencereli bir VPIN rozetesi
  * gün boyu neredeyse hiç değişmez, /karar'da bakan trader için bilgi
  * taşımaz. D=500 → 50 bucket'lık pencere = günün 1/10'u = 2.4 saat, bu
- * ürünün karar ufkuyla örtüşüyor (ve vpin.ts'in kendi DEFAULT_VPIN_CONFIG
- * yorumundaki "2-3 saat"/"400-1000 bucket/gün" hedefiyle de uyumlu). VPIN
- * computeScore()'a girmiyor (doğrulandı, grep) — bu saf bir "kullanıcıya ne
- * göstermek faydalı" kararı, GO/WAIT/NO kararını etkilemiyor.
+ * ürünün karar ufkuyla örtüşüyor. VPIN computeScore()'a girmiyor (doğrulandı,
+ * grep) — bu saf bir "kullanıcıya ne göstermek faydalı" kararı, GO/WAIT/NO
+ * kararını etkilemiyor.
  *
- * BTC için kaba doğrulama: vol24h ~$20-50B/gün (vpin.ts'in kendi tahmini,
- * ölçülmedi) ise dinamik bucket $40M-$100M çıkar — statik fallback $50M'i
- * kapsıyor. BUCKET_MAX_USD $100M'den $300M'e yükseltildi çünkü D=500 ile
- * BTC'nin üst-normal ucu ($50B/500=$100M) eski tavana zaten değiyordu —
- * kriz-günü payı için gevşetildi.
+ * ÖLÇÜLDÜ (chat'te, /api/scan/universe?pairs=1 — tahmin değil): OKX'te BTC
+ * 24s hacmi ~$6.15B → dinamik bucket $6.15B/500 ≈ $12.3M (vpin.ts'teki
+ * DEFAULT_VPIN_CONFIG statik fallback'i de bu ölçüme göre $50M'den $12M'e
+ * düzeltildi — eski $50M, borsalar-arası TOPLAM hacim varsayımına
+ * dayanıyordu, tek borsa gerçeğiyle uyuşmuyordu). ETH ~$12.6M çıktı, mevcut
+ * statik fallback ($12.5M) zaten isabetliydi, değiştirilmedi. LINK/AVAX/
+ * NEAR/BNB/SUI ise BUCKET_MIN_USD tabanına yapışıyor — bkz. o sabitin
+ * üstündeki yorum.
  */
 const DAILY_BUCKETS_TARGET = 500;
 
