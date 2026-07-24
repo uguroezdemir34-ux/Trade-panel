@@ -40,6 +40,8 @@ export function formatNotifyMessage(msg: NotifyMessage): string {
       return formatConsecutiveLoss(msg);
     case "sl_proximity":
       return formatSlProximity(msg);
+    case "position_risk_violation":
+      return formatPositionRiskViolation(msg);
     case "test":
       return formatTest(msg);
     default: {
@@ -271,6 +273,25 @@ function formatSlProximity(msg: NotifyMessage): string {
   }
   if (msg.reasonText) {
     lines.push(escapeMarkdownV2(msg.reasonText));
+  }
+  return lines.join("\n");
+}
+
+// ═══════════════ POSITION RISK VIOLATION ═══════════════
+
+function formatPositionRiskViolation(msg: NotifyMessage): string {
+  const lines: string[] = [];
+  lines.push("🚨 " + bold("POZİSYON RİSK İHLALİ"));
+  lines.push("");
+  const dirLabel = msg.direction === "LONG" ? "LONG" : msg.direction === "SHORT" ? "SHORT" : "";
+  lines.push(bold(`${msg.pair ?? "—"}${dirLabel ? " " + escapeMarkdownV2(dirLabel) : ""}`));
+  if (msg.reasonText) {
+    lines.push(escapeMarkdownV2(msg.reasonText));
+  }
+  if (msg.timestamp !== undefined) {
+    const date = new Date(msg.timestamp);
+    const timeStr = `${pad2(date.getUTCHours())}:${pad2(date.getUTCMinutes())} UTC`;
+    lines.push(`⏰ ${escapeMarkdownV2(timeStr)}`);
   }
   return lines.join("\n");
 }

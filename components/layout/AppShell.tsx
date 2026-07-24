@@ -43,6 +43,7 @@ import { useMacroPoller } from "@/lib/hooks/useMacroPoller";
 import { useNewsPoller } from "@/lib/hooks/useNewsPoller";
 import { useEquityIndexPoller } from "@/lib/hooks/useEquityIndexPoller";
 import { NewsFeedBanner, NewsFeedCTA } from "./NewsFeedBanner";
+import { PositionRiskBanner } from "./PositionRiskBanner";
 import { useDailyPnlTracker } from "@/lib/hooks/useDailyPnlTracker";
 import { useWeeklyMonthlyPnlTracker } from "@/lib/hooks/useWeeklyMonthlyPnlTracker";
 import { useTradeFeed } from "@/lib/hooks/useTradeFeed";
@@ -220,6 +221,7 @@ export function AppShell({
       <DisclaimerModal />
       <MasterPinModal />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
+      <PositionRiskBanner />
       <AppHeader />
       <NewsFeedBanner />
       <NewsFeedCTA />

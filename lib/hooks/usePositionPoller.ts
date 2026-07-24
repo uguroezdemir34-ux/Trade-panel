@@ -16,6 +16,7 @@
  *   ilk poller döngüsünde yanlışlıkla kapatılmaması için.
  */
 
+import { useEffect } from "react";
 import { useStaggeredPoller } from "@/lib/hooks/useStaggeredPoller";
 import { fetchPositions } from "@/lib/okx/positions";
 import { fetchBinancePositions } from "@/lib/binance/positions";
@@ -33,6 +34,8 @@ import { useRiskStore } from "@/lib/store/riskStore";
 import { dispatchNotification } from "@/lib/notify/dispatch";
 import { decideAdherence, type GoSignalCandidate } from "@/lib/risk/position-adoption";
 import { ADHERENCE_CONFIG } from "@/lib/risk/adherence-score";
+import { checkPositionGuardrails } from "@/lib/risk/positionGuardrails";
+import { usePositionRiskStore } from "@/lib/store/positionRiskStore";
 import type { Position } from "@/lib/okx/positions";
 
 const POLL_INTERVAL_MS = 10_000;
@@ -42,6 +45,14 @@ const MIN_OPEN_AGE_MS = 30_000;
 export function usePositionPoller(delayMs = 0): void {
   const setPositions = usePositionStore((s) => s.setPositions);
   const credsLoaded = useCredentialStore((s) => s._loaded);
+
+  // warnedKeys'i localStorage'dan bir kez yükle — ilk fetchAll() (delayMs
+  // sonra) çalışmadan ÖNCE tamamlanır (senkron read), bu yüzden bir sonraki
+  // useStaggeredPoller effect'inden ayrı, kendi effect'i (bkz. positionRiskStore.ts
+  // header'ı — modül-scope'ta değil, hydration mismatch riskini önlemek için).
+  useEffect(() => {
+    usePositionRiskStore.getState().hydrateWarnedKeys();
+  }, []);
 
   async function fetchAll(): Promise<void> {
     const { okxProd, okxDemo, bnbFutures, bybitFutures, gateioFutures, kucoinFutures, mexcFutures, krakenFutures } = useCredentialStore.getState();
@@ -73,6 +84,7 @@ export function usePositionPoller(delayMs = 0): void {
     setPositions(positions);
     reconcileOpenTrades(positions);
     void adoptNewPositions(positions);
+    checkAndNotifyViolations(positions);
   }
 
   // Resume-jitter (visibilitychange, 0-2sn) dahil — bkz. useStaggeredPoller.ts
@@ -130,6 +142,28 @@ function reconcileOpenTrades(livePositions: Position[]): void {
       pnl: (exitPrice - trade.entryPrice) * (trade.direction === "SHORT" ? -1 : 1) * trade.qty,
       reasonText: "Exchange reconciled — position closed on exchange (SL/TP/liq/manual)",
       timestamp: now,
+    }).catch(() => {/* ignore */});
+  }
+}
+
+/**
+ * GUARDRAILS — kaldıraç/SL ihlali tespiti (bkz. lib/risk/positionGuardrails.ts).
+ * Engelleme değil, uyarı: positionRiskStore güncellenir (banner bunu okur),
+ * YENİ ihlaller (henüz Telegram gönderilmemiş) için bir kez bildirim atılır.
+ * Dedup mantığı positionRiskStore.applyViolations()'ta — bkz. o dosyanın
+ * header'ı (localStorage persist, "düzelene/kapanana kadar bir kez" garantisi).
+ */
+function checkAndNotifyViolations(livePositions: Position[]): void {
+  const violations = checkPositionGuardrails(livePositions);
+  const newlyViolated = usePositionRiskStore.getState().applyViolations(violations);
+
+  for (const v of newlyViolated) {
+    void dispatchNotification({
+      kind: "position_risk_violation",
+      pair: v.pair,
+      direction: v.direction,
+      reasonText: v.message,
+      timestamp: Date.now(),
     }).catch(() => {/* ignore */});
   }
 }

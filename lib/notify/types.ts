@@ -37,6 +37,7 @@ export type NotifyKind =
   | "score_momentum"
   | "consecutive_loss"
   | "sl_proximity"  // SL yaklaştığında veya ihlal uyarısı
+  | "position_risk_violation" // kaldıraç/SL guardrail ihlali (lib/risk/positionGuardrails.ts)
   | "test"; // health check
 
 /**

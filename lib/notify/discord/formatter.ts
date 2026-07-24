@@ -29,6 +29,8 @@ export function formatDiscordMessage(msg: NotifyMessage): string {
       return formatConsecutiveLoss(msg);
     case "sl_proximity":
       return formatSlProximity(msg);
+    case "position_risk_violation":
+      return formatPositionRiskViolation(msg);
     case "test":
       return "**QUANTIX Discord Test**\n\nBot connection working ✓";
     default: {
@@ -53,6 +55,23 @@ function formatSlProximity(msg: NotifyMessage): string {
   }
   if (msg.reasonText) {
     lines.push(`⚠️ ${msg.reasonText}`);
+  }
+  return lines.join("\n");
+}
+
+// ═══════════════ POSITION RISK VIOLATION ═══════════════
+
+function formatPositionRiskViolation(msg: NotifyMessage): string {
+  const lines: string[] = [];
+  lines.push("🚨 **POSITION RISK VIOLATION**");
+  lines.push("");
+  lines.push(`**${msg.pair ?? "—"}**${msg.direction ? " " + msg.direction : ""}`);
+  if (msg.reasonText) {
+    lines.push(msg.reasonText);
+  }
+  if (msg.timestamp !== undefined) {
+    const d = new Date(msg.timestamp);
+    lines.push(`⏰ ${pad2(d.getUTCHours())}:${pad2(d.getUTCMinutes())} UTC`);
   }
   return lines.join("\n");
 }
