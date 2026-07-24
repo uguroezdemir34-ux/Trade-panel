@@ -14,8 +14,14 @@ export interface Tick {
   open24h: number;
   /** % değişim (chg) */
   chg: number;
-  /** 24 saatlik USDT hacim (USD nominal). OKX: volCcy24h, Binance: q.
-   *  Trade tick'lerinde bulunmaz (undefined). */
+  /**
+   * 24 saatlik USD nominal hacim. Binance: q alanı (zaten quote/USDT
+   * cinsinden — doğrulanmadı, dokunulmadı). OKX: volCcy24h — bu alan
+   * OKX'in SWAP ticker'larında BASE-COIN cinsinden (coin adedi) geliyor,
+   * USD cinsinden DEĞİL (ampirik olarak doğrulandı, bkz. lib/scan/universe.ts
+   * ve parseOkxTicker()'daki çarpım) — önceki bir sürümde burada "= USD
+   * nominal" yazıyordu, YANLIŞTI. Trade tick'lerinde bulunmaz (undefined).
+   */
   vol24h?: number;
   /** Tick alındı zamanı (epoch ms) */
   ts: number;

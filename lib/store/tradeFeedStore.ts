@@ -34,18 +34,49 @@ import { useMarketStore } from "@/lib/store/marketStore";
 
 // Dinamik bucket clamp sınırları
 const BUCKET_MIN_USD = 100_000;      // $100K — tek trade'in gürültü yapmaması için
-const BUCKET_MAX_USD = 100_000_000;  // $100M — BTC kriz günlerinde bile makul warm-up
+const BUCKET_MAX_USD = 300_000_000;  // $300M — bkz. DAILY_BUCKETS_TARGET notu
+
+/**
+ * Günde hedeflenen bucket sayısı — dolayısıyla dinamik bucket'ın divisor'ı
+ * (bkz. computeDynamicBucketUsd: bucketUsd = vol24h / DAILY_BUCKETS_TARGET,
+ * bu formülasyonda "vol24h / D" ifadesi TANIM GEREĞİ günde D bucket üretir).
+ *
+ * TARİHÇE (chat'te tartışıldı, bilinçli karar — bug düzeltmesi DEĞİL):
+ * Burada önceden "/50" vardı. Bu bir kaza değildi — 50, klasik Easley et al.
+ * VPIN metodolojisinin kendisi (günde 50 bucket × 50 bucket'lık pencere =
+ * tam 1 günlük pencere; windowSize=50 bu yüzden 50, kaza değil, tutarlı bir
+ * seçimdi — bkz. lib/orderflow/vpin.ts DEFAULT_VPIN_CONFIG/ETH_VPIN_CONFIG).
+ * Asıl bug SADECE lib/ws/messages.ts'teki vol24h ölçek hatasıydı (coin-adedi,
+ * USD değil) — o düzeltilince D=50 ile BTC bucket'ı ~$300-600M çıkar,
+ * BUCKET_MAX_USD eski tavanına ($100M) yapışırdı.
+ *
+ * 500'e BİLİNÇLİ SAPMA — akademik sadakat değil, ürün kararı: Easley VPIN
+ * E-mini S&P vadelilerinde GÜNLÜK ölçekte toksik akış ölçmek için tasarlandı.
+ * Bu sistem 1H ana + 4H teyit mimarisiyle çalışıyor, kararlar 15dk-1sa
+ * pencerelerinde değerlendiriliyor — 1 günlük pencereli bir VPIN rozetesi
+ * gün boyu neredeyse hiç değişmez, /karar'da bakan trader için bilgi
+ * taşımaz. D=500 → 50 bucket'lık pencere = günün 1/10'u = 2.4 saat, bu
+ * ürünün karar ufkuyla örtüşüyor (ve vpin.ts'in kendi DEFAULT_VPIN_CONFIG
+ * yorumundaki "2-3 saat"/"400-1000 bucket/gün" hedefiyle de uyumlu). VPIN
+ * computeScore()'a girmiyor (doğrulandı, grep) — bu saf bir "kullanıcıya ne
+ * göstermek faydalı" kararı, GO/WAIT/NO kararını etkilemiyor.
+ *
+ * BTC için kaba doğrulama: vol24h ~$20-50B/gün (vpin.ts'in kendi tahmini,
+ * ölçülmedi) ise dinamik bucket $40M-$100M çıkar — statik fallback $50M'i
+ * kapsıyor. BUCKET_MAX_USD $100M'den $300M'e yükseltildi çünkü D=500 ile
+ * BTC'nin üst-normal ucu ($50B/500=$100M) eski tavana zaten değiyordu —
+ * kriz-günü payı için gevşetildi.
+ */
+const DAILY_BUCKETS_TARGET = 500;
 
 /**
  * Pair'in anlık vol24h'ından dinamik bucket boyutu hesapla.
- * Formül: vol24h / 50 (günde ~50 bucket = windowSize'a eşit)
- * Kaynak: Easley et al. VPIN paper, "1/50 of daily volume per bucket"
  * vol24h yoksa null döner → getDefaultConfig(pair) fallback kullanılır.
  */
 function computeDynamicBucketUsd(pair: Pair): number | null {
   const vol24h = useMarketStore.getState().prices[pair]?.vol24h;
   if (!vol24h || vol24h <= 0) return null;
-  return Math.max(BUCKET_MIN_USD, Math.min(BUCKET_MAX_USD, vol24h / 50));
+  return Math.max(BUCKET_MIN_USD, Math.min(BUCKET_MAX_USD, vol24h / DAILY_BUCKETS_TARGET));
 }
 
 const VPIN_STORAGE_KEY = "qx_vpin_states";

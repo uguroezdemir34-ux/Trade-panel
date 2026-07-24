@@ -48,7 +48,9 @@ function parseTickerRow(row: unknown): ScanCandidate | null {
   if (typeof r.instId !== "string" || !r.instId.endsWith("-USDT-SWAP")) return null;
 
   const symbol = r.instId.split("-")[0];
-  if (EXISTING_PAIRS.has(symbol)) return null;
+  // NOT: mevcut-parite hariç tutma/dahil etme kontrolü BİLEREK burada değil,
+  // artık scanUniverse()'de (onlyExisting opsiyonuna bağlı) — bu fonksiyon
+  // sadece parse/format doğrulaması yapar, iş kuralı filtrelemez.
 
   const last = typeof r.last === "string" ? parseFloat(r.last) : NaN;
   if (!isFinite(last) || last <= 0) return null;
@@ -73,12 +75,28 @@ function parseTickerRow(row: unknown): ScanCandidate | null {
   };
 }
 
+export interface ScanUniverseOptions {
+  /**
+   * GEÇİCİ DEBUG PARAMETRESİ (chat'te istendi — VPIN vol24h ölçek
+   * doğrulaması için) — true ise filtre TERSİNE döner: SADECE mevcut 9
+   * skorlanan parite (lib/constants/pairs.ts → PAIRS) döner, geri kalan
+   * onlarca/yüzlerce enstrüman elenir. MIN_VOLUME_USD ve MAX_CANDIDATES
+   * hiç uygulanmaz (9 satır zaten 25'in altında, kırpma anlamsız). Amaç:
+   * telefonda tek ekranda okunabilir bir çıktı (9 satır), yüzlerce satırlık
+   * ham OKX sayfasının aynısını tekrar üretmemek. Kalıcı bir özellik
+   * DEĞİL — doğrulama bitince kaldırılabilir.
+   */
+  onlyExisting?: boolean;
+}
+
 /**
  * "Ağ öldü" / "yanıt bozuk" durumları ile "hepsi filtreden elendi" (meşru
  * boş sonuç) durumunu ayırt etmek için — ilki fırlatılır (caller/route
  * bunu görür), ikincisi normal bir boş dizi olarak döner.
  */
-export async function scanUniverse(): Promise<ScanCandidate[]> {
+export async function scanUniverse(
+  opts: ScanUniverseOptions = {},
+): Promise<ScanCandidate[]> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), FETCH_TIMEOUT_MS);
 
@@ -108,11 +126,14 @@ export async function scanUniverse(): Promise<ScanCandidate[]> {
   const candidates: ScanCandidate[] = [];
   for (const row of data) {
     const candidate = parseTickerRow(row);
-    if (candidate && candidate.volumeUsd >= MIN_VOLUME_USD) {
+    if (!candidate) continue;
+    const isExisting = EXISTING_PAIRS.has(candidate.symbol);
+    if (opts.onlyExisting ? !isExisting : isExisting) continue;
+    if (opts.onlyExisting || candidate.volumeUsd >= MIN_VOLUME_USD) {
       candidates.push(candidate);
     }
   }
 
   candidates.sort((a, b) => Math.abs(b.changePct24h) - Math.abs(a.changePct24h));
-  return candidates.slice(0, MAX_CANDIDATES);
+  return opts.onlyExisting ? candidates : candidates.slice(0, MAX_CANDIDATES);
 }

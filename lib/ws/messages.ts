@@ -24,7 +24,11 @@ const okxTickerSchema = z.object({
         instId: z.string(),
         last: z.string(),
         open24h: z.string().optional(),
-        // USDT-margined SWAP için quote currency (USDT) 24h hacim = USD nominal
+        // OKX SWAP ticker'larında BASE-COIN cinsinden (coin adedi) — USD
+        // NOMİNAL DEĞİL. Önceki yorum ("= USD nominal") yanlıştı, ampirik
+        // olarak doğrulandı (lib/scan/universe.ts — PEPE/XAU çapraz kontrolü:
+        // ham değer × last, bilinen gerçek USD hacimle örtüşüyor). USD'ye
+        // çevirmek için parseOkxTicker()'da `last` ile çarpılıyor.
         volCcy24h: z.string().optional(),
       }),
     )
@@ -94,12 +98,18 @@ export function parseOkxTicker(msg: unknown, now: number): Tick | null {
   if (!isFinite(last) || last <= 0) return null;
   const open24h = t.open24h ? parseFloat(t.open24h) : last;
   const volCcy24h = t.volCcy24h ? parseFloat(t.volCcy24h) : undefined;
+  // volCcy24h base-coin cinsinden (coin adedi) — USD nominal elde etmek için
+  // last ile çarpılıyor (bkz. schema'daki yorum, ampirik doğrulama).
+  const vol24hUsd =
+    volCcy24h !== undefined && isFinite(volCcy24h) && volCcy24h > 0
+      ? volCcy24h * last
+      : undefined;
   return {
     pair,
     last,
     open24h: isFinite(open24h) && open24h > 0 ? open24h : last,
     chg: calcChg(last, open24h),
-    vol24h: volCcy24h !== undefined && isFinite(volCcy24h) && volCcy24h > 0 ? volCcy24h : undefined,
+    vol24h: vol24hUsd,
     ts: now,
     source: "ticker",
   };
