@@ -50,6 +50,8 @@ export const zh: Dictionary = {
     wait: "等待",
     no: "否",
     pullback: "🔄 回调",
+    confirmPending: "confirmation pending",
+    confirmUnknown: "confirmation status unknown",
   },
 
   direction: {

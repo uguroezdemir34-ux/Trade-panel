@@ -50,6 +50,8 @@ export const ja: Dictionary = {
     wait: "待機",
     no: "NG",
     pullback: "🔄 プルバック",
+    confirmPending: "confirmation pending",
+    confirmUnknown: "confirmation status unknown",
   },
 
   direction: {

@@ -10,6 +10,8 @@ import { useAccountStore } from "@/lib/store/accountStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useMacroStore } from "@/lib/store/macroStore";
+import { useSignalConfirmStore } from "@/lib/store/signalConfirmStore";
+import { useSettingsStore } from "@/lib/store/settingsStore";
 import { computeOiDivergence } from "@/lib/market/oi-divergence";
 import { computeDisplayTrends } from "@/lib/market/mtfTrend";
 import type { TimeframeTrend } from "@/lib/market/mtfTrend";
@@ -177,6 +179,12 @@ export default function KararPage() {
 
   const result = useScoreStore((s) => s.results[activePair]);
   const allResults = useScoreStore((s) => s.results);
+  // GO teyit rozeti — bkz. lib/store/signalConfirmStore.ts + VerdictBadge.tsx.
+  // demoMode'da useSignalFirehose bekleme mekanizmasını hiç çalıştırmıyor
+  // (bkz. useSignalFirehose.ts satır ~69 !demoMode şartı), o yüzden rozet de
+  // orada devre dışı kalmalı — "teyit bekleniyor" göstermek yanlış olur.
+  const confirmDemoMode = useSettingsStore((s) => s.demoMode);
+  const confirmEntry = useSignalConfirmStore((s) => s.entries[activePair]);
   const computedAt = useScoreStore((s) => s.computedAt);
   const computing = useScoreStore((s) => s.computing);
   const scoreHistory = useScoreHistoryStore((s) => s.history);
@@ -728,6 +736,9 @@ export default function KararPage() {
                       signalType={result.pullbackActive ? "pullback" : "classic"}
                       hysteresisActive={!!result.reasons.hysteresis}
                       hysteresisDetail={result.reasons.hysteresis}
+                      confirmTrackingApplies={!confirmDemoMode}
+                      confirmPendingUntil={confirmEntry?.pendingUntil ?? null}
+                      confirmConfirmedAt={confirmEntry?.confirmedAt ?? null}
                     />
                     <DirectionBadge
                       direction={result.direction}

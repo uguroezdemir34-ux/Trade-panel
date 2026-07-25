@@ -50,6 +50,8 @@ export const tr: Dictionary = {
     wait: "BEKLE",
     no: "HAYIR",
     pullback: "🔄 GERİ ÇEKİLME",
+    confirmPending: "teyit bekleniyor",
+    confirmUnknown: "teyit durumu bilinmiyor",
   },
 
   direction: {

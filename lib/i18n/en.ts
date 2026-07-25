@@ -50,6 +50,8 @@ export const en: Dictionary = {
     wait: "WAIT",
     no: "NO",
     pullback: "🔄 PULLBACK",
+    confirmPending: "confirmation pending",
+    confirmUnknown: "confirmation status unknown",
   },
 
   direction: {

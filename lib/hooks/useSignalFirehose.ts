@@ -8,6 +8,12 @@
  *   4. direction = NEUTRAL → atla
  *
  * Stop/TP hesabı: 1H ATR + swing seviyelerinden yapısal stop + ADX-adaptive TP.
+ *
+ * pendingConfirmAt/prevVerdicts/lastFiredAt (aşağıda) tetikleme mantığının
+ * TEK gerçek kaynağı — bellekte (useRef), sayfa yenilenince sıfırlanır.
+ * signalConfirmStore.ts'e yapılan yazılar sadece bu ref'lerin UI'a görünür
+ * bir yansıması (VerdictBadge'in "teyit bekleniyor/bilinmiyor" rozeti için),
+ * tetikleme koşullarından hiçbirini değiştirmez.
  */
 
 "use client";
@@ -31,6 +37,7 @@ import { useGoSignalLogStore } from "@/lib/store/goSignalLogStore";
 import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { computeOiDivergence } from "@/lib/market/oi-divergence";
+import { useSignalConfirmStore } from "@/lib/store/signalConfirmStore";
 
 const SIGNAL_COOLDOWN_MS = 2 * 60 * 1000;   // 2 dakika
 const CONFIRM_DELAY_MS   = 5 * 60 * 1000;   // 5 dakika — momentary false-positive koruması
@@ -63,11 +70,29 @@ export function useSignalFirehose(): void {
       // GO düştü → bekleyen onayı iptal et
       if (prevVerdict === "go" && verdict !== "go" && pendingAt != null) {
         delete pendingConfirmAt.current[pair];
+        // UI görünürlüğü — bkz. signalConfirmStore.ts header'ı. Tetikleme
+        // mantığını etkilemez, sadece yukarıdaki satırın bir yansıması.
+        useSignalConfirmStore.getState().clear(pair);
       }
 
       // non-go → go geçişi: onay saatini kaydet, henüz sinyal atma
       if (isGoTransition && cooldownOk && !demoMode && result.direction !== "NEUTRAL" && pendingAt == null) {
-        pendingConfirmAt.current[pair] = now + CONFIRM_DELAY_MS;
+        const pendingUntil = now + CONFIRM_DELAY_MS;
+        pendingConfirmAt.current[pair] = pendingUntil;
+        // UI görünürlüğü — SADECE bu session'da GERÇEKTEN gözlemlenen bir
+        // geçişte yazılır (prevVerdict tanımlıysa, yani bu pair'in önceki
+        // durumunu bu session'da gördüysek). prevVerdict === undefined ise
+        // (sayfa yeni yenilendi, bu pair'in ilk cycle'ı) bu satır kasıtlı
+        // olarak store'a YAZMIYOR — aksi halde saatlerdir stabil bir GO,
+        // yenileme sonrası "teyit bekleniyor 5:00" gibi görünürdü, ki bu
+        // teyitli bir sinyali zayıf gösteren tam ters bir yanlış bilgi olur.
+        // pendingConfirmAt.current (yukarıdaki satır) HER durumda set
+        // edilir — gerçek tetikleme mantığı bundan etkilenmez, sadece
+        // görüntüleme bu durumda "pending" yerine "unknown" kalır (store'da
+        // hiç kayıt olmadığı için, bkz. VerdictBadge.tsx useConfirmStatus).
+        if (prevVerdict !== undefined) {
+          useSignalConfirmStore.getState().setPending(pair, pendingUntil);
+        }
       }
 
       // 5 dk bekleme doldu + hâlâ GO → sinyal at
@@ -75,6 +100,7 @@ export function useSignalFirehose(): void {
       if (verdict === "go" && currentPending != null && now >= currentPending && !demoMode) {
         delete pendingConfirmAt.current[pair];
         lastFiredAt.current[pair] = now;
+        useSignalConfirmStore.getState().setConfirmed(pair, now);
         if (result.direction !== "NEUTRAL") {
           const rawPrice = useMarketStore.getState().prices[pair]?.last;
           const livePrice = rawPrice ?? 0;

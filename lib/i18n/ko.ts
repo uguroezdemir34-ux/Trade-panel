@@ -50,6 +50,8 @@ export const ko: Dictionary = {
     wait: "대기",
     no: "아니오",
     pullback: "🔄 풀백",
+    confirmPending: "confirmation pending",
+    confirmUnknown: "confirmation status unknown",
   },
 
   direction: {

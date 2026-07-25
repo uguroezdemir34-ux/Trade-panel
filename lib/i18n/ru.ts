@@ -50,6 +50,8 @@ export const ru: Dictionary = {
     wait: "ЖДАТЬ",
     no: "НЕТ",
     pullback: "🔄 ОТКАТ",
+    confirmPending: "confirmation pending",
+    confirmUnknown: "confirmation status unknown",
   },
 
   direction: {
