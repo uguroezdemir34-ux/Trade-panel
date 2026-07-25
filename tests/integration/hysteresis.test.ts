@@ -253,6 +253,7 @@ function makeStubResult(verdict: "go" | "wait" | "no"): ScoreResult {
     atrRegimeAdj: 0,
     volBreakoutActive: false,
     oiDivergenceContrib: 0,
+    oiBonus: 0,
     signalType: "classic",
     pullbackActive: false,
     pullbackThreshold: 80,

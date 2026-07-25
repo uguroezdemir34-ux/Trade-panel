@@ -31,9 +31,15 @@ export const CATEGORIES: Array<{
 export function ScoreBreakdown({
   sub,
   reasons,
+  oiBonus,
 }: {
   sub: ScoreSubScores;
   reasons: ScoreReasons;
+  /** ScoreResult.oiBonus — total'e eklenen OI velocity katkısı (±10 clamp).
+   *  reasons.oiDivergence ile KARIŞTIRILMASIN, o gölge modda (bkz.
+   *  lib/score/orchestrator.ts oiBonus alanı yorumu). 0 veya veri yoksa
+   *  satır hiç gösterilmez. */
+  oiBonus?: number;
 }): React.ReactElement {
   const t = useT();
   return (
@@ -74,6 +80,27 @@ export function ScoreBreakdown({
             </div>
           );
         })}
+        {/* 8 kategori baseScore'a girer (ağırlıklı), OI velocity ise
+         *  modifier olarak doğrudan total'e eklenir — bu yüzden ayrı,
+         *  sabit-max'lı bir çubuk değil, işaretli bir değer olarak
+         *  gösteriliyor. 0/undefined ise (veri yok veya nötr) hiç
+         *  gösterilmiyor — sessiz sıfır değil, satırın kendisi yok. */}
+        {oiBonus != null && oiBonus !== 0 && (
+          <div className="flex items-center gap-3 border-t border-border/40 pt-2">
+            <div className="text-text-t2 w-14 font-mono text-2xs tracking-wider">
+              {t("piyasa.oiVelocity.title").toUpperCase()}
+            </div>
+            <div className="flex-1" />
+            <div
+              className={`w-10 text-right font-mono text-xs tabular-nums ${
+                oiBonus > 0 ? "text-signal-green" : "text-signal-red"
+              }`}
+            >
+              {oiBonus > 0 ? "+" : ""}
+              {oiBonus}
+            </div>
+          </div>
+        )}
       </div>
       {/* Açıklamalar */}
       <div className="border-border mt-4 space-y-1 border-t pt-3 text-2xs leading-relaxed">

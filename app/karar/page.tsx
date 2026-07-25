@@ -1064,7 +1064,7 @@ export default function KararPage() {
 
                     {/* Score breakdown + Blocks + Reasons */}
                     <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-                      <ScoreBreakdown sub={result.sub} reasons={result.reasons} />
+                      <ScoreBreakdown sub={result.sub} reasons={result.reasons} oiBonus={result.oiBonus} />
                       <div className="flex flex-col gap-3">
                         <BlocksList
                           hardBlocks={result.blocks}

@@ -340,6 +340,13 @@ export interface ScoreResult {
   atrRegimeAdj: number;
   volBreakoutActive: boolean;
   oiDivergenceContrib: number;
+  /** total'e GERÇEKTEN eklenen OI velocity katkısı (input.oiVelocityScore ??
+   *  0) — oiDivergenceContrib'le KARIŞTIRILMASIN, o gölge modda ve total'e
+   *  girmiyor (bkz. #5. Total yorumu). Bu alan önceden hesaplanıp total'e
+   *  eklendiği halde ScoreResult'ta hiç dönmüyordu — ekrandaki ScoreBreakdown
+   *  bu yüzden skorun bir kısmını (±10 puana kadar) açıklayamıyordu. Saf
+   *  export: yeni hesap yok, total değişmedi. */
+  oiBonus: number;
   // Pullback engine (paket #5e)
   signalType: SignalType;
   pullbackActive: boolean;
@@ -798,6 +805,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
     atrRegimeAdj: atrReg.adj,
     volBreakoutActive: volBreakout.active,
     oiDivergenceContrib,
+    oiBonus,
     signalType: pullback.signalType,
     pullbackActive: pullback.active,
     pullbackThreshold,
