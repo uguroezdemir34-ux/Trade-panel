@@ -1,19 +1,23 @@
 "use client";
 
 /**
- * SHARE BUTTON — /karar'daki aktif paritenin skor kartını görsel olarak
- * paylaşır. Her verdict'te çalışır (sadece GO değil) — kart bilgilendirici
- * bir çıktı.
+ * SHARE BUTTON — /karar'daki aktif paritenin skor kartını panoya metin +
+ * indirilen PNG olarak sunar. Her verdict'te çalışır (sadece GO değil) —
+ * kart bilgilendirici bir çıktı.
  *
- * Akış:
- *   1. renderShareCard()'ı offscreen bir <canvas>'a çiz (lib/share/
- *      exportShareCard.ts) — DOM node/foreignObject YOK (bkz. o dosyanın
- *      başındaki taint bulgusu), PNG Blob üret.
- *   2. Metni HER DURUMDA panoya kopyala — navigator.share text alanını
- *      hedef uygulamaya (X, Telegram) taşımayabiliyor (doğrulandı, bkz.
- *      commit mesajındaki kaynaklar). Kullanıcı hedefte yapıştırır.
- *   3. navigator.share({files, text, title}) varsa dene. Yoksa (masaüstü,
- *      eski tarayıcı) PNG'yi indirme linkiyle sun.
+ * navigator.share() BİLİNÇLİ OLARAK YOK — dallanma da yok. Gerçek Android
+ * cihazda doğrulandı: X'in Android uygulaması navigator.share({files,text})
+ * ile paylaşılan dosyayı düşürüp SADECE metni alıyor — kullanıcı görseli hiç
+ * göremiyor. Tek belirleyici (deterministic) akışa geçildi: panoya kopyala,
+ * PNG indir, tek onay göster. Bunu geri koymadan önce bu notu oku.
+ *
+ * SIRA ÖNEMLİ: panoya yazma ÖNCE, PNG üretimi SONRA.
+ * navigator.clipboard.writeText() bazı tarayıcılarda "user activation"
+ * (kullanıcı hareketi) bağlamının hâlâ taze olmasını istiyor — PNG üretimi
+ * async (canvas çizim + toBlob) olduğu için önce o çalışırsa, clipboard
+ * çağrısı geldiğinde user-gesture bağlamı düşmüş olabilir ve izin sessizce
+ * reddedilebilir. Metin senkron olarak hazır (shareData zaten hesaplı), o
+ * yüzden ilk iş.
  *
  * shareData TEK yerde (useMemo) hesaplanıyor — hem canvas'a çizilen kart
  * hem panoya kopyalanan metin AYNI objeden okuyor.
@@ -31,7 +35,17 @@ import type { ShareCardData } from "@/lib/share/renderShareCard";
 import { exportShareCardPng } from "@/lib/share/exportShareCard";
 import { buildShareText } from "@/lib/share/shareCardText";
 
-const SITE_URL = "https://quantixos.com";
+const SITE_URL = "quantixos.com";
+
+/** epoch ms → "20260725-1432" (yerel saat) — dosya adında galeri sıralaması
+ *  ve tek bakışta bulunabilirlik için. */
+function formatFileTimestamp(ts: number): string {
+  const d = new Date(ts);
+  const pad = (n: number): string => String(n).padStart(2, "0");
+  const date = `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
+  const time = `${pad(d.getHours())}${pad(d.getMinutes())}`;
+  return `${date}-${time}`;
+}
 
 export function ShareButton({
   pair,
@@ -90,7 +104,6 @@ export function ShareButton({
     if (busy) return;
     setBusy(true);
     try {
-      const blob = await exportShareCardPng(shareData);
       const shareText = buildShareText({
         pair: shareData.pair,
         direction: shareData.direction,
@@ -98,11 +111,17 @@ export function ShareButton({
         confirmStatus: shareData.confirmStatus,
         score: shareData.score,
         priceLabel: shareData.priceLabel,
-        labels: shareData.labels,
+        labels: {
+          ...shareData.labels,
+          signalLabel: t("share.signalLabel"),
+          scoreLabel: t("share.scoreLabel"),
+          directionLeaningLabel: t("share.directionLeaningLabel"),
+          priceOnlyLabel: t("share.priceOnlyLabel"),
+        },
         siteUrl: SITE_URL,
       });
 
-      // HER DURUMDA panoya kopyala — bkz. dosya başı yorumu.
+      // 1. ÖNCE panoya kopyala — bkz. dosya başı yorumu (user-gesture bağlamı).
       let clipboardOk = true;
       try {
         await navigator.clipboard.writeText(shareText);
@@ -110,34 +129,22 @@ export function ShareButton({
         clipboardOk = false;
       }
 
-      const file = new File([blob], `quantix-${pair.toLowerCase()}-${shareData.ts}.png`, {
-        type: "image/png",
-      });
+      // 2. SONRA PNG üret (async) ve indir.
+      const blob = await exportShareCardPng(shareData);
+      const fileName = `quantix-${pair}-${formatFileTimestamp(shareData.ts)}.png`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = fileName;
+      a.click();
+      // revoke'u hemen çağırmak bazı tarayıcılarda a.click()'in indirmeyi
+      // başlatmasıyla yarışıyor ve indirmeyi iptal edebiliyor — artık tek
+      // yol olduğu için (navigator.share yedeği yok) bir sonraki tick'e
+      // ertelendi.
+      setTimeout(() => URL.revokeObjectURL(url), 0);
 
-      const canUseShare =
-        typeof navigator.share === "function" &&
-        typeof navigator.canShare === "function" &&
-        navigator.canShare({ files: [file] });
-
-      if (canUseShare) {
-        try {
-          await navigator.share({ files: [file], text: shareText, title: "QUANTIX" });
-          toast(clipboardOk ? t("share.toastSharedCopied") : t("share.toastShared"));
-        } catch (err) {
-          // Kullanıcı paylaşım menüsünü iptal ettiyse (AbortError) sessiz kal.
-          if (err instanceof Error && err.name === "AbortError") return;
-          toast.error(t("share.toastError"));
-        }
-      } else {
-        // navigator.share yok (masaüstü vb.) — indirme linkiyle sun.
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = file.name;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast(clipboardOk ? t("share.toastDownloadedCopied") : t("share.toastDownloaded"));
-      }
+      // 3. Tek onay.
+      toast(clipboardOk ? t("share.toastDownloadedCopied") : t("share.toastDownloaded"));
     } catch (err) {
       console.warn("[ShareButton] paylaşım başarısız:", err);
       toast.error(t("share.toastError"));
