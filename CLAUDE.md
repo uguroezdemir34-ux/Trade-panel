@@ -23,6 +23,35 @@ dokunulmaz.**
 
 ---
 
+## 0.1 Denetlenebilir Güvenilirlik İlkeleri
+
+"Zarardan koru" gibi ölçülemeyen bir taahhüt yerine, bugün fiilen
+uygulanan ve ihlali tespit edilebilir dört kural:
+
+1. **Canlı sinyal yoluna dokunan hiçbir değişiklik doğrulama olmadan
+   commit edilmez.** Doğrulama = gerçek ölçüm (grep, canlı veri,
+   değişikliğin üretebileceği hata sınıflarına daraltılmış tsc),
+   varsayım değil. Ham tsc çıktısı bu repoda doğrulama sayılmaz —
+   node_modules eksikliğinden binlerce satır TS2307/TS7026 gürültüsü
+   üretir, gerçek hata içinde kaybolur. Kapsam Kural 0'la sınırlı
+   değil — sinyal/skor/risk zincirinde okunan her modül için geçerli.
+2. **Bir yorumun/açıklamanın iddiası, doğrulanmadan gerçek sayılmaz.**
+   Koda "muhtemelen böyledir" yazılmaz — ya doğrulanır ya da açıkça
+   "doğrulanmadı" diye işaretlenir.
+3. **Sistem emin değilse boş/varsayılan değer göstermez, emin olmadığını
+   söyler.** Sessiz fallback yerine görünür "bilinmiyor" durumu.
+4. **Açık bir soru cevaplanmadan sonraki adıma geçilmez.** Bir
+   doğrulama sorusu sorulduğunda, cevabı gelmeden diff hazırlanmaz ve
+   onay istenmez. Cevap gelmeden hazırlanan diff, cevabın yerine
+   geçmez.
+
+Bu maddeler denetlenebilir çünkü ihlal edildiklerinde somut olarak
+gösterilebilir (doğrulanmamış bir iddia, atlanmış bir tsc kontrolü,
+sessizce yutulan bir hata). "Zarardan koru" gösterilemez — bu yüzden
+CLAUDE.md'ye madde olarak eklenmedi.
+
+---
+
 ## 1. Proje Özeti
 
 **QUANTIX OS** — Next.js 15 tabanlı kripto vadeli işlem trading paneli.
