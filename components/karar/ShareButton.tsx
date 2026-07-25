@@ -2,22 +2,34 @@
 
 /**
  * SHARE BUTTON — /karar'daki aktif paritenin skor kartını panoya metin +
- * indirilen PNG olarak sunar. Her verdict'te çalışır (sadece GO değil) —
- * kart bilgilendirici bir çıktı.
+ * indirilen PNG olarak sunar, mümkünse ek olarak native paylaşım menüsünü
+ * de açar. Her verdict'te çalışır (sadece GO değil) — kart bilgilendirici
+ * bir çıktı.
  *
- * navigator.share() BİLİNÇLİ OLARAK YOK — dallanma da yok. Gerçek Android
- * cihazda doğrulandı: X'in Android uygulaması navigator.share({files,text})
- * ile paylaşılan dosyayı düşürüp SADECE metni alıyor — kullanıcı görseli hiç
- * göremiyor. Tek belirleyici (deterministic) akışa geçildi: panoya kopyala,
- * PNG indir, tek onay göster. Bunu geri koymadan önce bu notu oku.
+ * SIRA — garanti olan önce, best-effort olan sonra:
+ *   1. Panoya kopyala (senkron hazır metin, user-gesture bağlamı tazeyken —
+ *      navigator.clipboard.writeText() bazı tarayıcılarda bunu istiyor).
+ *   2. PNG üret (async).
+ *   3. HER DURUMDA indir — koşulsuz, dallanma yok. Bu GARANTİ yol.
+ *   4. navigator.canShare({files}) destekliyorsa navigator.share() dene —
+ *      bu BEST-EFFORT. Başarısız olursa (AbortError: kullanıcı menüyü
+ *      kapattı; NotAllowedError: user-activation düşmüş; başka bir hata)
+ *      SESSİZCE yutulur — dosya zaten indi, metin zaten kopyalandı,
+ *      kullanıcı hiçbir şey kaybetmedi. Hata toast'ı SADECE 2. adım (PNG
+ *      üretimi) başarısız olursa gösterilir.
  *
- * SIRA ÖNEMLİ: panoya yazma ÖNCE, PNG üretimi SONRA.
- * navigator.clipboard.writeText() bazı tarayıcılarda "user activation"
- * (kullanıcı hareketi) bağlamının hâlâ taze olmasını istiyor — PNG üretimi
- * async (canvas çizim + toBlob) olduğu için önce o çalışırsa, clipboard
- * çağrısı geldiğinde user-gesture bağlamı düşmüş olabilir ve izin sessizce
- * reddedilebilir. Metin senkron olarak hazır (shareData zaten hesaplı), o
- * yüzden ilk iş.
+ * navigator.share'in geçici user-activation istediği (~5sn) biliniyor —
+ * pano yazımı ve PNG üretimi beklendikten SONRA çağrıldığı için bu
+ * pencere düşmüş olabilir, bu yüzden 4. adım "best-effort" ve sıra
+ * BİLİNÇLİ: garanti olan (indirme) önce çalışıp bitiyor, paylaşım
+ * menüsü ek bir bonus, temel akışın önkoşulu değil.
+ *
+ * Gerçek Android cihazda doğrulanmış bulgu HÂLÂ geçerli ve değerli: X'in
+ * Android uygulaması navigator.share({files,text}) ile paylaşılan dosyayı
+ * düşürüp SADECE metni alıyor — kullanıcı görseli hiç göremiyor. Bu artık
+ * "share'i kaldır" gerekçesi değil, "indirme neden koşulsuz" gerekçesi:
+ * X gibi dosyayı düşüren bir uygulamaya paylaşılsa bile kullanıcının
+ * cihazında PNG zaten var, galeriden elle ekleyebilir.
  *
  * shareData TEK yerde (useMemo) hesaplanıyor — hem canvas'a çizilen kart
  * hem panoya kopyalanan metin AYNI objeden okuyor.
@@ -129,8 +141,11 @@ export function ShareButton({
         clipboardOk = false;
       }
 
-      // 2. SONRA PNG üret (async) ve indir.
+      // 2. PNG üret (async) — bu adım başarısız olursa dış catch'e düşer,
+      // tek hata toast'ı burası içindir.
       const blob = await exportShareCardPng(shareData);
+
+      // 3. HER DURUMDA indir — koşulsuz, dallanma yok. GARANTİ yol.
       const fileName = `quantix-${pair}-${formatFileTimestamp(shareData.ts)}.png`;
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -138,15 +153,42 @@ export function ShareButton({
       a.download = fileName;
       a.click();
       // revoke'u hemen çağırmak bazı tarayıcılarda a.click()'in indirmeyi
-      // başlatmasıyla yarışıyor ve indirmeyi iptal edebiliyor — artık tek
-      // yol olduğu için (navigator.share yedeği yok) bir sonraki tick'e
-      // ertelendi.
+      // başlatmasıyla yarışıyor ve indirmeyi iptal edebiliyor — bir sonraki
+      // tick'e ertelendi.
       setTimeout(() => URL.revokeObjectURL(url), 0);
 
-      // 3. Tek onay.
-      toast(clipboardOk ? t("share.toastDownloadedCopied") : t("share.toastDownloaded"));
+      // 4. BEST-EFFORT paylaşım menüsü — bkz. dosya başı yorumu. Hiçbir
+      // hata dış catch'e sızmıyor, indirme/kopyalama zaten tamamlandı.
+      const file = new File([blob], fileName, { type: "image/png" });
+      const canUseShare =
+        typeof navigator.share === "function" &&
+        typeof navigator.canShare === "function" &&
+        navigator.canShare({ files: [file] });
+
+      // Menü GÖRÜNDÜ mü (opened) — tamamlandı mı (completed) değil. Ekranı
+      // bir kez kaplamışsa (kullanıcı görüp kapatmış olsa bile, AbortError)
+      // ayrı bir toast'a gerek yok. Hiç görünmediyse (canUseShare false,
+      // veya NotAllowedError gibi görünmeden başarısız olduysa) kullanıcının
+      // GÖRDÜĞÜ tek onay toast olmalı.
+      let opened = false;
+      if (canUseShare) {
+        try {
+          await navigator.share({ files: [file], text: shareText });
+          opened = true; // tamamlandı — kesinlikle göründü
+        } catch (err) {
+          if (err instanceof Error && err.name === "AbortError") {
+            opened = true; // göründü, kullanıcı kapattı
+          }
+          // NotAllowedError veya başka bir sebep — muhtemelen hiç
+          // görünmedi (user-activation düşmüştü), sessizce yutulur.
+        }
+      }
+
+      if (!opened) {
+        toast(clipboardOk ? t("share.toastDownloadedCopied") : t("share.toastDownloaded"));
+      }
     } catch (err) {
-      console.warn("[ShareButton] paylaşım başarısız:", err);
+      console.warn("[ShareButton] PNG üretimi başarısız:", err);
       toast.error(t("share.toastError"));
     } finally {
       setBusy(false);
