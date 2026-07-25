@@ -46,11 +46,19 @@ export interface ComposeInput {
   openPositions: ScoreInput["openPositions"];
   drawdownProtocol: ScoreInput["drawdownProtocol"];
   trades: ScoreInput["trades"];
-  /** S/R modifier (paket #5a output) - şimdilik 0, sonraki paketlerde compute */
+  /** S/R modifier (paket #5a output) — zorunlu alan, varsayılanı YOK. Canlı
+   *  çağıranlar (useScoreEngine.ts, signalEngine.ts) srResult.modifier ×
+   *  SR_SCALE_FACTOR gerçek değerini geçiyor; backtest/engine.ts de aynı
+   *  hesabı bar bazında yapıyor. "0" burada bir varsayılan değil. */
   srModifier: number;
-  /** Sweep (paket #5b) - şimdilik no sweep */
+  /** Sweep (paket #5b) — zorunlu alan, varsayılanı YOK. useScoreEngine.ts ve
+   *  signalEngine.ts gerçek sweepDetection sonucunu geçiyor; backtest/
+   *  engine.ts kasıtlı olarak sabit {type:null, strength:0} kullanıyor
+   *  (yorumla işaretli, "no sweep" genel varsayılan değil). */
   sweep15m: ScoreInput["sweep15m"];
-  /** Time quality - şimdilik full quality */
+  /** Time quality — zorunlu alan, varsayılanı YOK. Her canlı çağıran
+   *  computeTimeQuality(now)'un gerçek sonucunu geçiyor, "full quality"
+   *  sabit bir varsayılan değil. */
   timeQuality: ScoreInput["timeQuality"];
   /** Şu an (epoch ms) */
   now: number;

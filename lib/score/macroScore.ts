@@ -1,10 +1,24 @@
 /**
  * MACRO SCORE (GENİŞLETİLMİŞ) — F&G + ABD borsaları (S&P500/NASDAQ proxy) + DXY.
  *
- * DURUM: Bu dosya HENÜZ orchestrator.ts/composeScoreInput.ts'e BAĞLANMADI.
+ * DURUM: Bu dosya bir ARA DENENDİ, SONRA BİLİNÇLİ OLARAK REVERTE EDİLDİ.
+ * commit 0e4bba7 bu modülü orchestrator.ts'e bağlamıştı (calculateMacroScore,
+ * BASE_MAX.macro 7→8). Merge commit 341c2fb bu wiring'i main'e almadan geri
+ * çıkardı — sebep: signalEngine.ts (Telegram sinyalleri) yeni macro modelini
+ * beslemiyordu, bu yüzden nötr senaryolarda (örn. F&G=45/LONG) macro
+ * alt-skoru sessizce %100'den %75'e düşüyordu (341c2fb'de doğrulanmış).
  * scorers.ts → scoreMacro() (7 pts, sadece F&G) hâlâ tek aktif MACRO
- * kaynağı — orada HİÇBİR EŞİK DEĞİŞTİRİLMEDİ. Bu dosya sadece yeni
- * building block'ları sağlıyor, canlı skor hesabına henüz etkisi yok.
+ * kaynağı — orada HİÇBİR EŞİK DEĞİŞTİRİLMEDİ. Bu dosya DORMANT: tanımlı
+ * ama hiçbir yerden çağrılmıyor, canlı skor hesabına etkisi yok. Silinmedi
+ * çünkü isUSMarketOpen() lib/hooks/useEquityIndexPoller.ts tarafından
+ * (skor motoruyla ilgisiz, piyasa-kapalıyken-fetch-atlama optimizasyonu
+ * için) ayrıca kullanılıyor.
+ *
+ * AÇIK KARAR (341c2fb'den beri bekliyor, henüz verilmedi): (A) signalEngine.ts
+ * de yeni macro modelini besleyecek şekilde güncellenip wiring yeniden
+ * kurulsun, veya (B) formül sabitlenip mevcut scoreMacro() öylece kalsın.
+ * Hangisi seçilirse seçilsin, test coverage (macro-alignment-gate testleri
+ * o turda main'e alınmamıştı) eklenmeden bağlanmamalı.
  *
  * fgScore burada scoreMacro()'nun AYNI bant mantığını (30-60 healthy,
  * <20/>80 extreme, yön-bağımlı contrarian ödül) kullanır — sadece FG_RESCALE

@@ -23,7 +23,7 @@ const CATEGORIES: Array<{
   { key: "bb", labelKey: "score.categories.bb", max: 10 },
   { key: "vwap", labelKey: "score.categories.vwap", max: 10 },
   { key: "funding", labelKey: "score.categories.funding", max: 8 },
-  { key: "macro", labelKey: "score.categories.macro", max: 8 },
+  { key: "macro", labelKey: "score.categories.macro", max: 7 },
 ];
 
 export function ScoreBreakdown({
