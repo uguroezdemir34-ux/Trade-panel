@@ -12,6 +12,9 @@
  *   - seenIds: Set (dedup için)
  *   - connectionState: 'idle' | 'connecting' | 'live' | 'reconnecting' | 'failed'
  *   - lastMessageAt: ms timestamp (heartbeat için)
+ *   - vpinConfigured: bucket boyutu vol24h'tan netleşene kadar false — bu
+ *     süre boyunca trade'ler buffer'a girer ama VPIN'e hiç ingest edilmez
+ *     (bkz. PairFeedState.vpinConfigured doc'u, tradeFeedStore.ts ingest()).
  */
 
 import type { Pair } from "@/lib/constants/pairs";
@@ -46,6 +49,15 @@ export interface PairFeedState {
   lastError: string | null;
   /** Kalıcı VPIN state — fresh trade'lerle artar, render'lar arası korunur */
   vpinState: VpinState;
+  /**
+   * Bucket boyutu vol24h'tan netleşti mi (bkz. tradeFeedStore.ts ingest()).
+   * false iken gelen trade'ler buffer'a girer (CVD/tape reader etkilenmez)
+   * ama VPIN'e HİÇ ingest edilmez — "uydurma" bir bucket boyutuyla
+   * sayılmasın diye (chat'te karar verildi, ingestTrades() bu bayrağı okur).
+   * UI, VPIN'in "hesaplanıyor" değil "vol24h bekleniyor" durumunda olduğunu
+   * bu alandan ayırt edebilir.
+   */
+  vpinConfigured: boolean;
 }
 
 /** Per-pair buffer kapasitesi. */
@@ -69,6 +81,7 @@ export function createPairFeedState(
     lastMessageAt: null,
     lastError: null,
     vpinState: createVpinState(pair),
+    vpinConfigured: false,
   };
 }
 
@@ -106,8 +119,11 @@ export function ingestTrades(
   // 3. Dedup
   const { fresh, newIds } = dedupeTrades(state.seenIds, parsed);
 
-  // 4. VPIN — fresh (dedup sonrası) trade'lerle incremental güncelle; seenIds koruması çift ingest'i engeller
-  const newVpinState = fresh.length > 0
+  // 4. VPIN — SADECE vpinConfigured true ise ingest edilir (bkz. tradeFeed.ts
+  // header'ı + PairFeedState.vpinConfigured doc'u). false iken bu trade'ler
+  // VPIN'e hiç girmez, buffer'a (adım 5) girmeye devam eder — ring buffer/CVD
+  // tamamen bağımsız, vol24h'ın gelip gelmediğinden etkilenmez.
+  const newVpinState = state.vpinConfigured && fresh.length > 0
     ? ingestTradesIntoVpin(state.vpinState, fresh)
     : state.vpinState;
 
@@ -125,6 +141,7 @@ export function ingestTrades(
     lastMessageAt: now,
     lastError: null,
     vpinState: newVpinState,
+    vpinConfigured: state.vpinConfigured,
   };
 }
 

@@ -140,19 +140,31 @@ export function FlowAlignmentRow({ flow }: Props) {
             />
           )}
 
-          {/* Smart Money (VPIN) toxicity rozeti */}
-          {flow.flowVerdict.vpin && flow.flowVerdict.vpin.ready && (
-            <DetailRow
-              label={t("karar.flowSmartMoney")}
-              value={`${flow.flowVerdict.vpin.toxicity.toUpperCase()} ${flow.flowVerdict.vpin.vpin.toFixed(2)}`}
-              tone={
-                flow.flowVerdict.vpin.toxicity === "toxic" || flow.flowVerdict.vpin.toxicity === "extreme"
-                  ? "down"
-                  : flow.flowVerdict.vpin.toxicity === "warning"
-                  ? "warn"
-                  : "neutral"
-              }
-            />
+          {/* Smart Money (VPIN) toxicity rozeti — ready değilse de SESSİZCE
+              gizlenmiyor artık: configured'a göre "vol24h bekleniyor" ya da
+              "hesaplanıyor" gösteriliyor (chat'te karar verildi — teşhis
+              edilemeyen sessiz boşluk, düzelttiğimiz vol24h bug'ıyla aynı
+              aileden sayıldı). */}
+          {flow.flowVerdict.vpin && (
+            flow.flowVerdict.vpin.ready ? (
+              <DetailRow
+                label={t("karar.flowSmartMoney")}
+                value={`${flow.flowVerdict.vpin.toxicity.toUpperCase()} ${flow.flowVerdict.vpin.vpin.toFixed(2)}`}
+                tone={
+                  flow.flowVerdict.vpin.toxicity === "toxic" || flow.flowVerdict.vpin.toxicity === "extreme"
+                    ? "down"
+                    : flow.flowVerdict.vpin.toxicity === "warning"
+                    ? "warn"
+                    : "neutral"
+                }
+              />
+            ) : (
+              <DetailRow
+                label={t("karar.flowSmartMoney")}
+                value={flow.flowVerdict.vpin.configured ? t("karar.flowComputing") : t("karar.flowVpinWaiting")}
+                tone="neutral"
+              />
+            )
           )}
 
           {/* Funding Bias — yön-agnostik, macroStore ham funding rate'inden */}

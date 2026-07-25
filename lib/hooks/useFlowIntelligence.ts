@@ -51,6 +51,10 @@ export function useFlowIntelligence(
   const feed = useTradeFeedStore(selectFeed(pair));
   const trades = feed?.buffer?.items ?? EMPTY_TRADES;
   const vpinState = feed?.vpinState;
+  // feed hiç yoksa (pair desteklenmiyor) true varsayılan — vpinState zaten
+  // undefined olacağı için computeVpinResult hiç çağrılmayacak, bu değerin
+  // önemi yok o durumda.
+  const vpinConfigured = feed?.vpinConfigured ?? true;
   const candles1hRaw = useCandleStore((s) => s.candles[`${pair}_1h`]);
   const candles1h = candles1hRaw ?? EMPTY_CANDLES;
   const livePriceRaw = useMarketStore((s) => s.prices[pair]?.last ?? null);
@@ -77,7 +81,8 @@ export function useFlowIntelligence(
       vpinState,
       Date.now(),
       prebuiltLiqMap,
+      vpinConfigured,
     );
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pair, signalDirection, trades, candles1h, livePrice, liqEvents, vpinState]);
+  }, [pair, signalDirection, trades, candles1h, livePrice, liqEvents, vpinState, vpinConfigured]);
 }

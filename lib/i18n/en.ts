@@ -160,6 +160,7 @@ export const en: Dictionary = {
     snapshots: "snapshots",
     flowPreparing: "Flow Intelligence: loading...",
     flowComputing: "Computing...",
+    flowVpinWaiting: "Waiting for volume data...",
     flowNoDivergence: "None (aligned)",
     flowZonesNearby: "zones nearby",
     flowZonesFar: "Far",

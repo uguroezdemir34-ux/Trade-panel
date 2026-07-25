@@ -160,6 +160,7 @@ export const tr: Dictionary = {
     snapshots: "anlık görüntü",
     flowPreparing: "Flow Intelligence: hazırlanıyor...",
     flowComputing: "Hesaplanıyor...",
+    flowVpinWaiting: "Hacim verisi bekleniyor...",
     flowNoDivergence: "Yok (uyumlu)",
     flowZonesNearby: "zone yakın",
     flowZonesFar: "Uzak",

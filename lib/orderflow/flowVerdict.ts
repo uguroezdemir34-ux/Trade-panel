@@ -125,18 +125,26 @@ function isDivergenceVeto(
 /**
  * Ana fonksiyon: trade'ler + sinyal yönü → FlowVerdict.
  *
- * @param vpinState Opsiyonel — VPIN engine state'i (varsa multiplier eklenir)
+ * @param vpinState VPIN engine state'i (yoksa `undefined` — açıkça geçilmeli)
+ * @param vpinConfigured Bucket boyutu vol24h'tan netleşti mi (bkz.
+ *   PairFeedState.vpinConfigured). BİLEREK varsayılan değeri YOK (chat'te
+ *   karar verildi, bkz. computeVpinResult()'taki aynı gerekçe) — `now` ve
+ *   `vpinState` de bu yüzden zorunlu hale getirildi: TypeScript "opsiyonel
+ *   parametreden sonra zorunlu parametre olamaz" kuralı gereği, vpinConfigured
+ *   zorunlu olunca ondan ÖNCEKİ hiçbir parametre opsiyonel/varsayılanlı
+ *   kalamıyordu — bu yan etki değil, dilin kendi kısıtı.
  */
 export function computeFlowVerdict(
   pair: Pair,
   trades: readonly Trade[],
   signalDirection: SignalDirection,
-  now: number = Date.now(),
-  vpinState?: VpinState,
+  now: number,
+  vpinState: VpinState | undefined,
+  vpinConfigured: boolean,
 ): FlowVerdict {
   const cvd = computeCvdMultiFrame(pair, trades, now);
   const divergence = detectMultiFrameDivergence(pair, trades, now);
-  const vpin = vpinState ? computeVpinResult(vpinState) : null;
+  const vpin = vpinState ? computeVpinResult(vpinState, vpinConfigured) : null;
 
   // VETO kontrolü ÖNCE — multi-frame divergence
   if (divergence.confluence && isDivergenceVeto(signalDirection, divergence.confluenceType)) {

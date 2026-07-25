@@ -368,7 +368,7 @@ describe("liquidationScoreAdjustment()", () => {
 
 describe("enrichWithFlowIntelligence()", () => {
   it("trades=0 + candles=0 → bypass, adj=0, vetoed=false", () => {
-    const r = enrichWithFlowIntelligence("BTC", "LONG", [], [], 50000, undefined, NOW);
+    const r = enrichWithFlowIntelligence("BTC", "LONG", [], [], 50000, undefined, NOW, undefined, true);
     expect(r.totalAdjustment).toBe(0);
     expect(r.vetoed).toBe(false);
     expect(r.confidenceMultiplier).toBe(1.0);
@@ -376,7 +376,7 @@ describe("enrichWithFlowIntelligence()", () => {
   });
 
   it("pair + direction pass-through", () => {
-    const r = enrichWithFlowIntelligence("ETH", "SHORT", [], [], 3000, undefined, NOW);
+    const r = enrichWithFlowIntelligence("ETH", "SHORT", [], [], 3000, undefined, NOW, undefined, true);
     expect(r.pair).toBe("ETH");
     expect(r.signalDirection).toBe("SHORT");
   });
@@ -386,19 +386,19 @@ describe("enrichWithFlowIntelligence()", () => {
     const trades = Array.from({ length: 50 }, (_, i) =>
       makeTrade("buy", 50_000, NOW - i * 10_000),
     );
-    const r = enrichWithFlowIntelligence("BTC", "LONG", trades, makeCandles(20), 50000, undefined, NOW);
+    const r = enrichWithFlowIntelligence("BTC", "LONG", trades, makeCandles(20), 50000, undefined, NOW, undefined, true);
     expect(r.totalAdjustment).toBeLessThanOrEqual(15);
     expect(r.totalAdjustment).toBeGreaterThanOrEqual(-15);
   });
 
   it("confidenceMultiplier 0.4-1.6 arasında", () => {
-    const r = enrichWithFlowIntelligence("BTC", "LONG", [], [], 50000, undefined, NOW);
+    const r = enrichWithFlowIntelligence("BTC", "LONG", [], [], 50000, undefined, NOW, undefined, true);
     expect(r.confidenceMultiplier).toBeGreaterThanOrEqual(0.4);
     expect(r.confidenceMultiplier).toBeLessThanOrEqual(1.6);
   });
 
   it("smc ve liqMap alanları tanımlı", () => {
-    const r = enrichWithFlowIntelligence("BTC", "LONG", [], [], 50000, undefined, NOW);
+    const r = enrichWithFlowIntelligence("BTC", "LONG", [], [], 50000, undefined, NOW, undefined, true);
     expect(r.smc).toBeDefined();
     expect(r.liqMap).toBeDefined();
     expect(r.flowVerdict).toBeDefined();

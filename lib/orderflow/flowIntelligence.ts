@@ -78,10 +78,14 @@ export interface FlowIntelligenceResult {
 /**
  * Pipeline'ı çalıştır — saf hesap.
  *
- * Tüm modüller opsiyonel (parametre verilmemişse skip edilir).
+ * VPIN dışındaki modüller değer verilmezse (undefined) skip edilir.
  *
- * @param vpinState VPIN engine state'i (opsiyonel)
+ * @param vpinState VPIN engine state'i (yoksa `undefined` — açıkça geçilmeli)
  * @param currentPrice Current spot price (liq map için)
+ * @param vpinConfigured Bucket boyutu vol24h'tan netleşti mi (bkz.
+ *   PairFeedState.vpinConfigured). BİLEREK varsayılan değeri YOK — bkz.
+ *   computeFlowVerdict()'teki aynı gerekçe (chat'te karar verildi); `now`
+ *   ve `prebuiltLiqMap` de aynı TypeScript kısıtı yüzünden zorunlu oldu.
  */
 export function enrichWithFlowIntelligence(
   pair: Pair,
@@ -89,9 +93,10 @@ export function enrichWithFlowIntelligence(
   trades: readonly Trade[],
   candles: readonly Candle[],
   currentPrice: number,
-  vpinState?: VpinState,
-  now: number = Date.now(),
-  prebuiltLiqMap?: LiquidationMap,
+  vpinState: VpinState | undefined,
+  now: number,
+  prebuiltLiqMap: LiquidationMap | undefined,
+  vpinConfigured: boolean,
 ): FlowIntelligenceResult {
   // Yetersiz veri → bypass (etki yok)
   if (trades.length === 0 && candles.length === 0) {
@@ -130,6 +135,7 @@ export function enrichWithFlowIntelligence(
     signalDirection,
     now,
     vpinState,
+    vpinConfigured,
   );
 
   // VETO ÖNCELİKLİ — diğer adjustment'ları engelle

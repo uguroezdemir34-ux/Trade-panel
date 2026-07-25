@@ -49,8 +49,12 @@ export function FlowMiniCards({ flow }: Props): React.ReactElement | null {
             </div>
           </>
         ) : vpin !== null ? (
-          /* vpinState var ama henüz warm-up (BTC/ETH, bucket < 10) */
-          <div className="text-[10px] font-mono text-text-t4 leading-tight">{t("karar.flowComputing")}</div>
+          /* vpinState var ama henüz ready değil — configured'a göre ayrım:
+             hâlâ vol24h bekleniyor mu (chat'te karar verildi, ayrı mesaj)
+             yoksa vol24h netleşti de bucket sayısı mı yetersiz (<10)? */
+          <div className="text-[10px] font-mono text-text-t4 leading-tight">
+            {vpin!.configured ? t("karar.flowComputing") : t("karar.flowVpinWaiting")}
+          </div>
         ) : (
           /* vpinState hiç yok — bu pair desteklenmiyor, sonsuz bekleme yerine boş */
           <div className="text-[10px] font-mono text-text-t4 leading-tight">—</div>

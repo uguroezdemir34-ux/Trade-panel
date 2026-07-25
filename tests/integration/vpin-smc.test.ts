@@ -236,7 +236,7 @@ describe("classifyToxicity()", () => {
 
 describe("computeVpinResult()", () => {
   it("empty state → not ready", () => {
-    const result = computeVpinResult(createVpinState("BTC"));
+    const result = computeVpinResult(createVpinState("BTC"), true);
     expect(result.ready).toBe(false);
     expect(result.vpin).toBe(0);
     expect(result.pair).toBe("BTC");
@@ -247,14 +247,14 @@ describe("computeVpinResult()", () => {
     let state = createVpinState("BTC", config);
     const trades = Array.from({ length: 10 }, () => makeTrade("buy", 100));
     state = ingestTradesIntoVpin(state, trades);
-    expect(computeVpinResult(state).ready).toBe(true);
+    expect(computeVpinResult(state, true).ready).toBe(true);
   });
 
   it("bucketCount matches closedBuckets.length", () => {
     const config = { bucketSizeUsd: 100, windowSize: 50 };
     let state = createVpinState("BTC", config);
     state = ingestTradesIntoVpin(state, [makeTrade("buy", 300)]);
-    const result = computeVpinResult(state);
+    const result = computeVpinResult(state, true);
     expect(result.bucketCount).toBe(state.closedBuckets.length);
   });
 });

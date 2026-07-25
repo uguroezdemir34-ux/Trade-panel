@@ -71,7 +71,7 @@ function bulkTrades(side: "buy" | "sell", count = 30): Trade[] {
 
 describe("computeFlowVerdict() — alignment", () => {
   it("boş trade listesi → neutral, adj=0, vetoed=false", () => {
-    const r = computeFlowVerdict("BTC", [], "LONG", NOW);
+    const r = computeFlowVerdict("BTC", [], "LONG", NOW, undefined, true);
     expect(r.alignment).toBe("neutral");
     expect(r.scoreAdjustment).toBe(0);
     expect(r.confidenceMultiplier).toBe(1.0);
@@ -82,7 +82,7 @@ describe("computeFlowVerdict() — alignment", () => {
 
   it("3/3 buy ağırlıklı trade + LONG → strong_align, adj=+10", () => {
     const trades = bulkTrades("buy", 30);
-    const r = computeFlowVerdict("BTC", trades, "LONG", NOW);
+    const r = computeFlowVerdict("BTC", trades, "LONG", NOW, undefined, true);
     expect(r.alignment).toBe("strong_align");
     expect(r.scoreAdjustment).toBe(10);
     expect(r.confidenceMultiplier).toBe(1.5);
@@ -90,32 +90,32 @@ describe("computeFlowVerdict() — alignment", () => {
 
   it("3/3 sell ağırlıklı trade + SHORT → strong_align", () => {
     const trades = bulkTrades("sell", 30);
-    const r = computeFlowVerdict("BTC", trades, "SHORT", NOW);
+    const r = computeFlowVerdict("BTC", trades, "SHORT", NOW, undefined, true);
     expect(r.alignment).toBe("strong_align");
     expect(r.scoreAdjustment).toBe(10);
   });
 
   it("3/3 buy ağırlıklı + SHORT → strong_oppose, adj=-10", () => {
     const trades = bulkTrades("buy", 30);
-    const r = computeFlowVerdict("BTC", trades, "SHORT", NOW);
+    const r = computeFlowVerdict("BTC", trades, "SHORT", NOW, undefined, true);
     expect(r.alignment).toBe("strong_oppose");
     expect(r.scoreAdjustment).toBe(-10);
     expect(r.confidenceMultiplier).toBe(0.5);
   });
 
   it("pair pass-through", () => {
-    const r = computeFlowVerdict("ETH", [], "LONG", NOW);
+    const r = computeFlowVerdict("ETH", [], "LONG", NOW, undefined, true);
     expect(r.pair).toBe("ETH");
     expect(r.signalDirection).toBe("LONG");
   });
 
   it("humanSummary boş değil", () => {
-    const r = computeFlowVerdict("BTC", [], "LONG", NOW);
+    const r = computeFlowVerdict("BTC", [], "LONG", NOW, undefined, true);
     expect(r.humanSummary.length).toBeGreaterThan(0);
   });
 
   it("cvd + divergence alanları dolu", () => {
-    const r = computeFlowVerdict("BTC", [], "LONG", NOW);
+    const r = computeFlowVerdict("BTC", [], "LONG", NOW, undefined, true);
     expect(r.cvd).toBeDefined();
     expect(r.divergence).toBeDefined();
   });
@@ -154,7 +154,7 @@ describe("computeFlowVerdict() — veto", () => {
 
   it("normal strong_align → vetoed=false", () => {
     const trades = bulkTrades("buy", 30);
-    const r = computeFlowVerdict("BTC", trades, "LONG", NOW);
+    const r = computeFlowVerdict("BTC", trades, "LONG", NOW, undefined, true);
     expect(r.vetoed).toBe(false);
   });
 });
@@ -166,13 +166,13 @@ describe("computeFlowVerdict() — veto", () => {
 describe("computeFlowVerdict() — scoreAdjustment sınırları", () => {
   it("adj ≤ +10 (strong_align max)", () => {
     const trades = bulkTrades("buy", 50);
-    const r = computeFlowVerdict("BTC", trades, "LONG", NOW);
+    const r = computeFlowVerdict("BTC", trades, "LONG", NOW, undefined, true);
     expect(r.scoreAdjustment).toBeLessThanOrEqual(10);
   });
 
   it("adj ≥ -10 (strong_oppose/veto min)", () => {
     const trades = bulkTrades("buy", 50);
-    const r = computeFlowVerdict("BTC", trades, "SHORT", NOW);
+    const r = computeFlowVerdict("BTC", trades, "SHORT", NOW, undefined, true);
     expect(r.scoreAdjustment).toBeGreaterThanOrEqual(-10);
   });
 });

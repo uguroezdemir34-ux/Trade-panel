@@ -160,7 +160,13 @@ function initialFeeds(): Record<Pair, PairFeedState> {
   const feeds: Partial<Record<Pair, PairFeedState>> = {};
   for (const p of PAIRS) {
     const feed = createPairFeedState(p);
-    feeds[p] = saved[p] ? { ...feed, vpinState: saved[p]! } : feed;
+    // saveVpinToStorage() SADECE bir bucket kapandığında yazıyor (aşağıda,
+    // ingest()'teki koşula bkz.) — yani storage'dan gelen HER state zaten
+    // en az bir kez gerçek (vol24h'tan resolve edilmiş) config'le ingest
+    // edilmiş demektir. vpinConfigured: true bu yüzden güvenli — yeniden
+    // resolve denemesi (ve olası bir yarı-dolu bucket'ı bozma riski) hiç
+    // tetiklenmez.
+    feeds[p] = saved[p] ? { ...feed, vpinState: saved[p]!, vpinConfigured: true } : feed;
   }
   return feeds as Record<Pair, PairFeedState>;
 }
@@ -176,20 +182,27 @@ export const useTradeFeedStore = create<TradeFeedStoreState>((set, get) => ({
     const current = get().feeds[pair];
     if (!current) return;
 
-    // Dinamik bucket: yalnızca tamamen boş VPIN state'inde seçilir.
-    // Koşul: hiç bucket kapanmamış VE mevcut bucket henüz trade almamış.
-    // → Bucket dolmaya başladıktan sonra config kilitlenir, değişmez.
-    // → SessionStorage'dan restore edilen state (closedBuckets.length > 0):
-    //   bu blok hiç çalışmaz, restore edilen config aynen kullanılır.
+    // Bucket boyutu HENÜZ netleşmediyse (vpinConfigured=false — her zaman
+    // bakir bir state'te, çünkü restore edilenler zaten true başlıyor,
+    // bkz. initialFeeds()), vol24h'ı dene. Netleşirse config resolve edilir
+    // VE vpinConfigured=true'ya çevrilir — bu andan sonra ingestTrades()
+    // VPIN'e ingest etmeye başlar (bkz. tradeFeed.ts). Netleşmezse
+    // (vol24h hâlâ yok) feedToIngest değişmeden kalır — trade buffer'a
+    // girer, VPIN'e hiç girmez (chat'te karar verildi: "uydurma" bir bucket
+    // boyutuyla saymaktansa hiç saymamak).
+    //
+    // NOT: totalVolumeUsd===0 kontrolü ARTIK YOK — vpinConfigured tek
+    // başına yeterli, çünkü artık config SADECE bu blokta, HENÜZ hiçbir
+    // trade ingest edilmemişken set ediliyor (ingestTrades() vpinConfigured
+    // false iken hiç ingest yapmıyor) — yarı-dolu bir bucket'ın boyutunu
+    // sonradan değiştirme riski yapısal olarak yok.
     let feedToIngest = current;
-    if (
-      current.vpinState.closedBuckets.length === 0 &&
-      current.vpinState.currentBucket.totalVolumeUsd === 0
-    ) {
+    if (!current.vpinConfigured) {
       const dynamicSize = computeDynamicBucketUsd(pair);
-      if (dynamicSize !== null && dynamicSize !== current.vpinState.config.bucketSizeUsd) {
+      if (dynamicSize !== null) {
         feedToIngest = {
           ...current,
+          vpinConfigured: true,
           vpinState: {
             ...current.vpinState,
             config: { ...current.vpinState.config, bucketSizeUsd: dynamicSize },

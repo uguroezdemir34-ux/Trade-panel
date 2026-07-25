@@ -84,6 +84,12 @@ export interface VpinResult {
   maxBuckets: number;
   /** Yeterli veri var mı? */
   ready: boolean;
+  /**
+   * Bucket boyutu vol24h'tan netleşti mi (bkz. PairFeedState.vpinConfigured,
+   * lib/orderflow/tradeFeed.ts). false ise "warming up" değil "vol24h
+   * bekleniyor" — ikisi farklı durumlar, humanReason bunu ayırt eder.
+   */
+  configured: boolean;
   /** İnsan-okunaklı özet */
   humanReason: string;
 }
@@ -321,8 +327,15 @@ export function classifyToxicity(vpin: number): ToxicityLevel {
 
 /**
  * VPIN result hesapla — UI/integration için tam paket.
+ *
+ * @param configured Bucket boyutu vol24h'tan netleşti mi (bkz.
+ *   PairFeedState.vpinConfigured). BİLEREK varsayılan değeri YOK — chat'te
+ *   karar verildi: "configured=true" varsayılanı, bu değeri geçmeyi
+ *   unutan bir çağıranın sessizce "netleşmiş" iddia etmesine yol açardı
+ *   (bugünün ana dersiyle aynı sınıf hata). Her çağıran tsc tarafından
+ *   bu kararı açıkça vermeye zorlanır.
  */
-export function computeVpinResult(state: VpinState): VpinResult {
+export function computeVpinResult(state: VpinState, configured: boolean): VpinResult {
   const minBucketsForReady = 10;
   const ready = state.closedBuckets.length >= minBucketsForReady;
 
@@ -333,11 +346,13 @@ export function computeVpinResult(state: VpinState): VpinResult {
     bucketCount: state.closedBuckets.length,
     maxBuckets: state.config.windowSize,
     ready,
-    humanReason: humanReasonForVpin(state.lastVpin, ready),
+    configured,
+    humanReason: humanReasonForVpin(state.lastVpin, ready, configured),
   };
 }
 
-function humanReasonForVpin(vpin: number, ready: boolean): string {
+function humanReasonForVpin(vpin: number, ready: boolean, configured: boolean): string {
+  if (!configured) return "VPIN waiting for volume data";
   if (!ready) return "VPIN warming up (insufficient data)";
   const tox = classifyToxicity(vpin);
   switch (tox) {
