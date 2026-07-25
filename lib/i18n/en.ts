@@ -296,6 +296,18 @@ export const en: Dictionary = {
       removed: "{pair} removed from watchlist",
     },
   },
+  share: {
+    button: "Share",
+    busy: "Preparing…",
+    disclaimer: "Not investment advice",
+    toastShared: "Shared",
+    toastSharedCopied: "Shared — text also copied",
+    toastDownloaded: "Image downloaded",
+    toastDownloadedCopied: "Image downloaded — text also copied",
+    toastError: "Share failed",
+    scoreWeightedNote: "regime-weighted",
+    categoriesRawLabel: "raw category scores",
+  },
   disclaimer: {
     title: "Risk Warning",
     subtitle: "Risk Disclosure",

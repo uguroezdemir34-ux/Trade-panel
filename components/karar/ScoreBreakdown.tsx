@@ -9,7 +9,9 @@
 import { useT } from "@/lib/i18n/context";
 import type { ScoreSubScores, ScoreReasons } from "@/lib/score/orchestrator";
 
-const CATEGORIES: Array<{
+/** ShareCard.tsx da aynı kategori/max eşlemesini kullanıyor — tek kaynak,
+ *  iki ayrı yerde aynı hesabın durması riski olmasın diye export edildi. */
+export const CATEGORIES: Array<{
   // macroBreakdown eklendiğinden beri ScoreSubScores'un tamamı sayısal değil
   // (bkz. lib/score/orchestrator.ts) — bar grafiği sadece sayısal alanları listeler.
   key: Exclude<keyof ScoreSubScores, "macroBreakdown">;

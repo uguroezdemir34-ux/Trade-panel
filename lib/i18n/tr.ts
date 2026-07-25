@@ -296,6 +296,18 @@ export const tr: Dictionary = {
       removed: "{pair} takipten çıkarıldı",
     },
   },
+  share: {
+    button: "Paylaş",
+    busy: "Hazırlanıyor…",
+    disclaimer: "Yatırım tavsiyesi değildir",
+    toastShared: "Paylaşıldı",
+    toastSharedCopied: "Paylaşıldı — metin de panoya kopyalandı",
+    toastDownloaded: "Görsel indirildi",
+    toastDownloadedCopied: "Görsel indirildi — metin de panoya kopyalandı",
+    toastError: "Paylaşım başarısız",
+    scoreWeightedNote: "rejime göre ağırlıklandırılmış",
+    categoriesRawLabel: "ham kategori skorları",
+  },
   disclaimer: {
     title: "Risk Uyarısı",
     subtitle: "Risk Bildirimi",

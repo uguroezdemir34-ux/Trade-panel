@@ -62,6 +62,7 @@ const VOL_REGIME_LABEL_KEY: Record<AtrRegime, string> = {
   extreme_expansion: "karar.regimeVolExtreme",
 };
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
+import { ShareButton } from "@/components/karar/ShareButton";
 import { ActiveBlockBadge } from "@/components/karar/ActiveBlockBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
 import { getScoreColor } from "@/lib/ui/scoreColor";
@@ -745,6 +746,9 @@ export default function KararPage() {
                       confidence={result.dirConfidence}
                     />
                     <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
+                    <div className="ml-auto">
+                      <ShareButton pair={activePair} result={result} price={livePrice} />
+                    </div>
                   </div>
 
                   {/* Aktif engel sebepleri — WAIT/NO iken, Detaylar'ı açmadan görünür */}

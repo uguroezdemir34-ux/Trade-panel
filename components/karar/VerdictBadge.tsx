@@ -12,10 +12,12 @@
 
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n/context";
+import {
+  deriveConfirmStructural,
+  type ConfirmStatus,
+} from "@/lib/store/signalConfirmStore";
 
 type Verdict = "go" | "wait" | "no";
-
-type ConfirmStatus = "pending" | "confirmed" | "unknown";
 
 /** ms → "4:12" biçimi. Negatif/0 → "0:00". */
 function formatCountdown(ms: number): string {
@@ -29,7 +31,9 @@ function formatCountdown(ms: number): string {
  * confirmPendingUntil/confirmConfirmedAt store'dan hiç dolmamışsa (sayfa
  * yenilenmiş, henüz ilk useSignalFirehose cycle'ı çalışmamış) durum
  * "unknown" — asla sessizce "confirmed" gibi davranılmaz (bkz. CLAUDE.md
- * §0.1 madde 3).
+ * §0.1 madde 3). Yapısal karar deriveConfirmStructural()'dan geliyor —
+ * ShareButton.tsx da AYNI fonksiyonu kullanıyor, iki ayrı yerde aynı
+ * kararın durması riski olmasın diye (bkz. signalConfirmStore.ts).
  */
 function useConfirmStatus(
   verdict: Verdict,
@@ -38,17 +42,9 @@ function useConfirmStatus(
   confirmedAt: number | null | undefined,
 ): { status: ConfirmStatus | null; remainingMs: number } {
   const active = verdict === "go" && trackingApplies;
-
-  // "now"a bağlı OLMAYAN, sadece prop'lardan türeyen yapısal durum — sayaç
-  // sadece bu "pending adayı" iken çalışsın diye (confirmed/unknown'da
-  // saniyede bir gereksiz render tetiklememesi için, bkz. review notu).
   const structural: ConfirmStatus | null = !active
     ? null
-    : confirmedAt != null
-    ? "confirmed"
-    : pendingUntil != null
-    ? "pending"
-    : "unknown";
+    : deriveConfirmStructural({ pendingUntil: pendingUntil ?? null, confirmedAt: confirmedAt ?? null });
 
   const [now, setNow] = useState<number>(() => Date.now());
   useEffect(() => {

@@ -50,3 +50,38 @@ export const useSignalConfirmStore = create<SignalConfirmState>((set) => ({
       return { entries: next };
     }),
 }));
+
+export type ConfirmStatus = "pending" | "confirmed" | "unknown";
+
+/**
+ * "now"a bağlı OLMAYAN yapısal durum — VerdictBadge.tsx (canlı, tick'li) ve
+ * ShareButton.tsx (tek seferlik, tıklama anı) AYNI kararı versin diye tek
+ * yerde. "pending" adayı gerçekten hâlâ gelecekte mi (pendingUntil > now),
+ * onu çağıran kendi "now"ıyla ayrıca kontrol etmeli — bkz. kullanım yerleri.
+ */
+export function deriveConfirmStructural(
+  entry: SignalConfirmEntry | undefined,
+): ConfirmStatus {
+  if (entry?.confirmedAt != null) return "confirmed";
+  if (entry?.pendingUntil != null) return "pending";
+  return "unknown";
+}
+
+/**
+ * Tam durum — verdict/demoMode/entry/now hepsi birlikte. trackingApplies
+ * false ise (demoMode) veya verdict "go" değilse null döner — rozet/kart
+ * o durumda hiç uygulanmaz.
+ */
+export function resolveConfirmStatus(
+  verdict: "go" | "wait" | "no",
+  trackingApplies: boolean,
+  entry: SignalConfirmEntry | undefined,
+  now: number,
+): ConfirmStatus | null {
+  if (verdict !== "go" || !trackingApplies) return null;
+  const structural = deriveConfirmStructural(entry);
+  if (structural !== "pending") return structural;
+  if (entry!.pendingUntil! > now) return "pending";
+  // süre doldu ama confirmedAt henüz gelmedi — bkz. deriveConfirmStructural yorumu
+  return "unknown";
+}
