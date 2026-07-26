@@ -31,6 +31,25 @@
  * canvas context'e vektör path/gradient olarak çiziyor. Hiçbir görsel
  * kaynak yüklenmiyor, dolayısıyla drawImage() hiç çağrılmıyor — taint
  * riski yapısal olarak yok.
+ *
+ * TEK ÇİZİM KODU, İKİ ÇAĞIRAN (kullanıcı kararı): bu fonksiyon SAF —
+ * hangi ortamda (tarayıcı/sunucu) çalıştığını bilmiyor, sadece verilen
+ * context'e çiziyor. lib/share/exportShareCard.ts (tarayıcı, gerçek
+ * CanvasRenderingContext2D) ve lib/share/exportShareCardServer.ts
+ * (sunucu, @napi-rs/canvas SKRSContext2D) ince sarmalayıcılar — context'i
+ * hazırlayıp bu fonksiyona geçiriyorlar. İki ayrı çizim kodu YOK, zamanla
+ * ayrışma riski yapısal olarak yok. `ShareCanvasContext` interface'i
+ * ikisinin de yapısal olarak sağladığı ortak alt küme.
+ *
+ * Font — IBM Plex Mono, @fontsource/ibm-plex-mono paketinden, İKİ TARAFA
+ * DA AYNI KAYNAKTAN (kullanıcı kararı — sistem fontuyla tarayıcı, marka
+ * fontuyla sunucu çizerse "tek çizim kodu" hedefi anlamsızlaşır, aynı kod
+ * iki farklı görüntü üretir). Fontsource self-host için tasarlanmış —
+ * kendi alan adından servis edilir, CDN bağımlılığı yok (Google Fonts CDN
+ * riski burada geçerli değil). IBM Plex Mono'nun gerçek ağırlıkları
+ * 100-700 (Thin→Bold) — bu dosyadaki 800/900 istekleri gerçek bir kesim
+ * değil, her iki ortamda da en yakın mevcut ağırlığa (700) düşer; kasıtlı
+ * bırakıldı, görsel tasarım bu diff'in konusu değil.
  */
 
 import type { Pair } from "@/lib/constants/pairs";
@@ -39,6 +58,56 @@ import type { ConfirmStatus } from "@/lib/store/signalConfirmStore";
 import { CATEGORIES } from "@/components/karar/ScoreBreakdown";
 import { getScoreColor } from "@/lib/ui/scoreColor";
 import { BRAND } from "@/lib/brand";
+
+/**
+ * renderShareCard()'ın ihtiyaç duyduğu Canvas 2D metodlarının/alanlarının
+ * DAR bir alt kümesi — hem gerçek DOM CanvasRenderingContext2D hem
+ * @napi-rs/canvas'ın SKRSContext2D'si davranışsal olarak bunu sağlıyor.
+ * Gradient dönüş tipi DOM'un CanvasGradient'ına kasıtlı olarak bağlanmadı
+ * (kendi minimal ShareGradient şekli) — napi-rs'in gradient nesnesi DOM
+ * tipiyle birebir eşleşmeyebilir, sadece addColorStop() kullanılıyor zaten.
+ *
+ * DÜZELTME (tsc ile doğrulandı): gerçek CanvasRenderingContext2D.fillStyle
+ * tipi `string | CanvasGradient | CanvasPattern` — CanvasPattern'de
+ * addColorStop yok, dolayısıyla bu union ShareGradient'a yapısal olarak
+ * UYMUYOR. Yani "cast gerekmiyor" iddiası yanlıştı — gerçek context'i
+ * çağıran iki ince sarmalayıcı (exportShareCard.ts, exportShareCardServer.ts)
+ * `as unknown as ShareCanvasContext` ile dar bir cast yapıyor. Bu bir
+ * "her ihtimalde güvenli" cast değil, dar ve doğrulanmış bir varsayıma
+ * dayanıyor: renderShareCard hiçbir yerde fillStyle/strokeStyle'a
+ * CanvasPattern ATAMIYOR (sadece string veya createLinearGradient/
+ * createRadialGradient dönüşü) — bu dosyadaki tüm ctx.fillStyle=/
+ * ctx.strokeStyle= çağrıları grep ile doğrulanabilir.
+ */
+export interface ShareGradient {
+  addColorStop(offset: number, color: string): void;
+}
+
+export interface ShareCanvasContext {
+  fillStyle: string | ShareGradient;
+  strokeStyle: string | ShareGradient;
+  font: string;
+  textAlign: string;
+  textBaseline: string;
+  globalAlpha: number;
+  lineWidth: number;
+  fillRect(x: number, y: number, w: number, h: number): void;
+  fillText(text: string, x: number, y: number): void;
+  measureText(text: string): { width: number };
+  beginPath(): void;
+  moveTo(x: number, y: number): void;
+  arcTo(x1: number, y1: number, x2: number, y2: number, r: number): void;
+  closePath(): void;
+  arc(x: number, y: number, r: number, start: number, end: number): void;
+  fill(): void;
+  stroke(): void;
+  save(): void;
+  restore(): void;
+  setLineDash(segments: number[]): void;
+  createLinearGradient(x0: number, y0: number, x1: number, y1: number): ShareGradient;
+  createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): ShareGradient;
+  translate(x: number, y: number): void;
+}
 
 export const SHARE_CARD_SIZE = 1080;
 
@@ -66,7 +135,12 @@ export interface ShareCardData {
   };
 }
 
-const CARD_FONT = 'ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace';
+/** İki tarafta da AYNI kaynaktan (@fontsource/ibm-plex-mono) — bkz. dosya
+ *  başı yorumu. Sistem monospace fallback zinciri, kayıtlı font bir sebeple
+ *  (henüz yüklenmedi, kayıt başarısız) kullanılamazsa görsel tamamen
+ *  bozulmasın diye kalıyor, birincil seçim değil. */
+export const CARD_FONT_FAMILY = "IBM Plex Mono";
+const CARD_FONT = `"${CARD_FONT_FAMILY}", ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace`;
 
 const VERDICT_COLORS: Record<"go" | "wait" | "no", { bg: string; fg: string }> = {
   go: { bg: "#0e7030", fg: "#eafff0" },
@@ -86,7 +160,7 @@ function font(size: number, weight = 400): string {
 
 /** Yuvarlatılmış dikdörtgen path — ctx.roundRect() modern tarayıcılarda var,
  *  ama elle çizmek eski WebView sürümlerinde de garanti çalışır. */
-function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number): void {
+function roundRectPath(ctx: ShareCanvasContext, x: number, y: number, w: number, h: number, r: number): void {
   ctx.beginPath();
   ctx.moveTo(x + r, y);
   ctx.arcTo(x + w, y, x + w, y + h, r);
@@ -98,7 +172,7 @@ function roundRectPath(ctx: CanvasRenderingContext2D, x: number, y: number, w: n
 
 /** public/quantix-logo.svg ile aynı görsel kimlik — vektör path/gradient,
  *  hiçbir görsel kaynak yüklenmiyor (bkz. dosya başı yorumu). */
-function drawLogo(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: number): void {
+function drawLogo(ctx: ShareCanvasContext, cx: number, cy: number, r: number): void {
   ctx.save();
   ctx.translate(cx - r, cy - r);
   const s = r / 100; // orijinal SVG 200x200 viewBox, yarıçap 100 birim
@@ -149,7 +223,7 @@ function drawLogo(ctx: CanvasRenderingContext2D, cx: number, cy: number, r: numb
   ctx.restore();
 }
 
-export function renderShareCard(ctx: CanvasRenderingContext2D, data: ShareCardData): void {
+export function renderShareCard(ctx: ShareCanvasContext, data: ShareCardData): void {
   const { verdict, confirmStatus } = data;
   const verdictColor = VERDICT_COLORS[verdict];
   const scoreBand = getScoreColor(data.score);

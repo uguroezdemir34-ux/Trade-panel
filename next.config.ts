@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
   env: {
     APP_VERSION: "2.0.0",
   },
+  // @napi-rs/canvas prebuilt native (.node) binary — Next.js'in bundle'a
+  // gömmeye çalışmaması gerekiyor, sunucu tarafında require ile olduğu
+  // gibi yüklenmeli (bkz. lib/share/exportShareCardServer.ts).
+  serverExternalPackages: ["@napi-rs/canvas"],
 };
 
 // Bundle analyzer — ANALYZE=true ile koşulur, normal build'de no-op.

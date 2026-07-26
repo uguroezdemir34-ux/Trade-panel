@@ -1,6 +1,14 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import "./globals.css";
+// Paylaşım kartı (lib/share/renderShareCard.ts) tarayıcı ve sunucu
+// tarafında AYNI kaynaktan font kullansın diye self-hosted — bkz.
+// exportShareCard.ts dosya başı yorumu. Global CSS olduğu için burada,
+// root layout'ta import edilmesi ZORUNLU (Next.js kısıtı).
+import "@fontsource/ibm-plex-mono/400.css";
+import "@fontsource/ibm-plex-mono/500.css";
+import "@fontsource/ibm-plex-mono/600.css";
+import "@fontsource/ibm-plex-mono/700.css";
 import { ClerkClientWrapper } from "@/lib/auth/ClerkClientWrapper";
 import { AppShell } from "@/components/layout/AppShell";
 import { I18nProvider } from "@/lib/i18n/context";
