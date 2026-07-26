@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
 
+// exportShareCardServer.ts'in ihtiyaç duyduğu dosyalar — her iki route da
+// (debug + telegram/signal) aynı setini istiyor, tek yerden tutuluyor.
+const SHARE_CARD_TRACED_FILES = [
+  "./node_modules/@expo-google-fonts/ibm-plex-mono/400Regular/IBMPlexMono_400Regular.ttf",
+  "./node_modules/@expo-google-fonts/ibm-plex-mono/500Medium/IBMPlexMono_500Medium.ttf",
+  "./node_modules/@expo-google-fonts/ibm-plex-mono/600SemiBold/IBMPlexMono_600SemiBold.ttf",
+  "./node_modules/@expo-google-fonts/ibm-plex-mono/700Bold/IBMPlexMono_700Bold.ttf",
+  "./public/quantix-logo.png",
+];
+
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
@@ -31,7 +41,8 @@ const nextConfig: NextConfig = {
   // çağrıldığında webpack modülü grafiğe eklemiyor, bu da Vercel'de
   // runtime çözümlemesini başarısız kılıyordu — kullanıcı tespiti).
   // Not: exportShareCardServer.ts'i çağıran her yeni route bu anahtara
-  // kendi yolunu eklemeli (şu an sadece geçici debug route var).
+  // kendi yolunu eklemeli — /api/telegram/signal artık trade_opened
+  // sinyallerinde kart üretip fotoğraf olarak gönderiyor (bkz. route.ts).
   //
   // public/quantix-logo.png DA BURADA: aynı gerekçe font dosyalarıyla —
   // public/ Vercel'de ayrı bir statik CDN yoluyla sunuluyor, serverless
@@ -42,13 +53,8 @@ const nextConfig: NextConfig = {
   // §0.1 madde 2 gereği "doğrulandı" DENMİYOR, yalnızca tutarlı bir
   // varsayım uygulanıyor.
   outputFileTracingIncludes: {
-    "/api/debug/share-card": [
-      "./node_modules/@expo-google-fonts/ibm-plex-mono/400Regular/IBMPlexMono_400Regular.ttf",
-      "./node_modules/@expo-google-fonts/ibm-plex-mono/500Medium/IBMPlexMono_500Medium.ttf",
-      "./node_modules/@expo-google-fonts/ibm-plex-mono/600SemiBold/IBMPlexMono_600SemiBold.ttf",
-      "./node_modules/@expo-google-fonts/ibm-plex-mono/700Bold/IBMPlexMono_700Bold.ttf",
-      "./public/quantix-logo.png",
-    ],
+    "/api/debug/share-card": SHARE_CARD_TRACED_FILES,
+    "/api/telegram/signal": SHARE_CARD_TRACED_FILES,
   },
 };
 

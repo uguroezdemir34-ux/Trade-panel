@@ -209,6 +209,11 @@ async function fireSignal(
     score: result.score,
     reasonText,
     timestamp: Date.now(),
+    // /api/telegram/signal route'unun paylaşım kartı üretebilmesi için —
+    // bu fonksiyon SADECE GO + 5dk teyit sonrası çağrılıyor (bkz. dosya başı
+    // yorumu), yani route bunu her zaman "confirmed" bir sinyal olarak
+    // işleyebilir.
+    sub: result.sub,
   };
 
   // Telegram (Layer 1/2) + Discord + genel Webhook — tek merkezi orkestratör.

@@ -159,6 +159,118 @@ export async function sendTelegramMessage(
   return { ok: false, ...lastError, attempts: maxAttempts };
 }
 
+// ═══════════════ SEND PHOTO ═══════════════
+
+export interface SendPhotoInput {
+  /** PNG buffer — lib/share/exportShareCardServer.ts çıktısı. */
+  photo: Buffer;
+  /** Markdown V2 formatlı, Telegram sendPhoto caption limiti 1024 karakter
+   *  (sendMessage'ın 4096'sından farklı) — bu dosyadaki formatNotifyMessage
+   *  çıktıları tipik olarak bunun çok altında, ayrıca kısaltma YAPILMIYOR
+   *  (doğrulanmış bir risk değil, sadece gözlem). */
+  caption?: string;
+  filename?: string;
+  disableNotification?: boolean;
+}
+
+/**
+ * Fotoğraf gönder — sendTelegramMessage ile aynı retry/rate-limit deseni,
+ * ayrı fonksiyon (paylaşılan bir soyutlamaya çekilmedi — mevcut, test
+ * edilmiş sendTelegramMessage'a dokunma riski istenmedi).
+ */
+export async function sendTelegramPhoto(
+  config: TelegramConfig,
+  input: SendPhotoInput,
+  opts: ClientOptions = {},
+): Promise<SendMessageResult> {
+  const fetchImpl = opts.fetchFn ?? globalThis.fetch.bind(globalThis);
+  const maxAttempts = opts.maxAttempts ?? 3;
+  const timeoutMs = opts.timeoutMs ?? 8000;
+  const backoffBaseMs = opts.backoffBaseMs ?? 500;
+  const sleep = opts.sleepFn ?? defaultSleep;
+
+  const url = `${DEFAULT_BASE_URL}/bot${config.botToken}/sendPhoto`;
+
+  let lastError: Pick<SendMessageResult, "errorKind" | "errorMessage"> = {
+    errorKind: "unknown",
+  };
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), timeoutMs);
+
+    try {
+      const form = new FormData();
+      form.append("chat_id", config.chatId);
+      form.append("disable_notification", String(input.disableNotification ?? false));
+      if (input.caption) {
+        form.append("caption", input.caption);
+        form.append("parse_mode", "MarkdownV2");
+      }
+      form.append(
+        "photo",
+        new Blob([input.photo], { type: "image/png" }),
+        input.filename ?? "quantix-signal.png",
+      );
+
+      const res = await fetchImpl(url, {
+        method: "POST",
+        body: form,
+        signal: ctrl.signal,
+      });
+      clearTimeout(tid);
+
+      if (res.ok) {
+        const data = (await res.json()) as TelegramResponse;
+        if (data.ok && data.result) {
+          return {
+            ok: true,
+            messageId: String(data.result.message_id ?? ""),
+            attempts: attempt,
+          };
+        }
+        lastError = {
+          errorKind: classifyTelegramError(undefined, data.description),
+          errorMessage: data.description,
+        };
+        return { ok: false, ...lastError, attempts: attempt };
+      }
+
+      const errorBody = await safeReadJson(res);
+      const description = errorBody?.description;
+      const errorKind = classifyTelegramError(res.status, description);
+      lastError = { errorKind, errorMessage: description };
+
+      if (errorKind === "rate_limited" && attempt < maxAttempts) {
+        const retryAfterSec = errorBody?.parameters?.retry_after ?? 1;
+        await sleep(Math.min(retryAfterSec * 1000, 10000));
+        continue;
+      }
+      if (errorKind === "server_error" && attempt < maxAttempts) {
+        await sleep(backoffBaseMs * Math.pow(2, attempt - 1));
+        continue;
+      }
+
+      return { ok: false, ...lastError, attempts: attempt };
+    } catch (e) {
+      clearTimeout(tid);
+      const err = e as { name?: string; message?: string };
+      const isAbort = err.name === "AbortError";
+      lastError = {
+        errorKind: isAbort ? "timeout" : "network_error",
+        errorMessage: err.message ?? "Unknown",
+      };
+      if (attempt < maxAttempts) {
+        await sleep(backoffBaseMs * Math.pow(2, attempt - 1));
+        continue;
+      }
+      return { ok: false, ...lastError, attempts: attempt };
+    }
+  }
+
+  return { ok: false, ...lastError, attempts: maxAttempts };
+}
+
 // ═══════════════ HELPERS ═══════════════
 
 interface TelegramResponse {

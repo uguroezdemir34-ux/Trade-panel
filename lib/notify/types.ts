@@ -8,6 +8,7 @@
  */
 
 import type { Pair } from "@/lib/constants/pairs";
+import type { ScoreSubScores } from "@/lib/score/orchestrator";
 import type { TelegramConfig } from "./telegram/config";
 
 // ═══════════════ CHANNEL NAME ═══════════════
@@ -66,6 +67,10 @@ export interface NotifyMessage {
   pnlPct?: number;
   /** Mesaj zamanı (epoch ms) — channel format'lar */
   timestamp?: number;
+  /** 8 kategori ham skoru — sadece Telegram paylaşım kartı (route.ts →
+   *  exportShareCardPngServer) için, diğer channel'lar (Discord/Webhook)
+   *  yoksayar. trade_opened dışında hiçbir kind bunu doldurmuyor. */
+  sub?: ScoreSubScores;
 }
 
 // ═══════════════ RESULT ═══════════════
