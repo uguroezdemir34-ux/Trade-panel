@@ -23,17 +23,17 @@ const nextConfig: NextConfig = {
   // edilmiyor, dolayısıyla Next'in otomatik dosya izleme (file tracing)
   // mekanizması bunları serverless fonksiyon paketine DAHİL ETMEZ; yerelde
   // çalışır ama Vercel'de "dosya bulunamadı" hatası verir. Açıkça dahil
-  // ediyoruz — glob değil, kullanılan dosyaların tam yolu (paket ~14 dosya
-  // taşıyor, italik varyantlar dahil ~2MB; bize gereken beşi ~540KB).
-  // package.json DAHİL — resolveFontPackageRoot() paket kökünü
-  // require.resolve(paket + "/package.json") ile buluyor, bu dosya
-  // izlemede yoksa çözümleme deploy'da başarısız olur (yerelde sorun
-  // görünmez, çünkü node_modules zaten diskte tam halde durur).
+  // ediyoruz — glob değil, kullanılan dört dosyanın tam yolu (paket ~14
+  // dosya taşıyor, italik varyantlar dahil ~2MB; bize gereken dördü ~540KB).
+  // package.json ARTIK GEREKMİYOR: exportShareCardServer.ts artık paket
+  // kökünü require.resolve ile değil process.cwd() tabanlı sabit bir
+  // node_modules yoluyla buluyor (require.resolve şablon dizeyle
+  // çağrıldığında webpack modülü grafiğe eklemiyor, bu da Vercel'de
+  // runtime çözümlemesini başarısız kılıyordu — kullanıcı tespiti).
   // Not: exportShareCardServer.ts'i çağıran her yeni route bu anahtara
   // kendi yolunu eklemeli (şu an sadece geçici debug route var).
   outputFileTracingIncludes: {
     "/api/debug/share-card": [
-      "./node_modules/@expo-google-fonts/ibm-plex-mono/package.json",
       "./node_modules/@expo-google-fonts/ibm-plex-mono/400Regular/IBMPlexMono_400Regular.ttf",
       "./node_modules/@expo-google-fonts/ibm-plex-mono/500Medium/IBMPlexMono_500Medium.ttf",
       "./node_modules/@expo-google-fonts/ibm-plex-mono/600SemiBold/IBMPlexMono_600SemiBold.ttf",

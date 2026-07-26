@@ -36,6 +36,17 @@
  *   700Bold/IBMPlexMono_700Bold.ttf
  * Paket ayrıca italik varyantları da içeriyor (ör. 400Regular_Italic/) —
  * renderShareCard hiçbir yerde italik font kullanmıyor, kullanılmıyorlar.
+ *
+ * Kök çözümleme — require.resolve() DEĞİL, process.cwd() tabanlı düz fs
+ * yolu: önceki sürüm require.resolve(`${FONT_PACKAGE}/package.json`)
+ * kullanıyordu — şablon dize (template literal) ile çağrıldığı için
+ * webpack'in statik analizi bunu modül grafiğine ekleyemiyor, bu da
+ * Vercel'de runtime'da çözümlemenin başarısız olmasına yol açıyor
+ * (kullanıcı tespiti). outputFileTracingIncludes ile dahil edilen
+ * dosyalar serverless fonksiyonda proje köküne göre aynı dizin yapısıyla
+ * yerleşiyor, bu yüzden process.cwd() + sabit node_modules yolu doğru
+ * desen — package.json'a artık ihtiyaç yok, izleme listesinden çıkarıldı
+ * (dört .ttf kaldı).
  */
 
 import path from "node:path";
@@ -50,7 +61,7 @@ import {
 
 export class ShareCardServerExportError extends Error {}
 
-const FONT_PACKAGE = "@expo-google-fonts/ibm-plex-mono";
+const FONT_PACKAGE_ROOT = path.join(process.cwd(), "node_modules/@expo-google-fonts/ibm-plex-mono");
 
 const FONT_RELATIVE_PATHS = [
   "400Regular/IBMPlexMono_400Regular.ttf",
@@ -61,19 +72,6 @@ const FONT_RELATIVE_PATHS = [
 
 let fontsRegistered = false;
 
-function resolveFontPackageRoot(): string {
-  let pkgJsonPath: string;
-  try {
-    pkgJsonPath = require.resolve(`${FONT_PACKAGE}/package.json`);
-  } catch (err) {
-    throw new ShareCardServerExportError(
-      `${FONT_PACKAGE} bulunamadı (require.resolve başarısız) — npm install ` +
-        `çalıştı mı? Orijinal hata: ${err instanceof Error ? err.message : String(err)}`,
-    );
-  }
-  return path.dirname(pkgJsonPath);
-}
-
 /**
  * Her çağrıda yeniden diske bakmamak için process ömrü boyunca bir kez
  * çalışır (Next.js Node runtime'da modül instance'ı süreç boyunca canlı
@@ -82,9 +80,8 @@ function resolveFontPackageRoot(): string {
  */
 function registerFonts(): void {
   if (fontsRegistered) return;
-  const root = resolveFontPackageRoot();
   for (const rel of FONT_RELATIVE_PATHS) {
-    const fullPath = path.join(root, rel);
+    const fullPath = path.join(FONT_PACKAGE_ROOT, rel);
     let ok: boolean;
     try {
       ok = GlobalFonts.registerFromPath(fullPath, CARD_FONT_FAMILY);
