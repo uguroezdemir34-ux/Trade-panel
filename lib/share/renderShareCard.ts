@@ -55,7 +55,7 @@
 import type { Pair } from "@/lib/constants/pairs";
 import type { Direction, ScoreSubScores } from "@/lib/score/orchestrator";
 import type { ConfirmStatus } from "@/lib/store/signalConfirmStore";
-import { CATEGORIES } from "@/components/karar/ScoreBreakdown";
+import { CATEGORIES } from "@/lib/score/categories";
 import { getScoreColor } from "@/lib/ui/scoreColor";
 import { BRAND } from "@/lib/brand";
 

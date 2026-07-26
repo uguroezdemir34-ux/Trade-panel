@@ -8,25 +8,13 @@
 
 import { useT } from "@/lib/i18n/context";
 import type { ScoreSubScores, ScoreReasons } from "@/lib/score/orchestrator";
+import { CATEGORIES } from "@/lib/score/categories";
 
-/** ShareCard.tsx da aynı kategori/max eşlemesini kullanıyor — tek kaynak,
- *  iki ayrı yerde aynı hesabın durması riski olmasın diye export edildi. */
-export const CATEGORIES: Array<{
-  // macroBreakdown eklendiğinden beri ScoreSubScores'un tamamı sayısal değil
-  // (bkz. lib/score/orchestrator.ts) — bar grafiği sadece sayısal alanları listeler.
-  key: Exclude<keyof ScoreSubScores, "macroBreakdown">;
-  labelKey: string;
-  max: number;
-}> = [
-  { key: "trend", labelKey: "score.categories.trend", max: 25 },
-  { key: "adx", labelKey: "score.categories.adx", max: 15 },
-  { key: "rsi", labelKey: "score.categories.rsi", max: 10 },
-  { key: "vol", labelKey: "score.categories.vol", max: 15 },
-  { key: "bb", labelKey: "score.categories.bb", max: 10 },
-  { key: "vwap", labelKey: "score.categories.vwap", max: 10 },
-  { key: "funding", labelKey: "score.categories.funding", max: 8 },
-  { key: "macro", labelKey: "score.categories.macro", max: 7 },
-];
+/** Gerçek kaynak lib/score/categories.ts'e taşındı — bu dosya "use client"
+ *  olduğu için sunucu tarafı (renderShareCard.ts → exportShareCardServer.ts)
+ *  buradan import edemiyordu. Geriye dönük uyumluluk için yeniden export
+ *  ediliyor, içerik değişmedi. */
+export { CATEGORIES };
 
 export function ScoreBreakdown({
   sub,
