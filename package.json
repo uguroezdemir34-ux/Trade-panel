@@ -35,6 +35,7 @@
   "dependencies": {
     "eruda": "^3.4.1",
     "@capacitor/android": "^7.0.0",
+    "@expo-google-fonts/ibm-plex-mono": "^0.4.1",
     "@fontsource/ibm-plex-mono": "^5.2.5",
     "@napi-rs/canvas": "^0.1.65",
     "@capacitor/app": "^7.0.0",

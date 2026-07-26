@@ -6,30 +6,36 @@
  * değil) ve gerekçesi için bkz. next.config.ts serverExternalPackages
  * yorumu.
  *
- * FONT — HENÜZ DOĞRULANMADI: @napi-rs/canvas'ın GlobalFonts.registerFromPath()
- * fonksiyonu dokümante edilen tüm örneklerde .ttf/.otf alıyor, .woff2 değil
- * (bkz. node-woff2-rs — bu boşluk için var olan ayrı bir dönüştürme aracı,
- * .woff2'nin native desteklenmediğine güçlü bir kanıt). Fontsource paketleri
- * (tarayıcı tarafında kullanılan @fontsource/ibm-plex-mono) SADECE .woff/.woff2
- * dağıtıyor — kendi açık GitHub issue'ları (#371) bunu doğruluyor. Yani bu
- * npm paketinden sunucu için doğrudan kullanılabilir bir .ttf YOK.
+ * FONT KAYNAĞI — @expo-google-fonts/ibm-plex-mono: sıfır çalışma zamanı
+ * bağımlılığı olan, sadece statik .ttf dosyaları taşıyan bir npm paketi
+ * (Metro/React Native varsayımı yok — asset'ler düz dosya, bu yüzden Node
+ * fs ile doğrudan okunabilir). Önceki tasarımda (github.com/IBM/plex'ten
+ * elle indirilecek .ttf) bu sandbox'ın GitHub'a ağ erişiminin engelli
+ * olması net bir blokajdı; npm paketine geçiş bu blokajı ORTADAN KALDIRIR
+ * (paket npm install ile gelir, elle dosya eklemeye gerek yok) — ancak bu
+ * sandbox'ta registry.npmjs.org'a erişim de engelli (npm view/curl ile
+ * doğrulandı, 403), yani paketin GERÇEKTEN kurulup çalıştığı BEN tarafımdan
+ * burada doğrulanamadı. Vercel'in build ortamının npm registry'ye tam
+ * erişimi var, bu yüzden orada çalışması beklenir ama bu bir doğrulama
+ * DEĞİL, bir beklenti — CLAUDE.md §0.1 madde 2 gereği böyle işaretleniyor.
  *
- * Bu dosya IBM Plex Mono'nun resmi TTF kaynağından (github.com/IBM/plex)
- * gelecek dosyaları FONT_FILES altında bekliyor — bu sandbox'ta GitHub'a
- * ağ erişimi engellendiği için bu binary dosyalar buraya BENİM tarafımdan
- * eklenemedi. Dosyalar yoksa registerFonts() açıkça hata fırlatır (CLAUDE.md
- * §0.1 madde 3: sessiz fallback yok, "bilinmiyor/eksik" durumu görünür
- * olmalı) — sistemin sessizce sistem fontuna düşüp "çalışıyor" izlenimi
- * vermesi burada YANLIŞ olur, çünkü asıl hedef iki tarafın da AYNI fontu
- * kullandığını garanti etmekti.
+ * Not (tarayıcı tarafıyla küçük bir fark): tarayıcı hâlâ @fontsource/
+ * ibm-plex-mono kullanıyor (app/layout.tsx) — bu iki paket IBM Plex
+ * Mono'nun AYNI yukarı akış (upstream) OFL fontunun farklı ekipler
+ * tarafından yapılan iki ayrı npm repaketlemesi, birebir aynı npm kaynağı
+ * değil. Görsel olarak ayırt edilemez olması beklenir (ikisi de Google
+ * Fonts'un yayınladığı aynı font dosyalarından türüyor) ama bu da
+ * doğrulanmadı, sadece makul bir varsayım.
  *
- * Beklenen dosya yolları (github.com/IBM/plex resmi TTF export'u,
- * IBM-Plex-Mono/fonts/complete/ttf/ altında) — kesin dosya adları
- * indirilene kadar doğrulanmadı, en olası isimlendirme:
- *   lib/share/fonts/IBMPlexMono-Regular.ttf   (400)
- *   lib/share/fonts/IBMPlexMono-Medium.ttf    (500)
- *   lib/share/fonts/IBMPlexMono-SemiBold.ttf  (600)
- *   lib/share/fonts/IBMPlexMono-Bold.ttf      (700)
+ * Dosya yolları — kullanıcı paketi bizzat indirip içini listeleyerek
+ * doğruladı (bu BENİM tarafımdan bu sandbox'ta bağımsız doğrulanmadı,
+ * ama artık bir tahmin değil, kaynağı kullanıcının gerçek incelemesi):
+ *   400Regular/IBMPlexMono_400Regular.ttf
+ *   500Medium/IBMPlexMono_500Medium.ttf
+ *   600SemiBold/IBMPlexMono_600SemiBold.ttf
+ *   700Bold/IBMPlexMono_700Bold.ttf
+ * Paket ayrıca italik varyantları da içeriyor (ör. 400Regular_Italic/) —
+ * renderShareCard hiçbir yerde italik font kullanmıyor, kullanılmıyorlar.
  */
 
 import path from "node:path";
@@ -44,35 +50,48 @@ import {
 
 export class ShareCardServerExportError extends Error {}
 
-const FONT_DIR = path.join(process.cwd(), "lib/share/fonts");
+const FONT_PACKAGE = "@expo-google-fonts/ibm-plex-mono";
 
-const FONT_FILES = [
-  "IBMPlexMono-Regular.ttf",
-  "IBMPlexMono-Medium.ttf",
-  "IBMPlexMono-SemiBold.ttf",
-  "IBMPlexMono-Bold.ttf",
+const FONT_RELATIVE_PATHS = [
+  "400Regular/IBMPlexMono_400Regular.ttf",
+  "500Medium/IBMPlexMono_500Medium.ttf",
+  "600SemiBold/IBMPlexMono_600SemiBold.ttf",
+  "700Bold/IBMPlexMono_700Bold.ttf",
 ] as const;
 
 let fontsRegistered = false;
 
+function resolveFontPackageRoot(): string {
+  let pkgJsonPath: string;
+  try {
+    pkgJsonPath = require.resolve(`${FONT_PACKAGE}/package.json`);
+  } catch (err) {
+    throw new ShareCardServerExportError(
+      `${FONT_PACKAGE} bulunamadı (require.resolve başarısız) — npm install ` +
+        `çalıştı mı? Orijinal hata: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+  return path.dirname(pkgJsonPath);
+}
+
 /**
  * Her çağrıda yeniden diske bakmamak için process ömrü boyunca bir kez
  * çalışır (Next.js Node runtime'da modül instance'ı süreç boyunca canlı
- * kalır). Herhangi bir dosya eksikse veya kayıt başarısızsa AÇIKÇA fırlatır
- * — see dosya başı yorumu, sessiz fallback yok.
+ * kalır). Dosya eksikse veya kayıt başarısızsa AÇIKÇA fırlatır — sessiz
+ * fallback yok (CLAUDE.md §0.1 madde 3).
  */
 function registerFonts(): void {
   if (fontsRegistered) return;
-  for (const file of FONT_FILES) {
-    const fullPath = path.join(FONT_DIR, file);
+  const root = resolveFontPackageRoot();
+  for (const rel of FONT_RELATIVE_PATHS) {
+    const fullPath = path.join(root, rel);
     let ok: boolean;
     try {
       ok = GlobalFonts.registerFromPath(fullPath, CARD_FONT_FAMILY);
     } catch (err) {
       throw new ShareCardServerExportError(
-        `Font dosyası okunamadı: ${fullPath} — sunucu tarafı kart üretimi ` +
-          `için IBM Plex Mono .ttf dosyaları henüz eklenmedi (bkz. dosya başı ` +
-          `yorumu). Orijinal hata: ${err instanceof Error ? err.message : String(err)}`,
+        `Font dosyası okunamadı: ${fullPath} — orijinal hata: ` +
+          `${err instanceof Error ? err.message : String(err)}`,
       );
     }
     if (!ok) {
