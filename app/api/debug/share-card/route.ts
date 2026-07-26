@@ -48,7 +48,7 @@ const SAMPLE_DATA: ShareCardData = {
 
 export async function GET(): Promise<NextResponse> {
   try {
-    const png = exportShareCardPngServer(SAMPLE_DATA);
+    const png = await exportShareCardPngServer(SAMPLE_DATA);
     return new NextResponse(new Uint8Array(png), {
       status: 200,
       headers: {

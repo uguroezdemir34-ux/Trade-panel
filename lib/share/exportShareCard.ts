@@ -17,6 +17,11 @@
  * app/layout.tsx'te — Next.js global CSS'in yalnızca root layout'tan (ya
  * da _app'ten) import edilmesini şart koşuyor, bileşen olmayan bir lib
  * dosyasından import edilirse derleme patlayabilir.
+ *
+ * Logo — public/quantix-logo.png aynı-origin bir <img> olarak yükleniyor
+ * (bkz. renderShareCard.ts dosya başı yorumu: drawImage() taint riski
+ * TAŞIMIYOR, önceki bulgu foreignObject'e özgüydü). Süreç ömrü boyunca
+ * bir kez yüklenip modül düzeyinde önbelleğe alınıyor.
  */
 
 import {
@@ -25,6 +30,7 @@ import {
   CARD_FONT_FAMILY,
   type ShareCardData,
   type ShareCanvasContext,
+  type ShareImageSource,
 } from "./renderShareCard";
 
 export class ShareCardExportError extends Error {}
@@ -43,12 +49,26 @@ async function ensureFontsLoaded(): Promise<void> {
   await document.fonts.ready;
 }
 
+let cachedLogoImagePromise: Promise<HTMLImageElement> | null = null;
+
+function loadLogoImage(): Promise<HTMLImageElement> {
+  if (!cachedLogoImagePromise) {
+    cachedLogoImagePromise = new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.onerror = () => reject(new ShareCardExportError("Logo yüklenemedi: /quantix-logo.png"));
+      img.src = "/quantix-logo.png";
+    });
+  }
+  return cachedLogoImagePromise;
+}
+
 export async function exportShareCardPng(data: ShareCardData): Promise<Blob> {
   if (typeof document === "undefined") {
     throw new ShareCardExportError("exportShareCardPng sadece client'ta çalışır.");
   }
 
-  await ensureFontsLoaded();
+  const [, logoImage] = await Promise.all([ensureFontsLoaded(), loadLogoImage()]);
 
   const canvas = document.createElement("canvas");
   canvas.width = SHARE_CARD_SIZE;
@@ -62,7 +82,7 @@ export async function exportShareCardPng(data: ShareCardData): Promise<Blob> {
   // gerçek fillStyle/strokeStyle tipi CanvasPattern içeriyor (ShareGradient'a
   // yapısal olarak uymuyor), ama renderShareCard bu ikisine hiçbir yerde
   // CanvasPattern atamıyor — doğrulandı.
-  renderShareCard(ctx as unknown as ShareCanvasContext, data);
+  renderShareCard(ctx as unknown as ShareCanvasContext, data, logoImage as ShareImageSource);
 
   const blob = await new Promise<Blob | null>((resolve) => {
     canvas.toBlob(resolve, "image/png");

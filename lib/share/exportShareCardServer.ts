@@ -47,16 +47,23 @@
  * yerleşiyor, bu yüzden process.cwd() + sabit node_modules yolu doğru
  * desen — package.json'a artık ihtiyaç yok, izleme listesinden çıkarıldı
  * (dört .ttf kaldı).
+ *
+ * Logo — public/quantix-logo.png, aynı process.cwd() tabanlı sabit fs yolu
+ * ve aynı outputFileTracingIncludes deseni (bkz. next.config.ts): public/
+ * klasörü Next'in statik CDN sunumu için ayrı işleniyor, serverless
+ * fonksiyonun kendi fs'inden otomatik erişilebilir DEĞİL — font dosyalarıyla
+ * aynı sınıf sorun, aynı çözüm.
  */
 
 import path from "node:path";
-import { createCanvas, GlobalFonts } from "@napi-rs/canvas";
+import { createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
 import {
   renderShareCard,
   SHARE_CARD_SIZE,
   CARD_FONT_FAMILY,
   type ShareCardData,
   type ShareCanvasContext,
+  type ShareImageSource,
 } from "./renderShareCard";
 
 export class ShareCardServerExportError extends Error {}
@@ -70,7 +77,25 @@ const FONT_RELATIVE_PATHS = [
   "700Bold/IBMPlexMono_700Bold.ttf",
 ] as const;
 
+const LOGO_PATH = path.join(process.cwd(), "public/quantix-logo.png");
+
 let fontsRegistered = false;
+let cachedLogoImage: ShareImageSource | null = null;
+
+/** Süreç ömrü boyunca bir kez yüklenir (fontsRegistered ile aynı gerekçe).
+ *  Dosya bulunamazsa/okunamazsa AÇIKÇA fırlatır — sessiz fallback yok. */
+async function loadLogoImage(): Promise<ShareImageSource> {
+  if (cachedLogoImage) return cachedLogoImage;
+  try {
+    cachedLogoImage = await loadImage(LOGO_PATH);
+  } catch (err) {
+    throw new ShareCardServerExportError(
+      `Logo yüklenemedi: ${LOGO_PATH} — orijinal hata: ` +
+        `${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+  return cachedLogoImage;
+}
 
 /**
  * Her çağrıda yeniden diske bakmamak için process ömrü boyunca bir kez
@@ -100,15 +125,16 @@ function registerFonts(): void {
   fontsRegistered = true;
 }
 
-export function exportShareCardPngServer(data: ShareCardData): Buffer {
+export async function exportShareCardPngServer(data: ShareCardData): Promise<Buffer> {
   registerFonts();
+  const logoImage = await loadLogoImage();
 
   const canvas = createCanvas(SHARE_CARD_SIZE, SHARE_CARD_SIZE);
   const ctx = canvas.getContext("2d");
 
   // Dar cast — bkz. renderShareCard.ts'teki ShareCanvasContext yorumu ve
   // exportShareCard.ts'teki aynı cast (tarayıcı tarafı) için gerekçe.
-  renderShareCard(ctx as unknown as ShareCanvasContext, data);
+  renderShareCard(ctx as unknown as ShareCanvasContext, data, logoImage);
 
   return canvas.toBuffer("image/png");
 }

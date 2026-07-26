@@ -26,11 +26,24 @@
  * notu var. Kimse toplamaya kalkışmasın diye kart zaten toplanacağını
  * iddia etmiyor.
  *
- * Logo: SVG <img>/drawImage DEĞİL — public/quantix-logo.svg'nin görsel
- * kimliğini (halka + gradient "Q" + iç parlama + alt aksan çizgileri) aynı
- * canvas context'e vektör path/gradient olarak çiziyor. Hiçbir görsel
- * kaynak yüklenmiyor, dolayısıyla drawImage() hiç çağrılmıyor — taint
- * riski yapısal olarak yok.
+ * Logo — DÜZELTME: önceki sürüm public/quantix-logo.svg'yi (eski, artık
+ * kullanılmayan bir "Q" harfi placeholder'ı) vektör path/gradient olarak
+ * çiziyordu, "aynı görsel kimlik" iddiasıyla. Bu iddia YANLIŞTI — uygulamanın
+ * her yerinde gerçek marka logosu components/brand/QuantixLogo.tsx →
+ * public/quantix-logo.png (boğa kafası temalı madalyon illüstrasyonu),
+ * SVG'yle hiç eşleşmiyor (kullanıcı gerçek header'la kartı yan yana koyup
+ * fark etti — bkz. commit mesajı). Artık ctx.drawImage() ile gerçek PNG
+ * çiziliyor (dairesel clip ile, PNG'nin köşeleri şeffaf değil).
+ *
+ * drawImage() taint riski TAŞIMIYOR — daha önce bulunan "tainted canvas"
+ * hatası özellikle <foreignObject> içine HTML gömme tekniğinden
+ * kaynaklanıyordu (html-to-image'in çalışma prensibi). Aynı-origin bir
+ * <img>'i (tarayıcıda) veya dosyadan yüklenen bir Image'i (sunucuda,
+ * @napi-rs/canvas loadImage) drawImage() ile çizmek CORS/taint modeline
+ * hiç girmiyor — standart, güvenli bir işlem. Resim renderShareCard()
+ * ÇAĞRILMADAN ÖNCE ince sarmalayıcılar (exportShareCard.ts,
+ * exportShareCardServer.ts) tarafından ASENKRON yükleniyor — renderShareCard
+ * kendisi SENKRON kalıyor, sadece önceden yüklenmiş image handle'ını alıyor.
  *
  * TEK ÇİZİM KODU, İKİ ÇAĞIRAN (kullanıcı kararı): bu fonksiyon SAF —
  * hangi ortamda (tarayıcı/sunucu) çalıştığını bilmiyor, sadece verilen
@@ -83,6 +96,11 @@ export interface ShareGradient {
   addColorStop(offset: number, color: string): void;
 }
 
+/** Tarayıcıda HTMLImageElement, sunucuda @napi-rs/canvas'ın yüklenmiş
+ *  Image'i — ikisi de drawImage()'a doğrudan geçirilebilir, ortak bir DOM
+ *  tipine kasıtlı olarak bağlanmadı (aynı ShareGradient gerekçesi). */
+export type ShareImageSource = unknown;
+
 export interface ShareCanvasContext {
   fillStyle: string | ShareGradient;
   strokeStyle: string | ShareGradient;
@@ -101,12 +119,14 @@ export interface ShareCanvasContext {
   arc(x: number, y: number, r: number, start: number, end: number): void;
   fill(): void;
   stroke(): void;
+  clip(): void;
   save(): void;
   restore(): void;
   setLineDash(segments: number[]): void;
   createLinearGradient(x0: number, y0: number, x1: number, y1: number): ShareGradient;
   createRadialGradient(x0: number, y0: number, r0: number, x1: number, y1: number, r1: number): ShareGradient;
   translate(x: number, y: number): void;
+  drawImage(image: ShareImageSource, dx: number, dy: number, dw: number, dh: number): void;
 }
 
 export const SHARE_CARD_SIZE = 1080;
@@ -170,60 +190,21 @@ function roundRectPath(ctx: ShareCanvasContext, x: number, y: number, w: number,
   ctx.closePath();
 }
 
-/** public/quantix-logo.svg ile aynı görsel kimlik — vektör path/gradient,
- *  hiçbir görsel kaynak yüklenmiyor (bkz. dosya başı yorumu). */
-function drawLogo(ctx: ShareCanvasContext, cx: number, cy: number, r: number): void {
+/** Gerçek marka logosu (public/quantix-logo.png) — kare PNG'nin köşeleri
+ *  şeffaf değil, bu yüzden dairesel bir clip path içine çiziliyor (aynı
+ *  QuantixLogo.tsx'in tarayıcıda CSS rounded-full ile yaptığı, burada
+ *  canvas clip() ile). */
+function drawLogo(ctx: ShareCanvasContext, image: ShareImageSource, cx: number, cy: number, r: number): void {
   ctx.save();
-  ctx.translate(cx - r, cy - r);
-  const s = r / 100; // orijinal SVG 200x200 viewBox, yarıçap 100 birim
-
-  // Dış metalik halka
   ctx.beginPath();
-  ctx.arc(100 * s, 100 * s, 90 * s, 0, Math.PI * 2);
-  const ringGrad = ctx.createLinearGradient(0, 0, 200 * s, 200 * s);
-  ringGrad.addColorStop(0, "#888");
-  ringGrad.addColorStop(0.4, "#fff");
-  ringGrad.addColorStop(1, "#555");
-  ctx.strokeStyle = ringGrad;
-  ctx.globalAlpha = 0.5;
-  ctx.lineWidth = 2.5 * s;
-  ctx.stroke();
-  ctx.globalAlpha = 1;
-
-  // İç parlama (radyal gradient)
-  const glowGrad = ctx.createRadialGradient(100 * s, 85 * s, 0, 100 * s, 85 * s, 55 * s);
-  glowGrad.addColorStop(0, "rgba(255,213,128,0.9)");
-  glowGrad.addColorStop(1, "rgba(255,107,26,0)");
-  ctx.beginPath();
-  ctx.arc(100 * s, 85 * s, 55 * s, 0, Math.PI * 2);
-  ctx.fillStyle = glowGrad;
-  ctx.globalAlpha = 0.35;
-  ctx.fill();
-  ctx.globalAlpha = 1;
-
-  // "Q" harfi — gradient dolgulu
-  const qGrad = ctx.createLinearGradient(0, 0, 100 * s, 200 * s);
-  qGrad.addColorStop(0, "#FFB347");
-  qGrad.addColorStop(0.55, "#FF6B1A");
-  qGrad.addColorStop(1, "#CC4400");
-  ctx.fillStyle = qGrad;
-  ctx.font = `900 ${110 * s}px "SF Pro Display","Helvetica Neue","Arial Black",sans-serif`;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillText("Q", 100 * s, 125 * s);
-
-  // Alt aksan çizgileri
-  ctx.fillStyle = "rgba(255,107,26,0.7)";
-  roundRectPath(ctx, 55 * s, 155 * s, 90 * s, 2.5 * s, 1.25 * s);
-  ctx.fill();
-  ctx.fillStyle = "rgba(255,107,26,0.3)";
-  roundRectPath(ctx, 75 * s, 161 * s, 50 * s, 1.5 * s, 0.75 * s);
-  ctx.fill();
-
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(image, cx - r, cy - r, r * 2, r * 2);
   ctx.restore();
 }
 
-export function renderShareCard(ctx: ShareCanvasContext, data: ShareCardData): void {
+export function renderShareCard(ctx: ShareCanvasContext, data: ShareCardData, logoImage: ShareImageSource): void {
   const { verdict, confirmStatus } = data;
   const verdictColor = VERDICT_COLORS[verdict];
   const scoreBand = getScoreColor(data.score);
@@ -239,7 +220,7 @@ export function renderShareCard(ctx: ShareCanvasContext, data: ShareCardData): v
   ctx.textBaseline = "alphabetic";
 
   // ── Header: logo + marka + tarih ──
-  drawLogo(ctx, PAD + 36, PAD + 36, 36);
+  drawLogo(ctx, logoImage, PAD + 36, PAD + 36, 36);
   ctx.textAlign = "left";
   ctx.fillStyle = "#e8eaf4";
   ctx.font = font(34, 700);
