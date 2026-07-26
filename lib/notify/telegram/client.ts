@@ -164,11 +164,16 @@ export async function sendTelegramMessage(
 export interface SendPhotoInput {
   /** PNG buffer — lib/share/exportShareCardServer.ts çıktısı. */
   photo: Buffer;
-  /** Markdown V2 formatlı, Telegram sendPhoto caption limiti 1024 karakter
-   *  (sendMessage'ın 4096'sından farklı) — bu dosyadaki formatNotifyMessage
-   *  çıktıları tipik olarak bunun çok altında, ayrıca kısaltma YAPILMIYOR
-   *  (doğrulanmış bir risk değil, sadece gözlem). */
+  /** Telegram sendPhoto caption limiti 1024 karakter (sendMessage'ın
+   *  4096'sından farklı) — kısaltma YAPILMIYOR (doğrulanmış bir risk değil,
+   *  sadece gözlem, çağıranların ürettiği metinler tipik olarak çok altında). */
   caption?: string;
+  /** true ise caption MarkdownV2 olarak parse edilir — caption'ın escape
+   *  edilmiş olduğunu ÇAĞIRAN garanti etmeli (bkz. escapeMarkdownV2).
+   *  Varsayılan false: düz metin caption (ör. buildShareText çıktısı,
+   *  hiç escape edilmemiş, MarkdownV2 özel karakterleri — "." gibi —
+   *  içerebilir). */
+  markdownV2?: boolean;
   filename?: string;
   disableNotification?: boolean;
 }
@@ -205,7 +210,7 @@ export async function sendTelegramPhoto(
       form.append("disable_notification", String(input.disableNotification ?? false));
       if (input.caption) {
         form.append("caption", input.caption);
-        form.append("parse_mode", "MarkdownV2");
+        if (input.markdownV2) form.append("parse_mode", "MarkdownV2");
       }
       form.append(
         "photo",
