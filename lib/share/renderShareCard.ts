@@ -69,7 +69,6 @@ import type { Pair } from "@/lib/constants/pairs";
 import type { Direction, ScoreSubScores } from "@/lib/score/orchestrator";
 import type { ConfirmStatus } from "@/lib/store/signalConfirmStore";
 import { CATEGORIES } from "@/lib/score/categories";
-import { getScoreColor } from "@/lib/ui/scoreColor";
 import { BRAND } from "@/lib/brand";
 
 /**
@@ -168,6 +167,21 @@ const VERDICT_COLORS: Record<"go" | "wait" | "no", { bg: string; fg: string }> =
   no: { bg: "#9a0e0e", fg: "#ffecec" },
 };
 
+/** Büyük skor rakamının rengi — VERDICT'e göre, skor eşiğine göre DEĞİL
+ *  (kullanıcı kararı). Önceki sürüm getScoreColor() (skor eşiği bazlı 5-bant
+ *  sistem, lib/ui/scoreColor.ts) kullanıyordu; verdict ise motorun tamamına
+ *  bağlı (hard/soft bloklar dahil) — bloklanmış yüksek skorlu bir sinyalde
+ *  ikisi ayrışabiliyor, halka açık kartta yeşil bir sayı ile kırmızı "HAYIR"
+ *  pili yan yana yanıltıcı olurdu. Kartta tek renk otoritesi verdict.
+ *  Kategori barları (aşağıda, ayrı bir eksen — kategori bazlı doluluk oranı)
+ *  hiçbir zaman getScoreColor() kullanmıyordu, kendi satır-içi eşik mantığına
+ *  sahipler — o kasıtlı olarak değişmedi. */
+const VERDICT_SCORE_COLOR: Record<"go" | "wait" | "no", string> = {
+  go: "#3ee97d",
+  wait: "#ffcf5a",
+  no: "#ff3b3b",
+};
+
 const DIRECTION_ICON: Record<Direction, string> = { LONG: "▲", SHORT: "▼", NEUTRAL: "◆" };
 const DIRECTION_COLOR: Record<Direction, string> = { LONG: "#6ee89a", SHORT: "#f08080", NEUTRAL: "#a8b0bc" };
 
@@ -207,7 +221,6 @@ function drawLogo(ctx: ShareCanvasContext, image: ShareImageSource, cx: number, 
 export function renderShareCard(ctx: ShareCanvasContext, data: ShareCardData, logoImage: ShareImageSource): void {
   const { verdict, confirmStatus } = data;
   const verdictColor = VERDICT_COLORS[verdict];
-  const scoreBand = getScoreColor(data.score);
 
   // Arkaplan
   const bg = ctx.createLinearGradient(0, 0, 0, W);
@@ -298,7 +311,7 @@ export function renderShareCard(ctx: ShareCanvasContext, data: ShareCardData, lo
   y += pillH + 44 + 100;
   ctx.textAlign = "left";
   ctx.font = font(140, 900);
-  ctx.fillStyle = scoreBand.color;
+  ctx.fillStyle = VERDICT_SCORE_COLOR[verdict];
   const scoreText = String(Math.round(data.score));
   ctx.fillText(scoreText, PAD, y);
   const scoreWidth = ctx.measureText(scoreText).width;
