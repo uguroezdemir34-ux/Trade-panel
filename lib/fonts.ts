@@ -75,15 +75,24 @@ export const notoSansKR = Noto_Sans_KR({
   display: "swap",
 });
 
+// DÜZELTME 3 (gerçek build hatasıyla doğrulandı — bir önceki turun hatası:
+// SC/JP/KR'nin subset listesini beş fontun tamamına genellemek yanlıştı).
+// Her Noto Sans varyantının KENDİ ayrı "Available subsets" listesi var,
+// ortak tek bir set yok:
+//   Noto Sans Arabic     → arabic, latin, latin-ext, math, symbols
+//   Noto Sans Devanagari → devanagari, latin, latin-ext (sadece 3)
+// cyrillic İKİSİNDE DE geçersiz (SC/JP/KR'den farklı). math/symbols
+// bilinçli olarak dışarıda bırakıldı — script kapsamı zaten "arabic" ile
+// geliyor, ek ağırlık eklemenin bir gerekçesi yok.
 export const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ["cyrillic", "latin", "latin-ext", "vietnamese"],
+  subsets: ["arabic", "latin", "latin-ext"],
   weight: ["400", "500", "700"],
   variable: "--font-noto-sans-arabic",
   display: "swap",
 });
 
 export const notoSansDevanagari = Noto_Sans_Devanagari({
-  subsets: ["cyrillic", "latin", "latin-ext", "vietnamese"],
+  subsets: ["devanagari", "latin", "latin-ext"],
   weight: ["400", "500", "700"],
   variable: "--font-noto-sans-devanagari",
   display: "swap",
