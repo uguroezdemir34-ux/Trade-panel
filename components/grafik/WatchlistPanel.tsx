@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect, useRef, useCallback } from "react";
+import Image from "next/image";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
@@ -103,11 +104,17 @@ function CoinLogo({ pair, size = 44 }: { pair: string; size?: number }) {
   const [failed, setFailed] = useState(false);
   const logoOverride = LOGO_OVERRIDES[pair];
   const cmcId = CMC_IDS[pair];
-  const src   = logoOverride
+  // CMC PNG yolu next/image üzerinden (next.config.ts remotePatterns) —
+  // jsdelivr SVG yedek yolu BİLEREK next/image'a taşınmadı (üçüncü taraf
+  // SVG optimizasyonu dangerouslyAllowSVG gerektirir, XSS yüzeyini
+  // genişletmemek için ham <img> olarak bırakıldı, bkz. next.config.ts).
+  const usesCmcPng = !logoOverride && !!cmcId;
+  const src = logoOverride
     ? logoOverride
     : cmcId
       ? `https://s2.coinmarketcap.com/static/img/coins/64x64/${cmcId}.png`
       : `https://cdn.jsdelivr.net/gh/atomiclabs/cryptocurrency-icons@master/svg/color/${(CDN_OVERRIDES[pair] ?? pair.toLowerCase())}.svg`;
+  const iconSize = size - Math.round(size * 0.22);
 
   if (failed) {
     return (
@@ -136,14 +143,26 @@ function CoinLogo({ pair, size = 44 }: { pair: string; size?: number }) {
         padding: Math.round(size * 0.1),
       }}
     >
-      <img
-        src={src}
-        alt={pair}
-        width={size - Math.round(size * 0.22)}
-        height={size - Math.round(size * 0.22)}
-        onError={() => setFailed(true)}
-        className="object-contain"
-      />
+      {usesCmcPng ? (
+        <Image
+          src={src}
+          alt={pair}
+          width={iconSize}
+          height={iconSize}
+          onError={() => setFailed(true)}
+          className="object-contain"
+        />
+      ) : (
+        // eslint-disable-next-line @next/next/no-img-element -- jsdelivr SVG, next/image'a bilerek taşınmadı (yorum yukarıda)
+        <img
+          src={src}
+          alt={pair}
+          width={iconSize}
+          height={iconSize}
+          onError={() => setFailed(true)}
+          className="object-contain"
+        />
+      )}
     </div>
   );
 }

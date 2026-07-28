@@ -56,6 +56,22 @@ const nextConfig: NextConfig = {
     "/api/debug/share-card": SHARE_CARD_TRACED_FILES,
     "/api/telegram/signal": SHARE_CARD_TRACED_FILES,
   },
+  // WatchlistPanel'in CoinLogo'su — sadece CoinMarketCap PNG yolu (birincil,
+  // CMC ID eşleşen paritelerde). jsdelivr'dan gelen SVG yedek yolu BİLEREK
+  // dışarıda: next/image üçüncü taraf SVG'leri varsayılan olarak optimize
+  // etmiyor (images.dangerouslyAllowSVG gerektirir — SVG script içerebilir,
+  // dinamik bir CDN'den gelen SVG'ler için bu riski açmamak tercih edildi),
+  // o yol ham <img> olarak kalıyor. pathname dar tutuldu — gerçekte
+  // üretilen URL kalıbıyla birebir.
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "s2.coinmarketcap.com",
+        pathname: "/static/img/coins/64x64/**",
+      },
+    ],
+  },
 };
 
 // Bundle analyzer — ANALYZE=true ile koşulur, normal build'de no-op.
