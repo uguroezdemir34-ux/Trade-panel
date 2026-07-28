@@ -30,36 +30,51 @@ export const jetBrainsMono = JetBrains_Mono({
   display: "swap",
 });
 
+// DÜZELTME (gerçek üretim build hatasıyla doğrulandı, tahmin değil):
+// "chinese-simplified"/"japanese"/"korean"/"arabic"/"devanagari" bu next/font
+// paketleri için GEÇERSİZ subset adları — Vercel build log'u 5 fontun 5'inde
+// de aynı hatayı verdi ("Unknown subset '...' — Available subsets: cyrillic,
+// latin, latin-ext, vietnamese"). Script glyph'lerinin kendisi (Han/Hangul/
+// Arapça/Devanagari) subset seçimine bağlı DEĞİL — bu aileler zaten script'e
+// özel (adları bunu söylüyor), "subset" burada sadece EK Latin/Kiril
+// kapsamını kontrol ediyor. cyrillic BİLEREK dahil edildi (kullanıcının
+// tereddüt ettiği nokta) — RU, CLAUDE.md'nin 7 desteklenen dilinden biri ve
+// cyrillic gerçek hata mesajında geçerli seçenek olarak listelendi, çıkarmak
+// için sebep yok. HENÜZ DOĞRULANMADI: build başarılı olsa bile gerçek CJK/
+// Arapça/Devanagari metnin görsel olarak doğru render olduğu (tofu/□ değil)
+// canlıda kontrol edilmeli.
+const NOTO_SUBSETS = ["cyrillic", "latin", "latin-ext", "vietnamese"] as const;
+
 export const notoSansSC = Noto_Sans_SC({
-  subsets: ["latin", "chinese-simplified"],
+  subsets: [...NOTO_SUBSETS],
   weight: ["400", "500", "700"],
   variable: "--font-noto-sans-sc",
   display: "swap",
 });
 
 export const notoSansJP = Noto_Sans_JP({
-  subsets: ["latin", "japanese"],
+  subsets: [...NOTO_SUBSETS],
   weight: ["400", "500", "700"],
   variable: "--font-noto-sans-jp",
   display: "swap",
 });
 
 export const notoSansKR = Noto_Sans_KR({
-  subsets: ["latin", "korean"],
+  subsets: [...NOTO_SUBSETS],
   weight: ["400", "500", "700"],
   variable: "--font-noto-sans-kr",
   display: "swap",
 });
 
 export const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ["latin", "arabic"],
+  subsets: [...NOTO_SUBSETS],
   weight: ["400", "500", "700"],
   variable: "--font-noto-sans-arabic",
   display: "swap",
 });
 
 export const notoSansDevanagari = Noto_Sans_Devanagari({
-  subsets: ["latin", "devanagari"],
+  subsets: [...NOTO_SUBSETS],
   weight: ["400", "500", "700"],
   variable: "--font-noto-sans-devanagari",
   display: "swap",
