@@ -1,5 +1,8 @@
 "use client";
 
+import Image from "next/image";
+import quantixLogo from "@/public/quantix-logo.png";
+
 interface Props {
   size?: "sm" | "md" | "lg";
   alt?: string;
@@ -18,12 +21,16 @@ export function QuantixLogo({
 }: Props): React.ReactElement {
   const px = SIZES[size];
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src="/quantix-logo.png"
+    <Image
+      src={quantixLogo}
       alt={alt}
       width={px}
       height={px}
+      // Sadece "sm" (BrandHeader — tek kullanım yeri, header'da her
+      // sayfada üstte) LCP önceliği alıyor; "lg" (splash/waitlist)
+      // kasıtlı hariç — birden fazla görseli priority işaretlemek
+      // sinyali sulandırır.
+      priority={size === "sm"}
       className={`inline-block rounded-full ${className}`}
       style={{
         width: px,
