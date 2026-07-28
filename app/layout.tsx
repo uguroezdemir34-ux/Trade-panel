@@ -9,6 +9,7 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "@fontsource/ibm-plex-mono/600.css";
 import "@fontsource/ibm-plex-mono/700.css";
+import { fontVariables } from "@/lib/fonts";
 import { ClerkClientWrapper } from "@/lib/auth/ClerkClientWrapper";
 import { AppShell } from "@/components/layout/AppShell";
 import { I18nProvider } from "@/lib/i18n/context";
@@ -95,21 +96,8 @@ export default async function RootLayout({
               }}
             />
           )}
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link
-            rel="preconnect"
-            href="https://fonts.gstatic.com"
-            crossOrigin=""
-          />
-          {/* IBM Plex (Latin/Cyrillic) + Noto Sans families for CJK, Arabic, Devanagari.
-              JetBrains Mono: opsiyonel "cyber-terminal" tema varyantı için (bkz. globals.css) —
-              light/dark temalar hâlâ IBM Plex kullanıyor, bu sadece cyber-terminal seçilince aktif olur. */}
-          <link
-            href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&family=Noto+Sans+KR:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;500;700&family=Noto+Sans+Devanagari:wght@400;500;700&display=swap"
-            rel="stylesheet"
-          />
         </head>
-        <body className="bg-bg text-text-t1 font-sans antialiased">
+        <body className={`bg-bg text-text-t1 font-sans antialiased ${fontVariables}`}>
           <SonnerToaster />
           <ClerkClientWrapper>
             <I18nProvider>

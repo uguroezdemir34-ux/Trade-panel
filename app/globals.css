@@ -135,8 +135,9 @@
 [data-theme="cyber-terminal"] body,
 [data-theme="cyber-terminal"] .font-mono,
 [data-theme="cyber-terminal"] .font-sans {
-  font-family: "JetBrains Mono", "Noto Sans SC", "Noto Sans JP", "Noto Sans KR",
-    "Noto Sans Arabic", "Noto Sans Devanagari", ui-monospace, monospace !important;
+  font-family: var(--font-jetbrains-mono), var(--font-noto-sans-sc), var(--font-noto-sans-jp),
+    var(--font-noto-sans-kr), var(--font-noto-sans-arabic), var(--font-noto-sans-devanagari),
+    ui-monospace, monospace !important;
 }
 
 /*
