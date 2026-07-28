@@ -23,6 +23,7 @@ import {
   saveCache,
   cacheKey,
   CANDLE_LIMIT,
+  CANDLE_LIMIT_15M,
   CANDLE_LIMIT_1D,
 } from "@/lib/okx/candleFetch";
 import type { Candle, Timeframe } from "@/lib/okx/candles";
@@ -32,7 +33,7 @@ import type { Pair } from "@/lib/constants/pairs";
 const STALE_CACHE_MAX_AGE = 2 * 60 * 1000;
 
 const PRIORITY_TFS: Array<{ tf: Timeframe; limit: number }> = [
-  { tf: "15m", limit: CANDLE_LIMIT },
+  { tf: "15m", limit: CANDLE_LIMIT_15M },
   { tf: "1h",  limit: CANDLE_LIMIT },
   { tf: "4h",  limit: CANDLE_LIMIT },
   { tf: "1d",  limit: CANDLE_LIMIT_1D },
