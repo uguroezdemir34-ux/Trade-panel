@@ -1,0 +1,47 @@
+name: Typecheck
+
+# Dijital denetim raporu (§7 madde ~7) bulgusu: next.config.ts'te hem
+# typescript.ignoreBuildErrors hem eslint.ignoreDuringBuilds true —
+# Vercel build'i bozuk tip hatası içeren kodu deploy etmekten
+# alıkoymuyor. Bu workflow, CLAUDE.md §14'teki daraltılmış tsc
+# komutunu build'ten bağımsız, gerçek bir kapı olarak çalıştırır.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # Repoda hiçbir lockfile (package-lock.json/pnpm-lock.yaml/yarn.lock)
+      # commit edilmemiş (doğrulandı — .gitignore'da da adı geçmiyor,
+      # sebebi bilinmiyor) — npm ci lockfile ister, o yüzden npm install.
+      - name: Install dependencies
+        run: npm install
+
+      # CLAUDE.md §14'teki komutun birebir aynısı — node_modules
+      # gürültüsünü (TS7026/TS7006/TS2307/TS2503/TS7031/TS7053/TS2591/
+      # TS2339/TS2551) eleyip sadece gerçek hataları gösterir. Ham
+      # `grep -v ... | grep "error TS"` boru hattı, hata YOKKEN grep'in
+      # kendi "eşleşme bulunamadı" exit code'u (1) yüzünden CI'da yanlışlıkla
+      # "başarısız" sayılır — bu yüzden çıktı bir değişkene alınıp exit
+      # code'dan bağımsız, içerik boş mu diye kontrol ediliyor.
+      - name: TypeScript check (CLAUDE.md §14 filtresi)
+        run: |
+          RAW=$(npx tsc --noEmit 2>&1 || true)
+          FILTERED=$(echo "$RAW" | grep -v "TS7026\|TS7006\|TS2307\|TS2503\|TS7031\|TS7053\|TS2591\|TS2339\|TS2551" | grep "error TS" || true)
+          if [ -n "$FILTERED" ]; then
+            echo "$FILTERED"
+            echo "::error::Daraltılmış tsc kontrolünden gerçek hata(lar) geçti — CLAUDE.md §14."
+            exit 1
+          fi
+          echo "Daraltılmış tsc kontrolü temiz."
