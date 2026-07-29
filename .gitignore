@@ -15,3 +15,6 @@ tsconfig.tsbuildinfo
 
 # Claude Code internal
 .claude/
+
+# Tek seferlik, hassas script — repoda kalıcı bir parça değil (bkz. dosya başı yorumu)
+scripts/grant-pro-once.ts
