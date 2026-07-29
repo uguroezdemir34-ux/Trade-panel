@@ -1,5 +1,6 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
+import { withSentryConfig } from "@sentry/nextjs";
 
 // exportShareCardServer.ts'in ihtiyaç duyduğu dosyalar — her iki route da
 // (debug + telegram/signal) aynı setini istiyor, tek yerden tutuluyor.
@@ -100,4 +101,11 @@ const withBundleAnalyzer = bundleAnalyzer({
   openAnalyzer: true,
 });
 
-export default withBundleAnalyzer(nextConfig);
+export default withSentryConfig(withBundleAnalyzer(nextConfig), {
+  org: "quantixos",
+  project: "javascript-nextjs",
+  authToken: process.env.SENTRY_AUTH_TOKEN,
+  widenClientFileUpload: true,
+  tunnelRoute: "/monitoring",
+  silent: !process.env.CI,
+});
