@@ -72,6 +72,25 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // Dijital denetim raporu bulgusu: headers() hiç yoktu, uygulama kodu
+  // hiçbir güvenlik header'ı eklemiyordu. CSP'den (middleware.ts) farklı
+  // olarak bunlar "ihlal var mı" kontrolü gerektirmiyor — X-Frame-Options:
+  // DENY, middleware'in CSP'sindeki frame-ancestors 'none' ile aynı amacı
+  // (clickjacking koruması) taşıyor; CSP hâlâ report-only olduğu için şu an
+  // bu header tek başına o korumayı sağlıyor, çakışma yok.
+  async headers() {
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+        ],
+      },
+    ];
+  },
 };
 
 // Bundle analyzer — ANALYZE=true ile koşulur, normal build'de no-op.
