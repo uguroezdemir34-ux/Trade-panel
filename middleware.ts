@@ -16,6 +16,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/macro(.*)",
   "/api/global-ticker(.*)",
   "/api/waitlist/register(.*)",
+  "/api/track-record(.*)",
   "/api/okx/api/v5/market/(.*)",
   "/api/okx/api/v5/public/(.*)",
 ]);
