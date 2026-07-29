@@ -1,0 +1,19 @@
+name: Install Sentry SDK
+
+on: workflow_dispatch
+
+jobs:
+  install-sentry:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install @sentry/nextjs --save --legacy-peer-deps
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: add @sentry/nextjs dependency"
+          file_pattern: package.json package-lock.json
