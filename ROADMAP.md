@@ -13,6 +13,8 @@
   3. Pazarlama iddiaları küçük ve ölçülebilir tutulur (örn. "son 30 günde N sinyal, %X isabet" formatında), abartılı getiri vaadi YASAK.
   4. **Kural — ihlal edilmemeli:** Sosyal medya/topluluk büyütme kampanyaları YALNIZCA 1 ve 2 çalışır duruma geldikten SONRA başlatılır.
 
+> Rekabet/pazar analizi: bkz. docs/competitive-analysis-2026-07.md
+
 ## ADIM 3: SaaS ve Sinyal Dönüşüm Altyapısı (Regülasyon Uyumu)
 - Sorun: Doğrudan otomatik trade botu çalıştırmak finansal otoritelerin lisanslama ve ceza radarına takılır.
 - Çözüm: Otomatik execution, copy trading ve otomatik trailing yönetimi kalıcı olarak kaldırıldı — sistem salt analiz/sinyal platformu; TV Webhook / Telegram / Email üreten bir "Karar Destek Sistemi" (SaaS) olarak konumlandırılmıştır. Manuel emir açma (QuickTradeSheet, kullanıcının kendi tıklamasıyla) ayrı tutulur ve yalnızca web tarayıcıda sunulur — native mobil istemcide de devre dışıdır (bkz. Google Play Financial Features risk azaltma kararı).
