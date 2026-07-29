@@ -22,11 +22,15 @@ jobs:
         with:
           node-version: "20"
 
-      # Repoda hiçbir lockfile (package-lock.json/pnpm-lock.yaml/yarn.lock)
-      # commit edilmemiş (doğrulandı — .gitignore'da da adı geçmiyor,
-      # sebebi bilinmiyor) — npm ci lockfile ister, o yüzden npm install.
+      # package-lock.json artık repoda (generate-lockfile.yml ile üretildi,
+      # bkz. 8164dab) — npm ci kullanılabiliyor: deterministik (lockfile'a
+      # birebir uyar) ve npm install'dan daha hızlı. --legacy-peer-deps,
+      # .npmrc'deki repo geneli ayarla tutarlılık için (.npmrc zaten
+      # legacy-peer-deps=true diyor, bu flag CI'da teknik olarak gereksiz
+      # ama generate-lockfile.yml'deki aynı komutla birebir eşleşsin diye
+      # açıkça yazıldı).
       - name: Install dependencies
-        run: npm install
+        run: npm ci --legacy-peer-deps
 
       # CLAUDE.md §14'teki komutun birebir aynısı — node_modules
       # gürültüsünü (TS7026/TS7006/TS2307/TS2503/TS7031/TS7053/TS2591/
