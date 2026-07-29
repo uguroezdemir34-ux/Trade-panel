@@ -185,6 +185,24 @@ export function WaitlistScreen({ referredBy }: Props): React.ReactElement {
               </div>
             </div>
 
+            <div className="w-full rounded-lg border border-white/10 bg-[#161820] p-4">
+              <p className="mb-1 text-sm font-bold text-white">
+                Join our Telegram community
+              </p>
+              <p className="mb-3 text-xs leading-relaxed text-gray-400">
+                Get real-time updates on the closed beta rollout and signal
+                performance in our Telegram channel.
+              </p>
+              <a
+                href="https://t.me/quantixossignals"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block w-full rounded-lg bg-[#10B981] px-4 py-3 text-center text-sm font-bold tracking-wide text-[#0D0E12] transition-all hover:brightness-110 active:scale-[0.98]"
+              >
+                Join Telegram Channel
+              </a>
+            </div>
+
             <Link
               href="/sign-in"
               className="text-xs font-medium text-gray-500 underline-offset-4 transition-colors hover:text-[#00F0FF] hover:underline"
