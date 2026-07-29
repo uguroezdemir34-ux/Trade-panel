@@ -9,6 +9,15 @@ import {
   Noto_Sans_Devanagari,
 } from "next/font/google";
 
+// KİRİL DOĞRULANDI (2026-07-29, kullanıcı tarafından canlıda, tarayıcıda
+// gözle kontrol edildi — tahmin değil): aşağıdaki üç ailenin (ibmPlexMono/
+// ibmPlexSans/jetBrainsMono) hiçbiri "cyrillic" subset'i istemiyor, sadece
+// "latin" — teorik bir RU-locale riskiydi. 11 farklı ekranda (Piyasa,
+// Karar, Portföy, Ayarlar/API, Telegram, Pozisyon Hesaplayıcı) hem kısa
+// etiketler hem uzun cümleler kutu/□ karakteri OLMADAN doğru render oldu.
+// Kesin kök neden doğrulanmadı ama en olası açıklama: globals.css'teki
+// cyber-terminal font-family zinciri, Kiril glyph'leri için cyrillic
+// subset'i OLAN Noto Sans ailelerine (notoSansSC/JP/KR) fallback yapıyor.
 export const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
