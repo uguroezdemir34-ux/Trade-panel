@@ -355,14 +355,13 @@ tamamlanacak:
 - OKX API key'leri: `credentialStore` → AES-256-GCM, browser localStorage'ta şifreli
 - `STATE_ENCRYPTION_KEY` Vercel env'de: `your-state-encryption-key-here` (placeholder —
   gerçek değer SADECE Vercel dashboard'da tutulur, buraya asla yazılmaz).
-  **Rotasyon önerilir (hijyen, kritik değil):** Bu dosyada önceden gerçek görünümlü bir
-  değer sızdırılmıştı (git geçmişinde hâlâ mevcut). 2026-07-29'da doğrulandı
-  (`lib/config/env.ts:150` + `lib/store/secure-storage.ts` okunarak): bu değer gerçek
-  şifreleme akışına HİÇ bağlı değil — kullanıcı verisini koruyan AES-256-GCM anahtarı
-  Master PIN'den PBKDF2 ile türetiliyor, `STATE_ENCRYPTION_KEY`'e hiçbir referans yok
-  (kod tabanında `createCipheriv`/`createDecipheriv` kullanımı da sıfır). Yani rotasyon
-  kullanıcı verisini bozma riski taşımıyor — Vercel dashboard'da ne zaman uygun olursa
-  yapılabilir, acil değil.
+  **ROTATE EDİLDİ (2026-07-29):** Bu dosyada önceden gerçek görünümlü bir değer
+  sızdırılmıştı (git geçmişinde hâlâ mevcut, temizlenemez ama artık değersiz). Değer
+  Vercel Dashboard'da (Production + Preview) yeni rastgele bir anahtarla değiştirildi ve
+  Production'a Ready olarak deploy edildi. Rotasyon öncesi doğrulanmıştı ki bu değişken
+  gerçek şifreleme akışına hiç bağlı değil (`lib/config/env.ts:150`, `lib/store/secure-storage.ts`)
+  — kullanıcı verisi bu değişiklikten etkilenmedi. Sızmış git geçmişindeki eski değer artık
+  işe yaramaz. Bu madde kapandı.
 - OKX sırları sunucu tarafında (`next.config.ts` `serverComponentsExternalPackages`)
 - Telegram Layer 1: `TELEGRAM_BOT_TOKEN` + `TELEGRAM_VIP_CHAT_ID` (Vercel env)
 - `EXECUTION_MODE=LIVE` — demo key konfigüre edilmemiş
