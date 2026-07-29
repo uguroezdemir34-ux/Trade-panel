@@ -1,0 +1,19 @@
+name: Generate Lockfile
+
+on: workflow_dispatch
+
+jobs:
+  gen-lockfile:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --legacy-peer-deps
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: add package-lock.json"
+          file_pattern: package-lock.json
