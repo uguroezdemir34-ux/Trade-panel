@@ -9,7 +9,7 @@
  * günceller. Skor pipeline buradan okur.
  */
 
-import { create } from "zustand";
+import { createWithEqualityFn } from "zustand/traditional";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Candle, Timeframe } from "@/lib/okx/candles";
 
@@ -43,7 +43,13 @@ interface CandleStoreState {
 const keyOf = (pair: Pair, tf: Timeframe): PairTfKey =>
   `${pair}_${tf}` as PairTfKey;
 
-export const useCandleStore = create<CandleStoreState>((set) => ({
+// createWithEqualityFn (create değil) — useScoreEngine.ts ve app/karar/page.tsx
+// bu hook'u özel bir equality fn ile (2 argümanlı: selector + comparator)
+// çağırıyor. Zustand v5'in düz create()'i bu deseni artık desteklemiyor
+// (v4'te vardı, v5'te kaldırıldı — resmi migration yolu bu). Diğer 20+
+// tek-argümanlı (sadece selector) çağrı yeri ETKİLENMİYOR, createWithEqualityFn
+// equality fn verilmediğinde create()'le birebir aynı davranır.
+export const useCandleStore = createWithEqualityFn<CandleStoreState>((set) => ({
   candles: {},
   lastFetchedAt: {},
   lastError: {},
