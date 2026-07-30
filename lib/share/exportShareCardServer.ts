@@ -20,7 +20,9 @@
  * DEĞİL, bir beklenti — CLAUDE.md §0.1 madde 2 gereği böyle işaretleniyor.
  *
  * Not (tarayıcı tarafıyla küçük bir fark): tarayıcı hâlâ @fontsource/
- * ibm-plex-mono kullanıyor (app/layout.tsx) — bu iki paket IBM Plex
+ * ibm-plex-mono kullanıyor (app/karar/layout.tsx — perf teşhisinde root
+ * layout'tan buraya taşındı, tek çağıran ShareButton.tsx zaten sadece
+ * /karar'da) — bu iki paket IBM Plex
  * Mono'nun AYNI yukarı akış (upstream) OFL fontunun farklı ekipler
  * tarafından yapılan iki ayrı npm repaketlemesi, birebir aynı npm kaynağı
  * değil. Görsel olarak ayırt edilemez olması beklenir (ikisi de Google

@@ -14,9 +14,12 @@
  * document.fonts.load() ile AÇIKÇA tetikleniyor — CARD_FONT_FAMILY
  * ("IBM Plex Mono") global CSS'e @fontsource/ibm-plex-mono importuyla
  * @font-face olarak zaten tanımlı. Bu importlar BİLEREK bu dosyada değil,
- * app/layout.tsx'te — Next.js global CSS'in yalnızca root layout'tan (ya
- * da _app'ten) import edilmesini şart koşuyor, bileşen olmayan bir lib
- * dosyasından import edilirse derleme patlayabilir.
+ * app/karar/layout.tsx'te (bu dosyanın TEK çağıranı ShareButton.tsx,
+ * sadece /karar'da render ediliyor — önceden root layout'taydı, perf
+ * teşhisinde her sayfaya bulaştığı bulunup route-özel layout'a taşındı) —
+ * Next.js global CSS'in yalnızca layout/page dosyasından import edilmesini
+ * şart koşuyor, bileşen olmayan bir lib dosyasından import edilirse derleme
+ * patlayabilir.
  *
  * Logo — public/quantix-logo.png aynı-origin bir <img> olarak yükleniyor
  * (bkz. renderShareCard.ts dosya başı yorumu: drawImage() taint riski

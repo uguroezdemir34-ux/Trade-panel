@@ -5,6 +5,7 @@
   "engines": {
     "node": ">=20"
   },
+  "browserslist": ["chrome >= 100", "firefox >= 100", "safari >= 15", "not dead"],
   "description": "Uğur Trader Panel v2 — v55.51 panelinin Next.js mimarisine taşınmış hali. BTC + ETH futures, disiplinli kural tabanlı sinyal motoru.",
   "scripts": {
     "dev": "next dev",
