@@ -18,6 +18,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/waitlist/register(.*)",
   "/api/track-record(.*)",
   "/track-record(.*)",
+  "/api/csp-report(.*)",
   "/api/okx/api/v5/market/(.*)",
   "/api/okx/api/v5/public/(.*)",
 ]);
@@ -148,11 +149,19 @@ function generateNonce(): string {
 /**
  * REPORT-ONLY MOD — bilerek `Content-Security-Policy` değil,
  * `Content-Security-Policy-Report-Only` header'ı kullanılıyor: tarayıcı
- * ihlalleri konsola loglar ama HİÇBİR ŞEYİ bloklamaz. Clerk/Stripe/font/WS
- * domain listesi statik kod taramasıyla çıkarıldı (bkz. ANALYSIS.md) ama
- * çalışma zamanında görülmeyen bir domain kaçmış olabilir — enforce moduna
- * (`Content-Security-Policy`) geçiş, gerçek trafikte ihlal loglanmadığı
- * doğrulandıktan SONRA, ayrı bir onaylı adımda yapılmalı.
+ * ihlalleri bloklamaz. Clerk/Stripe/font/WS domain listesi statik kod
+ * taramasıyla çıkarıldı (bkz. ANALYSIS.md) ama çalışma zamanında görülmeyen
+ * bir domain kaçmış olabilir — enforce moduna (`Content-Security-Policy`)
+ * geçiş, gerçek trafikte ihlal loglanmadığı doğrulandıktan SONRA, ayrı bir
+ * onaylı adımda yapılmalı.
+ *
+ * report-uri + report-to: önceden ihlaller SADECE tarayıcı console'una
+ * düşüyordu, hiçbir yerde toplanmıyordu (teşhis turunda bulundu — bkz.
+ * app/api/csp-report/route.ts header yorumu). İkisi birden verilir çünkü
+ * tarayıcı desteği bölünmüş: report-uri eski ama Firefox/Safari'nin hâlâ
+ * tek desteklediği yol, report-to (+ aşağıdaki Reporting-Endpoints header'ı)
+ * modern Reporting API'yi destekleyen tarayıcılar (Chrome) için. Bu
+ * SADECE Report-Only header'ına ekleniyor — enforce header'ı hâlâ hiç yok.
  */
 function buildCsp(nonce: string): string {
   return [
@@ -166,6 +175,8 @@ function buildCsp(nonce: string): string {
     `frame-ancestors 'none'`,
     `base-uri 'self'`,
     `form-action 'self'`,
+    `report-uri /api/csp-report`,
+    `report-to csp-endpoint`,
   ].join("; ");
 }
 
@@ -228,6 +239,9 @@ export default clerkMiddleware(async (auth, req) => {
   requestHeaders.set("x-nonce", nonce);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
+  // buildCsp()'nin report-to direktifinin çözümlediği endpoint adı —
+  // Reporting API (Chrome) bu header olmadan report-to'yu yok sayar.
+  response.headers.set("Reporting-Endpoints", 'csp-endpoint="/api/csp-report"');
   response.headers.set("Content-Security-Policy-Report-Only", buildCsp(nonce));
   return response;
 });
