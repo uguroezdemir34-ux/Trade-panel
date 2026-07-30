@@ -1532,4 +1532,30 @@ export const en: Dictionary = {
       empty: "No upcoming scheduled events",
     },
   },
+
+  trackRecord: {
+    pageTitle: "Track Record",
+    pageSubtitle: "Every signal QUANTIX has published, with its real 15-minute and 1-hour outcome.",
+    disclaimer: "Includes every signal, wins and losses alike — nothing is filtered out.",
+    loadError: "Track record could not be loaded right now.",
+    empty: "No resolved signals for this pair yet.",
+    summary: {
+      totalSignals: "Total Signals",
+      winRate15m: "Hit Rate (15m)",
+      winRate1h: "Hit Rate (1h)",
+      avgMove: "Avg. Move (1h)",
+      avgMoveNote: "Direction-corrected",
+    },
+    filter: {
+      all: "All",
+    },
+    table: {
+      colDate: "Date",
+      colPair: "Pair",
+      colDirection: "Direction",
+      col15m: "15m Result",
+      col1h: "1h Result",
+      pending: "Pending",
+    },
+  },
 };

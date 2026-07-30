@@ -1532,4 +1532,30 @@ export const tr: Dictionary = {
       empty: "Yaklaşan planlı etkinlik yok",
     },
   },
+
+  trackRecord: {
+    pageTitle: "Sinyal Sicili",
+    pageSubtitle: "QUANTIX'in yayınladığı her sinyal, gerçek 15 dakikalık ve 1 saatlik sonucuyla.",
+    disclaimer: "Kazanan ve kaybeden dahil her sinyal gösterilir — hiçbiri filtrelenmez.",
+    loadError: "Sinyal sicili şu anda yüklenemedi.",
+    empty: "Bu parite için henüz sonuçlanmış sinyal yok.",
+    summary: {
+      totalSignals: "Toplam Sinyal",
+      winRate15m: "İsabet Oranı (15dk)",
+      winRate1h: "İsabet Oranı (1sa)",
+      avgMove: "Ort. Hareket (1sa)",
+      avgMoveNote: "Yön-düzeltmeli",
+    },
+    filter: {
+      all: "Tümü",
+    },
+    table: {
+      colDate: "Tarih",
+      colPair: "Parite",
+      colDirection: "Yön",
+      col15m: "15dk Sonuç",
+      col1h: "1sa Sonuç",
+      pending: "Bekliyor",
+    },
+  },
 };
