@@ -22,7 +22,7 @@ import { NextResponse } from "next/server";
 import { PAIRS } from "@/lib/constants/pairs";
 import type { Pair } from "@/lib/constants/pairs";
 import { computeAllSignals, fetch24hTickers } from "@/lib/server/signalEngine";
-import { loadTelegramConfigFromEnv } from "@/lib/notify/telegram/config";
+import { loadTelegramConfigFromEnv, type TelegramConfig } from "@/lib/notify/telegram/config";
 import { sendTelegramMessage } from "@/lib/notify/telegram/client";
 import { escapeMarkdownV2, bold } from "@/lib/notify/telegram/escape";
 import {
@@ -60,14 +60,73 @@ const OUTCOME_15M_MAX_MS = 75 * 60_000;
 const OUTCOME_1H_MIN_MS = 60 * 60_000;
 const OUTCOME_1H_MAX_MS = 120 * 60_000;
 
-/** Bekleyen sinyal listesini tickers Map'iyle işler, yazılan kayıt sayısını döner. */
+/**
+ * Sonuç takip mesajı — orijinal sinyal mesajından (buildSignalMessage)
+ * BİLEREK farklı format/başlık: aynı formatta gönderilse iki mesaj görsel
+ * olarak ayırt edilemez, kullanıcı hangisinin "yeni sinyal" hangisinin
+ * "eski sinyalin sonucu" olduğunu karıştırabilir (ROADMAP ADIM 2 madde 2 —
+ * kazanan VE kaybeden AYNI formatta, hiçbir filtreleme yok).
+ */
+function buildOutcomeMessage(
+  pair: string,
+  direction: string,
+  field: OutcomeField,
+  triggerPrice: number,
+  currentPrice: number,
+  movePct: number,
+  isAdverse: boolean,
+): string {
+  const dirEmoji = direction === "LONG" ? "▲" : direction === "SHORT" ? "▼" : "◆";
+  const resultEmoji = isAdverse ? "❌" : "✅";
+  const windowLabel = field === "15m" ? "15 Dakika" : "1 Saat";
+  const movePctSign = movePct >= 0 ? "+" : "";
+  const movePctText = `${movePctSign}${movePct.toFixed(2)}%`;
+  const lines: string[] = [
+    `${resultEmoji} ${bold("SONUÇ TAKİBİ")} ${escapeMarkdownV2(`· ${windowLabel}`)}`,
+    "",
+    `${dirEmoji} ${bold(pair)} ${escapeMarkdownV2(direction)}`,
+    escapeMarkdownV2(`Giriş: ${formatPrice(triggerPrice)}  →  Şimdi: ${formatPrice(currentPrice)}`),
+    `${resultEmoji} ${bold(movePctText)} ${escapeMarkdownV2(isAdverse ? "(aleyhte)" : "(isabet)")}`,
+    "",
+    `\\#${escapeMarkdownV2(pair)} \\#${escapeMarkdownV2(direction)} \\#SONUÇ`,
+  ];
+  return lines.join("\n");
+}
+
+interface OutcomeBatchResult {
+  written: number;
+  notified: number;
+  notifyFailed: number;
+}
+
+/**
+ * Bekleyen sinyal listesini tickers Map'iyle işler.
+ *
+ * Bildirim, writeSignalOutcome() BAŞARILI olduktan HEMEN SONRA, aynı döngü
+ * adımında gönderilir — ayrı bir "bildirildi mi" kolonu YOK ve gerekmiyor:
+ * getSignalsPendingOutcome() zaten sadece outcome_{field}_captured_at IS
+ * NULL olan satırları seçiyor, writeSignalOutcome bu alanı dolduran işlemin
+ * kendisi — yani bir sonraki cron çalışmasında bu satır artık pending
+ * listesine hiç girmeyecek (doğal, tek-seferlik garanti). Kaynak client mı
+ * server mı ayrımı YAPILMIYOR — go_signals'taki her satır (client-side
+ * useSignalFirehose.ts VEYA bu cron'un kendi GO sinyali fark etmeksizin)
+ * aynı şekilde işlenir.
+ *
+ * Telegram gönderimi başarısız olursa retry YOK (DB satırı zaten
+ * captured_at dolu, bir daha pending listesine girmeyecek) — mevcut GO
+ * sinyali gönderim deseniyle aynı risk sınıfı, sessizce yutulmaz,
+ * console.error ile loglanır.
+ */
 async function processOutcomeBatch(
   pending: PendingOutcomeSignal[],
   field: OutcomeField,
   tickers: Map<Pair, { last: number; chg24hPct: number }>,
   nowMs: number,
-): Promise<number> {
+  telegramConfig: TelegramConfig | null,
+): Promise<OutcomeBatchResult> {
   let written = 0;
+  let notified = 0;
+  let notifyFailed = 0;
   for (const sig of pending) {
     // sig.pair DB'den geliyor (string) ama go_signals'a sadece bu sistemin
     // kendisi PAIRS listesinden yazıyor — Pair union'ına daraltmak güvenli.
@@ -76,18 +135,41 @@ async function processOutcomeBatch(
     try {
       const movePct = ((currentPrice - sig.triggerPrice) / sig.triggerPrice) * 100;
       const movePctDir = directionalMovePct(sig.triggerPrice, currentPrice, sig.direction);
+      const isAdverse = isAdverseMove(movePctDir);
       await writeSignalOutcome(sig.id, field, {
         movePct,
         price: currentPrice,
-        isAdverse: isAdverseMove(movePctDir),
+        isAdverse,
         capturedAtMs: nowMs,
       });
       written++;
+
+      if (telegramConfig) {
+        const text = buildOutcomeMessage(
+          sig.pair,
+          sig.direction,
+          field,
+          sig.triggerPrice,
+          currentPrice,
+          movePct,
+          isAdverse,
+        );
+        const result = await sendTelegramMessage(telegramConfig, { text });
+        if (result.ok) {
+          notified++;
+        } else {
+          notifyFailed++;
+          console.error(
+            `[CRON signal-check] outcome${field} Telegram bildirimi başarısız (${sig.id}):`,
+            result.errorMessage,
+          );
+        }
+      }
     } catch (err) {
       console.error(`[CRON signal-check] outcome${field} write failed for ${sig.id}:`, err);
     }
   }
-  return written;
+  return { written, notified, notifyFailed };
 }
 
 function buildSignalMessage(
@@ -210,6 +292,8 @@ export async function GET(req: Request): Promise<NextResponse> {
   // (non-fatal — whole block wrapped so a Supabase hiccup never fails the
   // Telegram/score-check work above, which already completed by this point)
   let outcomesWritten = 0;
+  let outcomesNotified = 0;
+  let outcomesNotifyFailed = 0;
   try {
     const [pending15m, pending1h] = await Promise.all([
       getSignalsPendingOutcome("15m", startMs, OUTCOME_15M_MIN_MS, OUTCOME_15M_MAX_MS),
@@ -218,8 +302,11 @@ export async function GET(req: Request): Promise<NextResponse> {
 
     if (pending15m.length > 0 || pending1h.length > 0) {
       const tickers = await fetch24hTickers(PAIRS);
-      outcomesWritten += await processOutcomeBatch(pending15m, "15m", tickers, startMs);
-      outcomesWritten += await processOutcomeBatch(pending1h, "1h", tickers, startMs);
+      const res15m = await processOutcomeBatch(pending15m, "15m", tickers, startMs, telegramConfig);
+      const res1h = await processOutcomeBatch(pending1h, "1h", tickers, startMs, telegramConfig);
+      outcomesWritten += res15m.written + res1h.written;
+      outcomesNotified += res15m.notified + res1h.notified;
+      outcomesNotifyFailed += res15m.notifyFailed + res1h.notifyFailed;
     }
   } catch (err) {
     console.error(`[CRON signal-check] outcome check failed:`, err);
@@ -230,7 +317,8 @@ export async function GET(req: Request): Promise<NextResponse> {
   console.log(
     `[CRON signal-check] ${signals.length} pairs checked, ${newSignals.length} new GO signals,` +
       ` ${telegramSent} sent, ${dbWritten} db written, ${scoreHistoryWritten} score_history written,` +
-      ` ${outcomesWritten} outcomes written, ${errors.length} errors, ${elapsedMs}ms`,
+      ` ${outcomesWritten} outcomes written (${outcomesNotified} notified, ${outcomesNotifyFailed} notify failed),` +
+      ` ${errors.length} errors, ${elapsedMs}ms`,
   );
 
   return NextResponse.json({
@@ -243,6 +331,8 @@ export async function GET(req: Request): Promise<NextResponse> {
     dbWritten,
     scoreHistoryWritten,
     outcomesWritten,
+    outcomesNotified,
+    outcomesNotifyFailed,
     errors: errors.map((e) => ({ pair: e.pair, error: e.error })),
     elapsedMs,
     ...(verbose && {
