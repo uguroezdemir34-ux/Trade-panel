@@ -25,12 +25,40 @@
  * giriş yapmamış kullanıcıda gösterilmesi zaten yanlış olurdu),
  * safe-area-inset padding (küçük bir görsel regresyon riski — bu
  * route'lar için ayrıca eklenmedi).
+ *
+ * AppShell next/dynamic İLE YÜKLENİYOR (perf teşhisinde bulundu — bkz.
+ * "Kullanılmayan JavaScript 256 KiB" raporu): eskiden statik
+ * `import { AppShell } from "./AppShell"` kullanılıyordu — bu, runtime'daki
+ * isPublicRoute() kontrolünden BAĞIMSIZ olarak, AppShell'in TÜM bağımlılık
+ * ağacını (20 hook + skor motoru + WS client'ları) HER route'un JS
+ * bundle'ına (public route'lar dahil) dahil ediyordu; "if" kontrolü
+ * sadece render'ı engelliyordu, indirmeyi değil. dynamic() bunu ayrı bir
+ * chunk'a böler — sadece AppShell gerçekten render edildiğinde indirilir.
+ *
+ * BİLEREK ssr:false YOK — ilk versiyon ssr:false kullanıyordu ama bu,
+ * AppShell'i gerektiren TÜM route'ları (/karar, /grafik, vb.) da SSR'sız
+ * bırakıyordu; istenmeyen, çok geniş bir yan etkiydi, ayrı bir turda
+ * kaldırıldı. ssr:false olmadan da code-splitting kazanımı (public
+ * route'lar AppShell'in chunk'ını hiç istemiyor) aynen korunuyor, sadece
+ * AppShell'i gerektiren route'larda sunucu tarafı render'ı devam ediyor.
+ * SSR-güvenlik doğrulaması: AppShell'in TÜM hook'ları (useMarketStream,
+ * useLiqFeed, useCapacitorApp/Push dahil) tek tek incelendi — browser
+ * API erişimleri ya useEffect içinde (SSR'da hiç çalışmaz, React'in
+ * garantisi) ya da açık `typeof window`/`typeof document` guard'ları
+ * arkasında (ör. isNativePlatform() kendi belgesinde "SSR safe — server'da
+ * her zaman false döner" diyor). Daha da güçlü kanıt: bu AYNI AppShell
+ * component ağacı (AppHeader/BottomNav/DisclaimerModal/MasterPinModal/
+ * PositionRiskBanner/NewsFeedBanner/QuickTradeSheet dahil), bu route-gating
+ * turundan ÖNCE, projenin tüm geçmişi boyunca root layout'ta koşulsuz
+ * SSR ediliyordu — hiç sorun çıkarmadı.
  */
 
 import { usePathname } from "next/navigation";
-import { AppShell } from "./AppShell";
+import dynamic from "next/dynamic";
 import { DisclaimerModal } from "./DisclaimerModal";
 import { isPublicRoute } from "@/lib/routes/publicRoutes";
+
+const AppShell = dynamic(() => import("./AppShell").then((m) => m.AppShell));
 
 export function RouteAwareShell({
   children,
