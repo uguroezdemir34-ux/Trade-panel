@@ -7,7 +7,7 @@
  *  - DPR (Retina / Android WebView): useBitmapCoordinateSpace ile fiziksel piksel hassasiyeti
  */
 
-import type { ISeriesPrimitiveView, Time } from "lightweight-charts";
+import type { ISeriesPrimitivePaneView, Time } from "lightweight-charts";
 import type { VerticalLine } from "../types";
 import { BasePrimitive } from "./base";
 
@@ -24,7 +24,7 @@ interface DrawTarget {
 }
 
 export class VerticalLinePrimitive extends BasePrimitive<VerticalLine> {
-  paneViews(): readonly ISeriesPrimitiveView[] {
+  paneViews(): readonly ISeriesPrimitivePaneView[] {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
     return [

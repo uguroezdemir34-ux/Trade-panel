@@ -9,9 +9,10 @@ import type {
   IChartApi,
   ISeriesApi,
   SeriesType,
+  Time,
   ISeriesPrimitive,
-  ISeriesPrimitiveView,
-  SeriesPrimitivesAttachedParameters,
+  ISeriesPrimitivePaneView,
+  SeriesAttachedParameter,
 } from "lightweight-charts";
 
 export abstract class BasePrimitive<T extends { id: string }> implements ISeriesPrimitive {
@@ -24,7 +25,7 @@ export abstract class BasePrimitive<T extends { id: string }> implements ISeries
     this.data = data;
   }
 
-  attached(params: SeriesPrimitivesAttachedParameters): void {
+  attached(params: SeriesAttachedParameter<Time, SeriesType>): void {
     this.chart = params.chart;
     this.series = params.series;
     this._requestUpdate = params.requestUpdate;
@@ -42,5 +43,5 @@ export abstract class BasePrimitive<T extends { id: string }> implements ISeries
     this._requestUpdate?.();
   }
 
-  abstract paneViews(): readonly ISeriesPrimitiveView[];
+  abstract paneViews(): readonly ISeriesPrimitivePaneView[];
 }

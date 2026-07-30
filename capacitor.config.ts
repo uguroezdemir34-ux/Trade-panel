@@ -46,16 +46,28 @@ const config: CapacitorConfig = {
       resizeOnFullScreen: true,
     },
 
-    App: {
-      launchUrl: "/karar",
-    },
   },
 
+  // "App: { launchUrl: "/karar" }" ve "ios: { minVersion: "16.0" }" burada
+  // kaldırıldı — WebSearch ile doğrulandı (CI'ın TS2353 hatası + Capacitor
+  // resmi dokümantasyonu): ikisi de yeniden adlandırılmış değil, HİÇ VAR
+  // OLMAMIŞ config alanları. App plugin'inin gerçek config tipi sadece
+  // `disableBackButtonHandler` taşıyor — "launchUrl" hiçbir sürümde bir
+  // config dosyası alanı olmadı, App plugin'in gerçek karşılığı runtime'da
+  // çağrılan getLaunchUrl()/appUrlOpen event'i. iOS minimum sürümü
+  // Capacitor'da hiç capacitor.config.ts'ten yönetilmiyor — Xcode projesinin
+  // kendi "iOS Deployment Target" ayarından geliyor. Yani bu iki satır
+  // muhtemelen hiçbir zaman gerçek bir etkisi olmayan, sessizce ölü kod
+  // olarak buradaydı (tıpkı dün geceki ignoreDeprecations "6.0" gibi —
+  // tsc hiç gerçek çalışmadığı için hiç yakalanmamıştı). Eğer "uygulama
+  // /karar'a açılsın" ya da "iOS 16.0 altı desteklenmesin" davranışı hâlâ
+  // isteniyorsa, bu AYRI bir iş — ilki gerçek runtime navigasyon mantığı,
+  // ikincisi Xcode proje ayarı gerektirir, ikisi de bu dosyanın kapsamı
+  // dışında.
   ios: {
     contentInset: "always",
     backgroundColor: "#0A0A0A",
     scheme: "quantixos",
-    minVersion: "16.0",
   },
 
   android: {

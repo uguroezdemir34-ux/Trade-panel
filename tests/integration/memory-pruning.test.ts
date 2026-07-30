@@ -332,7 +332,7 @@ describe("TradePruner — zamanlayıcı döngüsü", () => {
   it("start() → running=true", () => {
     const store = makeMockStore();
     const setIntervalFn = vi.fn((_fn: () => void) => {
-      return 1 as ReturnType<typeof setInterval>;
+      return 1 as unknown as ReturnType<typeof setInterval>;
     });
     const clearIntervalFn = vi.fn();
 
@@ -348,7 +348,7 @@ describe("TradePruner — zamanlayıcı döngüsü", () => {
 
   it("stop() → running=false", () => {
     const store = makeMockStore();
-    const setIntervalFn = vi.fn(() => 1 as ReturnType<typeof setInterval>);
+    const setIntervalFn = vi.fn(() => 1 as unknown as ReturnType<typeof setInterval>);
     const clearIntervalFn = vi.fn();
 
     const pruner = new TradePruner(store, {
@@ -364,7 +364,7 @@ describe("TradePruner — zamanlayıcı döngüsü", () => {
 
   it("start() idempotent — iki kez çağrılırsa tek interval kurulur", () => {
     const store = makeMockStore();
-    const setIntervalFn = vi.fn(() => 1 as ReturnType<typeof setInterval>);
+    const setIntervalFn = vi.fn(() => 1 as unknown as ReturnType<typeof setInterval>);
     const clearIntervalFn = vi.fn();
 
     const pruner = new TradePruner(store, { setIntervalFn, clearIntervalFn, now: () => NOW });
@@ -443,7 +443,7 @@ describe("TradePruner — zamanlayıcı döngüsü", () => {
     const callbacks: Array<() => void> = [];
     const setIntervalFn = vi.fn((fn: () => void, _ms: number) => {
       callbacks.push(fn);
-      return 99 as ReturnType<typeof setInterval>;
+      return 99 as unknown as ReturnType<typeof setInterval>;
     });
     const clearIntervalFn = vi.fn();
 

@@ -1,4 +1,4 @@
-import type { ISeriesPrimitiveView, Time } from "lightweight-charts";
+import type { ISeriesPrimitivePaneView, Time } from "lightweight-charts";
 import type { FibTimeZone } from "../types";
 import { BasePrimitive } from "./base";
 
@@ -15,7 +15,7 @@ interface DrawTarget {
 }
 
 export class FibTimeZonePrimitive extends BasePrimitive<FibTimeZone> {
-  paneViews(): readonly ISeriesPrimitiveView[] {
+  paneViews(): readonly ISeriesPrimitivePaneView[] {
     const self = this;
     return [{
       renderer() {
