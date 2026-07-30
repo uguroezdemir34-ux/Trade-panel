@@ -183,6 +183,17 @@ function buildSeries(
 export default function GrafikPage() {
   const t = useT();
   const theme           = useSettingsStore((s) => s.theme);
+  // KULLANICI KARARI (CI temizlik turu, bkz. sohbet): cyber-terminal
+  // şimdilik PriceChart'a "dark" olarak gönderiliyor — PriceChart'ın
+  // THEME_COLORS tablosu (components/grafik/PriceChart.tsx) kasıtlı olarak
+  // sadece dark/light ayırıyor (grid/text/border renkleri), WatchlistPanel.tsx:670
+  // "isDark = theme !== 'light'" ile aynı emsal. Bilinçli olarak ERTELENEN
+  // alternatif: cyber-terminal'in kendi chart paleti — bu CI-temizlik
+  // turunun kapsamı dışında (yeni özellik, davranış değişikliği), ayrı bir
+  // iş olarak backlog'a alınmalı. Bu satırla davranış DEĞİŞMEDİ, sadece
+  // önceden tip hatası maskesi altında zaten olan durum dürüstçe ifade
+  // edildi.
+  const chartTheme: "dark" | "light" = theme === "light" ? "light" : "dark";
   const isOverlayActive = useFocusStore((s) => s.isOverlayActive);
   const clearFocus       = useFocusStore((s) => s.clearFocus);
   // War Room: /karar'dan "→ Chart" ile geldiyse yerel pair state'i focusStore'dan başlat.
@@ -354,7 +365,10 @@ export default function GrafikPage() {
 
   // Primary series
   const series = useMemo(() =>
-    buildSeries(candles, trades, pair, {
+    // EMPTY_CANDLES (candleStore.ts) Object.freeze() ile gerçekten immutable —
+    // candles ?? EMPTY_CANDLES union'ı bu yüzden readonly Candle[]'a genişliyor.
+    // buildSeries mutable Candle[] bekliyor, [...candles] ile sığ kopya alınıyor.
+    buildSeries([...candles], trades, pair, {
       ema20: showEma20, ema50: showEma50, ema200: showEma200,
       volume: showVolume, rsi: showRsi, macd: showMacd, bb: showBb,
       vwap: showVwap, sr: showSr, trades: showTrades,
@@ -589,7 +603,7 @@ export default function GrafikPage() {
             <PriceChart
                 series={series}
                 height={showSplit ? 360 : primaryChartHeight}
-                theme={theme}
+                theme={chartTheme}
                 onChartClick={handlePriceClick}
                 resetKey={`${pair}_${timeframe}`}
                 currentPrice={livePrice ?? undefined}
@@ -628,7 +642,7 @@ export default function GrafikPage() {
               <PriceChart
                   series={secSeries}
                   height={360}
-                  theme={theme}
+                  theme={chartTheme}
                   onChartClick={handlePriceClick}
                   resetKey={`${secPair}_${secTf}`}
                   currentPrice={secLivePrice ?? undefined}

@@ -106,6 +106,11 @@ export function AiCheckButton({ position }: { position: Position }): React.React
   if (!scoreResult) return null;
 
   async function handleClick(): Promise<void> {
+    // Component zaten satır 106'da `if (!scoreResult) return null` ile
+    // render'ı koruyor, ama TS bu narrowing'i handleClick'in kendi (nested
+    // function) closure'ına taşımıyor — kodun genelindeki desen (bkz.
+    // PwaCard.tsx handleInstall) gibi burada da kendi erken-return guard'ı.
+    if (!scoreResult) return;
     setPhase("loading");
     try {
       const roe = computeRoe(position, currentPrice);

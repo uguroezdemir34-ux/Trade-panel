@@ -35,6 +35,7 @@ import { dispatchNotification } from "@/lib/notify/dispatch";
 import { decideAdherence, type GoSignalCandidate } from "@/lib/risk/position-adoption";
 import { ADHERENCE_CONFIG } from "@/lib/risk/adherence-score";
 import { checkPositionGuardrails } from "@/lib/risk/positionGuardrails";
+import { isSupportedPair } from "@/lib/constants/pairs";
 import { usePositionRiskStore } from "@/lib/store/positionRiskStore";
 import type { Position } from "@/lib/okx/positions";
 
@@ -160,7 +161,10 @@ function checkAndNotifyViolations(livePositions: Position[]): void {
   for (const v of newlyViolated) {
     void dispatchNotification({
       kind: "position_risk_violation",
-      pair: v.pair,
+      // PositionViolation.pair (lib/risk/positionGuardrails.ts) genel
+      // string — NotifyMessage.pair Pair|undefined bekliyor. isSupportedPair
+      // zaten bu codebase'in kurulu konvansiyonu (bkz. AiCheckButton.tsx).
+      pair: isSupportedPair(v.pair) ? v.pair : undefined,
       direction: v.direction,
       reasonText: v.message,
       timestamp: Date.now(),

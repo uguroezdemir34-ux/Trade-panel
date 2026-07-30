@@ -27,8 +27,9 @@ export interface TradeRecord {
   pnlPct?: number;
   /** Score (verdict_go anındaki skor, varsa) */
   score?: number;
-  /** Kapanış sebebi */
-  closeReason?: "tp1" | "tp2" | "sl" | "manual" | "trail";
+  /** Kapanış sebebi — lib/trades/types.ts'teki ExitReason ile senkron tutulmalı
+   * (equity_halt eksikti, CI'ın gerçek tsc kontrolüyle yakalandı, eklendi) */
+  closeReason?: "tp1" | "tp2" | "sl" | "manual" | "trail" | "equity_halt";
   /** R-multiple — pnlUsd / riskAmountUsd (computed at close) */
   rMultiple?: number;
 }

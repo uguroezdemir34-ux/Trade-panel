@@ -680,7 +680,7 @@ export function MobileWatchlistView({ activePair, onPairSelect }: MobileWatchlis
   const displayPairs = isFiltered ? PAIRS.filter((p) => watchedPairs.includes(p)) : PAIRS;
 
   /* ── Uzun basış tespiti ── */
-  const lpTimer      = useRef<ReturnType<typeof setTimeout>>();
+  const lpTimer      = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const lpStart      = useRef<{ x: number; y: number } | null>(null);
   const suppressClick = useRef(false);
 

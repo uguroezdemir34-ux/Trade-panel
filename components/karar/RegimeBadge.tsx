@@ -57,7 +57,11 @@ export function RegimeBadge({ pair, baseThreshold = 70 }: Props) {
 
   const regimeResult = useMemo(() => {
     if (candles.length < 60) return null;
-    return detectRegime(candles, baseThreshold);
+    // EMPTY_CANDLES (candleStore.ts) Object.freeze() ile immutable — readonly
+    // Candle[]'a genişleyen union'ı detectRegime'in mutable Candle[]
+    // beklentisine [...candles] sığ kopyasıyla uyduruyoruz (app/grafik/page.tsx
+    // ile aynı desen).
+    return detectRegime([...candles], baseThreshold);
   }, [candles, baseThreshold]);
 
   if (!regimeResult) return null;

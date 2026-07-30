@@ -30,7 +30,11 @@ export function PwaCard(): React.ReactElement {
     if (!installPrompt) return;
     setInstalling(true);
     try {
-      const prompt = installPrompt as { prompt(): Promise<void>; userChoice: Promise<{ outcome: string }> };
+      // BeforeInstallPromptEvent standart DOM lib'inde yok (non-standard
+      // PWA install API) — installPrompt'un gerçek store tipi (Event) bu
+      // shape'le yeterince örtüşmüyor, unknown üzerinden double-cast
+      // gerekiyor (aynı desen: tests/integration/memory-pruning.test.ts).
+      const prompt = installPrompt as unknown as { prompt(): Promise<void>; userChoice: Promise<{ outcome: string }> };
       await prompt.prompt();
       const choice = await prompt.userChoice;
       if (choice.outcome === "accepted") {

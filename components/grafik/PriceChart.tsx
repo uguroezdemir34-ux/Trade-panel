@@ -858,7 +858,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           priceLineVisible: false,
           lastValueVisible: false,
         });
-        chart.priceScale("volume").applyOptions({ drawTicks: false, borderVisible: false, autoScale: true });
+        chart.priceScale("volume").applyOptions({ ticksVisible: false, borderVisible: false, autoScale: true });
       }
       chart.priceScale("volume").applyOptions({ scaleMargins: panelMargins(volSlot) });
       volumeRef.current.setData(series.volume as HistogramData<Time>[]);
@@ -890,7 +890,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
           price: 30, color: "#22c55ecc", lineWidth: 1, lineStyle: 2,
           axisLabelVisible: true, title: t("grafik.rsiOversold"),
         });
-        chart.priceScale("rsi").applyOptions({ drawTicks: false, borderVisible: false });
+        chart.priceScale("rsi").applyOptions({ ticksVisible: false, borderVisible: false });
         rsiRef.current = rsiLine;
       }
       chart.priceScale("rsi").applyOptions({ scaleMargins: panelMargins(rsiSlot) });
@@ -915,7 +915,7 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
         macdHistRef.current = chart.addHistogramSeries({
           priceScaleId: "macd", priceLineVisible: false, lastValueVisible: false,
         });
-        chart.priceScale("macd").applyOptions({ drawTicks: false, borderVisible: false });
+        chart.priceScale("macd").applyOptions({ ticksVisible: false, borderVisible: false });
       }
       if (!macdLineRef.current) {
         macdLineRef.current = chart.addLineSeries({

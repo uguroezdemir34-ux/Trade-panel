@@ -56,7 +56,7 @@
  */
 
 import path from "node:path";
-import { createCanvas, GlobalFonts, loadImage } from "@napi-rs/canvas";
+import { createCanvas, GlobalFonts, loadImage, type FontKey } from "@napi-rs/canvas";
 import {
   renderShareCard,
   SHARE_CARD_SIZE,
@@ -107,7 +107,11 @@ function registerFonts(): void {
   if (fontsRegistered) return;
   for (const rel of FONT_RELATIVE_PATHS) {
     const fullPath = path.join(FONT_PACKAGE_ROOT, rel);
-    let ok: boolean;
+    // @napi-rs/canvas 0.1.100'ün gerçek dönüş tipi boolean değil, FontKey|null
+    // (CI'ın gerçek tsc hatasıyla doğrulandı) — runtime davranışı aynı kalıyor
+    // (!ok hem null hem falsy her durumda hata fırlatıyordu), sadece tip
+    // doğru ifade ediliyor.
+    let ok: FontKey | null;
     try {
       ok = GlobalFonts.registerFromPath(fullPath, CARD_FONT_FAMILY);
     } catch (err) {
@@ -118,7 +122,7 @@ function registerFonts(): void {
     }
     if (!ok) {
       throw new ShareCardServerExportError(
-        `GlobalFonts.registerFromPath() ${fullPath} için false döndü — font kaydı başarısız.`,
+        `GlobalFonts.registerFromPath() ${fullPath} için null döndü — font kaydı başarısız.`,
       );
     }
   }

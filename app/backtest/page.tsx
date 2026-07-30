@@ -139,12 +139,19 @@ function BacktestPageInner() {
           <ProgressBar
             label={t("backtest.downloading")}
             pct={downloadPct}
-            done={status === "computing" || status === "done"}
+            done={status === "computing"}
           />
           <ProgressBar
             label={t("backtest.computing")}
             pct={computePct}
-            done={status === "done"}
+            // Bu blok sadece isSingleRunning (status "downloading"|"computing")
+            // iken render oluyor — status "done" olduğu an isSingleRunning
+            // false'a düşer ve bu JSX hiç render edilmez, showSingleResult
+            // devreye girer. Yani "status === done" burada yapısal olarak
+            // HİÇBİR ZAMAN true olamaz (TS2367'nin yakaladığı gerçek bir
+            // "unreachable comparison" — davranış değişmedi, sadece dürüstçe
+            // ifade edildi).
+            done={false}
             inactive={status === "downloading"}
           />
           <p className="text-text-t4 font-mono text-xs">

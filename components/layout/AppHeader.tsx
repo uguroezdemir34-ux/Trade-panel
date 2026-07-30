@@ -15,7 +15,7 @@ import { LanguageDropdown } from "@/components/ui/LanguageDropdown";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { TABS } from "@/lib/nav/tabs";
 
-export function AppHeader(): React.ReactElement {
+export function AppHeader(): React.ReactElement | null {
   const hydrated = useHydrated();
   const demoMode = useSettingsStore((s) => s.demoMode);
   const dailyPnlPct = useAccountStore((s) => s.dailyPnlPct);
