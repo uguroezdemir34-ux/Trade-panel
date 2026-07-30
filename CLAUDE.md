@@ -222,11 +222,29 @@ useLiqFeed()             // OKX+Binance+Bybit liq feed → liqFeedStore
 
 ## 9. Bilinen Açık Hatalar (Düzeltilmemiş)
 
-**Durum (2026-06-04 doğrulandı):** Filtreli TS kontrolü sıfır hata veriyor.
+**Durum (2026-07-30 güncellendi):** Önceki "(2026-06-04 doğrulandı): Filtreli
+TS kontrolü sıfır hata veriyor" iddiası **YANLIŞTI** — o zamanki sandbox'ın
+`npx tsc` sürümü (6.0.2) projenin gerçek pinlenmiş sürümünden (5.7.2)
+tamamen farklıydı ve bu sandbox'ta `node_modules` hiç kurulu değil;
+`typecheck.yml` CI workflow'u da o tarihte `tsconfig.json`'daki geçersiz bir
+`ignoreDeprecations` değeri yüzünden config doğrulama aşamasında çöküyordu —
+yani gerçek bir tarama hiç tamamlanmamıştı, "sıfır hata" iddiası hiçbir
+zaman gerçek TypeScript 5.7.2 ile doğrulanmamıştı.
 
-Kalan `npx tsc --noEmit` hataları **yalnızca** node_modules eksikliğinden
-kaynaklanıyor (react, zustand, next yüklü değil).
-Runtime'da Next.js bundler çözer — gerçek mantık hatası yok.
+2026-07-30'da `ignoreDeprecations` düzeltilip CI ilk kez gerçek bir taramayı
+tamamlayınca, önceden hiç görülmemiş **48 gerçek TS hatası** ortaya çıktı.
+3 round'da (11 + 24 + 13 hata) + `lib/store/candleStore.ts`'teki kök-neden
+fix'i ile hepsi düzeltildi — `lib/score/*` dosyalarının hiçbirine
+dokunulmadan (Kategori 1'deki son 13 hata `useScoreEngine.ts`/`app/karar/page.tsx`'in
+Zustand v5 hook çağrı imzasıyla ilgiliydi, `lib/score/`'un okuduğu candle
+verisinin şekli/akışı değişmedi). Commit `e930223` itibarıyla `typecheck.yml`
+gerçekten yeşil.
+
+Yerel sandbox'taki `npx tsc --noEmit` çıktısının gürültüsü hâlâ **sadece**
+node_modules eksikliğinden kaynaklanıyor (react/zustand/next kurulu değil,
+`npx tsc` sürümü de projeninkinden farklı) — ama bu yerel sıfır-çıktı ASLA
+tek başına doğrulama sayılmaz. **Tek güvenilir doğrulama `typecheck.yml`
+CI'ının kendisidir.**
 
 > Yeni gerçek hata tespit edilirse buraya ekle, node_modules hataları ekleme.
 
