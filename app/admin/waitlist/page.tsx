@@ -12,6 +12,7 @@
  */
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 
 interface WaitlistRow {
   id: number;
@@ -67,6 +68,13 @@ export default function AdminWaitlistPage(): React.ReactElement {
 
   return (
     <div className="min-h-screen bg-bg p-4 text-text-t1">
+      <nav className="mb-4 flex gap-4 font-mono text-xs">
+        <span className="text-brand">Waitlist</span>
+        <Link href="/admin/genel-bakis" className="text-text-t3 hover:text-text-t1">
+          Genel Bakış
+        </Link>
+      </nav>
+
       <h1 className="mb-1 font-mono text-lg font-bold tracking-wide">Waitlist Onay</h1>
       <p className="mb-4 font-mono text-xs text-text-t3">
         {rows.length} kayıt — onaylanan kullanıcı, hesabı zaten varsa anında beta erişimi alır;
