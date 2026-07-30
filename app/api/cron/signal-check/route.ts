@@ -13,6 +13,13 @@
  * If browser is also open and sends the signal, user gets a duplicate — the
  * server message is tagged [SERVER] so it's distinguishable.
  *
+ * DUAL-CHANNEL — VIP (TELEGRAM_VIP_CHAT_ID, zorunlu) + public
+ * (TELEGRAM_PUBLIC_CHAT_ID, opsiyonel — tanımsızsa sessizce atlanır, bkz.
+ * loadPublicChatId()). GO sinyal ve sonuç-takip mesajları AYNI metinle iki
+ * kanala da gönderilir — app/api/telegram/signal/route.ts'in aksine ayrı
+ * bir sadeleştirme yok, çünkü buradaki mesajlar zaten TP/SL/giriş/R:R
+ * içermiyor (bkz. sendToVipAndPublic() yorumu).
+ *
  * Vercel plan requirement:
  *   Hobby:  2 crons/project, 10s max duration (30 pairs × ~200ms = ~6s → fits)
  *   Pro:    unlimited crons, 60s max duration
@@ -93,10 +100,78 @@ function buildOutcomeMessage(
   return lines.join("\n");
 }
 
+/**
+ * PUBLIC KANAL — TELEGRAM_PUBLIC_CHAT_ID env'de tanımlıysa okunur, yoksa
+ * null (opsiyonel — app/api/telegram/signal/route.ts'teki
+ * TELEGRAM_PUBLIC_CHAT_ID ile AYNI env değişkeni, aynı "tanımsızsa sessizce
+ * atla" deseni).
+ *
+ * O route'taki sendToPublicChannel() BİLEREK burada tekrar kullanılmadı —
+ * o fonksiyon karta (PNG buffer + kısaltılmış caption) bağlı, cron'un
+ * ürettiği buildSignalMessage()/buildOutcomeMessage() çıktısı ise zaten düz
+ * metin ve TP/SL/giriş/R:R HİÇ İÇERMİYOR (ikisi de kod okunarak doğrulandı:
+ * sadece pair/direction/price/score veya pair/direction/giriş→şimdi/movePct)
+ * — yani route'taki "analiz çıktısı vs işlem talimatı" ayrımı burada zaten
+ * baştan sağlanmış durumda, ayrı bir sadeleştirme adımına gerek yok, AYNI
+ * metin iki kanala da gönderiliyor.
+ */
+function loadPublicChatId(): string | null {
+  const id = process.env.TELEGRAM_PUBLIC_CHAT_ID?.trim();
+  return id || null;
+}
+
+interface VipPublicSendResult {
+  vipOk: boolean;
+  vipErrorMessage?: string;
+  /** publicChatId hiç tanımlı değilse false — bu durumda publicOk anlamsız. */
+  publicAttempted: boolean;
+  publicOk: boolean;
+  publicErrorMessage?: string;
+}
+
+/**
+ * VIP'e (zorunlu, her zaman denenir) + varsa public'e (opsiyonel,
+ * best-effort) AYNI metni gönderir. sendTelegramMessage() kendi içinde
+ * retry/timeout/hata durumlarını yakalayıp hep bir SendMessageResult
+ * döndürür (throw etmez) — burada ayrıca try/catch'e gerek yok. Public
+ * gönderimin başarısız olması VIP sonucunu hiç etkilemez, çağıran taraf
+ * ikisini ayrı ayrı sayaçlayıp loglar.
+ */
+async function sendToVipAndPublic(
+  config: TelegramConfig,
+  publicChatId: string | null,
+  text: string,
+): Promise<VipPublicSendResult> {
+  const vipResult = await sendTelegramMessage(config, { text });
+
+  if (!publicChatId) {
+    return {
+      vipOk: vipResult.ok,
+      vipErrorMessage: vipResult.errorMessage,
+      publicAttempted: false,
+      publicOk: false,
+    };
+  }
+
+  const publicResult = await sendTelegramMessage(
+    { botToken: config.botToken, chatId: publicChatId },
+    { text },
+  );
+  return {
+    vipOk: vipResult.ok,
+    vipErrorMessage: vipResult.errorMessage,
+    publicAttempted: true,
+    publicOk: publicResult.ok,
+    publicErrorMessage: publicResult.errorMessage,
+  };
+}
+
 interface OutcomeBatchResult {
   written: number;
   notified: number;
   notifyFailed: number;
+  notifiedPublic: number;
+  notifyFailedPublic: number;
 }
 
 /**
@@ -123,10 +198,13 @@ async function processOutcomeBatch(
   tickers: Map<Pair, { last: number; chg24hPct: number }>,
   nowMs: number,
   telegramConfig: TelegramConfig | null,
+  publicChatId: string | null,
 ): Promise<OutcomeBatchResult> {
   let written = 0;
   let notified = 0;
   let notifyFailed = 0;
+  let notifiedPublic = 0;
+  let notifyFailedPublic = 0;
   for (const sig of pending) {
     // sig.pair DB'den geliyor (string) ama go_signals'a sadece bu sistemin
     // kendisi PAIRS listesinden yazıyor — Pair union'ına daraltmak güvenli.
@@ -154,22 +232,33 @@ async function processOutcomeBatch(
           movePct,
           isAdverse,
         );
-        const result = await sendTelegramMessage(telegramConfig, { text });
-        if (result.ok) {
+        const result = await sendToVipAndPublic(telegramConfig, publicChatId, text);
+        if (result.vipOk) {
           notified++;
         } else {
           notifyFailed++;
           console.error(
             `[CRON signal-check] outcome${field} Telegram bildirimi başarısız (${sig.id}):`,
-            result.errorMessage,
+            result.vipErrorMessage,
           );
+        }
+        if (result.publicAttempted) {
+          if (result.publicOk) {
+            notifiedPublic++;
+          } else {
+            notifyFailedPublic++;
+            console.error(
+              `[CRON signal-check] outcome${field} Public Telegram bildirimi başarısız (${sig.id}):`,
+              result.publicErrorMessage,
+            );
+          }
         }
       }
     } catch (err) {
       console.error(`[CRON signal-check] outcome${field} write failed for ${sig.id}:`, err);
     }
   }
-  return { written, notified, notifyFailed };
+  return { written, notified, notifyFailed, notifiedPublic, notifyFailedPublic };
 }
 
 function buildSignalMessage(
@@ -208,20 +297,34 @@ export async function GET(req: Request): Promise<NextResponse> {
 
   let telegramSent = 0;
   let telegramFailed = 0;
+  let telegramPublicSent = 0;
+  let telegramPublicFailed = 0;
 
   const telegramConfig = loadTelegramConfigFromEnv();
+  const publicChatId = loadPublicChatId();
 
   for (const sig of newSignals) {
     if (!telegramConfig) break;
 
     const text = buildSignalMessage(sig.pair, sig.direction, sig.score, sig.price);
-    const result = await sendTelegramMessage(telegramConfig, { text });
+    const result = await sendToVipAndPublic(telegramConfig, publicChatId, text);
 
-    if (result.ok) {
+    if (result.vipOk) {
       telegramSent++;
     } else {
       telegramFailed++;
-      console.error(`[CRON signal-check] Telegram failed for ${sig.pair}:`, result.errorMessage);
+      console.error(`[CRON signal-check] Telegram failed for ${sig.pair}:`, result.vipErrorMessage);
+    }
+    if (result.publicAttempted) {
+      if (result.publicOk) {
+        telegramPublicSent++;
+      } else {
+        telegramPublicFailed++;
+        console.error(
+          `[CRON signal-check] Public Telegram failed for ${sig.pair}:`,
+          result.publicErrorMessage,
+        );
+      }
     }
   }
 
@@ -294,6 +397,8 @@ export async function GET(req: Request): Promise<NextResponse> {
   let outcomesWritten = 0;
   let outcomesNotified = 0;
   let outcomesNotifyFailed = 0;
+  let outcomesNotifiedPublic = 0;
+  let outcomesNotifyFailedPublic = 0;
   try {
     const [pending15m, pending1h] = await Promise.all([
       getSignalsPendingOutcome("15m", startMs, OUTCOME_15M_MIN_MS, OUTCOME_15M_MAX_MS),
@@ -302,11 +407,13 @@ export async function GET(req: Request): Promise<NextResponse> {
 
     if (pending15m.length > 0 || pending1h.length > 0) {
       const tickers = await fetch24hTickers(PAIRS);
-      const res15m = await processOutcomeBatch(pending15m, "15m", tickers, startMs, telegramConfig);
-      const res1h = await processOutcomeBatch(pending1h, "1h", tickers, startMs, telegramConfig);
+      const res15m = await processOutcomeBatch(pending15m, "15m", tickers, startMs, telegramConfig, publicChatId);
+      const res1h = await processOutcomeBatch(pending1h, "1h", tickers, startMs, telegramConfig, publicChatId);
       outcomesWritten += res15m.written + res1h.written;
       outcomesNotified += res15m.notified + res1h.notified;
       outcomesNotifyFailed += res15m.notifyFailed + res1h.notifyFailed;
+      outcomesNotifiedPublic += res15m.notifiedPublic + res1h.notifiedPublic;
+      outcomesNotifyFailedPublic += res15m.notifyFailedPublic + res1h.notifyFailedPublic;
     }
   } catch (err) {
     console.error(`[CRON signal-check] outcome check failed:`, err);
@@ -316,8 +423,9 @@ export async function GET(req: Request): Promise<NextResponse> {
 
   console.log(
     `[CRON signal-check] ${signals.length} pairs checked, ${newSignals.length} new GO signals,` +
-      ` ${telegramSent} sent, ${dbWritten} db written, ${scoreHistoryWritten} score_history written,` +
-      ` ${outcomesWritten} outcomes written (${outcomesNotified} notified, ${outcomesNotifyFailed} notify failed),` +
+      ` ${telegramSent} VIP sent (${telegramPublicSent} public), ${dbWritten} db written,` +
+      ` ${scoreHistoryWritten} score_history written,` +
+      ` ${outcomesWritten} outcomes written (${outcomesNotified} VIP notified, ${outcomesNotifiedPublic} public notified),` +
       ` ${errors.length} errors, ${elapsedMs}ms`,
   );
 
@@ -328,11 +436,15 @@ export async function GET(req: Request): Promise<NextResponse> {
     newSignals: newSignals.length,
     telegramSent,
     telegramFailed,
+    telegramPublicSent,
+    telegramPublicFailed,
     dbWritten,
     scoreHistoryWritten,
     outcomesWritten,
     outcomesNotified,
     outcomesNotifyFailed,
+    outcomesNotifiedPublic,
+    outcomesNotifyFailedPublic,
     errors: errors.map((e) => ({ pair: e.pair, error: e.error })),
     elapsedMs,
     ...(verbose && {
