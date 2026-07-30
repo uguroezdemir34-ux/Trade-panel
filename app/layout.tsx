@@ -8,7 +8,7 @@ import "./globals.css";
 // Detay için app/karar/layout.tsx ve exportShareCard.ts dosya başı yorumuna bkz.
 import { fontVariables } from "@/lib/fonts";
 import { ClerkClientWrapper } from "@/lib/auth/ClerkClientWrapper";
-import { AppShell } from "@/components/layout/AppShell";
+import { RouteAwareShell } from "@/components/layout/RouteAwareShell";
 import { I18nProvider } from "@/lib/i18n/context";
 import { LocaleHtmlSync } from "@/components/layout/LocaleHtmlSync";
 import { BRAND_META } from "@/lib/brand";
@@ -99,7 +99,7 @@ export default async function RootLayout({
           <ClerkClientWrapper>
             <I18nProvider>
               <LocaleHtmlSync />
-              <AppShell>{children}</AppShell>
+              <RouteAwareShell>{children}</RouteAwareShell>
             </I18nProvider>
           </ClerkClientWrapper>
         </body>
