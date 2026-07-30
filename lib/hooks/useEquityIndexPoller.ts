@@ -55,8 +55,18 @@ export function useEquityIndexPoller(delayMs = 0): void {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const consecutiveFailuresRef = useRef(0);
+  // AppShell route-gating turunda bulundu: self-rescheduling setTimeout
+  // zincirinde unmount tam bir poll() fetch'i beklerken olursa, in-flight
+  // çağrı tamamlandığında .then(scheduleNext) koşulsuz yeni bir (artık
+  // takip edilmeyen) timer kuruyordu — nadir bir yarış koşulunda "hayalet"
+  // bir poller kalabiliyordu. useMarketStream.ts'in REST fallback'indeki
+  // aynı desenle (module-level restFallbackStartedAt bayrağı) aynı çözüm —
+  // burada instance-scoped bir ref yeterli, bu hook singleton değil.
+  const stoppedRef = useRef(false);
 
   useEffect(() => {
+    stoppedRef.current = false;
+
     async function poll(): Promise<void> {
       // ABD borsası kapalıyken (hafta sonu/tatil) fetch'i tamamen atla —
       // hata değil, backoff sayacını etkilemez (FAZ 4).
@@ -94,6 +104,10 @@ export function useEquityIndexPoller(delayMs = 0): void {
     }
 
     function scheduleNext(): void {
+      // Tek choke point — hem ilk çağrının hem sonraki her döngünün
+      // .then(scheduleNext)'i buradan geçiyor, unmount sonrası ikisi de
+      // burada durur.
+      if (stoppedRef.current) return;
       const backoff =
         consecutiveFailuresRef.current >= MAX_CONSECUTIVE_FAILURES ? BACKOFF_MULTIPLIER : 1;
       timerRef.current = setTimeout(() => {
@@ -106,6 +120,7 @@ export function useEquityIndexPoller(delayMs = 0): void {
     }, delayMs);
 
     return () => {
+      stoppedRef.current = true;
       if (startTimerRef.current) clearTimeout(startTimerRef.current);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
