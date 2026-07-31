@@ -15,7 +15,7 @@
 import { NextResponse } from "next/server";
 import { PAIRS } from "@/lib/constants/pairs";
 import { computeAllSignals, fetch24hTickers } from "@/lib/server/signalEngine";
-import { loadTelegramConfigFromEnv } from "@/lib/notify/telegram/config";
+import { resolveTelegramConfig } from "@/lib/notify/telegram/config";
 import { sendTelegramMessage } from "@/lib/notify/telegram/client";
 import { escapeMarkdownV2, bold } from "@/lib/notify/telegram/escape";
 import type { ServerSignalResult } from "@/lib/server/signalEngine";
@@ -124,7 +124,7 @@ export async function GET(req: Request): Promise<NextResponse> {
     fetch24hTickers(PAIRS),
   ]);
 
-  const telegramConfig = loadTelegramConfigFromEnv();
+  const telegramConfig = await resolveTelegramConfig();
   let telegramResult: { ok: boolean; error?: string } = { ok: false, error: "not_configured" };
 
   if (telegramConfig) {

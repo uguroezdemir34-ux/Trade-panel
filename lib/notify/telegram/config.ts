@@ -49,3 +49,49 @@ export function isValidTelegramConfig(config: TelegramConfig | null): boolean {
   if (!config.botToken.includes(":")) return false;
   return true;
 }
+
+/**
+ * DB-ÖNCELİKLİ ÇÖZÜMLEME — resolveTelegramConfig() / resolvePublicChatId()
+ *
+ * loadTelegramConfigFromEnv()'e (yukarıda) KASITLI OLARAK dokunulmadı —
+ * senkron kalıyor, mevcut çağıranlar (özellikle lib/notify/telegram/
+ * channel.ts'teki TelegramChannel'ın constructor'ı — constructor'lar asla
+ * async olamaz) hiç etkilenmiyor. DB sorgusu doğası gereği asenkron olduğu
+ * için "aynı fonksiyon imzasıyla DB'yi de dene" mümkün değildi — bunun
+ * yerine bu İKİ YENİ fonksiyon eklendi, sadece bunları açıkça `await` eden
+ * çağıranlar (şu an: iki cron route'u) DB-farkında oluyor.
+ *
+ * Önce Supabase'deki notification_config satırını dener (şifreli kolonlar,
+ * lib/crypto/serverSecrets.ts ile decrypt edilir) — orada değer yoksa, DB
+ * yapılandırılmamışsa veya herhangi bir hata olursa (network, decrypt
+ * başarısızlığı vb.) SESSİZCE process.env'e düşer — env hâlâ set edilmiş
+ * durumdaysa hiçbir şey kırılmaz, sadece console.error ile loglanır.
+ */
+import { getNotificationConfigRow } from "@/lib/db/notificationConfig";
+import { decryptSecret } from "@/lib/crypto/serverSecrets";
+
+export async function resolveTelegramConfig(): Promise<TelegramConfig | null> {
+  try {
+    const row = await getNotificationConfigRow();
+    const botToken = row?.telegram_bot_token_enc ? decryptSecret(row.telegram_bot_token_enc) : null;
+    const chatId = row?.telegram_vip_chat_id_enc ? decryptSecret(row.telegram_vip_chat_id_enc) : null;
+    if (botToken && chatId && botToken.includes(":")) {
+      return { botToken, chatId };
+    }
+  } catch (err) {
+    console.error("[resolveTelegramConfig] DB okuma/decrypt başarısız, env'e düşülüyor:", err);
+  }
+  return loadTelegramConfigFromEnv();
+}
+
+export async function resolvePublicChatId(): Promise<string | null> {
+  try {
+    const row = await getNotificationConfigRow();
+    const id = row?.telegram_public_chat_id_enc ? decryptSecret(row.telegram_public_chat_id_enc) : null;
+    if (id) return id;
+  } catch (err) {
+    console.error("[resolvePublicChatId] DB okuma/decrypt başarısız, env'e düşülüyor:", err);
+  }
+  const envId = process.env.TELEGRAM_PUBLIC_CHAT_ID?.trim();
+  return envId || null;
+}

@@ -13,12 +13,15 @@
  * If browser is also open and sends the signal, user gets a duplicate — the
  * server message is tagged [SERVER] so it's distinguishable.
  *
- * DUAL-CHANNEL — VIP (TELEGRAM_VIP_CHAT_ID, zorunlu) + public
- * (TELEGRAM_PUBLIC_CHAT_ID, opsiyonel — tanımsızsa sessizce atlanır, bkz.
- * loadPublicChatId()). GO sinyal ve sonuç-takip mesajları AYNI metinle iki
- * kanala da gönderilir — app/api/telegram/signal/route.ts'in aksine ayrı
- * bir sadeleştirme yok, çünkü buradaki mesajlar zaten TP/SL/giriş/R:R
- * içermiyor (bkz. sendToVipAndPublic() yorumu).
+ * DUAL-CHANNEL — VIP (zorunlu) + public (opsiyonel, tanımsızsa sessizce
+ * atlanır). Config artık DB-öncelikli: resolveTelegramConfig()/
+ * resolvePublicChatId() (lib/notify/telegram/config.ts) önce Supabase'deki
+ * notification_config satırını dener, yoksa process.env'e (TELEGRAM_
+ * BOT_TOKEN/TELEGRAM_VIP_CHAT_ID/TELEGRAM_PUBLIC_CHAT_ID) düşer. GO sinyal
+ * ve sonuç-takip mesajları AYNI metinle iki kanala da gönderilir —
+ * app/api/telegram/signal/route.ts'in aksine ayrı bir sadeleştirme yok,
+ * çünkü buradaki mesajlar zaten TP/SL/giriş/R:R içermiyor (bkz.
+ * sendToVipAndPublic() yorumu).
  *
  * Vercel plan requirement:
  *   Hobby:  2 crons/project, 10s max duration (30 pairs × ~200ms = ~6s → fits)
@@ -29,7 +32,7 @@ import { NextResponse } from "next/server";
 import { PAIRS } from "@/lib/constants/pairs";
 import type { Pair } from "@/lib/constants/pairs";
 import { computeAllSignals, fetch24hTickers } from "@/lib/server/signalEngine";
-import { loadTelegramConfigFromEnv, type TelegramConfig } from "@/lib/notify/telegram/config";
+import { resolveTelegramConfig, resolvePublicChatId, type TelegramConfig } from "@/lib/notify/telegram/config";
 import { sendTelegramMessage } from "@/lib/notify/telegram/client";
 import { escapeMarkdownV2, bold } from "@/lib/notify/telegram/escape";
 import {
@@ -101,10 +104,11 @@ function buildOutcomeMessage(
 }
 
 /**
- * PUBLIC KANAL — TELEGRAM_PUBLIC_CHAT_ID env'de tanımlıysa okunur, yoksa
- * null (opsiyonel — app/api/telegram/signal/route.ts'teki
- * TELEGRAM_PUBLIC_CHAT_ID ile AYNI env değişkeni, aynı "tanımsızsa sessizce
- * atla" deseni).
+ * PUBLIC KANAL — resolvePublicChatId() (lib/notify/telegram/config.ts)
+ * önce Supabase'deki notification_config satırını dener, yoksa
+ * TELEGRAM_PUBLIC_CHAT_ID env'e düşer — opsiyonel, ikisi de yoksa null
+ * (app/api/telegram/signal/route.ts'teki TELEGRAM_PUBLIC_CHAT_ID ile AYNI
+ * "tanımsızsa sessizce atla" felsefesi, artık DB-farkında).
  *
  * O route'taki sendToPublicChannel() BİLEREK burada tekrar kullanılmadı —
  * o fonksiyon karta (PNG buffer + kısaltılmış caption) bağlı, cron'un
@@ -115,10 +119,6 @@ function buildOutcomeMessage(
  * baştan sağlanmış durumda, ayrı bir sadeleştirme adımına gerek yok, AYNI
  * metin iki kanala da gönderiliyor.
  */
-function loadPublicChatId(): string | null {
-  const id = process.env.TELEGRAM_PUBLIC_CHAT_ID?.trim();
-  return id || null;
-}
 
 interface VipPublicSendResult {
   vipOk: boolean;
@@ -300,8 +300,8 @@ export async function GET(req: Request): Promise<NextResponse> {
   let telegramPublicSent = 0;
   let telegramPublicFailed = 0;
 
-  const telegramConfig = loadTelegramConfigFromEnv();
-  const publicChatId = loadPublicChatId();
+  const telegramConfig = await resolveTelegramConfig();
+  const publicChatId = await resolvePublicChatId();
 
   for (const sig of newSignals) {
     if (!telegramConfig) break;
