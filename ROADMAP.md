@@ -11,7 +11,7 @@
   1. Herkese açık `/track-record` sayfası — abonelik duvarı YOK, `go_signals` tablosundaki `outcome_15m`/`outcome_1h` verisinden beslenir, kazanç VE kayıp sinyalleri filtresiz gösterilir. Üçüncü-taraf doğrulanabilir olması kritik (OKX'ten çekilen gerçek fiyat verisiyle).
   2. Mevcut Telegram sinyal botuna (`useSignalFirehose.ts`) otomatik sonuç bildirimi eklenir — sinyal sonrası belirlenen pencerede (15dk/1sa) otomatik "sonuç" mesajı, insan müdahalesi olmadan. Topluluğun kendi kendini besleyen kanıt döngüsü.
   3. Pazarlama iddiaları küçük ve ölçülebilir tutulur (örn. "son 30 günde N sinyal, %X isabet" formatında), abartılı getiri vaadi YASAK.
-  4. **Kural — ihlal edilmemeli:** Sosyal medya/topluluk büyütme kampanyaları YALNIZCA 1 ve 2 çalışır duruma geldikten SONRA başlatılır.
+  4. **Kural — ihlal edilmemeli:** Sosyal medya/topluluk büyütme kampanyaları YALNIZCA 1 ve 2 çalışır duruma geldikten SONRA başlatılır. Bu kuralın somut, eşik-tetikli açılımı (Telegram → Discord → TikTok/YouTube sıralaması, her aşamanın tetikleyici koşulu, TikTok/YouTube video formatı kararı) için bkz. docs/growth-roadmap.md.
 
 > Rekabet/pazar analizi: bkz. docs/competitive-analysis-2026-07.md
 
