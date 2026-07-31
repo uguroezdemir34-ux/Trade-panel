@@ -1,14 +1,19 @@
 /**
  * /track-record — herkese açık, auth gerektirmeyen sinyal sicili sayfası.
  *
- * Server component: /api/track-record'u aynı origin'den fetch eder (DB
- * sorgusunu burada TEKRARLAMAZ — route.ts zaten doğru, ona dokunulmadı).
- * Filtreleme (parite) client tarafında (bkz. TrackRecordView) — API'den
- * tüm veri tek seferde çekilir.
+ * Server component: lib/track-record/fetchTrackRecordData.ts'i DOĞRUDAN
+ * çağırır (DB sorgusunu burada TEKRARLAMAZ, /api/track-record ile AYNI
+ * paylaşılan fonksiyon). ÖNCEDEN kendi API'sine HTTP self-fetch atıyordu
+ * — bu, build-time'da (server henüz dinlemiyorken) ECONNREFUSED riski
+ * taşıyordu, try/catch bunu yutup null'a düşürüyordu ama ilk deploy
+ * sonrası ISR revalidate'e kadar sayfa kısa süre "yüklenemedi"
+ * gösterebiliyordu. Artık ağ round-trip'i hiç yok, bu risk sınıfı
+ * tamamen ortadan kalktı. Filtreleme (parite) client tarafında (bkz.
+ * TrackRecordView) — tüm veri tek seferde çekilir.
  */
 
 import type { Metadata } from "next";
-import { serverEnv } from "@/lib/config/env";
+import { fetchTrackRecordData } from "@/lib/track-record/fetchTrackRecordData";
 import { TrackRecordView } from "@/components/track-record/TrackRecordView";
 import type { TrackRecordResponse } from "@/lib/track-record/types";
 
@@ -22,11 +27,7 @@ export const metadata: Metadata = {
 
 async function fetchTrackRecord(): Promise<TrackRecordResponse | null> {
   try {
-    const res = await fetch(`${serverEnv.appUrl}/api/track-record`, {
-      next: { revalidate: 300 },
-    });
-    if (!res.ok) return null;
-    return (await res.json()) as TrackRecordResponse;
+    return await fetchTrackRecordData();
   } catch (err) {
     console.error("[/track-record page]", err);
     return null;
