@@ -19,6 +19,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import * as Sentry from "@sentry/nextjs";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
@@ -220,6 +221,15 @@ async function fireSignal(
   const dispatchResult = await dispatchNotification(msg);
   if (dispatchResult.telegram && !dispatchResult.telegram.ok) {
     console.warn("[QUANTIX] Telegram sinyal başarısız:", dispatchResult.telegram.errorMessage);
+    // "not_configured" — kullanıcı henüz Telegram kurmamış, beklenen bir
+    // durum (ilk kurulumda normal), Sentry'ye gitmez. Başka her şey
+    // (gerçek Telegram API/network hatası) gerçek bir sinyal — captureMessage.
+    if (dispatchResult.telegram.errorMessage !== "not_configured") {
+      Sentry.captureMessage("Telegram sinyal gönderimi başarısız", {
+        level: "warning",
+        extra: { errorMessage: dispatchResult.telegram.errorMessage },
+      });
+    }
   }
   if (dispatchResult.discord && !dispatchResult.discord.ok) {
     console.warn("[QUANTIX] Discord sinyal hatası:", dispatchResult.discord.errorMessage);

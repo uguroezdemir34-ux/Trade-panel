@@ -29,6 +29,7 @@
  */
 
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { PAIRS } from "@/lib/constants/pairs";
 import type { Pair } from "@/lib/constants/pairs";
 import { computeAllSignals, fetch24hTickers } from "@/lib/server/signalEngine";
@@ -237,10 +238,16 @@ async function processOutcomeBatch(
           notified++;
         } else {
           notifyFailed++;
+          // Bu bloğa "if (telegramConfig)" içinden girildi — yapılandırma
+          // eksikliği değil, her zaman gerçek bir gönderim hatası.
           console.error(
             `[CRON signal-check] outcome${field} Telegram bildirimi başarısız (${sig.id}):`,
             result.vipErrorMessage,
           );
+          Sentry.captureMessage("Telegram outcome bildirimi (VIP) başarısız", {
+            level: "warning",
+            extra: { field, signalId: sig.id, errorMessage: result.vipErrorMessage },
+          });
         }
         if (result.publicAttempted) {
           if (result.publicOk) {
@@ -251,6 +258,10 @@ async function processOutcomeBatch(
               `[CRON signal-check] outcome${field} Public Telegram bildirimi başarısız (${sig.id}):`,
               result.publicErrorMessage,
             );
+            Sentry.captureMessage("Telegram outcome bildirimi (public) başarısız", {
+              level: "warning",
+              extra: { field, signalId: sig.id, errorMessage: result.publicErrorMessage },
+            });
           }
         }
       }
@@ -313,7 +324,13 @@ export async function GET(req: Request): Promise<NextResponse> {
       telegramSent++;
     } else {
       telegramFailed++;
+      // Bu satıra "if (!telegramConfig) break;" atlanmadan gelindi —
+      // yapılandırma eksikliği değil, her zaman gerçek bir gönderim hatası.
       console.error(`[CRON signal-check] Telegram failed for ${sig.pair}:`, result.vipErrorMessage);
+      Sentry.captureMessage("Telegram GO sinyali (VIP) gönderimi başarısız", {
+        level: "warning",
+        extra: { pair: sig.pair, errorMessage: result.vipErrorMessage },
+      });
     }
     if (result.publicAttempted) {
       if (result.publicOk) {
@@ -324,6 +341,10 @@ export async function GET(req: Request): Promise<NextResponse> {
           `[CRON signal-check] Public Telegram failed for ${sig.pair}:`,
           result.publicErrorMessage,
         );
+        Sentry.captureMessage("Telegram GO sinyali (public) gönderimi başarısız", {
+          level: "warning",
+          extra: { pair: sig.pair, errorMessage: result.publicErrorMessage },
+        });
       }
     }
   }

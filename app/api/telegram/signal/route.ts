@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 import { formatNotifyMessage } from "@/lib/notify/telegram/formatter";
 import { sendTelegramPhoto } from "@/lib/notify/telegram/client";
 import type { NotifyMessage } from "@/lib/notify/types";
@@ -128,7 +129,14 @@ async function sendToPublicChannel(
     { photo: png, caption },
   );
   if (!photoRes.ok) {
+    // Bu satıra gelindiğinde publicChatId zaten mevcuttu (yukarıdaki
+    // "if (!publicChatId) return;" atlanmadı) — yapılandırma eksikliği
+    // değil, her zaman gerçek bir gönderim hatası.
     console.warn("[telegram/signal] Halka açık gönderim başarısız:", photoRes.errorMessage);
+    Sentry.captureMessage("Telegram public kanal gönderimi başarısız", {
+      level: "warning",
+      extra: { errorMessage: photoRes.errorMessage },
+    });
   }
 }
 
@@ -196,7 +204,14 @@ export async function POST(req: NextRequest) {
     if (photoRes.ok) {
       vipOk = true;
     } else {
+      // Bu satıra gelindiğinde token/chatId zaten doğrulanmıştı (route
+      // başında "if (!token || !chatId) return 400" atlanmadı) —
+      // yapılandırma eksikliği değil, her zaman gerçek bir gönderim hatası.
       console.warn("[telegram/signal] VIP kart gönderimi başarısız, metne düşülüyor:", photoRes.errorMessage);
+      Sentry.captureMessage("Telegram VIP kart gönderimi başarısız", {
+        level: "warning",
+        extra: { errorMessage: photoRes.errorMessage },
+      });
     }
   }
 

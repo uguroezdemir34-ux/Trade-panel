@@ -67,6 +67,7 @@ export function isValidTelegramConfig(config: TelegramConfig | null): boolean {
  * başarısızlığı vb.) SESSİZCE process.env'e düşer — env hâlâ set edilmiş
  * durumdaysa hiçbir şey kırılmaz, sadece console.error ile loglanır.
  */
+import * as Sentry from "@sentry/nextjs";
 import { getNotificationConfigRow } from "@/lib/db/notificationConfig";
 import { decryptSecret } from "@/lib/crypto/serverSecrets";
 
@@ -79,7 +80,14 @@ export async function resolveTelegramConfig(): Promise<TelegramConfig | null> {
       return { botToken, chatId };
     }
   } catch (err) {
+    // "Yapılandırma eksik" durumu burada HİÇ throw etmez (yukarıdaki
+    // botToken/chatId kontrolü sessizce env'e düşer) — bu catch sadece
+    // gerçek DB/decrypt arızalarını yakalıyor, her zaman gerçek bir hata.
     console.error("[resolveTelegramConfig] DB okuma/decrypt başarısız, env'e düşülüyor:", err);
+    Sentry.captureMessage("Telegram config DB okuma/decrypt başarısız", {
+      level: "warning",
+      extra: { err: err instanceof Error ? err.message : String(err) },
+    });
   }
   return loadTelegramConfigFromEnv();
 }
@@ -90,7 +98,12 @@ export async function resolvePublicChatId(): Promise<string | null> {
     const id = row?.telegram_public_chat_id_enc ? decryptSecret(row.telegram_public_chat_id_enc) : null;
     if (id) return id;
   } catch (err) {
+    // resolveTelegramConfig() ile aynı gerekçe — her zaman gerçek hata.
     console.error("[resolvePublicChatId] DB okuma/decrypt başarısız, env'e düşülüyor:", err);
+    Sentry.captureMessage("Telegram public chat ID DB okuma/decrypt başarısız", {
+      level: "warning",
+      extra: { err: err instanceof Error ? err.message : String(err) },
+    });
   }
   const envId = process.env.TELEGRAM_PUBLIC_CHAT_ID?.trim();
   return envId || null;

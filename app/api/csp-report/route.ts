@@ -15,12 +15,16 @@
  *     Content-Type: application/reports+json
  *     Body: [{ "type": "csp-violation", "body": { "documentURL", "effectiveDirective", "blockedURL", ... }, ... }]
  *
- * Sadece console.error ile loglanıyor — DB'ye yazma YOK, rate-limit YOK
- * (kullanıcı kararı: bu sadece teşhis amaçlı bir ön koşul, gerçek hacim
- * görülürse ayrı bir iş olarak ele alınır).
+ * console.error + Sentry.captureMessage ile loglanıyor — DB'ye yazma YOK,
+ * rate-limit YOK (kullanıcı kararı: bu sadece teşhis amaçlı bir ön koşul,
+ * gerçek hacim görülürse ayrı bir iş olarak ele alınır). CSP'de "yapılandırma
+ * eksik" karşılığı yok (bu endpoint'in kendisi başka bir servise/kimlik
+ * bilgisine bağlı değil) — üç durumun (2 ihlal formatı + parse hatası)
+ * üçü de her zaman Sentry'ye gidiyor, filtre gerekmiyor.
  */
 
 import { NextResponse } from "next/server";
+import * as Sentry from "@sentry/nextjs";
 
 interface LegacyCspReportBody {
   "csp-report"?: {
@@ -55,6 +59,14 @@ function logLegacyReport(parsed: LegacyCspReportBody): void {
     referrer: report["referrer"],
     timestamp: new Date().toISOString(),
   });
+  Sentry.captureMessage("CSP Report-Only ihlali (legacy report-uri)", {
+    level: "warning",
+    extra: {
+      violatedDirective: report["violated-directive"],
+      blockedUri: report["blocked-uri"],
+      documentUri: report["document-uri"],
+    },
+  });
 }
 
 function logReportingApiEntries(entries: ReportingApiEntry[]): void {
@@ -68,6 +80,14 @@ function logReportingApiEntries(entries: ReportingApiEntry[]): void {
       disposition: b.disposition,
       referrer: b.referrer,
       timestamp: new Date().toISOString(),
+    });
+    Sentry.captureMessage("CSP Report-Only ihlali (Reporting API)", {
+      level: "warning",
+      extra: {
+        violatedDirective: b.effectiveDirective,
+        blockedUri: b.blockedURL,
+        documentUri: b.documentURL,
+      },
     });
   }
 }
@@ -89,6 +109,10 @@ export async function POST(req: Request): Promise<NextResponse> {
     }
   } catch (err) {
     console.error("[CSP Report] body parse hatası:", err);
+    Sentry.captureMessage("CSP Report body parse hatası", {
+      level: "warning",
+      extra: { err: err instanceof Error ? err.message : String(err) },
+    });
   }
 
   return new NextResponse(null, { status: 204 });
