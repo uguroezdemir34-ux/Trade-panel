@@ -60,8 +60,18 @@ export function useMarketExtrasPoller(delayMs = 0): void {
   const setStock = useStockTickerStore((s) => s.setStock);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // useEquityIndexPoller.ts'teki AYNI kanıtlanmış desen (AppShell route-gating
+  // turunda bulunan ghost-timer yarış koşulu — self-rescheduling setTimeout
+  // zincirinde unmount tam bir poll() fetch'i beklerken olursa, in-flight
+  // çağrı tamamlandığında .then(scheduleNext) koşulsuz yeni bir takip
+  // edilmeyen timer kuruyordu). Bu hook o denetimin kapsamında değildi
+  // (AppShell'de değil, app/karar/page.tsx'te mount ediliyor) — aynı bug
+  // burada da varmış, aynı çözüm uygulanıyor.
+  const stoppedRef = useRef(false);
 
   useEffect(() => {
+    stoppedRef.current = false;
+
     async function poll(): Promise<void> {
       try {
         const res = await fetch("/api/global-ticker");
@@ -93,6 +103,10 @@ export function useMarketExtrasPoller(delayMs = 0): void {
     }
 
     function scheduleNext(): void {
+      // Tek choke point — hem ilk çağrının hem sonraki her döngünün
+      // .then(scheduleNext)'i buradan geçiyor, unmount sonrası ikisi de
+      // burada durur.
+      if (stoppedRef.current) return;
       timerRef.current = setTimeout(() => {
         void poll().then(scheduleNext);
       }, POLL_INTERVAL_MS);
@@ -103,6 +117,7 @@ export function useMarketExtrasPoller(delayMs = 0): void {
     }, delayMs);
 
     return () => {
+      stoppedRef.current = true;
       if (startTimerRef.current) clearTimeout(startTimerRef.current);
       if (timerRef.current) clearTimeout(timerRef.current);
     };
