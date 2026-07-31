@@ -12,6 +12,7 @@ import { AccountBalanceCard } from "@/components/ayarlar/AccountBalanceCard";
 import { ModeToggleCard } from "@/components/ayarlar/ModeToggleCard";
 import { DangerZoneCard } from "@/components/ayarlar/DangerZoneCard";
 import { AuthStatusCard } from "@/components/ayarlar/AuthStatusCard";
+import { AdminPanelCard } from "@/components/ayarlar/AdminPanelCard";
 import { GoAlertsCard } from "@/components/ayarlar/GoAlertsCard";
 import { PriceAlarmsCard } from "@/components/ayarlar/PriceAlarmsCard";
 import { ScorerWeightsCard } from "@/components/ayarlar/ScorerWeightsCard";
@@ -106,6 +107,7 @@ export default function AyarlarPage() {
           </SubscriptionGate>
           <PwaCard />
           <AuthStatusCard />
+          <AdminPanelCard />
         </div>
       )}
 
