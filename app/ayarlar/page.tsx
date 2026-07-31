@@ -24,6 +24,7 @@ import { MexcCredsCard } from "@/components/ayarlar/MexcCredsCard";
 import { KrakenCredsCard } from "@/components/ayarlar/KrakenCredsCard";
 import { PwaCard } from "@/components/ayarlar/PwaCard";
 import { DiscordWebhookCard } from "@/components/ayarlar/DiscordWebhookCard";
+import { ChannelConnectionCard } from "@/components/ayarlar/ChannelConnectionCard";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import loadDynamic from "next/dynamic";
 const PlanStatusCard = loadDynamic(
@@ -87,6 +88,7 @@ export default function AyarlarPage() {
           <KucoinCredsCard />
           <MexcCredsCard />
           <KrakenCredsCard />
+          <ChannelConnectionCard />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <TelegramTestCard />
             <DiscordWebhookCard />

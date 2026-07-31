@@ -565,6 +565,13 @@ export const en: Dictionary = {
       configured: "Webhook configured",
       notConfigured: "Not configured",
     },
+    channelStatus: {
+      title: "Channel Connection Test",
+      subtitle: "Quick status overview and test for all notification channels",
+      configured: "Configured",
+      notConfigured: "Not configured",
+      notIntegrated: "Not integrated",
+    },
     dangerZone: "Danger Zone",
     resetAll: "RESET ALL DATA",
     resetConfirm: "Are you sure? This will delete all panel data.",

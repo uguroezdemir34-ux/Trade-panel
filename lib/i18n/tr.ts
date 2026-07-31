@@ -565,6 +565,13 @@ export const tr: Dictionary = {
       configured: "Webhook yapılandırıldı",
       notConfigured: "Yapılandırılmadı",
     },
+    channelStatus: {
+      title: "Kanal Bağlantı Testi",
+      subtitle: "Tüm bildirim kanalları için hızlı durum özeti ve test",
+      configured: "Yapılandırıldı",
+      notConfigured: "Yapılandırılmadı",
+      notIntegrated: "Entegre değil",
+    },
     dangerZone: "Tehlikeli Bölge",
     resetAll: "TÜM VERİLERİ SIFIRLA",
     resetConfirm: "Emin misiniz? Bu işlem tüm panel verilerini silecektir.",
