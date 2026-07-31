@@ -1,17 +1,18 @@
 "use client";
 
 /**
- * CHANNEL CONNECTION CARD — 5 kanal için hızlı özet+test şeridi (Telegram,
- * Discord, YouTube, TikTok, X). TelegramTestCard/DiscordWebhookCard'ın
- * YERİNE geçmiyor — onlar kimlik bilgisi giriş/düzenleme arayüzü olarak
- * aynen kalıyor, bu kart sadece üstte bir durum özeti + tek tık test.
+ * CHANNEL CONNECTION CARD — 5 kanal için hızlı durum özeti (Telegram,
+ * Discord, YouTube, TikTok, X). DiscordWebhookCard'ın YERİNE geçmiyor —
+ * o kimlik bilgisi giriş/düzenleme arayüzü olarak aynen kalıyor, bu kart
+ * sadece üstte bir durum özeti.
  *
  * TELEGRAM — durum /api/settings/channel-status'tan (server env,
  * TELEGRAM_BOT_TOKEN + TELEGRAM_VIP_CHAT_ID) okunuyor. Test butonu
- * TelegramTestCard'daki AYNI /api/telegram/test route'unu çağırıyor,
- * client-stored (Layer 2) credential varsa onu da gönderiyor — route
- * zaten Layer 1 (env) öncelikli, Layer 2 fallback mantığını kendi içinde
- * yapıyor (bkz. app/api/telegram/test/route.ts).
+ * BİLEREK KALDIRILDI (3 farklı Telegram yeri kafa karıştırıyordu, bkz.
+ * NotificationConfigCard.tsx) — token/chat ID girişi + test artık TEK
+ * yerde: NotificationConfigCard (admin-only, DB'ye şifreli yazan, gerçek
+ * çalışan sistem). Burada sadece durum noktası kalıyor, sekmeler arası
+ * hızlı bir genel bakış için.
  *
  * DISCORD — KASITLI OLARAK env DEĞİL, client-side store'dan okunuyor
  * (kullanıcı kararı, bkz. app/api/settings/channel-status/route.ts
@@ -31,7 +32,6 @@
 
 import { useEffect, useState } from "react";
 import { useT } from "@/lib/i18n/context";
-import { useCredentialStore } from "@/lib/store/credentialStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { sendDiscordMessage } from "@/lib/notify/discord/channel";
 
@@ -44,10 +44,8 @@ function StatusDot({ ok }: { ok: boolean }): React.ReactElement {
 export function ChannelConnectionCard(): React.ReactElement {
   const t = useT();
   const [telegramConfigured, setTelegramConfigured] = useState(false);
-  const [telegramStatus, setTelegramStatus] = useState<TestStatus>("idle");
   const [discordStatus, setDiscordStatus] = useState<TestStatus>("idle");
 
-  const telegramCreds = useCredentialStore((s) => s.telegram);
   const discordWebhookUrl = useSettingsStore((s) => s.discordWebhookUrl);
 
   useEffect(() => {
@@ -64,24 +62,6 @@ export function ChannelConnectionCard(): React.ReactElement {
       cancelled = true;
     };
   }, []);
-
-  async function handleTelegramTest(): Promise<void> {
-    setTelegramStatus("loading");
-    try {
-      const body: Record<string, string> = {};
-      if (telegramCreds?.botToken) body.botToken = telegramCreds.botToken;
-      if (telegramCreds?.chatId) body.chatId = telegramCreds.chatId;
-      const res = await fetch("/api/telegram/test", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = (await res.json()) as { ok: boolean };
-      setTelegramStatus(data.ok ? "success" : "error");
-    } catch {
-      setTelegramStatus("error");
-    }
-  }
 
   async function handleDiscordTest(): Promise<void> {
     if (!discordWebhookUrl) return;
@@ -110,7 +90,7 @@ export function ChannelConnectionCard(): React.ReactElement {
       </div>
 
       <div className="flex flex-col gap-2">
-        {/* Telegram */}
+        {/* Telegram — sadece durum, test/kaydetme NotificationConfigCard'da (bkz. dosya başı yorumu) */}
         <div className="flex items-center justify-between gap-2 py-1">
           <div className="flex items-center gap-2">
             <StatusDot ok={telegramConfigured} />
@@ -121,23 +101,7 @@ export function ChannelConnectionCard(): React.ReactElement {
                 : t("settings.channelStatus.notConfigured")}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => void handleTelegramTest()}
-            disabled={telegramStatus === "loading"}
-            className="border-border hover:bg-bg-page disabled:opacity-50 rounded border px-2 py-1 font-mono text-2xs tracking-widest uppercase transition-colors"
-          >
-            {telegramStatus === "loading"
-              ? t("settings.telegram.testing")
-              : t("settings.telegram.testButton")}
-          </button>
         </div>
-        {telegramStatus === "success" && (
-          <p className="text-signal-green -mt-1 font-mono text-2xs">✓ {t("settings.telegram.success")}</p>
-        )}
-        {telegramStatus === "error" && (
-          <p className="text-signal-red -mt-1 font-mono text-2xs">✗ {t("settings.telegram.apiError")}</p>
-        )}
 
         {/* Discord */}
         <div className="flex items-center justify-between gap-2 py-1">

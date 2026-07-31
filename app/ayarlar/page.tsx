@@ -5,7 +5,6 @@ export const dynamic = "force-dynamic";
 import { useState } from "react";
 import { useT } from "@/lib/i18n/context";
 import { OkxCredsCard } from "@/components/ayarlar/OkxCredsCard";
-import { TelegramTestCard } from "@/components/ayarlar/TelegramTestCard";
 import { TradingLimitsCard } from "@/components/ayarlar/TradingLimitsCard";
 import { DrawdownToggleCard } from "@/components/ayarlar/DrawdownToggleCard";
 import { AccountBalanceCard } from "@/components/ayarlar/AccountBalanceCard";
@@ -90,10 +89,7 @@ export default function AyarlarPage() {
           <MexcCredsCard />
           <KrakenCredsCard />
           <ChannelConnectionCard />
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <TelegramTestCard />
-            <DiscordWebhookCard />
-          </div>
+          <DiscordWebhookCard />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <SubscriptionGate feature="telegramSignals">
               <GoAlertsCard />

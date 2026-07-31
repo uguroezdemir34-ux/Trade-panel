@@ -1,11 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
+import { resolveTelegramConfig } from "@/lib/notify/telegram/config";
 
 export async function POST(req: NextRequest) {
-  // Layer 1: server-side env vars (highest priority)
-  let token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  let chatId = process.env.TELEGRAM_VIP_CHAT_ID?.trim();
+  // resolveTelegramConfig() önce Supabase'deki notification_config
+  // satırını dener, yoksa process.env'e (TELEGRAM_BOT_TOKEN/
+  // TELEGRAM_VIP_CHAT_ID) düşer — bkz. lib/notify/telegram/config.ts.
+  // NotificationConfigCard'ın "Test Et" butonu bu route'u body GÖNDERMEDEN
+  // çağırıyor, tamamen bu çözümlemeye güveniyor.
+  const resolved = await resolveTelegramConfig();
+  let token = resolved?.botToken;
+  let chatId = resolved?.chatId;
 
-  // Layer 2: client-provided credentials from request body
+  // Layer 2 (geriye dönük uyumluluk) — yukarıdakilerin ikisi de boşsa,
+  // request body'sinden gelen client-provided credential'lara düşülür.
   try {
     const body = (await req.json()) as { botToken?: string; chatId?: string };
     if (!token && body.botToken) token = body.botToken.trim();

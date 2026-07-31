@@ -20,6 +20,14 @@
  *
  * BİLEREK useT() KULLANMIYOR — AdminPanelCard.tsx'teki aynı gerekçe: bu
  * admin-only bir kontrol, tek admin (kurucu) Türkçe okuyor.
+ *
+ * TEST ET — /api/telegram/test'i BODY GÖNDERMEDEN çağırır: o route artık
+ * resolveTelegramConfig() ile önce bu kartın kaydettiği DB değerlerini
+ * dener, yoksa env'e düşer (bkz. app/api/telegram/test/route.ts) — yani
+ * bu buton, henüz kaydedilmemiş form alanlarını DEĞİL, en son KAYDEDİLMİŞ
+ * değeri test eder (ChannelConnectionCard'daki eski test butonu ve eski
+ * TelegramTestCard kaldırıldı — Telegram için artık TEK giriş/test yeri
+ * burası).
  */
 
 import { useEffect, useState } from "react";
@@ -31,6 +39,7 @@ interface ConfigStatus {
 }
 
 type SaveStatus = "idle" | "loading" | "success" | "error";
+type TestStatus = "idle" | "loading" | "success" | "error";
 
 export function NotificationConfigCard(): React.ReactElement | null {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -39,6 +48,7 @@ export function NotificationConfigCard(): React.ReactElement | null {
   const [vipChatId, setVipChatId] = useState("");
   const [publicChatId, setPublicChatId] = useState("");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [testStatus, setTestStatus] = useState<TestStatus>("idle");
 
   useEffect(() => {
     let cancelled = false;
@@ -94,6 +104,21 @@ export function NotificationConfigCard(): React.ReactElement | null {
       if (statusRes.ok) setStatus((await statusRes.json()) as ConfigStatus);
     } catch {
       setSaveStatus("error");
+    }
+  }
+
+  async function handleTest(): Promise<void> {
+    setTestStatus("loading");
+    try {
+      const res = await fetch("/api/telegram/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      const data = (await res.json()) as { ok: boolean };
+      setTestStatus(data.ok ? "success" : "error");
+    } catch {
+      setTestStatus("error");
     }
   }
 
@@ -159,19 +184,35 @@ export function NotificationConfigCard(): React.ReactElement | null {
             autoComplete="off"
           />
         </div>
-        <button
-          type="button"
-          onClick={() => void handleSave()}
-          disabled={saveStatus === "loading" || nothingToSave}
-          className="border-border hover:bg-bg-page disabled:opacity-40 rounded border px-2 py-1 font-mono text-2xs tracking-widest uppercase transition-colors"
-        >
-          {saveStatus === "loading" ? "Kaydediliyor..." : "Kaydet"}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => void handleSave()}
+            disabled={saveStatus === "loading" || nothingToSave}
+            className="border-border hover:bg-bg-page disabled:opacity-40 rounded border px-2 py-1 font-mono text-2xs tracking-widest uppercase transition-colors"
+          >
+            {saveStatus === "loading" ? "Kaydediliyor..." : "Kaydet"}
+          </button>
+          <button
+            type="button"
+            onClick={() => void handleTest()}
+            disabled={testStatus === "loading"}
+            className="border-border hover:bg-bg-page disabled:opacity-40 rounded border px-2 py-1 font-mono text-2xs tracking-widest uppercase transition-colors"
+          >
+            {testStatus === "loading" ? "Gönderiliyor..." : "Test Et"}
+          </button>
+        </div>
         {saveStatus === "success" && (
           <p className="text-signal-green font-mono text-2xs">✓ Kaydedildi</p>
         )}
         {saveStatus === "error" && (
           <p className="text-signal-red font-mono text-2xs">✗ Kaydetme başarısız</p>
+        )}
+        {testStatus === "success" && (
+          <p className="text-signal-green font-mono text-2xs">✓ Test mesajı gönderildi</p>
+        )}
+        {testStatus === "error" && (
+          <p className="text-signal-red font-mono text-2xs">✗ Test başarısız (yapılandırma eksik/hatalı olabilir)</p>
         )}
       </div>
     </div>
