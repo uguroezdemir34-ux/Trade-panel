@@ -1,11 +1,15 @@
 import * as Sentry from "@sentry/nextjs";
 
+// tracesSampleRate ve enableLogs bilerek kaldırıldı — ikisi de otomatik
+// olarak browserTracingIntegration + logs-capture entegrasyonunu dahil
+// ediyordu (bundle-analyze CI'da ölçüldü: paylaşılan chunk'ın @sentry/*
+// payının önemli kısmı), ve kod tabanında ne Sentry.startSpan ne
+// Sentry.logger hiç çağrılmıyor — sadece dashboard-only telemetri,
+// hata yakalama (GlobalHandlers/TryCatch/Breadcrumbs) bundan etkilenmez.
 Sentry.init({
   dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
-  tracesSampleRate: process.env.NODE_ENV === "development" ? 1.0 : 0.1,
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
-  enableLogs: true,
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
