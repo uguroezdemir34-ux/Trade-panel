@@ -60,6 +60,7 @@ import { usePriorityAlerts } from "@/lib/hooks/usePriorityAlerts";
 import { useCapacitorApp } from "@/lib/hooks/useCapacitorApp";
 import { useCapacitorPush } from "@/lib/hooks/useCapacitorPush";
 import { useGoSignalOutcomeTracker } from "@/lib/hooks/useGoSignalOutcomeTracker";
+import { useSentryReplay } from "@/lib/hooks/useSentryReplay";
 import { QuickTradeSheet } from "@/components/mobile/QuickTradeSheet";
 import { DisclaimerModal } from "./DisclaimerModal";
 import { MasterPinModal } from "./MasterPinModal";
@@ -164,6 +165,9 @@ export function AppShell({
   useCapacitorPush();
   // GO sinyal sonrası 15dk/1sa fiyat hareketi takibi
   useGoSignalOutcomeTracker();
+  // Sentry Session Replay'i geç yükle — /sign-in gibi public route'larda
+  // AppShell hiç render edilmediği için bu chunk oralarda hiç indirilmiyor
+  useSentryReplay();
 
   useEffect(() => {
     if (!authLoaded) return;
