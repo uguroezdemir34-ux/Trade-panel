@@ -10,6 +10,11 @@ import "@fontsource/ibm-plex-mono/400.css";
 import "@fontsource/ibm-plex-mono/500.css";
 import "@fontsource/ibm-plex-mono/600.css";
 import "@fontsource/ibm-plex-mono/700.css";
+// /karar'a özel CSS (glass-panel, panel-inset ailesi, ticker/flow
+// animasyonları, pnl-breathe) — app/globals.css'ten taşındı (CSS
+// temizliği teşhisi). Her selector /karar dışında hiç kullanılmıyor,
+// tek tek grep ile doğrulandı — bkz. karar.css dosya başı yorumu.
+import "./karar.css";
 
 export default function KararLayout({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
