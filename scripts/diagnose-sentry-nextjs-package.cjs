@@ -140,6 +140,76 @@ try {
   } else {
     console.log("  (dosya yok)");
   }
+
+  // — Bir önceki koşu @sentry/nextjs'in client barrel'ının "export * from
+  // '@sentry/react'" olduğunu gösterdi — replayIntegration @sentry/nextjs'te
+  // hiç tanımlı değil, @sentry/react'ten geliyor. Şimdi AYNI ADIMI
+  // @sentry/react için tekrarlıyoruz — hangi TAM PATH'in okunduğunu (kullanıcı
+  // bu sandbox'ı kendisi göremediği için) HER ADIMDA açıkça yazdırıyoruz.
+  function resolveBrowserEntryRelPath(pkg) {
+    const exp = pkg.exports && pkg.exports["."];
+    function pick(condObj) {
+      if (typeof condObj === "string") return condObj;
+      if (condObj && typeof condObj === "object") {
+        return condObj.import ?? condObj.require ?? condObj.default ?? null;
+      }
+      return null;
+    }
+    if (exp && typeof exp === "object" && exp.browser !== undefined) {
+      const picked = pick(exp.browser);
+      if (picked) return { relPath: picked, source: 'exports["."].browser' };
+    }
+    if (exp) {
+      const picked = pick(exp);
+      if (picked) return { relPath: picked, source: 'exports["."] (top-level, browser koşulu yok)' };
+    }
+    if (pkg.browser && typeof pkg.browser === "string") return { relPath: pkg.browser, source: "pkg.browser" };
+    if (pkg.module) return { relPath: pkg.module, source: "pkg.module" };
+    if (pkg.main) return { relPath: pkg.main, source: "pkg.main" };
+    return null;
+  }
+
+  section("@sentry/react package.json (diskten doğrudan okuma) + çözümlenen browser giriş yolu");
+  const reactPkgInfo = readPkgJsonFromDisk("@sentry/react");
+  if (!reactPkgInfo) {
+    console.log("(node_modules/@sentry/react/package.json bulunamadı)");
+  } else {
+    console.log("package.json yolu:", reactPkgInfo.path);
+    const p = reactPkgInfo.pkg;
+    console.log(JSON.stringify({
+      name: p.name, version: p.version, main: p.main, module: p.module,
+      browser: p.browser, sideEffects: p.sideEffects, exports: p.exports,
+    }, null, 2));
+
+    const resolved = resolveBrowserEntryRelPath(p);
+    if (!resolved) {
+      console.log("UYARI: browser giriş yolu package.json'dan çözümlenemedi.");
+    } else {
+      const reactRoot = path.join(process.cwd(), "node_modules", "@sentry", "react");
+      const absPath = path.join(reactRoot, resolved.relPath);
+      console.log(`ÇÖZÜMLENEN TAM PATH (kaynak: ${resolved.source}):`);
+      console.log(`  ${absPath}`);
+      console.log(`Dosya var mı: ${fs.existsSync(absPath)}`);
+
+      section(`${absPath} içinde "replayIntegration"/"Replay" arama`);
+      grepWithContext(absPath, ["replayIntegration", "Replay"]);
+
+      section(`${absPath} içindeki TÜM "@sentry/*" re-export/import satırları`);
+      if (fs.existsSync(absPath)) {
+        const lines = fs.readFileSync(absPath, "utf8").split("\n");
+        let anyMatch = false;
+        lines.forEach((line, i) => {
+          if (/from\s+["']@sentry\//.test(line)) {
+            anyMatch = true;
+            console.log(`  L${i + 1}: ${line.trim().slice(0, 300)}`);
+          }
+        });
+        if (!anyMatch) console.log("  (eşleşme yok)");
+      } else {
+        console.log("  (dosya yok)");
+      }
+    }
+  }
 } catch (err) {
   console.error("HATA:", err.message);
   process.exit(1);
