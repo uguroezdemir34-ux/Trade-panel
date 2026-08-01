@@ -1,0 +1,39 @@
+name: Bundle Analyze
+
+# Elle tetiklenir (workflow_dispatch) — /sign-in LCP araştırması kapsamında
+# client bundle'ının gerçek paket kompozisyonunu görmek için. next.config.ts
+# içindeki withBundleAnalyzer zaten kurulu (ANALYZE=true next build), bu
+# workflow onu CI'da çalıştırıp HTML raporlarını artifact olarak yükler.
+# Yerel makineye bağımlı kalmamak için: bu adım kalıcı, ihtiyaç oldukça
+# tekrar tekrar workflow_dispatch ile tetiklenebilir (generate-lockfile.yml /
+# install-sentry-sdk.yml'deki aynı desen).
+
+on: workflow_dispatch
+
+jobs:
+  bundle-analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      # typecheck.yml ile aynı desen — package-lock.json repoda,
+      # --legacy-peer-deps .npmrc ile tutarlılık için.
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      # openAnalyzer:true (next.config.ts) CI'da headless ortamda no-op
+      # kalır (tarayıcı açacak bir şey yok) — sadece HTML dosyaları üretir,
+      # build'i bloklamaz.
+      - name: Build with bundle analyzer
+        run: ANALYZE=true npm run build
+
+      - name: Upload analyzer reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: bundle-analyze-reports
+          path: .next/analyze/*.html
+          retention-days: 14
