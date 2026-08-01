@@ -148,10 +148,17 @@ try {
   // bu sandbox'ı kendisi göremediği için) HER ADIMDA açıkça yazdırıyoruz.
   function resolveBrowserEntryRelPath(pkg) {
     const exp = pkg.exports && pkg.exports["."];
+    // Bazı paketlerde (ör. @sentry/react) "import"/"require" koşullarının
+    // kendisi de iç içe bir obje ({types, default}) — tek seviye okumak
+    // yetmiyor, string bulana kadar recursive inmek gerekiyor. (Önceki
+    // koşuda bu eksiklik path.join()'e obje geçirip script'i exit code 1
+    // ile çökertti — build adımı hiç başlamadı.)
     function pick(condObj) {
       if (typeof condObj === "string") return condObj;
       if (condObj && typeof condObj === "object") {
-        return condObj.import ?? condObj.require ?? condObj.default ?? null;
+        const candidate = condObj.browser ?? condObj.import ?? condObj.require ?? condObj.default ?? condObj["react-native"];
+        if (candidate === undefined) return null;
+        return pick(candidate);
       }
       return null;
     }
