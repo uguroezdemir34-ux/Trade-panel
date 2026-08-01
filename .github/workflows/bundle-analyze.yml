@@ -37,3 +37,14 @@ jobs:
           name: bundle-analyze-reports
           path: .next/analyze/*.html
           retention-days: 14
+
+      # Artifact zip'i (blob storage indirme linki) bazı ortamlardan
+      # erişilemiyor — bu adım aynı veriyi (client.html içine gömülü
+      # webpack-bundle-analyzer chartData ağacı) npm paketi başına
+      # toplam boyut olarak düz metne çevirip doğrudan job log'una
+      # yazar, log her zaman GitHub API üzerinden okunabiliyor.
+      # continue-on-error: rapor formatı beklenmedik şekilde değişirse
+      # bu adım kırmızı görünür ama job'ı (ve artifact upload'ı) düşürmez.
+      - name: Print bundle package sizes (client.html)
+        continue-on-error: true
+        run: node scripts/print-bundle-package-sizes.mjs .next/analyze/client.html
