@@ -141,54 +141,18 @@
 }
 
 /*
- * Cam efektli konteynerler (Faz 2 — adaptif glassmorphism) — .glass-panel
- * class'ı taşıyan 11 panel: ScoreHeatmap + SqueezeRadarBanner (2 sabit) +
- * /karar 9-grid'indeki 9 pair kartı. SADECE [data-theme="cyber-terminal"]
- * altında etkili — light/dark temada bu class'ın hiçbir görsel etkisi yok
- * (kartlar önceki görünümünü aynen korur).
+ * .glass-panel, .heatmap-cell-neutral — /karar'a özel, app/karar/karar.css'e
+ * taşındı (CSS temizliği teşhisi — her ikisi de /karar dışında hiç
+ * kullanılmıyor, grep ile doğrulandı).
  *
- * İki katman, CSS specificity ile çözülür (JS'e/media query'e gerek yok):
- *   1) Taban kural (aşağıda) — data-perf attribute'u HENÜZ yoksa (ilk
- *      paint, DevicePerfSync henüz hydrate olmadan) veya "low" ise devreye
- *      girer: fake-glass — soft glow + border gradient + layered
- *      transparency + hafif noise, backdrop-filter YOK. Güvenli varsayılan
- *      (devicePerfStore.ts: mode hep "low" başlar).
- *   2) [data-perf="high"] override (daha yüksek specificity, sıralamadan
- *      bağımsız kazanır) — sadece devicePerfStore FPS ölçümüyle "high"a
- *      yükselttiğinde gerçek backdrop-filter: blur(12px) döner.
+ * .header-control-border BURADA KALDI — AppHeader'daki (LanguageDropdown,
+ * ThemeToggle) dil/tema seçim kutuları, AppShell'in mount edildiği TÜM
+ * route'larda gerekiyor (/karar dahil ama ona özel değil), /karar'a özel
+ * dosyaya taşınırsa diğer route'larda (/grafik, /pnl, vb.) kaybolurdu.
+ * --border sadece :root'tan miras kalıyordu (Parça A'da override
+ * edilmedi), daha derin --bg'ye göre görece "açık/donuk" duruyordu.
+ * Glass panel'lerin sınırıyla aynı ince/parlak tonla hizalandı.
  */
-[data-theme="cyber-terminal"] .glass-panel {
-  background-image:
-    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/></svg>"),
-    linear-gradient(180deg, rgba(232, 234, 244, 0.07) 0%, rgba(232, 234, 244, 0.02) 100%);
-  background-color: transparent !important;
-  border-color: rgba(232, 234, 244, 0.14) !important;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 16px rgba(0, 0, 0, 0.28);
-}
-
-[data-theme="cyber-terminal"][data-perf="high"] .glass-panel {
-  background-image: none;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  background-color: rgba(232, 234, 244, 0.04) !important;
-  border-color: rgba(232, 234, 244, 0.12) !important;
-  box-shadow: none;
-}
-
-/*
- * Cyber-Terminal son ayarlar — küçük, düşük riskli renk düzeltmeleri.
- *
- * 1) Heatmap nötr/düşük skor hücreleri (text-t3) — mobilde güneş altında
- *    okunabilirlik için text-t2'ye yükseltildi (bir üst kontrast kademesi).
- *    Sadece renk, layout/mantık değişmedi.
- * 2) Header'daki dil/tema seçim kutuları (.header-control-border) —
- *    --border sadece :root'tan miras kalıyordu (Parça A'da override
- *    edilmedi), daha derin --bg'ye göre görece "açık/donuk" duruyordu.
- *    Glass panel'lerin sınırıyla aynı ince/parlak tonla hizalandı.
- */
-[data-theme="cyber-terminal"] .heatmap-cell-neutral {
-  color: rgb(var(--text-t2)) !important;
-}
 [data-theme="cyber-terminal"] .header-control-border {
   border-color: rgba(232, 234, 244, 0.16) !important;
 }
@@ -199,59 +163,9 @@
 [data-theme="light"] .bg-soft-amber  { background-color: rgb(180 83 9 / 0.12); }
 [data-theme="light"] .bg-soft-blue   { background-color: rgb(29 78 216 / 0.12); }
 
-/*
- * Inset panel utility classes — dark: dark overlay, light: subtle tint with visible border.
- * Use className="panel-inset" instead of inline rgba(0,0,0,...) backgrounds.
- */
-.panel-inset {
-  background: linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%);
-  border: 1px solid rgba(255,255,255,0.06);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28);
-}
-[data-theme="light"] .panel-inset {
-  background: linear-gradient(180deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.07) 100%) !important;
-  border: 1px solid rgba(0,0,0,0.10) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70), inset 0 -1px 2px rgba(0,0,0,0.05) !important;
-}
-
-.panel-inset-strong {
-  background: linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.46) 100%);
-  border: 1px solid rgba(184,140,60,0.16);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.42);
-}
-[data-theme="light"] .panel-inset-strong {
-  background: linear-gradient(180deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.07) 100%) !important;
-  border: 1px solid rgba(0,0,0,0.12) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.80), inset 0 -1px 3px rgba(0,0,0,0.06) !important;
-}
-
-.panel-header-band {
-  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.20) 100%);
-  border-bottom: 1px solid rgba(184,140,60,0.22);
-}
-[data-theme="light"] .panel-header-band {
-  background: linear-gradient(180deg, rgba(255,255,255,0.60) 0%, rgba(0,0,0,0.04) 100%) !important;
-  border-bottom: 1px solid rgba(0,0,0,0.10) !important;
-}
-
-.panel-ai-note {
-  background: linear-gradient(180deg, rgba(0,0,0,0.24) 0%, rgba(0,0,0,0.40) 100%);
-  border: 1px solid rgba(184,140,60,0.14);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.35);
-}
-[data-theme="light"] .panel-ai-note {
-  background: linear-gradient(180deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.06) 100%) !important;
-  border: 1px solid rgba(180,83,9,0.20) !important;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70), inset 0 -1px 2px rgba(0,0,0,0.04) !important;
-}
-
-/* Card depth — subtle top-right specular for physical surface feel */
-.card-depth {
-  background-image: radial-gradient(ellipse at 70% 20%, rgba(255,255,255,0.018) 0%, transparent 58%);
-}
-[data-theme="light"] .card-depth {
-  background-image: radial-gradient(ellipse at 70% 20%, rgba(255,255,255,0.045) 0%, transparent 58%);
-}
+/* .panel-inset, .panel-inset-strong, .panel-header-band, .panel-ai-note,
+   .card-depth — /karar'a özel, app/karar/karar.css'e taşındı (CSS
+   temizliği teşhisi). */
 
 /* Smooth transitions — enabled after initial paint to avoid FOUC */
 .theme-ready,
@@ -309,44 +223,8 @@ body {
   letter-spacing: 0;    /* Mono'da normal letter-spacing sıfırla */
 }
 
-/*
- * ── TEXT UTILITY CLASSES ─────────────────────────────────────────────────────
- * Profesyonel terminal tipografisi için hazır sınıflar.
- */
-
-/* Fiyat/büyük sayı gösterimi */
-.type-price {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum" 1;
-  letter-spacing: -0.01em;
-  font-weight: 600;
-}
-
-/* Küçük büyük harf etiket (TREND, VPIN, VOL DELTA...) */
-.type-label {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
-  font-size: 0.625rem;      /* 10px */
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  font-weight: 500;
-  color: rgb(var(--text-t4));
-}
-
-/* Metrik değer */
-.type-value {
-  font-family: ui-monospace, SFMono-Regular, "SF Mono", monospace;
-  font-variant-numeric: tabular-nums;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-/* Açıklama / yardımcı metin */
-.type-muted {
-  font-size: 0.6875rem;    /* 11px */
-  color: rgb(var(--text-t3));
-  line-height: 1.4;
-}
+/* .type-price/.type-label/.type-value/.type-muted silindi — codebase'in
+   hiçbir yerinde kullanılmıyordu (grep ile doğrulandı, ölü CSS). */
 
 /* Main content bottom padding: mobile = bottom nav height + safe area, desktop = standard */
 .app-main {
@@ -458,18 +336,6 @@ textarea {
 .sp-scan     { animation: sp-scan   2000ms ease-in 800ms infinite; pointer-events: none; }
 .sp-exit     { animation: sp-exit   600ms  ease-in forwards; }
 
-/* P&L nefes / breath — pozisyon kartı */
-@keyframes pnl-breathe-green {
-  0%, 100% { text-shadow: 0 0 6px rgba(16,185,129,0.30); }
-  50%       { text-shadow: 0 0 18px rgba(16,185,129,0.70), 0 0 36px rgba(16,185,129,0.20); }
-}
-@keyframes pnl-breathe-red {
-  0%, 100% { text-shadow: 0 0 6px rgba(239,68,68,0.30); }
-  50%       { text-shadow: 0 0 18px rgba(239,68,68,0.70), 0 0 36px rgba(239,68,68,0.20); }
-}
-.pnl-breathe-green { animation: pnl-breathe-green 3.2s ease-in-out infinite; }
-.pnl-breathe-red   { animation: pnl-breathe-red   3.2s ease-in-out infinite; }
-
 /* Letter delays — 8 harf: Q U A N T I X */
 .sp-l0 { animation: sp-letter 320ms cubic-bezier(0.34,1.2,0.64,1) 780ms  both; }
 .sp-l1 { animation: sp-letter 320ms cubic-bezier(0.34,1.2,0.64,1) 850ms  both; }
@@ -479,38 +345,9 @@ textarea {
 .sp-l5 { animation: sp-letter 320ms cubic-bezier(0.34,1.2,0.64,1) 1130ms both; }
 .sp-l6 { animation: sp-letter 320ms cubic-bezier(0.34,1.2,0.64,1) 1200ms both; }
 
-/* FLOW badge pulse — yön değişince 1.5s, sonra söner */
-@keyframes flow-pulse-up {
-  0%   { box-shadow: 0 0 0 0 rgb(34 197 94 / 0.55); }
-  70%  { box-shadow: 0 0 0 7px rgb(34 197 94 / 0); }
-  100% { box-shadow: 0 0 0 0 rgb(34 197 94 / 0); }
-}
-@keyframes flow-pulse-down {
-  0%   { box-shadow: 0 0 0 0 rgb(239 68 68 / 0.55); }
-  70%  { box-shadow: 0 0 0 7px rgb(239 68 68 / 0); }
-  100% { box-shadow: 0 0 0 0 rgb(239 68 68 / 0); }
-}
-.flow-pulse-up   { animation: flow-pulse-up   1.5s ease-out forwards; }
-.flow-pulse-down { animation: flow-pulse-down 1.5s ease-out forwards; }
-
-/* FLOW nabız LED — sürekli neon halka */
-@keyframes flow-led-ring {
-  0%   { box-shadow: 0 0 0 0 var(--led-color, rgb(34 197 94 / 0.7)), 0 0 4px 1px var(--led-color, rgb(34 197 94 / 0.4)); }
-  60%  { box-shadow: 0 0 0 5px rgb(0 0 0 / 0), 0 0 6px 2px var(--led-color, rgb(34 197 94 / 0.2)); }
-  100% { box-shadow: 0 0 0 0 rgb(0 0 0 / 0), 0 0 4px 1px var(--led-color, rgb(34 197 94 / 0.4)); }
-}
-.flow-led { animation: flow-led-ring 2s ease-in-out infinite; }
-
-/* Ticker Tape — sürekli akan fiyat şeridi. Sadece transform (GPU compositor
-   thread'inde çalışır, ana thread'i meşgul etmez) — requestAnimationFrame
-   KULLANILMIYOR, bilinçli karar (bkz. CLAUDE.md §9 Görsel Kalite Paketi). */
-@keyframes ticker-scroll {
-  from { transform: translateX(0); }
-  to   { transform: translateX(-50%); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .ticker-tape-track { animation: none !important; }
-}
+/* .pnl-breathe-*, .flow-pulse-*, .flow-led, .ticker-tape-track/ticker-scroll
+   — /karar'a özel, app/karar/karar.css'e taşındı (CSS temizliği teşhisi;
+   pnl-breathe burada iki kez tanımlıydı, tekilleştirilip taşındı). */
 
 /* WaitlistScreen state geçişi — sadece transform+opacity (aynı GPU-dostu
    ilke, animasyon kütüphanesi eklemeden "smooth transition" sağlar). */
@@ -519,55 +356,7 @@ textarea {
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* === Hero card dış kabuk — nötr karanlık metal çerçeve ===
-   --border-strong tokeni: dark=58 58 58, light=136 136 152.
-   Kart gövdesi bg-card tokenından, çerçeve sadece kenarda. */
-.qx-hero-card {
-  border-radius: 14px;
-  background: rgb(var(--bg-card));
-  border: 1px solid rgb(var(--border-strong));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.06),
-    0 4px 24px rgba(0,0,0,0.50),
-    0 1px 4px rgba(0,0,0,0.32);
-}
-[data-theme="light"] .qx-hero-card {
-  border: 1px solid rgb(var(--border));
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,0.90),
-    0 4px 16px rgba(0,0,0,0.12),
-    0 1px 2px rgba(0,0,0,0.08);
-}
-
-/* === Karar sayfası Faz 1 metalik inset paneller ===
-   Dark mode: rgba siyah katman (mevcut görünüm korunur).
-   Light mode: çok hafif overlay → panel arka planı beyaz/açık gri kalır,
-   metin token renkleri yeterli kontrasta kavuşur. */
-.qx-inset {
-  background: linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%);
-}
-.qx-inset-deep {
-  background: linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.46) 100%);
-}
-.qx-inset-note {
-  background: linear-gradient(180deg, rgba(0,0,0,0.24) 0%, rgba(0,0,0,0.40) 100%);
-}
-[data-theme="light"] .qx-inset,
-[data-theme="light"] .qx-inset-note {
-  background: linear-gradient(180deg, rgba(0,0,0,0.04) 0%, rgba(0,0,0,0.08) 100%);
-}
-[data-theme="light"] .qx-inset-deep {
-  background: linear-gradient(180deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.10) 100%);
-}
-
-/* P&L nefes / breath — pozisyon kartı */
-@keyframes pnl-breathe-green {
-  0%, 100% { text-shadow: 0 0 6px rgba(16,185,129,0.30); }
-  50%       { text-shadow: 0 0 18px rgba(16,185,129,0.70), 0 0 36px rgba(16,185,129,0.20); }
-}
-@keyframes pnl-breathe-red {
-  0%, 100% { text-shadow: 0 0 6px rgba(239,68,68,0.30); }
-  50%       { text-shadow: 0 0 18px rgba(239,68,68,0.70), 0 0 36px rgba(239,68,68,0.20); }
-}
-.pnl-breathe-green { animation: pnl-breathe-green 3.2s ease-in-out infinite; }
-.pnl-breathe-red   { animation: pnl-breathe-red   3.2s ease-in-out infinite; }
+/* .qx-hero-card, .qx-inset/.qx-inset-deep/.qx-inset-note silindi —
+   codebase'in hiçbir yerinde kullanılmıyordu (grep ile doğrulandı, ölü
+   CSS). İkinci .pnl-breathe-* kopyası da burada kaldırıldı — bkz. yukarısı,
+   tekilleştirilip app/karar/karar.css'e taşındı. */

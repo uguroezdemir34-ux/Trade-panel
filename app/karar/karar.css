@@ -1,0 +1,166 @@
+/*
+ * /KARAR'A ÖZEL STİLLER — app/globals.css'ten taşındı (CSS temizliği,
+ * bkz. CLAUDE.md §9 Görsel Kalite Paketi + fontsource route-scoping
+ * öncülü, app/karar/layout.tsx dosya başı yorumu).
+ *
+ * Bu dosyadaki HER selector, sadece app/karar/page.tsx veya onun
+ * component ağacındaki (FlowAlignmentRow, TickerTape, WalletSummaryBar,
+ * PositionAccordion, ScoreHeatmap, SqueezeRadarBanner) dosyalarda
+ * kullanılıyor — taşımadan önce her sınıf ayrı ayrı grep ile doğrulandı.
+ *
+ * BİLEREK BURADA OLMAYANLAR (globals.css'te kaldı, taşınmadı): splash
+ * screen (sp-*) ve .header-control-border — ikisi de AppShell'in
+ * kendisinde (SplashScreen, AppHeader → LanguageDropdown/ThemeToggle)
+ * kullanılıyor, yani /karar dahil AMA /karar'a ÖZEL DEĞİL — public
+ * olmayan ~10 route'un hepsinde gerekiyor (/grafik, /pnl, /pozisyon,
+ * /risk, /ayarlar, /portfolyo, /backtest, /piyasa, /upgrade, /admin/*).
+ * Next.js'te bu route kümesini tek bir non-root layout kapsamıyor
+ * (hepsi farklı üst segment) — buraya taşımak o route'larda görsel
+ * regresyona yol açardı. Doğru düzeltme bir route-group refactor'ü
+ * gerektiriyor, kasıtlı olarak ayrı bir round'a bırakıldı.
+ */
+
+/*
+ * Cam efektli konteynerler (Faz 2 — adaptif glassmorphism) — .glass-panel
+ * class'ı taşıyan 11 panel: ScoreHeatmap + SqueezeRadarBanner (2 sabit) +
+ * /karar 9-grid'indeki 9 pair kartı. SADECE [data-theme="cyber-terminal"]
+ * altında etkili — light/dark temada bu class'ın hiçbir görsel etkisi yok
+ * (kartlar önceki görünümünü aynen korur).
+ *
+ * İki katman, CSS specificity ile çözülür (JS'e/media query'e gerek yok):
+ *   1) Taban kural (aşağıda) — data-perf attribute'u HENÜZ yoksa (ilk
+ *      paint, DevicePerfSync henüz hydrate olmadan) veya "low" ise devreye
+ *      girer: fake-glass — soft glow + border gradient + layered
+ *      transparency + hafif noise, backdrop-filter YOK. Güvenli varsayılan
+ *      (devicePerfStore.ts: mode hep "low" başlar).
+ *   2) [data-perf="high"] override (daha yüksek specificity, sıralamadan
+ *      bağımsız kazanır) — sadece devicePerfStore FPS ölçümüyle "high"a
+ *      yükselttiğinde gerçek backdrop-filter: blur(12px) döner.
+ */
+[data-theme="cyber-terminal"] .glass-panel {
+  background-image:
+    url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='60' height='60'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/></svg>"),
+    linear-gradient(180deg, rgba(232, 234, 244, 0.07) 0%, rgba(232, 234, 244, 0.02) 100%);
+  background-color: transparent !important;
+  border-color: rgba(232, 234, 244, 0.14) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 16px rgba(0, 0, 0, 0.28);
+}
+
+[data-theme="cyber-terminal"][data-perf="high"] .glass-panel {
+  background-image: none;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background-color: rgba(232, 234, 244, 0.04) !important;
+  border-color: rgba(232, 234, 244, 0.12) !important;
+  box-shadow: none;
+}
+
+/*
+ * Heatmap nötr/düşük skor hücreleri (text-t3) — mobilde güneş altında
+ * okunabilirlik için text-t2'ye yükseltildi (bir üst kontrast kademesi).
+ * Sadece renk, layout/mantık değişmedi. (.header-control-border'ın
+ * kardeşiydi, o AppShell-geneli olduğu için globals.css'te kaldı —
+ * yukarıdaki dosya başı yoruma bkz.)
+ */
+[data-theme="cyber-terminal"] .heatmap-cell-neutral {
+  color: rgb(var(--text-t2)) !important;
+}
+
+/*
+ * Inset panel utility classes — dark: dark overlay, light: subtle tint with visible border.
+ * Use className="panel-inset" instead of inline rgba(0,0,0,...) backgrounds.
+ */
+.panel-inset {
+  background: linear-gradient(180deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.36) 100%);
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.28);
+}
+[data-theme="light"] .panel-inset {
+  background: linear-gradient(180deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.07) 100%) !important;
+  border: 1px solid rgba(0,0,0,0.10) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70), inset 0 -1px 2px rgba(0,0,0,0.05) !important;
+}
+
+.panel-inset-strong {
+  background: linear-gradient(180deg, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0.46) 100%);
+  border: 1px solid rgba(184,140,60,0.16);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -2px 6px rgba(0,0,0,0.42);
+}
+[data-theme="light"] .panel-inset-strong {
+  background: linear-gradient(180deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.07) 100%) !important;
+  border: 1px solid rgba(0,0,0,0.12) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.80), inset 0 -1px 3px rgba(0,0,0,0.06) !important;
+}
+
+.panel-header-band {
+  background: linear-gradient(180deg, rgba(255,255,255,0.05) 0%, rgba(0,0,0,0.20) 100%);
+  border-bottom: 1px solid rgba(184,140,60,0.22);
+}
+[data-theme="light"] .panel-header-band {
+  background: linear-gradient(180deg, rgba(255,255,255,0.60) 0%, rgba(0,0,0,0.04) 100%) !important;
+  border-bottom: 1px solid rgba(0,0,0,0.10) !important;
+}
+
+.panel-ai-note {
+  background: linear-gradient(180deg, rgba(0,0,0,0.24) 0%, rgba(0,0,0,0.40) 100%);
+  border: 1px solid rgba(184,140,60,0.14);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), inset 0 -1px 3px rgba(0,0,0,0.35);
+}
+[data-theme="light"] .panel-ai-note {
+  background: linear-gradient(180deg, rgba(0,0,0,0.03) 0%, rgba(0,0,0,0.06) 100%) !important;
+  border: 1px solid rgba(180,83,9,0.20) !important;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.70), inset 0 -1px 2px rgba(0,0,0,0.04) !important;
+}
+
+/* Card depth — subtle top-right specular for physical surface feel */
+.card-depth {
+  background-image: radial-gradient(ellipse at 70% 20%, rgba(255,255,255,0.018) 0%, transparent 58%);
+}
+[data-theme="light"] .card-depth {
+  background-image: radial-gradient(ellipse at 70% 20%, rgba(255,255,255,0.045) 0%, transparent 58%);
+}
+
+/* Ticker Tape — sürekli akan fiyat şeridi. Sadece transform (GPU compositor
+   thread'inde çalışır, ana thread'i meşgul etmez) — requestAnimationFrame
+   KULLANILMIYOR, bilinçli karar (bkz. CLAUDE.md §9 Görsel Kalite Paketi). */
+@keyframes ticker-scroll {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ticker-tape-track { animation: none !important; }
+}
+
+/* FLOW badge pulse — yön değişince 1.5s, sonra söner */
+@keyframes flow-pulse-up {
+  0%   { box-shadow: 0 0 0 0 rgb(34 197 94 / 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgb(34 197 94 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(34 197 94 / 0); }
+}
+@keyframes flow-pulse-down {
+  0%   { box-shadow: 0 0 0 0 rgb(239 68 68 / 0.55); }
+  70%  { box-shadow: 0 0 0 7px rgb(239 68 68 / 0); }
+  100% { box-shadow: 0 0 0 0 rgb(239 68 68 / 0); }
+}
+.flow-pulse-up   { animation: flow-pulse-up   1.5s ease-out forwards; }
+.flow-pulse-down { animation: flow-pulse-down 1.5s ease-out forwards; }
+
+/* FLOW nabız LED — sürekli neon halka */
+@keyframes flow-led-ring {
+  0%   { box-shadow: 0 0 0 0 var(--led-color, rgb(34 197 94 / 0.7)), 0 0 4px 1px var(--led-color, rgb(34 197 94 / 0.4)); }
+  60%  { box-shadow: 0 0 0 5px rgb(0 0 0 / 0), 0 0 6px 2px var(--led-color, rgb(34 197 94 / 0.2)); }
+  100% { box-shadow: 0 0 0 0 rgb(0 0 0 / 0), 0 0 4px 1px var(--led-color, rgb(34 197 94 / 0.4)); }
+}
+.flow-led { animation: flow-led-ring 2s ease-in-out infinite; }
+
+/* P&L nefes / breath — pozisyon kartı */
+@keyframes pnl-breathe-green {
+  0%, 100% { text-shadow: 0 0 6px rgba(16,185,129,0.30); }
+  50%       { text-shadow: 0 0 18px rgba(16,185,129,0.70), 0 0 36px rgba(16,185,129,0.20); }
+}
+@keyframes pnl-breathe-red {
+  0%, 100% { text-shadow: 0 0 6px rgba(239,68,68,0.30); }
+  50%       { text-shadow: 0 0 18px rgba(239,68,68,0.70), 0 0 36px rgba(239,68,68,0.20); }
+}
+.pnl-breathe-green { animation: pnl-breathe-green 3.2s ease-in-out infinite; }
+.pnl-breathe-red   { animation: pnl-breathe-red   3.2s ease-in-out infinite; }
