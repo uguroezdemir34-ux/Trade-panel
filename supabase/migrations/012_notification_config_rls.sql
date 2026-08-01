@@ -1,0 +1,31 @@
+-- ═══════════════════════════════════════════════════════════════════
+-- QUANTIX OS — notification_config RLS
+-- Migration 012 — 011_notification_config.sql'in "No RLS" kararını
+-- savunma-derinliği için tersine çeviriyor.
+--
+-- Apply via: Supabase Dashboard → SQL Editor → run this script
+--
+-- BUGÜNKÜ TRAFİĞİ DEĞİŞTİRMEZ — 004_rls_policies.sql'deki aynı
+-- gerekçe: tüm erişim SUPABASE_SERVICE_ROLE_KEY ile (bkz. lib/db/server.ts),
+-- ve service_role Postgres/Supabase'de RLS'i HER ZAMAN bypass eder,
+-- politika olsun olmasın. Bugün hiçbir kod bu tabloya anon/authenticated
+-- key ile bağlanmıyor (grep ile doğrulandı — NEXT_PUBLIC_SUPABASE_*
+-- kullanımı sıfır).
+--
+-- AMAÇ — 011'de "gerek yok" denen ikinci savunma katmanını yine de
+-- eklemek: RLS açık ama anon/authenticated için HİÇBİR politika
+-- tanımlanmadı (go_signals'daki INSERT/UPDATE/DELETE deseniyle aynı —
+-- Postgres varsayılanı: politika yoksa erişim yok). Yani ileride
+-- (yanlışlıkla ya da bilerek) tarayıcıdan bu projenin anon key'i ile bir
+-- Supabase bağlantısı açılırsa, bot token/chat ID'ler (şifreli olsa da)
+-- doğrudan SELECT/UPDATE ile çekilemez/değiştirilemez — DB seviyesinde
+-- kapalı kalır, "uygulama kodunda bu key hiç kullanılmıyor" varsayımına
+-- bağlı kalmaz.
+-- ═══════════════════════════════════════════════════════════════════
+
+ALTER TABLE notification_config ENABLE ROW LEVEL SECURITY;
+
+-- Bilerek anon/authenticated için hiçbir SELECT/INSERT/UPDATE/DELETE
+-- politikası tanımlanmıyor — bu tablonun tek meşru yazarı/okuyucusu
+-- service_role (cron route'ları + /api/admin/notification-config),
+-- ikisi de zaten isAdminUserId()/middleware guard'ları arkasında.
