@@ -28,8 +28,15 @@ CREATE TABLE IF NOT EXISTS notification_config (
   updated_at                   TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- No RLS — sadece server-side (service_role) erişiyor: cron route'ları
--- (resolveTelegramConfig/resolvePublicChatId) ve admin-only
--- /api/admin/notification-config, ikisi de isAdminUserId()/middleware
--- guard'ları arkasında. Tarayıcıdan doğrudan erişilmesine gerek yok
--- (bkz. 005_create_stripe_events.sql'deki aynı gerekçe).
+-- No RLS (bu migration'da) — sadece server-side (service_role) erişiyor:
+-- cron route'ları (resolveTelegramConfig/resolvePublicChatId) ve
+-- admin-only /api/admin/notification-config, ikisi de
+-- isAdminUserId()/middleware guard'ları arkasında. Tarayıcıdan doğrudan
+-- erişilmesine gerek yok (bkz. 005_create_stripe_events.sql'deki aynı
+-- gerekçe).
+--
+-- GÜNCELLEME (bkz. 012_notification_config_rls.sql): "gerek yok" bugün
+-- hâlâ doğru ama savunma-derinliği için yine de RLS açıldı — bu tablo
+-- için anon key hiç kullanılmasa bile, ileride yanlışlıkla kullanılırsa
+-- DB seviyesinde kapalı kalsın diye. 011'i uygulayanlar 012'yi de
+-- çalıştırmalı.

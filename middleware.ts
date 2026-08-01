@@ -147,21 +147,25 @@ function generateNonce(): string {
 }
 
 /**
- * REPORT-ONLY MOD — bilerek `Content-Security-Policy` değil,
- * `Content-Security-Policy-Report-Only` header'ı kullanılıyor: tarayıcı
- * ihlalleri bloklamaz. Clerk/Stripe/font/WS domain listesi statik kod
- * taramasıyla çıkarıldı (bkz. ANALYSIS.md) ama çalışma zamanında görülmeyen
- * bir domain kaçmış olabilir — enforce moduna (`Content-Security-Policy`)
- * geçiş, gerçek trafikte ihlal loglanmadığı doğrulandıktan SONRA, ayrı bir
- * onaylı adımda yapılmalı.
+ * ENFORCE MOD — 30 Temmuz'da Report-Only olarak devreye alındı, 2+ gün
+ * canlı trafikte izlendi: app/api/csp-report/route.ts hem console.error
+ * hem Sentry.captureMessage'a yazıyordu, Sentry'de tek bir "CSP
+ * Report-Only ihlali" issue'su bile açılmadı — Clerk/Stripe/font/WS
+ * domain listesi (statik kod taramasıyla çıkarılmıştı, bkz. ANALYSIS.md)
+ * gerçek trafikte doğrulandı. Bu yeterli sinyal kabul edilip (kullanıcı
+ * onayıyla) `Content-Security-Policy-Report-Only`'den gerçek
+ * `Content-Security-Policy`'ye geçildi — tarayıcı artık ihlalleri
+ * gerçekten bloklar.
  *
- * report-uri + report-to: önceden ihlaller SADECE tarayıcı console'una
- * düşüyordu, hiçbir yerde toplanmıyordu (teşhis turunda bulundu — bkz.
- * app/api/csp-report/route.ts header yorumu). İkisi birden verilir çünkü
- * tarayıcı desteği bölünmüş: report-uri eski ama Firefox/Safari'nin hâlâ
- * tek desteklediği yol, report-to (+ aşağıdaki Reporting-Endpoints header'ı)
- * modern Reporting API'yi destekleyen tarayıcılar (Chrome) için. Bu
- * SADECE Report-Only header'ına ekleniyor — enforce header'ı hâlâ hiç yok.
+ * report-uri + report-to BİLEREK KALDI (enforce'a geçtikten sonra da):
+ * yeni bir tarayıcı/cihaz/ortam kombinasyonunda beklenmedik bir blok
+ * olursa (report-only döneminde görülmeyen bir edge case), bunu yine
+ * Sentry'de görebilmek için — enforce modunda da bir CSP header
+ * report-uri/report-to taşıyabilir, ikisi birbirini dışlamaz. İkisi
+ * birden verilir çünkü tarayıcı desteği bölünmüş: report-uri eski ama
+ * Firefox/Safari'nin hâlâ tek desteklediği yol, report-to (+ aşağıdaki
+ * Reporting-Endpoints header'ı) modern Reporting API'yi destekleyen
+ * tarayıcılar (Chrome) için.
  */
 function buildCsp(nonce: string): string {
   return [
@@ -242,7 +246,7 @@ export default clerkMiddleware(async (auth, req) => {
   // buildCsp()'nin report-to direktifinin çözümlediği endpoint adı —
   // Reporting API (Chrome) bu header olmadan report-to'yu yok sayar.
   response.headers.set("Reporting-Endpoints", 'csp-endpoint="/api/csp-report"');
-  response.headers.set("Content-Security-Policy-Report-Only", buildCsp(nonce));
+  response.headers.set("Content-Security-Policy", buildCsp(nonce));
   return response;
 });
 
