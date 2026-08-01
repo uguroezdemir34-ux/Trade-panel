@@ -21,6 +21,7 @@ import { useBacktestStore } from "@/lib/store/backtestStore";
 import type { BacktestConfig } from "@/lib/backtest/types";
 import type { ScanConfig, ScanRow } from "@/lib/store/backtestStore";
 import type { Pair } from "@/lib/constants/pairs";
+import type { Timeframe } from "@/lib/okx/candles";
 
 const STALE_MS = 23 * 60 * 60 * 1000;
 
@@ -28,7 +29,7 @@ const STALE_MS = 23 * 60 * 60 * 1000;
 
 async function fetchCandles(
   pair: Pair,
-  tf: "1h" | "4h",
+  tf: Timeframe,
   fromMs: number,
   onProgress?: (pct: number) => void,
 ) {
@@ -72,6 +73,9 @@ export function useBacktest() {
         const candles4h = await fetchCandles(pair, "4h", fromMs, (p) =>
           store.setDownloadPct(0.5 + p * 0.5),
         );
+        // canlı sistemle (useScoreEngine.ts) parite için — composeScoreInput()'un
+        // ema50_1d hesabına girer (bkz. lib/backtest/engine.ts candles1d yorumu).
+        const candles1d = await fetchCandles(pair, "1d", fromMs);
 
         // BTC cooldown simülasyonu için referans mumlar (bkz. lib/backtest/engine.ts).
         // pair "BTC" ise zaten kendi candles1h/4h'i BTC'nin ta kendisi — ayrı fetch gereksiz.
@@ -93,6 +97,7 @@ export function useBacktest() {
           (pct) => store.setComputePct(pct),
           btcCandles1h,
           btcCandles4h,
+          candles1d,
         );
 
         store.setResult(result, config);
@@ -124,6 +129,9 @@ export function useBacktest() {
         try {
           const candles1h = await fetchCandles(pair, "1h", fromMs);
           const candles4h = await fetchCandles(pair, "4h", fromMs);
+          // BTC referans mumları gibi paylaşılan bir "tek sefer fetch" DEĞİL —
+          // her pair'in kendi günlük trendi kendine ait (bkz. run() yorumu).
+          const candles1d = await fetchCandles(pair, "1d", fromMs);
 
           const result = await runBacktest(
             candles1h,
@@ -137,6 +145,7 @@ export function useBacktest() {
             undefined,
             btcCandles1h,
             btcCandles4h,
+            candles1d,
           );
 
           const { stats } = result;
