@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { formatNotifyMessage } from "@/lib/notify/telegram/formatter";
 import { sendTelegramPhoto } from "@/lib/notify/telegram/client";
+import { resolveTelegramConfig, resolvePublicChatId } from "@/lib/notify/telegram/config";
 import type { NotifyMessage } from "@/lib/notify/types";
 import { exportShareCardPngServer } from "@/lib/share/exportShareCardServer";
 import type { ShareCardData } from "@/lib/share/renderShareCard";
@@ -14,7 +15,7 @@ export const runtime = "nodejs";
 
 interface SignalBody {
   msg: NotifyMessage;
-  /** Layer 2: browser-stored credentials (fallback when env vars absent) */
+  /** Layer 2: browser-stored credentials (fallback when DB + env absent) */
   botToken?: string;
   chatId?: string;
 }
@@ -97,8 +98,11 @@ const PUBLIC_SITE_URL = "quantixos.com";
 /**
  * Halka açık kanala AYNI kart PNG'sini + kısa başlığı gönderir —
  * best-effort, ÇAĞIRANIN VIP sonucunu ASLA etkilemez (bu fonksiyon hiçbir
- * hatayı fırlatmaz, içeride yutar + loglar). TELEGRAM_PUBLIC_CHAT_ID yoksa
- * sessizce hiçbir şey yapmadan döner — bu bir hata durumu değil.
+ * hatayı fırlatmaz, içeride yutar + loglar). resolvePublicChatId() önce
+ * Supabase'deki notification_config satırını dener, yoksa
+ * TELEGRAM_PUBLIC_CHAT_ID env'e düşer (bkz. lib/notify/telegram/config.ts,
+ * app/api/cron/signal-check ile AYNI desen) — ikisi de yoksa sessizce
+ * hiçbir şey yapmadan döner, bu bir hata durumu değil.
  */
 async function sendToPublicChannel(
   cardData: ShareCardData,
@@ -106,7 +110,7 @@ async function sendToPublicChannel(
   png: Buffer,
   botToken: string,
 ): Promise<void> {
-  const publicChatId = process.env.TELEGRAM_PUBLIC_CHAT_ID;
+  const publicChatId = await resolvePublicChatId();
   if (!publicChatId) return;
 
   // buildShareText — kartla AYNI kaynak fonksiyon (ShareButton.tsx da
@@ -141,9 +145,14 @@ async function sendToPublicChannel(
 }
 
 export async function POST(req: NextRequest) {
-  // Layer 1: server-side env vars (highest priority)
-  let token = process.env.TELEGRAM_BOT_TOKEN;
-  let chatId = process.env.TELEGRAM_VIP_CHAT_ID;
+  // resolveTelegramConfig() önce Supabase'deki notification_config
+  // satırını dener, yoksa process.env'e (TELEGRAM_BOT_TOKEN/
+  // TELEGRAM_VIP_CHAT_ID) düşer — bkz. lib/notify/telegram/config.ts,
+  // app/api/cron/signal-check ve app/api/telegram/test ile AYNI
+  // çözümleme deseni (DB → env → client-provided).
+  const resolved = await resolveTelegramConfig();
+  let token = resolved?.botToken;
+  let chatId = resolved?.chatId;
 
   let body: SignalBody;
   try {
@@ -152,7 +161,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "invalid_body" }, { status: 400 });
   }
 
-  // Layer 2: client-provided credentials
+  // Layer 2 (geriye dönük uyumluluk) — DB + env'in ikisi de boşsa,
+  // request body'sinden gelen client-provided credential'lara düşülür.
   if (!token && body.botToken) token = body.botToken;
   if (!chatId && body.chatId) chatId = body.chatId;
 
