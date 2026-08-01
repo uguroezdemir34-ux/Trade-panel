@@ -25,6 +25,14 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      # READ-ONLY teşhis — @sentry/replay'in /sign-in'in paylaşılan
+      # chunk'ından hâlâ çıkmamasının nedenini araştırıyoruz: barrel
+      # re-export mi, sideEffects eksikliği mi, yoksa Next.js'e özgü bir
+      # chunk-gruplama davranışı mı. Hiçbir dosyayı değiştirmez.
+      - name: Diagnose @sentry/nextjs package exports (read-only)
+        continue-on-error: true
+        run: node scripts/diagnose-sentry-nextjs-package.cjs
+
       # openAnalyzer:true (next.config.ts) CI'da headless ortamda no-op
       # kalır (tarayıcı açacak bir şey yok) — sadece HTML dosyaları üretir,
       # build'i bloklamaz.
