@@ -23,6 +23,12 @@ import { readFileSync } from "node:fs";
 const filePath = process.argv[2] ?? ".next/analyze/client.html";
 const topN = Number(process.argv[3] ?? 20);
 
+// /sign-in'in "First Load JS shared by all" (Next.js build çıktısı, bkz.
+// run #1/#2 log'u) 3 paylaşılan chunk'ı — hash son eki build'den build'e
+// değişebildiği için sadece webpack'in içerik-hash'inden ÖNCEKİ, stabil
+// chunk adı önekiyle eşleştiriyoruz (örn. "4bd1b696-<hash>.js").
+const TARGET_CHUNK_PREFIXES = ["4bd1b696", "719-", "4a7b0c69"];
+
 function extractChartDataJson(html) {
   const marker = "chartData";
   const idx = html.lastIndexOf(marker);
@@ -115,28 +121,34 @@ function main() {
   let leafCount = 0;
   let totalSize = 0;
 
-  function walk(node, pathSoFar) {
+  // Bir alt ağacın tüm yapraklarını {fullPath, size} olarak toplar —
+  // hem tüm-ağaç özeti hem de tek bir root'a (chunk) daraltılmış analiz
+  // için ortak kullanılıyor.
+  function collectLeaves(node, pathSoFar, out) {
     const label = typeof node.label === "string" ? node.label : "";
     const fullPath = pathSoFar ? `${pathSoFar}/${label}` : label;
     const children = Array.isArray(node.groups) ? node.groups : Array.isArray(node.children) ? node.children : null;
-
     if (!children || children.length === 0) {
-      leafCount++;
-      const size = sizeOf(node);
-      totalSize += size;
-      const pkg = packageNameFromPath(fullPath);
-      if (pkg) {
-        byPackage.set(pkg, (byPackage.get(pkg) ?? 0) + size);
-      } else {
-        byAppCode.size += size;
-        byAppCode.count++;
-      }
+      out.push({ fullPath, size: sizeOf(node) });
       return;
     }
-    for (const child of children) walk(child, fullPath);
+    for (const child of children) collectLeaves(child, fullPath, out);
   }
 
-  for (const root of roots) walk(root, "");
+  const allLeaves = [];
+  for (const root of roots) collectLeaves(root, "", allLeaves);
+
+  for (const { fullPath, size } of allLeaves) {
+    leafCount++;
+    totalSize += size;
+    const pkg = packageNameFromPath(fullPath);
+    if (pkg) {
+      byPackage.set(pkg, (byPackage.get(pkg) ?? 0) + size);
+    } else {
+      byAppCode.size += size;
+      byAppCode.count++;
+    }
+  }
 
   if (leafCount === 0) {
     console.error("[bundle-sizes] HATA: agacta hic yaprak (gercek modul) bulunamadi - chartData bos ya da beklenmedik sekilde ic ice.");
@@ -154,6 +166,52 @@ function main() {
   sorted.slice(0, topN).forEach(([pkg, size], i) => {
     console.log(`[bundle-sizes] ${String(i + 1).padStart(2, " ")}. ${pkg.padEnd(40, " ")} ${fmtKb(size)}`);
   });
+
+  // — /sign-in'in paylaşılan 3 chunk'ına daralt: içinde @sentry/* var mı? —
+  console.log("");
+  console.log(`[bundle-sizes] --- Hedef chunk analizi (root label şu önekleri içeriyorsa eşleşir): ${TARGET_CHUNK_PREFIXES.join(", ")} ---`);
+  console.log(`[bundle-sizes] chartData toplam root (asset) sayısı: ${roots.length}`);
+
+  const matchedRoots = roots
+    .map((r, idx) => ({ root: r, idx, label: typeof r.label === "string" ? r.label : "" }))
+    .filter(({ label }) => TARGET_CHUNK_PREFIXES.some((p) => label.includes(p)));
+
+  if (matchedRoots.length === 0) {
+    console.log("[bundle-sizes] UYARI: hiçbir root label'ı hedef chunk öneklerinden biriyle eşleşmedi.");
+    console.log("[bundle-sizes] Bu, root'ların dosya-bazlı olmadığı (farklı bir gruplama) anlamına gelebilir — ilk 15 root label'ı (teşhis için):");
+    roots.slice(0, 15).forEach((r, i) => {
+      const leaves = [];
+      collectLeaves(r, "", leaves);
+      const sum = leaves.reduce((a, l) => a + l.size, 0);
+      console.log(`[bundle-sizes]   root[${i}] label="${String(r.label)}" toplam=${fmtKb(sum)}`);
+    });
+  } else {
+    for (const { root, idx, label } of matchedRoots) {
+      const leaves = [];
+      collectLeaves(root, "", leaves);
+      const chunkTotal = leaves.reduce((a, l) => a + l.size, 0);
+      const sentryLeaves = leaves.filter((l) => {
+        const pkg = packageNameFromPath(l.fullPath);
+        return pkg && pkg.startsWith("@sentry");
+      });
+      const sentryTotal = sentryLeaves.reduce((a, l) => a + l.size, 0);
+      const sentryByPkg = new Map();
+      for (const l of sentryLeaves) {
+        const pkg = packageNameFromPath(l.fullPath);
+        sentryByPkg.set(pkg, (sentryByPkg.get(pkg) ?? 0) + l.size);
+      }
+
+      console.log(`[bundle-sizes] root[${idx}] label="${label}" — chunk toplamı: ${fmtKb(chunkTotal)} (${leaves.length} modül)`);
+      if (sentryLeaves.length === 0) {
+        console.log(`[bundle-sizes]   -> @sentry/* modülü YOK bu chunk'ta.`);
+      } else {
+        console.log(`[bundle-sizes]   -> @sentry/* toplam: ${fmtKb(sentryTotal)} (${sentryLeaves.length} modül) — chunk'ın %${((sentryTotal / chunkTotal) * 100).toFixed(1)}'i:`);
+        [...sentryByPkg.entries()].sort((a, b) => b[1] - a[1]).forEach(([pkg, size]) => {
+          console.log(`[bundle-sizes]      ${pkg.padEnd(30, " ")} ${fmtKb(size)}`);
+        });
+      }
+    }
+  }
 }
 
 main();
