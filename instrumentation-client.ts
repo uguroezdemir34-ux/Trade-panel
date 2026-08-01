@@ -13,18 +13,29 @@ export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
 // Session Replay init'ten kasıtlı olarak çıkarıldı — bu dosyanın en üstündeki
 // "import * as Sentry" statik olduğu için, replayIntegration()'ı burada
 // çağırmak (integrations: [] içinde ya da sonradan) Replay'in kodunu
-// (@sentry/replay + bağımlılıkları) her sayfanın ilk yüküne dahil ederdi;
-// tree-shaking bunu güvenilir şekilde ayıklayamıyor (Sentry'nin kendi
-// dokümantasyonunun da önerdiği gibi gerçek bir dinamik import() gerekiyor).
-// loadSentryReplay() bunu ayrı bir chunk'a böler, sadece çağrıldığında
-// indirilir. Çağıran: lib/hooks/useSentryReplay.ts (AppShell'de mount
-// edilir — AppShell public route'larda /sign-in, /sign-up vb. hiç render
-// edilmediği için Replay o sayfaların bundle'ına hiç girmez).
+// (@sentry/replay + bağımlılıkları) her sayfanın ilk yüküne dahil ederdi.
+//
+// İlk versiyon await import("@sentry/nextjs") kullanıyordu — bundle
+// analiziyle (CI, bundle-analyze.yml) bunun işe yaramadığı, Replay'in
+// paylaşılan chunk'ta değişmeden kaldığı VE ayrı bir chunk'ta ikinci bir
+// kopyasının oluştuğu ölçüldü. Kök neden zinciri (node_modules'ta
+// doğrudan okunarak doğrulandı): @sentry/nextjs → "export * from
+// '@sentry/react'" → "export * from '@sentry/browser'" — iki ardışık
+// wildcard re-export, statik namespace import ("import * as Sentry")
+// ile birleşince tree-shaking'i güvenilmez kılıyor; dinamik import de
+// aynı barrel'ı hedeflediği için bu zinciri atlamıyor. @sentry/browser
+// katmanının kendisi replayIntegration'ı SARMALAMIYOR — doğrudan
+// "export { replayIntegration } from '@sentry/replay'" ile, isimlendirilmiş
+// (tree-shake edilebilir) bir re-export olarak devrediyor; yani
+// @sentry/replay gerçek kaynak, aradaki iki paket sadece geçit. Bu yüzden
+// doğrudan @sentry/replay'den import ediyoruz — üç ara barrel'ı da
+// (nextjs/react/browser) atlıyor, işlevsellik kaybı riski yok (aynı
+// fonksiyon, hiç sarmalanmamış).
 let replayLoaded = false;
 
 export async function loadSentryReplay(): Promise<void> {
   if (replayLoaded) return;
   replayLoaded = true;
-  const { replayIntegration } = await import("@sentry/nextjs");
+  const { replayIntegration } = await import("@sentry/replay");
   Sentry.addIntegration(replayIntegration());
 }
