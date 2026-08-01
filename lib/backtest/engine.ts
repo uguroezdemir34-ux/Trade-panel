@@ -45,6 +45,8 @@ import type { SweepInput } from "@/lib/score/scorers";
 const WARMUP = 210;
 /** Use last 200 4h bars for trend context */
 const C4H_WINDOW = 200;
+/** Use last 200 1d bars for daily trend context (composeScoreInput needs ≥50 for ema50_1d) */
+const C1D_WINDOW = 200;
 /** Use last 25 1h bars as 15m proxy (ema21_15m approximation) */
 const C15M_PROXY = 25;
 /** Maximum 1h bars to hold a trade before timing out */
@@ -85,6 +87,21 @@ function build4hPointers(
     const ts1h = candles1h[i].ts;
     while (j < candles4h.length - 1 && candles4h[j + 1].ts <= ts1h) j++;
     if (j < candles4h.length && candles4h[j].ts <= ts1h) ptrs[i] = j;
+  }
+  return ptrs;
+}
+
+/** Align 1d bars to 1h bars (precompute pointer array in O(n+m)) — same alignment logic as build4hPointers */
+function build1dPointers(
+  candles1h: readonly Candle[],
+  candles1d: readonly Candle[],
+): Int32Array {
+  const ptrs = new Int32Array(candles1h.length).fill(-1);
+  let j = 0;
+  for (let i = 0; i < candles1h.length; i++) {
+    const ts1h = candles1h[i].ts;
+    while (j < candles1d.length - 1 && candles1d[j + 1].ts <= ts1h) j++;
+    if (j < candles1d.length && candles1d[j].ts <= ts1h) ptrs[i] = j;
   }
   return ptrs;
 }
@@ -216,9 +233,18 @@ export async function runBacktest(
    */
   btcCandles1h?: readonly Candle[],
   btcCandles4h?: readonly Candle[],
+  /**
+   * 1D mumlar — canlı sistemle (useScoreEngine.ts) parite için: composeScoreInput()
+   * bunlardan ema50_1d hesaplıyor, orchestrator'daki checkDailyTrendOpposite
+   * softBlock'u bu değer olmadan HER bar'da tetikleniyordu (verdict hiçbir zaman
+   * "go" olamıyordu). OPSİYONEL: verilmezse mevcut davranış (ema50_1d hep null,
+   * softBlock her bar'da tetiklenir) birebir korunur — geriye dönük uyumlu.
+   */
+  candles1d?: readonly Candle[],
 ): Promise<BacktestResult> {
   const trades: BacktestTrade[] = [];
   const ptrs = build4hPointers(candles1h, candles4h);
+  const ptrs1d = candles1d ? build1dPointers(candles1h, candles1d) : null;
   const total = candles1h.length - WARMUP;
 
   // BTC cooldown historical state — sadece btcCandles1h/4h verildiyse ilerletilir.
@@ -254,6 +280,9 @@ export async function runBacktest(
     if (config.signalTf === "4h" && ptrs[i] === ptrs[i - 1]) continue;
 
     const c4h = candles4h.slice(Math.max(0, ptr4h - C4H_WINDOW + 1), ptr4h + 1);
+    const c1d = ptrs1d
+      ? candles1d!.slice(Math.max(0, ptrs1d[i] - C1D_WINDOW + 1), ptrs1d[i] + 1)
+      : undefined;
 
     if (c1h.length < 200 || c4h.length < 200 || c15m.length < 20) continue;
 
@@ -290,6 +319,7 @@ export async function runBacktest(
       candles1h: c1h as Candle[],
       candles4h: c4h as Candle[],
       candles15m: c15m as Candle[],
+      candles1d: c1d as Candle[],
       fg: config.frozenFg,
       fundingRate: null,
       oiVelocityScore: null,
