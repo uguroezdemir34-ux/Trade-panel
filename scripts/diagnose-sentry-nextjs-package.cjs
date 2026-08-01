@@ -176,13 +176,19 @@ try {
     return null;
   }
 
-  section("@sentry/react package.json (diskten doğrudan okuma) + çözümlenen browser giriş yolu");
-  const reactPkgInfo = readPkgJsonFromDisk("@sentry/react");
-  if (!reactPkgInfo) {
-    console.log("(node_modules/@sentry/react/package.json bulunamadı)");
-  } else {
-    console.log("package.json yolu:", reactPkgInfo.path);
-    const p = reactPkgInfo.pkg;
+  // Genel amaçlı: bir paketin browser-koşullu giriş dosyasını çözümleyip
+  // içinde "replayIntegration"'ın İSİMLENDİRİLMİŞ (gerçek tanım/export)
+  // mi yoksa yine bir "export * from ..." ile mi geçtiğini raporlar —
+  // zinciri elle tekrar tekrar yazmadan bir sonraki pakete uygulanabilir.
+  function tracePackageEntry(pkgName) {
+    section(`${pkgName} package.json (diskten doğrudan okuma) + çözümlenen browser giriş yolu`);
+    const pkgInfo = readPkgJsonFromDisk(pkgName);
+    if (!pkgInfo) {
+      console.log(`(node_modules/${pkgName}/package.json bulunamadı)`);
+      return null;
+    }
+    console.log("package.json yolu:", pkgInfo.path);
+    const p = pkgInfo.pkg;
     console.log(JSON.stringify({
       name: p.name, version: p.version, main: p.main, module: p.module,
       browser: p.browser, sideEffects: p.sideEffects, exports: p.exports,
@@ -191,32 +197,52 @@ try {
     const resolved = resolveBrowserEntryRelPath(p);
     if (!resolved) {
       console.log("UYARI: browser giriş yolu package.json'dan çözümlenemedi.");
-    } else {
-      const reactRoot = path.join(process.cwd(), "node_modules", "@sentry", "react");
-      const absPath = path.join(reactRoot, resolved.relPath);
-      console.log(`ÇÖZÜMLENEN TAM PATH (kaynak: ${resolved.source}):`);
-      console.log(`  ${absPath}`);
-      console.log(`Dosya var mı: ${fs.existsSync(absPath)}`);
-
-      section(`${absPath} içinde "replayIntegration"/"Replay" arama`);
-      grepWithContext(absPath, ["replayIntegration", "Replay"]);
-
-      section(`${absPath} içindeki TÜM "@sentry/*" re-export/import satırları`);
-      if (fs.existsSync(absPath)) {
-        const lines = fs.readFileSync(absPath, "utf8").split("\n");
-        let anyMatch = false;
-        lines.forEach((line, i) => {
-          if (/from\s+["']@sentry\//.test(line)) {
-            anyMatch = true;
-            console.log(`  L${i + 1}: ${line.trim().slice(0, 300)}`);
-          }
-        });
-        if (!anyMatch) console.log("  (eşleşme yok)");
-      } else {
-        console.log("  (dosya yok)");
-      }
+      return null;
     }
+    const pkgRoot = path.join(process.cwd(), "node_modules", ...pkgName.split("/"));
+    const absPath = path.join(pkgRoot, resolved.relPath);
+    console.log(`ÇÖZÜMLENEN TAM PATH (kaynak: ${resolved.source}):`);
+    console.log(`  ${absPath}`);
+    console.log(`Dosya var mı: ${fs.existsSync(absPath)}`);
+
+    section(`${absPath} içinde "replayIntegration" — İSİMLENDİRİLMİŞ (gerçek) export mü, yoksa "export * from" ile mi geçiyor?`);
+    if (fs.existsSync(absPath)) {
+      const content = fs.readFileSync(absPath, "utf8");
+      const lines = content.split("\n");
+      let namedMentionFound = false;
+      lines.forEach((line, i) => {
+        if (line.includes("replayIntegration")) {
+          console.log(`  L${i + 1}: ${line.trim().slice(0, 300)}`);
+          if (!/export\s*\*\s*from/.test(line)) namedMentionFound = true;
+        }
+      });
+      if (!content.includes("replayIntegration")) {
+        console.log("  (bu dosyada 'replayIntegration' string'i hiç geçmiyor)");
+      }
+      console.log(`  >> SONUÇ: isimlendirilmiş (export * DIŞINDA) bir 'replayIntegration' bahsi bulundu mu: ${namedMentionFound}`);
+    } else {
+      console.log("  (dosya yok)");
+    }
+
+    section(`${absPath} içindeki TÜM "@sentry/*" re-export/import satırları`);
+    if (fs.existsSync(absPath)) {
+      const lines = fs.readFileSync(absPath, "utf8").split("\n");
+      let anyMatch = false;
+      lines.forEach((line, i) => {
+        if (/from\s+["']@sentry\//.test(line)) {
+          anyMatch = true;
+          console.log(`  L${i + 1}: ${line.trim().slice(0, 300)}`);
+        }
+      });
+      if (!anyMatch) console.log("  (eşleşme yok)");
+    } else {
+      console.log("  (dosya yok)");
+    }
+    return absPath;
   }
+
+  tracePackageEntry("@sentry/react");
+  tracePackageEntry("@sentry/browser");
 } catch (err) {
   console.error("HATA:", err.message);
   process.exit(1);
