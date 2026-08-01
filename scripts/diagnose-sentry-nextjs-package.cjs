@@ -85,7 +85,13 @@ try {
   console.log(importLine ?? "(bulunamadı)");
 
   section("loadSentryReplay() içindeki dinamik import satırı");
-  const dynamicImportLine = instrContent.split("\n").find((l) => l.includes("await import("));
+  // Yorum satırlarını hariç tut — açıklama yorumları "eski sürüm await
+  // import(...) kullanıyordu" gibi geçmiş bir referans içerebiliyor, bu da
+  // gerçek kod satırı yerine yanlışlıkla o yorumu eşleştirip yanıltıcı
+  // sonuç veriyordu (bu tam olarak önceki koşuda oldu).
+  const dynamicImportLine = instrContent.split("\n").find(
+    (l) => l.includes("await import(") && !l.trim().startsWith("//"),
+  );
   console.log(dynamicImportLine ?? "(bulunamadı)");
 
   // — Önceki koşuda require.resolve() düz Node çalıştığı için "node" koşulunu

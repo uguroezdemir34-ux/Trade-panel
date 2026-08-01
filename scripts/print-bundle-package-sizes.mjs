@@ -23,11 +23,22 @@ import { readFileSync } from "node:fs";
 const filePath = process.argv[2] ?? ".next/analyze/client.html";
 const topN = Number(process.argv[3] ?? 20);
 
-// /sign-in'in "First Load JS shared by all" (Next.js build çıktısı, bkz.
-// run #1/#2 log'u) 3 paylaşılan chunk'ı — hash son eki build'den build'e
-// değişebildiği için sadece webpack'in içerik-hash'inden ÖNCEKİ, stabil
-// chunk adı önekiyle eşleştiriyoruz (örn. "4bd1b696-<hash>.js").
-const TARGET_CHUNK_PREFIXES = ["4bd1b696", "719-", "4a7b0c69"];
+// /sign-in'in "First Load JS shared by all" (Next.js build çıktısı, aynı
+// job log'unda "Build with bundle analyzer" adımının çıktısında görünür)
+// paylaşılan chunk'ları — hash son eki build'den build'e değiştiği için
+// sadece webpack'in içerik-hash'inden ÖNCEKİ, stabil chunk adı önekiyle
+// eşleştiriyoruz (örn. "4bd1b696-<hash>.js").
+//
+// KIRILGAN: bu liste elle güncelleniyor, otomatik değil. run #10'da chunk
+// kompozisyonu değişti — "719" chunk'ı kayboldu, yerine "6109" geldi, ve
+// "4a7b0c69" paylaşılan listeden tamamen çıktı (artık sadece lazy/async
+// bir chunk — loadSentryReplay()'in await import("@sentry/replay") fix'i
+// sonrası beklenen davranış). Her yeni build'de bu listeyi, aynı job
+// log'undaki gerçek "First Load JS shared by all" tablosuyla karşılaştırıp
+// gerekirse güncelle — yoksa artık paylaşılan olmayan eski bir chunk'ı
+// yanlışlıkla "hâlâ paylaşılan" diye raporlayabilir (run #10'da tam olarak
+// bu oldu).
+const TARGET_CHUNK_PREFIXES = ["4bd1b696", "6109-"];
 
 function extractChartDataJson(html) {
   const marker = "chartData";
