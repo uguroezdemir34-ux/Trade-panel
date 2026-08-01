@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useT } from "@/lib/i18n/context";
 import type { ScanRow, ScanConfig } from "@/lib/store/backtestStore";
+import type { BacktestTrade } from "@/lib/backtest/types";
 
 function downloadScanCsv(rows: ScanRow[], config: ScanConfig | null): void {
   const header = "Pair,Trades,WinRate%,AvgR,EV,Sharpe,ProfitFactor,MaxDrawdownR,LongWR%,ShortWR%";
@@ -33,6 +34,20 @@ function downloadScanCsv(rows: ScanRow[], config: ScanConfig | null): void {
   URL.revokeObjectURL(url);
 }
 
+/** 9 paritenin havuzlanmış (pooled) trade-level ham verisi — kazanan/kaybeden
+ *  desen analizi için (skor kırılımı, rejim, yön). Parite bilgisi zaten her
+ *  trade'in içinde (trade.pair), ayrı bir gruplama YOK — düz dizi. */
+function downloadPooledJson(trades: BacktestTrade[], dataMonths: number): void {
+  const json = JSON.stringify(trades, null, 2);
+  const blob = new Blob([json], { type: "application/json;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `backtest-pooled-${dataMonths}mo-${Date.now()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 interface Props {
   rows: ScanRow[];
   scanDone: number;
@@ -41,6 +56,13 @@ interface Props {
   config: ScanConfig | null;
   status: "scanning" | "done" | "error";
   onSelectPair?: (pair: string) => void;
+  /**
+   * 9 paritenin trade-level ham verisini getirir (bkz. useBacktest.ts
+   * exportPooledResults — runScan()'a dokunmadan, aynı config'i tekrar
+   * çalıştırıp trades'i pooled döner). Sadece scanConfig mevcutken geçilir —
+   * yoksa buton hiç render edilmez.
+   */
+  onExportPooled?: () => Promise<BacktestTrade[]>;
 }
 
 type SortKey = "ev" | "winRate" | "avgR" | "sharpe" | "profitFactor" | "totalTrades" | "longWinRate" | "shortWinRate";
@@ -67,10 +89,25 @@ export function MultiScanResults({
   config,
   status,
   onSelectPair,
+  onExportPooled,
 }: Props): React.ReactElement {
   const t = useT();
   const [sortKey, setSortKey] = useState<SortKey>("ev");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [pooledExporting, setPooledExporting] = useState(false);
+
+  async function handleExportPooled() {
+    if (!onExportPooled) return;
+    setPooledExporting(true);
+    try {
+      const trades = await onExportPooled();
+      downloadPooledJson(trades, config?.dataMonths ?? 0);
+    } catch (err) {
+      console.error("[MultiScanResults] Pooled export başarısız:", err);
+    } finally {
+      setPooledExporting(false);
+    }
+  }
 
   function handleSort(key: SortKey) {
     if (sortKey === key) {
@@ -150,6 +187,16 @@ export function MultiScanResults({
                   className="text-text-t4 font-mono text-2xs border border-border rounded px-2 py-1 hover:text-text-t2 transition-colors"
                 >
                   ↓ CSV
+                </button>
+              )}
+              {onExportPooled && status === "done" && (
+                <button
+                  onClick={() => void handleExportPooled()}
+                  disabled={pooledExporting}
+                  className="text-text-t4 font-mono text-2xs border border-border rounded px-2 py-1 hover:text-text-t2 transition-colors disabled:opacity-40"
+                  title="9 paritenin trade-level ham verisini (skor kırılımı dahil) JSON olarak indir"
+                >
+                  {pooledExporting ? "…" : "↓ Pooled JSON"}
                 </button>
               )}
             </div>
