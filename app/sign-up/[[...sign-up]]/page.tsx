@@ -1,7 +1,5 @@
 "use client";
 
-export const dynamic = "force-dynamic";
-
 import { SignUp } from "@clerk/nextjs";
 import { clerkDarkAppearance } from "@/lib/auth/clerkAppearance";
 import { CLERK_CONFIGURED } from "@/lib/auth/ClerkClientWrapper";
