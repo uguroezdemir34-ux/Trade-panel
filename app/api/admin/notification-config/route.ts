@@ -74,6 +74,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ok: true });
   } catch (err) {
     console.error("[/api/admin/notification-config] save failed:", err);
-    return NextResponse.json({ error: "Save failed" }, { status: 500 });
+    // Bu route zaten admin-only (middleware + isAdminUserId guard) — gerçek
+    // hata mesajını response'a koymak güvenli. Amaç: mobil ekrandan Vercel
+    // server log'una erişemeyen admin'in, "Kaydetme başarısız" jenerik
+    // mesajı yerine asıl nedeni (ör. Supabase UPSERT 404 → tablo yok,
+    // STATE_ENCRYPTION_KEY eksik) doğrudan formda görebilmesi.
+    const detail = err instanceof Error ? err.message : String(err);
+    return NextResponse.json({ error: "Save failed", detail }, { status: 500 });
   }
 }
