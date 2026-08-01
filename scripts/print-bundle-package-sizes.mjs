@@ -212,6 +212,37 @@ function main() {
       }
     }
   }
+
+  // — @sentry/replay'i TÜM build'de, chunk hash'ine bağlı kalmadan ara —
+  // Sentry lazy-load değişikliğinden sonra chunk kompozisyonu değiştiği
+  // için webpack'in içerik-hash'i (ve muhtemelen chunk id'si) de değişmiş
+  // olabilir — TARGET_CHUNK_PREFIXES artık eşleşmeyebilir. Bu yüzden
+  // yukarıdaki analizden bağımsız olarak, "@sentry/replay" paketi hangi
+  // root'ta (hangi hash'li chunk olursa olsun) yaşıyor, gerçekten var mı
+  // yok mu — doğrudan sorulur.
+  console.log("");
+  console.log("[bundle-sizes] --- @sentry/replay'i TÜM build'de ara (chunk adından bağımsız) ---");
+  const replayByRoot = new Map(); // rootIdx -> { label, replaySize, rootTotal }
+  roots.forEach((root, idx) => {
+    const leaves = [];
+    collectLeaves(root, "", leaves);
+    const rootTotal = leaves.reduce((a, l) => a + l.size, 0);
+    const replaySize = leaves
+      .filter((l) => packageNameFromPath(l.fullPath) === "@sentry/replay")
+      .reduce((a, l) => a + l.size, 0);
+    if (replaySize > 0) {
+      replayByRoot.set(idx, { label: typeof root.label === "string" ? root.label : "", replaySize, rootTotal });
+    }
+  });
+
+  if (replayByRoot.size === 0) {
+    console.log("[bundle-sizes] SONUÇ: @sentry/replay build'in HİÇBİR yerinde bulunamadı (0 root'ta).");
+  } else {
+    console.log(`[bundle-sizes] SONUÇ: @sentry/replay ${replayByRoot.size} root'ta bulundu:`);
+    for (const [idx, { label, replaySize, rootTotal }] of replayByRoot) {
+      console.log(`[bundle-sizes]   root[${idx}] label="${label}" — @sentry/replay: ${fmtKb(replaySize)} / chunk toplamı: ${fmtKb(rootTotal)}`);
+    }
+  }
 }
 
 main();
