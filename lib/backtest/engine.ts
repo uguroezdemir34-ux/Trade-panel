@@ -409,6 +409,14 @@ export async function runBacktest(
       barsHeld: exit.barsHeld,
       feesPct,
       netPnlPct,
+      // Pooled trade-level analiz için (bkz. exportPooledResults, useBacktest.ts) —
+      // zaten computeScore()'un döndürdüğü alanlar, saf kopya, skor mantığına dokunulmadı.
+      regime: result.regime,
+      subScores: result.sub,
+      oiBonus: result.oiBonus,
+      srModifier: result.srModifier,
+      regimeBonus: result.regimeBonus,
+      sweepBonus: result.sweepBonus,
     });
   }
 

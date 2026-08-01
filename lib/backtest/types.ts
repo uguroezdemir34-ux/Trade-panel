@@ -3,7 +3,8 @@
  */
 
 import type { Pair } from "@/lib/constants/pairs";
-import type { ScorerWeights } from "@/lib/score/orchestrator";
+import type { ScorerWeights, ScoreSubScores } from "@/lib/score/orchestrator";
+import type { Regime } from "@/lib/score/scorers";
 
 export interface BacktestConfig {
   pair: Pair;
@@ -56,6 +57,15 @@ export interface BacktestTrade {
   feesPct?: number;
   /** pnlPct minus feesPct — undefined for results cached before fee model was added */
   netPnlPct?: number;
+  /** Sinyal anındaki rejim — undefined for results cached before this field was added */
+  regime?: Regime;
+  /** Sinyal anındaki 8 kategori HAM (ağırlıksız) skor — ScoreResult.sub ile aynı şekil */
+  subScores?: ScoreSubScores;
+  /** total'e giren modifier'lar — pooled trade-level analiz için (bkz. exportPooledResults) */
+  oiBonus?: number;
+  srModifier?: number;
+  regimeBonus?: number;
+  sweepBonus?: number;
 }
 
 export interface ScoreBucket {

@@ -29,6 +29,7 @@ function BacktestPageInner() {
   const {
     run,
     runScan,
+    exportPooledResults,
     // single-pair state
     status,
     downloadPct,
@@ -204,6 +205,7 @@ function BacktestPageInner() {
           config={scanConfig}
           status={scanStatus === "idle" ? "done" : scanStatus}
           onSelectPair={scanConfig && scanStatus === "done" ? handleDrillDown : undefined}
+          onExportPooled={scanConfig ? () => exportPooledResults(scanConfig) : undefined}
         />
       )}
     </div>

@@ -18,7 +18,7 @@ import { getCandlesFromDb, saveCandlesToDb } from "@/lib/storage/candleDb";
 import { fetchHistoricalCandleRange } from "@/lib/okx/historyCandles";
 import { runBacktest } from "@/lib/backtest/engine";
 import { useBacktestStore } from "@/lib/store/backtestStore";
-import type { BacktestConfig } from "@/lib/backtest/types";
+import type { BacktestConfig, BacktestTrade } from "@/lib/backtest/types";
 import type { ScanConfig, ScanRow } from "@/lib/store/backtestStore";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Timeframe } from "@/lib/okx/candles";
@@ -190,5 +190,46 @@ export function useBacktest() {
     [store],
   );
 
-  return { run, runScan, ...store };
+  // ── Pooled export (trade-level, all pairs) ─────────────────────────────────
+  // runScan() sadece özet stats'ı (ScanRow) tutuyor, ham trade dizisini atıyor —
+  // bu fonksiyon runScan()'a HİÇ dokunmadan, aynı fetch + runBacktest() akışını
+  // bağımsız olarak tekrarlayıp 9 paritenin TÜM trade'lerini tek dizide
+  // birleştirip döner. Aynı config (dataMonths/frozenFg/minScore) kullanılır ki
+  // sonuç, kullanıcının az önceki taramasıyla birebir karşılaştırılabilir olsun —
+  // caller (MultiScanResults) zaten aynı scanConfig'i geçiriyor. DOM/download
+  // işi burada YOK (saf veri getirme) — o UI katmanında (bkz. MultiScanResults.tsx
+  // downloadPooledJson).
+  const exportPooledResults = useCallback(
+    async (scanConfig: ScanConfig): Promise<BacktestTrade[]> => {
+      const { dataMonths, frozenFg, minScore } = scanConfig;
+      const fromMs = Date.now() - dataMonths * 30 * 24 * 60 * 60 * 1000;
+
+      const btcCandles1h = await fetchCandles("BTC", "1h", fromMs);
+      const btcCandles4h = await fetchCandles("BTC", "4h", fromMs);
+
+      const pooled: BacktestTrade[] = [];
+      for (const pair of PAIRS) {
+        const candles1h = await fetchCandles(pair, "1h", fromMs);
+        const candles4h = await fetchCandles(pair, "4h", fromMs);
+        // BTC referans mumları gibi paylaşılan bir "tek sefer fetch" DEĞİL —
+        // her pair'in kendi günlük trendi kendine ait (bkz. run()/runScan() yorumu).
+        const candles1d = await fetchCandles(pair, "1d", fromMs);
+
+        const result = await runBacktest(
+          candles1h,
+          candles4h,
+          { pair, dataMonths, frozenFg, minScore },
+          undefined,
+          btcCandles1h,
+          btcCandles4h,
+          candles1d,
+        );
+        pooled.push(...result.trades);
+      }
+      return pooled;
+    },
+    [],
+  );
+
+  return { run, runScan, exportPooledResults, ...store };
 }
