@@ -41,6 +41,11 @@ interface ConfigStatus {
 type SaveStatus = "idle" | "loading" | "success" | "error";
 type TestStatus = "idle" | "loading" | "success" | "error";
 
+interface SaveErrorBody {
+  error?: string;
+  detail?: string;
+}
+
 export function NotificationConfigCard(): React.ReactElement | null {
   const [isAdmin, setIsAdmin] = useState(false);
   const [status, setStatus] = useState<ConfigStatus | null>(null);
@@ -48,6 +53,7 @@ export function NotificationConfigCard(): React.ReactElement | null {
   const [vipChatId, setVipChatId] = useState("");
   const [publicChatId, setPublicChatId] = useState("");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
+  const [saveErrorDetail, setSaveErrorDetail] = useState<string | null>(null);
   const [testStatus, setTestStatus] = useState<TestStatus>("idle");
 
   useEffect(() => {
@@ -81,6 +87,7 @@ export function NotificationConfigCard(): React.ReactElement | null {
 
   async function handleSave(): Promise<void> {
     setSaveStatus("loading");
+    setSaveErrorDetail(null);
     try {
       const body: Record<string, string> = {};
       if (botToken.trim()) body.telegramBotToken = botToken.trim();
@@ -92,7 +99,10 @@ export function NotificationConfigCard(): React.ReactElement | null {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      if (!res.ok) throw new Error("save failed");
+      if (!res.ok) {
+        const errBody = (await res.json().catch(() => null)) as SaveErrorBody | null;
+        throw new Error(errBody?.detail ?? errBody?.error ?? `save failed (${res.status})`);
+      }
 
       setBotToken("");
       setVipChatId("");
@@ -102,7 +112,8 @@ export function NotificationConfigCard(): React.ReactElement | null {
 
       const statusRes = await fetch("/api/admin/notification-config");
       if (statusRes.ok) setStatus((await statusRes.json()) as ConfigStatus);
-    } catch {
+    } catch (err) {
+      setSaveErrorDetail(err instanceof Error ? err.message : String(err));
       setSaveStatus("error");
     }
   }
@@ -206,7 +217,9 @@ export function NotificationConfigCard(): React.ReactElement | null {
           <p className="text-signal-green font-mono text-2xs">✓ Kaydedildi</p>
         )}
         {saveStatus === "error" && (
-          <p className="text-signal-red font-mono text-2xs">✗ Kaydetme başarısız</p>
+          <p className="text-signal-red font-mono text-2xs">
+            ✗ Kaydetme başarısız{saveErrorDetail ? `: ${saveErrorDetail}` : ""}
+          </p>
         )}
         {testStatus === "success" && (
           <p className="text-signal-green font-mono text-2xs">✓ Test mesajı gönderildi</p>
