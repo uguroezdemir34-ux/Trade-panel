@@ -5,6 +5,7 @@
 import type { Pair } from "@/lib/constants/pairs";
 import type { ScorerWeights, ScoreSubScores } from "@/lib/score/orchestrator";
 import type { Regime } from "@/lib/score/scorers";
+import type { AtrRegime } from "@/lib/indicators/atr-percentile";
 
 export interface BacktestConfig {
   pair: Pair;
@@ -70,6 +71,12 @@ export interface BacktestTrade {
   consecutiveGoBars?: number;
   /** Son ≤6 bar'ın ham skoru, entry bar dahil, eski→yeni sıralı — slope/velocity analizi için */
   scoreHistory?: number[];
+  /** Giriş anındaki ATR percentile (0-100) — atrPercentile(), volatilite-patlaması hipotezi testi için */
+  atrPercentile?: number | null;
+  /** Giriş anındaki ATR rejimi — compression/normal/expansion/extreme_expansion */
+  atrRegime?: AtrRegime | null;
+  /** current ATR / son 20 bar ATR ortalaması */
+  atrRatio?: number | null;
 }
 
 export interface ScoreBucket {
