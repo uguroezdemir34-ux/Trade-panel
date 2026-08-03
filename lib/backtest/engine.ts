@@ -27,6 +27,8 @@ import { computeTimeQuality } from "@/lib/market/timeQuality";
 import { computeAdaptiveTPs } from "@/lib/sizer/take-profit";
 import { computeStructuralStop } from "@/lib/sizer/stop";
 import type { Candle } from "@/lib/okx/candles";
+import { toIndicatorCandle } from "@/lib/okx/candles";
+import { atrPercentile } from "@/lib/indicators/atr-percentile";
 import { simulateExit, simpleAtr } from "./exitSimulator";
 import type {
   BacktestConfig,
@@ -337,6 +339,12 @@ export async function runBacktest(
     });
     if (!composed) continue;
 
+    // ATR percentile/rejim — composeScoreInput.ts:170'in yaptığı AYNI çağrı,
+    // AYNI c1h'tan (toIndicatorCandle ile aynı dönüşüm) bağımsız bir kopyası.
+    // Deterministik olduğu için birebir aynı sonucu verir. computeScore()/
+    // orchestrator.ts'in döndürdüğü hiçbir şeyi etkilemez — saf gözlem.
+    const atrPctRes = atrPercentile(c1h.map(toIndicatorCandle));
+
     const result = computeScore({
       ...composed,
       scorerWeights: config.scorerWeights ?? null,
@@ -430,6 +438,9 @@ export async function runBacktest(
       sweepBonus: result.sweepBonus,
       consecutiveGoBars, // bu trade'in tetiklendiği an, kaçıncı ardışık GO barıydı (1 = ilk bar, taze sinyal)
       scoreHistory: [...scoreWindow], // son ≤6 bar'ın ham skoru, entry bar dahil, eski→yeni sıralı — slope/velocity analizi için
+      atrPercentile: atrPctRes?.percentile ?? null,
+      atrRegime: atrPctRes?.regime ?? null,
+      atrRatio: atrPctRes?.atrRatio ?? null,
     });
   }
 
