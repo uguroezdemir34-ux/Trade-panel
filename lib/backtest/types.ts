@@ -66,6 +66,10 @@ export interface BacktestTrade {
   srModifier?: number;
   regimeBonus?: number;
   sweepBonus?: number;
+  /** Bu trade'in tetiklendiği an, kaçıncı ardışık GO barıydı (1 = ilk bar, taze sinyal) — "geç giriş" hipotezi testi için */
+  consecutiveGoBars?: number;
+  /** Son ≤6 bar'ın ham skoru, entry bar dahil, eski→yeni sıralı — slope/velocity analizi için */
+  scoreHistory?: number[];
 }
 
 export interface ScoreBucket {

@@ -261,6 +261,11 @@ export async function runBacktest(
   // sıfırdan başlar, bu yüzden pariteler arası SIZINTI yapısal olarak imkansız
   // (bkz. tests/integration/hysteresis.test.ts, "prevVerdict sızmıyor" testi).
   let prevVerdict: Verdict | null = null;
+  // "Geç giriş" hipotezi testi için saf gözlem state'i — verdict/threshold
+  // mantığını etkilemiyor, sadece paralel kayıt tutuyor (bkz. trades.push).
+  let consecutiveGoBars = 0;
+  const scoreWindow: number[] = [];
+  const SCORE_WINDOW_SIZE = 6;
 
   for (let i = WARMUP; i < candles1h.length; i++) {
     // Progress + yield to event loop every YIELD_EVERY bars
@@ -341,6 +346,12 @@ export async function runBacktest(
     // hemen sonra, herhangi bir erken çıkıştan ÖNCE çalışır. Böylece prevVerdict
     // her zaman "en son GERÇEKTEN hesaplanan verdict"i temsil eder.
     prevVerdict = result.verdict;
+    // Aynı gerekçeyle (herhangi bir continue'dan ÖNCE, HER bar için) —
+    // consecutiveGoBars/scoreWindow her zaman "şu ana kadarki gerçek seri"yi
+    // yansıtır, sadece trade açılan barlar için değil.
+    consecutiveGoBars = result.verdict === "go" ? consecutiveGoBars + 1 : 0;
+    scoreWindow.push(result.score);
+    if (scoreWindow.length > SCORE_WINDOW_SIZE) scoreWindow.shift();
     if (result.verdict !== "go") continue;
     if (config.minScore && result.score < config.minScore) continue;
 
@@ -417,6 +428,8 @@ export async function runBacktest(
       srModifier: result.srModifier,
       regimeBonus: result.regimeBonus,
       sweepBonus: result.sweepBonus,
+      consecutiveGoBars, // bu trade'in tetiklendiği an, kaçıncı ardışık GO barıydı (1 = ilk bar, taze sinyal)
+      scoreHistory: [...scoreWindow], // son ≤6 bar'ın ham skoru, entry bar dahil, eski→yeni sıralı — slope/velocity analizi için
     });
   }
 
