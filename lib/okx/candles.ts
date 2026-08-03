@@ -118,10 +118,13 @@ export function parseCandleResponse(raw: unknown): Candle[] | null {
  * HTTP fetch arayüzü (test mock'u için). `init` opsiyonel — mevcut test
  * mock'ları (tek parametreli) hâlâ geçerli (positions.ts'in demo/prod
  * modu X-OKX-Mode header'ıyla ayırt etmesi için eklendi, geriye dönük
- * uyumlu).
+ * uyumlu). `status` opsiyonel olarak eklendi (fetchCandlesWithStatus için,
+ * bkz. aşağıda) — mevcut mock'ların hiçbiri bunu sağlamıyor, opsiyonel
+ * olduğu için geriye dönük tamamen uyumlu, fetchCandles() etkilenmedi.
  */
 export type FetchFn = (url: string, init?: RequestInit) => Promise<{
   ok: boolean;
+  status?: number;
   json: () => Promise<unknown>;
 }>;
 
@@ -129,7 +132,7 @@ export type FetchFn = (url: string, init?: RequestInit) => Promise<{
  *  istek runBatched worker'ını sonsuza dek kilitlemesin diye (bkz. FAZ 3). */
 const CANDLE_FETCH_TIMEOUT_MS = 8_000;
 
-async function fetchWithTimeout(url: string): Promise<{ ok: boolean; json: () => Promise<unknown> }> {
+async function fetchWithTimeout(url: string): Promise<{ ok: boolean; status: number; json: () => Promise<unknown> }> {
   const ctrl = new AbortController();
   const tid = setTimeout(() => ctrl.abort(), CANDLE_FETCH_TIMEOUT_MS);
   try {
@@ -201,5 +204,63 @@ export async function fetchCandles(
     return null;
   } catch {
     return null;
+  }
+}
+
+export interface CandleFetchResult {
+  candles: Candle[] | null;
+  /** HTTP durum kodu — network/timeout hatasında (hiç yanıt gelmedi) null */
+  status: number | null;
+}
+
+/**
+ * fetchCandles() ile AYNI istek/parse mantığı — ama HTTP durum kodunu da
+ * döndürür, caller (bkz. app/grafik/page.tsx on-demand fetch) 429'u diğer
+ * hatalardan ayırt edip retry kararı verebilsin diye. fetchCandles()
+ * BİLEREK değiştirilmedi (20+ çağrı yeri var, sözleşmesi Candle[] | null
+ * kalmalı) — bu fonksiyon aynı parse mantığını (küçük bir kod tekrarı
+ * pahasına, kasıtlı) kendi içinde tutuyor: bu sandbox'ta test suite
+ * çalıştırılamadığı için (node_modules yok) fetchCandles()'ı ortak bir
+ * helper'a refactor etmenin davranışı bozmadığını doğrulayamazdım —
+ * mevcut, kanıtlanmış fonksiyona dokunmama riski, kod tekrarına tercih
+ * edildi.
+ */
+export async function fetchCandlesWithStatus(
+  pair: Pair,
+  tf: Timeframe,
+  limit: number = 200,
+  fetchFn?: FetchFn,
+): Promise<CandleFetchResult> {
+  const instId = instIdFor(pair);
+  const bar = barFor(tf);
+  const url = `/api/okx/api/v5/market/candles?instId=${encodeURIComponent(instId)}&bar=${bar}&limit=${Math.min(300, limit)}`;
+  try {
+    const res = fetchFn ? await fetchFn(url) : await fetchWithTimeout(url);
+    const status = res.status ?? null;
+    if (!res.ok) return { candles: null, status };
+    const raw = await res.json();
+    if (!raw || typeof raw !== "object") return { candles: null, status };
+    const r = raw as Record<string, unknown>;
+
+    // Yanıt formatı tespiti — fetchCandles()'daki 3 olası şekille birebir aynı.
+    if (typeof r.ok === "boolean") {
+      if (!r.ok) return { candles: null, status };
+      const inner = r.data;
+      if (Array.isArray(inner)) {
+        return { candles: parseCandleResponse({ code: "0", data: inner }), status };
+      }
+      if (inner && typeof inner === "object") {
+        return { candles: parseCandleResponse(inner), status };
+      }
+      return { candles: null, status };
+    }
+
+    if (typeof r.code === "string") {
+      return { candles: parseCandleResponse(raw), status };
+    }
+
+    return { candles: null, status };
+  } catch {
+    return { candles: null, status: null };
   }
 }
