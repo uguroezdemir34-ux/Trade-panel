@@ -61,9 +61,10 @@ function instIdFor(pair: Pair): string {
 }
 
 /** Timeframe → OKX bar */
-export type Timeframe = "1d" | "4h" | "1h" | "15m" | "5m" | "1m";
+export type Timeframe = "1w" | "1d" | "4h" | "1h" | "15m" | "5m" | "1m";
 function barFor(tf: Timeframe): string {
-  // OKX bar formatları: "1D", "4H", "1H", "15m", "5m", "1m"
+  // OKX bar formatları: "1W", "1D", "4H", "1H", "15m", "5m", "1m"
+  if (tf === "1w") return "1W";
   if (tf === "1d") return "1D";
   if (tf === "4h") return "4H";
   if (tf === "1h") return "1H";

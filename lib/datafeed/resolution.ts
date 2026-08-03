@@ -35,6 +35,12 @@ const TF_TO_TV: Record<Timeframe, string> = {
   "1h":  "60",
   "4h":  "240",
   "1d":  "1D",
+  // Bu datafeed modülü şu an hiçbir yerde kullanılmıyor (grep ile doğrulandı —
+  // grafik sayfası PriceChart.tsx/lightweight-charts'ı doğrudan kullanıyor,
+  // bu TradingView UDF datafeed'i değil) — sadece Record<Timeframe,...>
+  // zorunluluğunu (TS derleyicisi) karşılamak için eklendi, TV'nin gerçek
+  // "1W" haftalık resolution konvansiyonuyla tutarlı.
+  "1w":  "1W",
 };
 
 /** Milliseconds per bar for each TV resolution (used for countBack → fromMs). */

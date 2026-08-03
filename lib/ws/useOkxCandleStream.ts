@@ -15,7 +15,7 @@
  * If WS fails, the existing REST poller (useCandlePoller) keeps data fresh.
  *
  * OKX candle channel naming (from OKX WS API docs):
- *   1d → "candle1D", 4h → "candle4H", 1h → "candle1H",
+ *   1w → "candle1W", 1d → "candle1D", 4h → "candle4H", 1h → "candle1H",
  *   15m → "candle15m", 5m → "candle5m"
  */
 
@@ -33,6 +33,7 @@ const OKX_WS_URLS = [
 
 function okxBar(tf: Timeframe): string {
   switch (tf) {
+    case "1w": return "candle1W";
     case "1d": return "candle1D";
     case "4h": return "candle4H";
     case "1h": return "candle1H";

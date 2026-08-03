@@ -46,10 +46,11 @@ const VOL_UP = "rgba(34,197,94,0.5)";
 const VOL_DOWN = "rgba(239,68,68,0.5)";
 
 const CHART_STORAGE_KEY = "qx_chart_v1";
-const VALID_TF = new Set<string>(["5m", "15m", "1h", "4h", "1d"]);
+const VALID_TF = new Set<string>(["5m", "15m", "1h", "4h", "1d", "1w"]);
 
 /** Secondary timeframe for split view */
 const SEC_TF: Record<Timeframe, Timeframe> = {
+  "1w": "1d",
   "1d": "4h",
   "4h": "1h",
   "1h": "15m",
@@ -57,6 +58,17 @@ const SEC_TF: Record<Timeframe, Timeframe> = {
   "5m": "1m",
   "1m": "1m",
 };
+
+/**
+ * useCandlePoller.ts (arka plan, tüm parite) SADECE 15m/1h/4h/1d'yi sürekli
+ * çekiyor — "5m" ve "1w" hiç poll edilmiyor, candleStore'da bu anahtarlar
+ * hiç dolmuyordu (grafik bu iki sekmede boş kalıyordu, baştan beri hiç
+ * kapsanmamış bir eksiklik). Poller'a EKLEMİYORUZ (7/24 gereksiz arka plan
+ * yükü olurdu) — sadece kullanıcı bu sekmeyi GERÇEKTEN görüntülerken,
+ * on-demand tek seferlik fetch + candleStore'a yazma (aşağıdaki useEffect,
+ * bkz. GrafikPage içi).
+ */
+const ON_DEMAND_TF = new Set<Timeframe>(["5m", "1w"]);
 
 /** Build ChartSeries from a candle array + overlay flags */
 function buildSeries(
@@ -295,6 +307,22 @@ export default function GrafikPage() {
       .catch(() => { setSecCandles([]); })
       .finally(() => { setSecLoading(false); });
   }, [showSplit, secPair, secTf]);
+
+  // On-demand fetch for timeframes the background poller doesn't cover
+  // (bkz. ON_DEMAND_TF yorumu yukarıda) — candleStore'a YAZAR, yeni bir
+  // local state DEĞİL: aşağıdaki candlesRaw zaten candleStore'dan okuyor,
+  // bu sayede mevcut okuma satırına hiç dokunmadan veri akışı tamamlanır.
+  useEffect(() => {
+    if (!ON_DEMAND_TF.has(timeframe)) return;
+    let cancelled = false;
+    fetchCandles(pair, timeframe, 200)
+      .then((data) => {
+        if (cancelled || !data) return;
+        useCandleStore.getState().setCandles(pair, timeframe, data, Date.now());
+      })
+      .catch(() => { /* candlesRaw boş/bayat kalır — bu iki TF için fix öncesindeki durumla aynı, sessiz hata */ });
+    return () => { cancelled = true; };
+  }, [pair, timeframe]);
 
   // Live candle stream — updates last candle via RAF-throttled WS (ADIM 3)
   useOkxCandleStream(pair, timeframe);
