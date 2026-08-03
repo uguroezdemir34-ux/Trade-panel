@@ -77,6 +77,8 @@ export interface BacktestTrade {
   atrRegime?: AtrRegime | null;
   /** current ATR / son 20 bar ATR ortalaması */
   atrRatio?: number | null;
+  /** Giriş anında son 30 günün getirisi (ör. -0.30 = %30 düşüş) — uzun vadeli düşüş/yükseliş trendi göstergesi, null ise yetersiz 1D veri */
+  trailingReturn30d?: number | null;
 }
 
 export interface ScoreBucket {
