@@ -18,6 +18,7 @@ const THROTTLE_MS = 300;
 
 function instId(pair: Pair): string { return `${pair}-USDT-SWAP`; }
 function bar(tf: Timeframe): string {
+  if (tf === "1w") return "1W";
   if (tf === "1d") return "1D";
   if (tf === "4h") return "4H";
   if (tf === "1h") return "1H";
@@ -76,6 +77,7 @@ export async function fetchHistoricalCandleRange(
   let retries = 0;
   const MAX_RETRIES = 3;
   const MS_PER_BAR: Record<Timeframe, number> = {
+    "1w": 604_800_000,
     "1d": 86_400_000,
     "4h": 14_400_000,
     "1h": 3_600_000,
