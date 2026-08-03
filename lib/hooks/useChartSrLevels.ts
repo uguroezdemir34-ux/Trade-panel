@@ -12,14 +12,23 @@
  * Yeni fetch/polling YOK: candleStore zaten useCandlePoller (AppShell'de
  * mount edilir, skor motoru için) tarafından TÜM parite × {15m,1h,4h,1d}
  * için sürekli güncel tutuluyor — burada sadece mevcut reaktif store'dan
- * okunuyor, grafikte hangi zaman dilimine bakılıyor olursa olsun (5m/15m/
- * 1h/4h/1d) S/R her zaman aynı (skorun gördüğü) kaynaktan gelir.
+ * okunuyor.
  *
  * direction="NEUTRAL" + volRatio=null bilerek geçiliyor: detectSRLevels'in
  * levels.resistances/supports listesi direction'dan BAĞIMSIZ hesaplanıyor
  * (sadece mevcut fiyata göre üstte/altta olma durumu) — modifier/
  * breakoutOverride (direction'a bağlı kısımlar) burada hiç kullanılmıyor,
  * saf görselleştirme. computeScore/orchestrator.ts'e hiç dokunulmadı.
+ *
+ * SEKME FİLTRESİ (kullanıcı kararı) — tüm kaynaklar HER ZAMAN hesaplanır
+ * (detectSRLevels tam çağrılır) ama sadece o an açık olan timeframe
+ * sekmesiyle eşleşen seviyeler DÖNDÜRÜLÜR: 15m'ye bakarken sadece gerçek
+ * 15m swing, 4H'e bakarken sadece 4H pivot, vb. — hepsi bir arada değil.
+ * ROUND (yuvarlak sayı) istisna: hiçbir candle timeframe'inden türemiyor
+ * (sadece currentPrice'tan), bu yüzden her sekmede görünür kalıyor.
+ * 5m/1m sekmelerinde bu haritada karşılığı yok → ROUND hariç hiçbir
+ * seviye gösterilmez (o granülerlikte hesaplanan bir kaynak yok, sahte
+ * bir eşleştirme uydurmak yerine boş bırakılıyor).
  */
 
 import { useMemo } from "react";
@@ -27,11 +36,19 @@ import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { detectSRLevels } from "@/lib/sr/detect";
 import { findAllSwingHighs, findAllSwingLows } from "@/lib/sr/swing";
-import { toIndicatorCandle } from "@/lib/okx/candles";
+import { toIndicatorCandle, type Timeframe } from "@/lib/okx/candles";
 import type { Pair } from "@/lib/constants/pairs";
-import type { SrLevel } from "@/lib/chart/types";
+import type { SrLevel, SrLevelSource } from "@/lib/chart/types";
 
-export function useChartSrLevels(pair: Pair): SrLevel[] {
+const TF_SOURCES: Partial<Record<Timeframe, SrLevelSource[]>> = {
+  "15m": ["swing_15m"],
+  "1h": ["pivot_1h_high", "pivot_1h_low"],
+  "4h": ["pivot_4h_high", "pivot_4h_low"],
+  "1d": ["PDH", "PDL"],
+  "1w": ["PWH", "PWL"],
+};
+
+export function useChartSrLevels(pair: Pair, timeframe: Timeframe): SrLevel[] {
   const candles4h = useCandleStore((s) => s.candles[`${pair}_4h`]) ?? EMPTY_CANDLES;
   const candles1h = useCandleStore((s) => s.candles[`${pair}_1h`]) ?? EMPTY_CANDLES;
   const candles15m = useCandleStore((s) => s.candles[`${pair}_15m`]) ?? EMPTY_CANDLES;
@@ -70,6 +87,8 @@ export function useChartSrLevels(pair: Pair): SrLevel[] {
       ];
     }
 
-    return [...fromScore, ...fromSwing15m];
-  }, [candles4h, candles1h, candles15m, livePrice]);
+    const combined = [...fromScore, ...fromSwing15m];
+    const allowed = TF_SOURCES[timeframe];
+    return combined.filter((lvl) => lvl.source === "ROUND" || (allowed?.includes(lvl.source) ?? false));
+  }, [candles4h, candles1h, candles15m, livePrice, timeframe]);
 }

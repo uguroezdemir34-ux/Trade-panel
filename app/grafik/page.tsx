@@ -336,8 +336,8 @@ export default function GrafikPage() {
   const secLivePrice = useMarketStore((s) => s.prices[secPair]?.last ?? null);
   // Skorun kullandığı gerçek S/R (detectSRLevels) + gerçek 15m swing — açık
   // sekmeden (timeframe) BAĞIMSIZ, bkz. lib/hooks/useChartSrLevels.ts.
-  const srLevels    = useChartSrLevels(pair);
-  const secSrLevels = useChartSrLevels(secPair);
+  const srLevels    = useChartSrLevels(pair, timeframe);
+  const secSrLevels = useChartSrLevels(secPair, secTf);
 
   const tradeLevels = useMemo<TradeLevelLine[]>(() => {
     const allPos = positions ?? [];
