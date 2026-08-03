@@ -50,9 +50,28 @@ export interface VwapBands {
   lower: LinePoint[];
 }
 
+/**
+ * Skorun gerçekten kullandığı S/R kaynakları (bkz. lib/sr/detect.ts
+ * detectSRLevels — SrLevelType ile BİREBİR aynı string'ler) + "swing_15m":
+ * detectSRLevels 15m'yi hiç kapsamıyor, bu grafik-only bir katman (gerçek
+ * 15m mumlardan findAllSwingHighs/Lows, bkz. lib/hooks/useChartSrLevels.ts).
+ */
+export type SrLevelSource =
+  | "pivot_4h_high"
+  | "pivot_4h_low"
+  | "pivot_1h_high"
+  | "pivot_1h_low"
+  | "PDH"
+  | "PDL"
+  | "PWH"
+  | "PWL"
+  | "ROUND"
+  | "swing_15m";
+
 export interface SrLevel {
   price: number;
   type: "support" | "resistance";
+  source: SrLevelSource;
 }
 
 export interface LiqBand {

@@ -22,8 +22,8 @@ import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
 import { bbSeries } from "@/lib/indicators/bb";
 import { vwapSeries } from "@/lib/indicators/vwap";
-import { findAllSwingHighs, findAllSwingLows } from "@/lib/sr/swing";
-import { toIndicatorCandle, fetchCandles, type Timeframe, type Candle } from "@/lib/okx/candles";
+import { fetchCandles, type Timeframe, type Candle } from "@/lib/okx/candles";
+import { useChartSrLevels } from "@/lib/hooks/useChartSrLevels";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine } from "@/lib/chart/types";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
@@ -68,6 +68,9 @@ function buildSeries(
     rsi: boolean; macd: boolean; bb: boolean; vwap: boolean; sr: boolean;
     trades: boolean; alarmLevels: AlarmLevel[]; tradeLevels: TradeLevelLine[];
     drawnLines: DrawnLine[];
+    /** Skorun kullandığı gerçek S/R + gerçek 15m swing (bkz. useChartSrLevels) —
+     *  `candles`/timeframe'den BAĞIMSIZ, caller tarafından önceden hesaplanır. */
+    srLevels: SrLevel[];
   },
 ): ChartSeries {
   const candlePoints = candles.map((c) => ({
@@ -161,21 +164,10 @@ function buildSeries(
       }));
   }
 
-  let srLevels: SrLevel[] | undefined;
-  if (opts.sr && candles.length >= 7) {
-    const indCandles = candles.map(toIndicatorCandle);
-    const highs = findAllSwingHighs(indCandles, 60, 3, 8);
-    const lows  = findAllSwingLows(indCandles, 60, 3, 8);
-    srLevels = [
-      ...highs.map((p) => ({ price: p.price, type: "resistance" as const })),
-      ...lows.map((p) => ({ price: p.price, type: "support" as const })),
-    ];
-  }
-
   return {
     candles: candlePoints, ema20, ema50, ema200, volume, rsi, macdData,
     bb: bbBands, vwap: vwapBands, alarmLevels: opts.alarmLevels,
-    markers, srLevels, tradeLevels: opts.tradeLevels,
+    markers, srLevels: opts.sr ? opts.srLevels : undefined, tradeLevels: opts.tradeLevels,
     drawnLines: opts.drawnLines,
   };
 }
@@ -314,6 +306,10 @@ export default function GrafikPage() {
   const alarms     = usePriceAlarmStore((s) => s.alarms);
   const livePrice    = useMarketStore((s) => s.prices[pair]?.last ?? null);
   const secLivePrice = useMarketStore((s) => s.prices[secPair]?.last ?? null);
+  // Skorun kullandığı gerçek S/R (detectSRLevels) + gerçek 15m swing — açık
+  // sekmeden (timeframe) BAĞIMSIZ, bkz. lib/hooks/useChartSrLevels.ts.
+  const srLevels    = useChartSrLevels(pair);
+  const secSrLevels = useChartSrLevels(secPair);
 
   const tradeLevels = useMemo<TradeLevelLine[]>(() => {
     const allPos = positions ?? [];
@@ -372,11 +368,11 @@ export default function GrafikPage() {
       ema20: showEma20, ema50: showEma50, ema200: showEma200,
       volume: showVolume, rsi: showRsi, macd: showMacd, bb: showBb,
       vwap: showVwap, sr: showSr, trades: showTrades,
-      alarmLevels, tradeLevels, drawnLines,
+      alarmLevels, tradeLevels, drawnLines, srLevels,
     }),
     [candles, trades, pair, showEma20, showEma50, showEma200, showVolume,
      showRsi, showMacd, showBb, showVwap, showSr, showTrades,
-     alarmLevels, tradeLevels, drawnLines],
+     alarmLevels, tradeLevels, drawnLines, srLevels],
   );
 
   // Secondary series (split view — EMA200 + volume only, same drawnLines)
@@ -386,9 +382,9 @@ export default function GrafikPage() {
       ema20: false, ema50: false, ema200: true,
       volume: showVolume, rsi: false, macd: false, bb: false,
       vwap: false, sr: showSr, trades: false,
-      alarmLevels: [], tradeLevels, drawnLines,
+      alarmLevels: [], tradeLevels, drawnLines, srLevels: secSrLevels,
     });
-  }, [showSplit, secCandles, trades, secPair, showVolume, showSr, tradeLevels, drawnLines]);
+  }, [showSplit, secCandles, trades, secPair, showVolume, showSr, tradeLevels, drawnLines, secSrLevels]);
 
   // Click handler dispatched to the appropriate mode
   const handlePriceClick = useCallback((price: number) => {
