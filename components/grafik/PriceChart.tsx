@@ -25,10 +25,33 @@ import {
   type Time,
   type MouseEventParams,
 } from "lightweight-charts";
-import type { ChartSeries, LiqBand } from "@/lib/chart/types";
+import type { ChartSeries, LiqBand, SrLevelSource } from "@/lib/chart/types";
 import { VerticalLinePrimitive } from "@/lib/chart/primitives/VerticalLinePrimitive";
 import { CrossLinePrimitive } from "@/lib/chart/primitives/CrossLinePrimitive";
 import { FibTimeZonePrimitive } from "@/lib/chart/primitives/FibTimeZonePrimitive";
+
+/**
+ * S/R kaynağına göre etiket + çizgi stili — skorun kullandığı kaynağın
+ * "gücü"yle kabaca orantılı (detectSRLevels.ts dosya başı yorumundaki sıra:
+ * 4H pivot primer/en güvenilir → 1H pivot sekonder → önceki gün/hafta →
+ * yuvarlak sayı en zayıf). lineStyle: lightweight-charts LineStyle enum'u
+ * (0=Solid, 1=Dotted, 2=Dashed, 3=LargeDashed, 4=SparseDotted) — bu dosyada
+ * zaten ham sayı olarak kullanılıyor (bkz. alarm/trade çizgileri), tutarlılık
+ * için burada da öyle. swing_15m AYRI bir kategori: detectSRLevels'in HİÇ
+ * kapsamadığı, gerçek 15m mumlardan türetilmiş grafik-only bir katman.
+ */
+const SR_LINE_STYLE: Record<SrLevelSource, { lineStyle: 0 | 1 | 2 | 3 | 4; width: 1 | 2 | 3 | 4; label: string }> = {
+  pivot_4h_high: { lineStyle: 0, width: 2, label: "4H" },
+  pivot_4h_low: { lineStyle: 0, width: 2, label: "4H" },
+  pivot_1h_high: { lineStyle: 1, width: 1, label: "1H" },
+  pivot_1h_low: { lineStyle: 1, width: 1, label: "1H" },
+  PDH: { lineStyle: 2, width: 1, label: "PDH" },
+  PDL: { lineStyle: 2, width: 1, label: "PDL" },
+  PWH: { lineStyle: 2, width: 1, label: "PWH" },
+  PWL: { lineStyle: 2, width: 1, label: "PWL" },
+  ROUND: { lineStyle: 4, width: 1, label: "○" },
+  swing_15m: { lineStyle: 3, width: 1, label: "15m" },
+};
 
 function chartPriceFormat(price: number): { type: "price"; precision: number; minMove: number } {
   if (price < 0.001)  return { type: "price", precision: 8, minMove: 0.00000001 };
@@ -963,11 +986,12 @@ export function PriceChart({ series, height = 400, theme = "dark", onChartClick,
     srLinesRef.current = [];
     if (series.srLevels?.length) {
       for (const sr of series.srLevels) {
+        const style = SR_LINE_STYLE[sr.source];
         const line = candle.createPriceLine({
           price: sr.price,
           color: sr.type === "support" ? "#22c55e88" : "#ef444488",
-          lineWidth: 1, lineStyle: 1, axisLabelVisible: true,
-          title: sr.type === "support" ? "S" : "R",
+          lineWidth: style.width, lineStyle: style.lineStyle, axisLabelVisible: true,
+          title: style.label,
         });
         srLinesRef.current.push(line);
       }
