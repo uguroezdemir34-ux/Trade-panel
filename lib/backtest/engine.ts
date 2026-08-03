@@ -345,6 +345,18 @@ export async function runBacktest(
     // orchestrator.ts'in döndürdüğü hiçbir şeyi etkilemez — saf gözlem.
     const atrPctRes = atrPercentile(c1h.map(toIndicatorCandle));
 
+    // 30 günlük trailing return — düşüş/yükseliş trendi göstergesi.
+    // c1d günlük mumlar (OKX ham format, .close — .c DEĞİL), son eleman
+    // "bugün" (bu 1h bar'ın ait olduğu gün). composeScoreInput/computeScore'a
+    // hiç etkisi yok, saf gözlem.
+    const trailingReturn30d = (() => {
+      if (!c1d || c1d.length < 31) return null;
+      const past = c1d[c1d.length - 31];
+      const latest = c1d[c1d.length - 1];
+      if (!past || !latest || past.close === 0) return null;
+      return (latest.close - past.close) / past.close; // ör. -0.30 = son 30 günde %30 düşüş
+    })();
+
     const result = computeScore({
       ...composed,
       scorerWeights: config.scorerWeights ?? null,
@@ -441,6 +453,7 @@ export async function runBacktest(
       atrPercentile: atrPctRes?.percentile ?? null,
       atrRegime: atrPctRes?.regime ?? null,
       atrRatio: atrPctRes?.atrRatio ?? null,
+      trailingReturn30d,
     });
   }
 
