@@ -212,24 +212,25 @@ async function fetchAndScore(pair: Pair): Promise<{
 } | null> {
   const instId = `${pair}-USDT-SWAP`;
   const now = Date.now();
-  const [raw1h, raw4h, rawFundingRate, oiResult, fgResult, raw1d] = await Promise.all([
+  const [raw1h, raw4h, rawFundingRate, oiResult, fgResult, raw1d, raw15m] = await Promise.all([
     fetchOkxCandles(instId, "1H", 300),
     fetchOkxCandles(instId, "4H", 300),
     fetchOkxFundingRate(instId),
     fetchOkxOpenInterest(instId),
     fetchFearGreed(now),
     fetchOkxCandles(instId, "1D", 60),
+    fetchOkxCandles(instId, "15m", 40), // CANDLE_MIN_15M (20) + pay
   ]);
 
   // Only use confirmed (closed) bars
   const candles1h = raw1h.filter((c) => c.confirm);
   const candles4h = raw4h.filter((c) => c.confirm);
   const candles1d = raw1d.filter((c) => c.confirm);
+  const candles15m = raw15m.filter((c) => c.confirm);
 
   if (candles1h.length < CANDLE_MIN_1H || candles4h.length < CANDLE_MIN_4H) return null;
 
   const latest = candles1h[candles1h.length - 1];
-  const candles15m = candles1h.slice(-25); // 1h bars as 15m proxy (same approach as backtest)
 
   if (candles15m.length < CANDLE_MIN_15M) return null;
 
@@ -308,7 +309,7 @@ async function fetchAndScore(pair: Pair): Promise<{
   // AYRICA ikinci kez çağırmasına gerek yok, tek hesap burada yapılıp döndürülüyor
   // (verimlilik yan etkisi: composeScoreInput+computeScore'un ikinci kez
   // tekrarlanması önleniyor).
-  const prevVerdict = scorePrevBar(candles1h, candles4h, candles1d, pair, fg, fundingRate);
+  const prevVerdict = scorePrevBar(candles1h, candles4h, candles1d, candles15m, pair, fg, fundingRate);
   const result = computeScore({
     ...composed,
     srModifier,
@@ -332,7 +333,11 @@ async function fetchAndScore(pair: Pair): Promise<{
     fundingRate,
     oiVelocityScore,
     oiVelocityResult,
-    signalTs: latest.ts,
+    // Kapanmış 1H mumun kendi ts'i DEĞİL — cron'un bu pair için veri çekmeye
+    // başladığı an (composeScoreInput'a ayrıca geçilen "now: latest.ts" ile
+    // KARIŞTIRILMASIN, o satıra dokunulmadı — skorlama mantığı mum bazlı zaman
+    // kullanmaya devam ediyor, sadece DB'ye yazılan tetiklenme zamanı düzeldi).
+    signalTs: now,
     sub: result.sub,
     baseScore: result.baseScore,
     effectiveThreshold: result.effectiveThreshold,
@@ -354,6 +359,7 @@ function scorePrevBar(
   candles1h: Candle[],
   candles4h: Candle[],
   candles1d: Candle[],
+  candles15m: Candle[],
   pair: Pair,
   fg: number,
   fundingRate: number | null,
@@ -362,7 +368,8 @@ function scorePrevBar(
   const prevLatest = prev1h[prev1h.length - 1];
   if (!prevLatest) return null;
 
-  const prev15m = prev1h.slice(-25);
+  // 15m: re-align to previous bar's timestamp — candles1d ile AYNI desen (bkz. aşağıdaki prev1d)
+  const prev15m = candles15m.filter((c) => c.ts <= prevLatest.ts);
   if (prev1h.length < CANDLE_MIN_1H || prev15m.length < CANDLE_MIN_15M) return null;
 
   // 4h: re-align to previous bar's timestamp
