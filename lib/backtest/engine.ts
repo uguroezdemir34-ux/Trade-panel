@@ -29,6 +29,10 @@ import { computeStructuralStop } from "@/lib/sizer/stop";
 import type { Candle } from "@/lib/okx/candles";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import { atrPercentile } from "@/lib/indicators/atr-percentile";
+import { detectSRLevels } from "@/lib/sr/detect";
+import { detectLiquiditySweep } from "@/lib/sr/sweep";
+import { inferDirection } from "@/lib/score/direction";
+import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import { simulateExit, simpleAtr } from "./exitSimulator";
 import type {
   BacktestConfig,
@@ -320,6 +324,27 @@ export async function runBacktest(
     const btcCooldownUntil = config.pair !== "BTC" && btcAltUntil > bar.ts ? btcAltUntil : null;
     const btcSelfCooldownUntil = config.pair === "BTC" && btcSelfUntil > bar.ts ? btcSelfUntil : null;
 
+    // Gösterge formatına dönüşüm — SADECE o ana kadarki (c1h/c4h, bar.ts'e
+    // kadar önceden hizalanmış pointer'larla kesilmiş) mumlardan; look-ahead
+    // YOK. Sweep/S/R + ATR percentile için ortak, tekrar hesaplanmıyor
+    // (canlı sistemdeki "Pre-compute indicator candles" deseniyle aynı,
+    // bkz. lib/server/signalEngine.ts:258-260).
+    const c1hInd = c1h.map(toIndicatorCandle);
+    const c4hInd = c4h.map(toIndicatorCandle);
+
+    // Gerçek sweep tespiti — canlı sistemle (signalEngine.ts:261-269) BİREBİR
+    // aynı çağrı ve mapping. detectLiquiditySweep saf fonksiyon, sadece
+    // c1hInd/c4hInd (yukarıda, look-ahead'siz) kullanıyor — yeni veri kaynağı
+    // gerekmiyor. Direction'a bağımlı DEĞİL, composeScoreInput'tan ÖNCE
+    // hesaplanabiliyor (srModifier'daki chicken-egg problemi burada yok).
+    const sweepDetection = detectLiquiditySweep(c1hInd, c4hInd);
+    const sweep15m: SweepInput = sweepDetection
+      ? {
+          type: sweepDetection.direction === "LONG" ? "bullish_sweep" : "bearish_sweep",
+          strength: sweepDetection.wickRatio,
+        }
+      : { type: null, strength: 0 };
+
     const composed = composeScoreInput({
       pair: config.pair,
       livePrice: bar.close,
@@ -332,6 +357,7 @@ export async function runBacktest(
       oiVelocityScore: null,
       now: bar.ts,
       ...FROZEN_STATE,
+      sweep15m, // FROZEN_STATE'in {type:null,strength:0} placeholder'ını gerçek değerle override eder
       btcCooldownUntil,
       btcCooldownReason: btcCooldownUntil || btcSelfCooldownUntil ? btcReason : "",
       btcSelfCooldownUntil,
@@ -339,11 +365,32 @@ export async function runBacktest(
     });
     if (!composed) continue;
 
+    // Gerçek S/R modifier — canlı sistemle (signalEngine.ts:291-302) BİREBİR
+    // aynı iki-geçişli desen: composeScoreInput srModifier=0 placeholder'ıyla
+    // çağrılır (detectSRLevels direction'a bağımlı, direction composeScoreInput'un
+    // KENDİ çıktısına bağımlı — chicken-egg), sonra composed'un px/ema
+    // alanlarından inferDirection() ile direction çıkarılır (computeScore()'un
+    // İÇİNDE orchestrator.ts:432'de yaptığı AYNI çağrı, AYNI girdilerle —
+    // bu yüzden preDirection her zaman result.direction'la eşleşir), sonra
+    // detectSRLevels() (saf fonksiyon, sadece c4hInd/c1hInd + composed.px/
+    // volRatio — yeni veri kaynağı yok) gerçek srModifier'ı üretir.
+    const { direction: preDirection } = inferDirection({
+      px15: composed.px15,
+      px1h: composed.px,
+      px4h: composed.px4h,
+      ema21_15m: composed.ema21_15m,
+      ema50_1h: composed.ema50_1h,
+      ema200_1h: composed.ema200_1h,
+      ema50_4h: composed.ema50_4h,
+    });
+    const srResult = detectSRLevels(c4hInd, c1hInd, composed.px, preDirection, composed.volRatio);
+    const srModifier = srResult.modifier * SR_SCALE_FACTOR;
+
     // ATR percentile/rejim — composeScoreInput.ts:170'in yaptığı AYNI çağrı,
-    // AYNI c1h'tan (toIndicatorCandle ile aynı dönüşüm) bağımsız bir kopyası.
-    // Deterministik olduğu için birebir aynı sonucu verir. computeScore()/
-    // orchestrator.ts'in döndürdüğü hiçbir şeyi etkilemez — saf gözlem.
-    const atrPctRes = atrPercentile(c1h.map(toIndicatorCandle));
+    // AYNI c1hInd'ten bağımsız bir kopyası. Deterministik olduğu için birebir
+    // aynı sonucu verir. computeScore()/orchestrator.ts'in döndürdüğü hiçbir
+    // şeyi etkilemez — saf gözlem.
+    const atrPctRes = atrPercentile(c1hInd);
 
     // 30 günlük trailing return — düşüş/yükseliş trendi göstergesi.
     // c1d günlük mumlar (OKX ham format, .close — .c DEĞİL), son eleman
@@ -359,6 +406,10 @@ export async function runBacktest(
 
     const result = computeScore({
       ...composed,
+      srModifier, // composed'un srModifier=0 placeholder'ını gerçek değerle override eder
+      srNearestResistance: srResult.levels.nearest_resistance,
+      srNearestSupport: srResult.levels.nearest_support,
+      srBreakoutOverride: srResult.meta.breakoutOverride,
       scorerWeights: config.scorerWeights ?? null,
       prevVerdict,
     });
