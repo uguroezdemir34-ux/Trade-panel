@@ -29,12 +29,27 @@
  * 5m/1m sekmelerinde bu haritada karşılığı yok → ROUND hariç hiçbir
  * seviye gösterilmez (o granülerlikte hesaplanan bir kaynak yok, sahte
  * bir eşleştirme uydurmak yerine boş bırakılıyor).
+ *
+ * PDH/PDL/PWH/PWL/ROUND — detectSRLevels()'İN DEDUP'LANMIŞ ÇIKTISINDAN
+ * DEĞİL, kendi ham kaynağından (bkz. aşağıdaki fromPeriodRound). detectSRLevels
+ * içindeki dedup ("aynı %0.3 aralığında İLK EKLENEN kazanır", sıra: 4H pivot
+ * → 1H pivot → PDH/PDL/PWH/PWL → ROUND) skor için doğru ve KASITLI — hangi
+ * "tip" olduğu skoru etkilemiyor, sadece en yakın seviyenin mesafesi/gücü
+ * önemli. Ama bir PDH bir 4H/1H pivot'a yakınsa dedup'ta sessizce yutuluyor;
+ * skor için zararsız, ama sekme-bazlı kaynak filtresi (TF_SOURCES) için
+ * yıkıcı — 1D sekmesinde "sadece PDH/PDL" arıyoruz, dedup'ta yutulmuşsa hiç
+ * bulunamıyor. Çözüm: PDH/PDL/PWH/PWL/ROUND için getPrevPeriodLevels()/
+ * getRoundNumberLevels()'i (lib/sr/levels.ts, zaten pure + dedup'suz)
+ * DOĞRUDAN çağırıyoruz — detectSRLevels()'in kendisine hiç dokunulmadı,
+ * sadece 4H/1H pivot kısmı (fromScore, zaten doğru) onun çıktısından
+ * kalıyor.
  */
 
 import { useMemo } from "react";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { detectSRLevels } from "@/lib/sr/detect";
+import { getPrevPeriodLevels, getRoundNumberLevels } from "@/lib/sr/levels";
 import { findAllSwingHighs, findAllSwingLows } from "@/lib/sr/swing";
 import { toIndicatorCandle, type Timeframe } from "@/lib/okx/candles";
 import type { Pair } from "@/lib/constants/pairs";
@@ -71,6 +86,26 @@ export function useChartSrLevels(pair: Pair, timeframe: Timeframe): SrLevel[] {
       ...levels.resistances.map((l) => ({ price: l.price, type: "resistance" as const, source: l.type })),
       ...levels.supports.map((l) => ({ price: l.price, type: "support" as const, source: l.type })),
     ];
+    // detectSRLevels'in dedup'lu çıktısından sadece 4H/1H pivot kısmını
+    // kullanıyoruz (zaten doğru çalışıyor) — PDH/PDL/PWH/PWL/ROUND'ı AŞAĞIDA
+    // kendi ham kaynağından ayrıca ekliyoruz (bkz. dosya başı yorumu).
+    const fromPivotOnly = fromScore.filter((l) => l.source.startsWith("pivot_"));
+
+    // PDH/PDL/PWH/PWL/ROUND — dedup'suz, ham kaynak (bkz. dosya başı yorumu).
+    const periodLevels = getPrevPeriodLevels(c4hInd);
+    const roundLevels = getRoundNumberLevels(currentPrice);
+    const fromPeriodRound: SrLevel[] = [
+      ...periodLevels.map((l) => ({
+        price: l.price,
+        type: l.price > currentPrice ? ("resistance" as const) : ("support" as const),
+        source: l.type,
+      })),
+      ...roundLevels.map((l) => ({
+        price: l.price,
+        type: l.price > currentPrice ? ("resistance" as const) : ("support" as const),
+        source: "ROUND" as const,
+      })),
+    ];
 
     // Gerçek 15m swing — detectSRLevels 15m'yi hiç kapsamıyor. Mevcut naif
     // hesapla AYNI yöntem (findAllSwingHighs/Lows), ama artık gerçek 15m
@@ -87,7 +122,7 @@ export function useChartSrLevels(pair: Pair, timeframe: Timeframe): SrLevel[] {
       ];
     }
 
-    const combined = [...fromScore, ...fromSwing15m];
+    const combined = [...fromPivotOnly, ...fromPeriodRound, ...fromSwing15m];
     const allowed = TF_SOURCES[timeframe];
     return combined.filter((lvl) => lvl.source === "ROUND" || (allowed?.includes(lvl.source) ?? false));
   }, [candles4h, candles1h, candles15m, livePrice, timeframe]);
