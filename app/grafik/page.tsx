@@ -22,7 +22,7 @@ import { rsiSeries } from "@/lib/indicators/rsi";
 import { macdSeries } from "@/lib/indicators/macd";
 import { bbSeries } from "@/lib/indicators/bb";
 import { vwapSeries } from "@/lib/indicators/vwap";
-import { fetchCandles, type Timeframe, type Candle } from "@/lib/okx/candles";
+import { fetchCandles, fetchCandlesWithStatus, type Timeframe, type Candle } from "@/lib/okx/candles";
 import { useChartSrLevels } from "@/lib/hooks/useChartSrLevels";
 import { PAIRS, type Pair } from "@/lib/constants/pairs";
 import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, AlarmLevel, BbBands, VwapBands, SrLevel, TradeLevelLine, DrawnLine } from "@/lib/chart/types";
@@ -69,6 +69,8 @@ const SEC_TF: Record<Timeframe, Timeframe> = {
  * bkz. GrafikPage içi).
  */
 const ON_DEMAND_TF = new Set<Timeframe>(["5m", "1w"]);
+/** 429 (rate limit) için tek seferlik retry gecikmesi — bkz. on-demand fetch useEffect. */
+const ON_DEMAND_RETRY_DELAY_MS = 2_000;
 
 /** Build ChartSeries from a candle array + overlay flags */
 function buildSeries(
@@ -228,6 +230,9 @@ export default function GrafikPage() {
   const [capturedPrice, setCapturedPrice] = useState<number | null>(null);
   const [secCandles, setSecCandles]     = useState<Candle[]>([]);
   const [secLoading, setSecLoading]     = useState(false);
+  // ON_DEMAND_TF fetch'inin (5m/1w) başarısız olduğu durum — bkz. aşağıdaki
+  // useEffect. Boş grafiği sessizce göstermek yerine sebebini belirtiyor.
+  const [onDemandError, setOnDemandError] = useState<{ tf: Timeframe; status: number | null } | null>(null);
 
   // Ana chart yüksekliği — /grafik'te header+haber bandı artık gizli olduğu
   // için kazanılan dikey alanı chart'a veriyoruz. PriceChart.tsx'in kendisi
@@ -312,15 +317,34 @@ export default function GrafikPage() {
   // (bkz. ON_DEMAND_TF yorumu yukarıda) — candleStore'a YAZAR, yeni bir
   // local state DEĞİL: aşağıdaki candlesRaw zaten candleStore'dan okuyor,
   // bu sayede mevcut okuma satırına hiç dokunmadan veri akışı tamamlanır.
+  //
+  // Artık SESSİZ değil: fetchCandlesWithStatus() durum kodunu da döndürüyor.
+  // 429 (rate limit — useCandlePoller zaten aynı proxy'yi 24 parite için
+  // sürekli kullanıyor, bkz. dosya başı yorumu) için TEK seferlik ~2sn
+  // sonra retry; diğer hatalarda (4xx/5xx/network) retry YOK — muhtemelen
+  // tekrar denemekle düzelmez, direkt onDemandError'a düşülür.
   useEffect(() => {
     if (!ON_DEMAND_TF.has(timeframe)) return;
     let cancelled = false;
-    fetchCandles(pair, timeframe, 200)
-      .then((data) => {
-        if (cancelled || !data) return;
-        useCandleStore.getState().setCandles(pair, timeframe, data, Date.now());
-      })
-      .catch(() => { /* candlesRaw boş/bayat kalır — bu iki TF için fix öncesindeki durumla aynı, sessiz hata */ });
+    setOnDemandError(null);
+
+    async function run(): Promise<void> {
+      let result = await fetchCandlesWithStatus(pair, timeframe, 200);
+      if (!cancelled && result.status === 429) {
+        await new Promise((r) => setTimeout(r, ON_DEMAND_RETRY_DELAY_MS));
+        if (cancelled) return;
+        result = await fetchCandlesWithStatus(pair, timeframe, 200);
+      }
+      if (cancelled) return;
+      if (result.candles) {
+        useCandleStore.getState().setCandles(pair, timeframe, result.candles, Date.now());
+        setOnDemandError(null);
+      } else {
+        setOnDemandError({ tf: timeframe, status: result.status });
+      }
+    }
+
+    void run();
     return () => { cancelled = true; };
   }, [pair, timeframe]);
 
@@ -621,6 +645,11 @@ export default function GrafikPage() {
               <span className="font-mono text-2xs text-text-t4 uppercase tracking-wider">
                 · {timeframe.toUpperCase()}
               </span>
+            </div>
+          )}
+          {onDemandError && (
+            <div className="text-[11px] text-red-400 text-center py-2 font-mono">
+              Veri yüklenemedi{onDemandError.status ? ` (${onDemandError.status})` : ""} — az sonra tekrar deneyin
             </div>
           )}
           <div className="relative">
