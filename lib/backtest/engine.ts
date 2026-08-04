@@ -512,6 +512,7 @@ export async function runBacktest(
       atrRegime: atrPctRes?.regime ?? null,
       atrRatio: atrPctRes?.atrRatio ?? null,
       trailingReturn30d,
+      volRatio: composed.volRatio, // composeScoreInput.ts:169'da zaten hesaplanıyor, S/R için de kullanılıyor (satır 386) — sadece export ediliyor
     });
   }
 

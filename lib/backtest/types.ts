@@ -83,6 +83,8 @@ export interface BacktestTrade {
   atrRatio?: number | null;
   /** Giriş anında son 30 günün getirisi (ör. -0.30 = %30 düşüş) — uzun vadeli düşüş/yükseliş trendi göstergesi, null ise yetersiz 1D veri */
   trailingReturn30d?: number | null;
+  /** Ham hacim oranı (composeScoreInput.ts'teki volumeRatio çıktısı) — subScores.vol'un kategorik olmayan sürekli hali */
+  volRatio?: number | null;
 }
 
 export interface ScoreBucket {
