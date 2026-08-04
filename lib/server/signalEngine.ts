@@ -26,15 +26,21 @@ import {
   type OiSnapshot,
   type OiVelocityResult,
 } from "@/lib/market/oi-velocity";
+import { loadOiSnapshotCache, saveOiSnapshotCache } from "@/lib/db/oiSnapshotCache";
 
 const OKX_BASE = "https://www.okx.com";
 const CANDLE_MIN_1H = 200;
 const CANDLE_MIN_4H = 200;
 const CANDLE_MIN_15M = 20;
 
-// OI snapshot cache — Vercel warm invocation'larda yaşıyor, velocity hesabı için gerekli.
-// Cold start'ta boş başlar (velocity=0), 2. cron çalışmasından itibaren gerçek değer.
-const _oiSnapshots = new Map<Pair, OiSnapshot[]>();
+// OI snapshot cache — ARTIK modül-seviyesinde in-memory DEĞİL (bkz. Phase 1.0,
+// OI Runtime Verification): saatlik cron'un neredeyse her çalışması yeni bir
+// serverless container'da (cold start) başlıyor, in-memory Map bu yüzden asla
+// 1'den fazla snapshot biriktiremiyordu — computeOiVelocityWindow() en az 2
+// istiyor, sonuç hep null/0. Kalıcılık artık oi_snapshot_cache tablosundan
+// (lib/db/oiSnapshotCache.ts) geliyor; caller (computeAllSignals) cron
+// başında yükleyip sonunda geri yazıyor, appendOiAndGetVelocity() kendisine
+// verilen Map'i günceller.
 const OI_SNAP_MAX_AGE_MS = 2 * 60 * 60_000; // 2 saat
 const OI_SNAP_MAX = 10;
 
@@ -95,6 +101,10 @@ export interface ServerSignalResult {
   blocks?: string[];
   softBlocks?: string[];
   pullbackActive?: boolean;
+  /** oiVelocityScore hesaplanırken mevcut olan snapshot sayısı — tanısal,
+   *  oi_snapshot_cache kalıcılığının gerçekten çalıştığını doğrulamak için
+   *  (bkz. migration 014). */
+  oiSnapshotCount?: number;
 }
 
 /** Fetch OKX public candles — no auth required */
@@ -158,32 +168,46 @@ async function fetchOkxOpenInterest(
   }
 }
 
-/** OI snapshot'ı modül cache'e ekle, velocity skoru + ham sonuç döndür. */
-function appendOiAndGetVelocity(
+/** OI snapshot'ı (caller'dan verilen kalıcı) cache'e ekle, velocity skoru +
+ *  ham sonuç + tanısal snapshot sayısını döndür. `cache` çağıran tarafça
+ *  yüklenip (loadOiSnapshotCache) tüm pariteler bittikten sonra geri
+ *  yazılıyor (saveOiSnapshotCache) — bkz. computeAllSignals().
+ *  Export edilmiş: tests/integration/oi-snapshot-trim.test.ts trim/yaş
+ *  mantığını (OI_SNAP_MAX/OI_SNAP_MAX_AGE_MS) doğrudan bu fonksiyonu
+ *  çağırarak doğruluyor — network/DB mock'una gerek kalmadan saf mantık testi. */
+export function appendOiAndGetVelocity(
   pair: Pair,
   oiResult: { oi: number; oiCcy: number } | null,
   price: number,
   now: number,
-): { score: number; result: OiVelocityResult | null } {
-  if (!oiResult || price <= 0) return { score: 0, result: null };
+  cache: Map<string, OiSnapshot[]>,
+): { score: number; result: OiVelocityResult | null; snapshotCount: number } {
+  if (!oiResult || price <= 0) {
+    return { score: 0, result: null, snapshotCount: cache.get(pair)?.length ?? 0 };
+  }
   const oiVal = oiResult.oiCcy > 0 ? oiResult.oiCcy : oiResult.oi;
-  if (oiVal <= 0) return { score: 0, result: null };
-  const prev = _oiSnapshots.get(pair) ?? [];
+  if (oiVal <= 0) {
+    return { score: 0, result: null, snapshotCount: cache.get(pair)?.length ?? 0 };
+  }
+  const prev = cache.get(pair) ?? [];
   const trimmed = prev.filter((s) => now - s.timestamp < OI_SNAP_MAX_AGE_MS);
   const updated = [
     ...trimmed.slice(-(OI_SNAP_MAX - 1)),
     { timestamp: now, openInterest: oiVal, price },
   ];
-  _oiSnapshots.set(pair, updated);
+  cache.set(pair, updated);
   const velocityResult = computeOiVelocityWindow(updated, pair, 5);
   return {
     score: oiVelocityScoreOrZero(velocityResult),
     result: velocityResult,
+    snapshotCount: updated.length,
   };
 }
 
-/** Score a single pair using server-fetched candles */
-async function fetchAndScore(pair: Pair): Promise<{
+/** Score a single pair using server-fetched candles.
+ *  `oiCache`: computeAllSignals() tarafından cron başında Supabase'den
+ *  yüklenen, tüm pariteler arasında paylaşılan kalıcı OI snapshot haritası. */
+async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Promise<{
   candles1h: Candle[];
   candles4h: Candle[];
   candles1d: Candle[];
@@ -195,6 +219,7 @@ async function fetchAndScore(pair: Pair): Promise<{
   fundingRate: number | null;
   oiVelocityScore: number;
   oiVelocityResult: OiVelocityResult | null;
+  oiSnapshotCount: number;
   signalTs: number;
   sub: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number; funding: number; macro: number };
   baseScore: number;
@@ -234,7 +259,8 @@ async function fetchAndScore(pair: Pair): Promise<{
 
   if (candles15m.length < CANDLE_MIN_15M) return null;
 
-  const { score: oiVelocityScore, result: oiVelocityResult } = appendOiAndGetVelocity(pair, oiResult, latest.close, now);
+  const { score: oiVelocityScore, result: oiVelocityResult, snapshotCount: oiSnapshotCount } =
+    appendOiAndGetVelocity(pair, oiResult, latest.close, now, oiCache);
 
   // F&G: source "fallback" → fetchFearGreed'in kendi TTL cache'i boşalmış + API down.
   // _lastFg varsa kullan; cold start'ta kabul edilebilir fallback (50).
@@ -333,6 +359,7 @@ async function fetchAndScore(pair: Pair): Promise<{
     fundingRate,
     oiVelocityScore,
     oiVelocityResult,
+    oiSnapshotCount,
     // Kapanmış 1H mumun kendi ts'i DEĞİL — cron'un bu pair için veri çekmeye
     // başladığı an (composeScoreInput'a ayrıca geçilen "now: latest.ts" ile
     // KARIŞTIRILMASIN, o satıra dokunulmadı — skorlama mantığı mum bazlı zaman
@@ -408,9 +435,12 @@ function scorePrevBar(
  * Compute server-side signal for a single pair.
  * Returns null if candle data is insufficient.
  */
-export async function computeServerSignal(pair: Pair): Promise<ServerSignalResult | null> {
+export async function computeServerSignal(
+  pair: Pair,
+  oiCache: Map<string, OiSnapshot[]>,
+): Promise<ServerSignalResult | null> {
   try {
-    const current = await fetchAndScore(pair);
+    const current = await fetchAndScore(pair, oiCache);
     if (!current) return null;
 
     // prevVerdict artık fetchAndScore() içinde TEK SEFERDE hesaplanıyor (hem
@@ -433,6 +463,7 @@ export async function computeServerSignal(pair: Pair): Promise<ServerSignalResul
         fundingRate: current.fundingRate,
         oiVelocityScore: current.oiVelocityScore,
       },
+      oiSnapshotCount: current.oiSnapshotCount,
       signalTs: current.signalTs,
       sub: current.sub,
       baseScore: current.baseScore,
@@ -461,9 +492,32 @@ export async function computeServerSignal(pair: Pair): Promise<ServerSignalResul
   }
 }
 
-/** Batch compute signals for all pairs in parallel */
+/**
+ * Batch compute signals for all pairs in parallel.
+ *
+ * OI snapshot kalıcılığı burada yönetiliyor (Phase 1.0 — OI Runtime
+ * Verification): cron başında oi_snapshot_cache'ten TEK istekle tüm
+ * pariteler yüklenir, paylaşılan bir Map olarak her computeServerSignal
+ * çağrısına geçilir (her çağrı sadece kendi pair'inin key'ine yazdığı için
+ * Promise.all ile eşzamanlı kullanımda çakışma yok — JS tek thread'li,
+ * pair'ler arası key çakışması olmadığı sürece güvenli), tüm hesaplamalar
+ * bittikten sonra güncellenmiş hâli TEK istekle geri yazılır. Kaydetme
+ * başarısız olsa bile (Supabase geçici kesinti vb.) sinyal/Telegram akışı
+ * kesilmez — sadece bir sonraki cron cold-start gibi davranır.
+ *
+ * Bilinçli tasarım kararı — optimistic locking YOK: aynı cron path'inin
+ * iki eşzamanlı çalışması (manuel + zamanlı tetikleme üst üste gelirse)
+ * teorik olarak son-yazan-kazanır ile bir snapshot'ın kaybolmasına yol
+ * açabilir. Kalıcı hasar değil — kendi kendini onarıyor (bir sonraki
+ * cron'da normale döner). score_history.oi_snapshot_count zaten bunu
+ * gözlemlenebilir kılıyor: sayı sürekli artması gerekirken düşüp
+ * sıçrarsa, o zaman kilitleme eklenir — şimdiden eklemek düşük-riskli
+ * bir altyapı düzeltmesinin kapsamını orantısız büyütür.
+ */
 export async function computeAllSignals(pairs: readonly Pair[]): Promise<ServerSignalResult[]> {
-  const results = await Promise.all(pairs.map((p) => computeServerSignal(p)));
+  const oiCache = await loadOiSnapshotCache(pairs);
+  const results = await Promise.all(pairs.map((p) => computeServerSignal(p, oiCache)));
+  await saveOiSnapshotCache(oiCache);
   return results.filter((r): r is ServerSignalResult => r !== null);
 }
 

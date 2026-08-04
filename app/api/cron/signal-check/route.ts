@@ -402,6 +402,14 @@ export async function GET(req: Request): Promise<NextResponse> {
         overextFlags: s.overextFlags ?? 0,
         srModifierRaw: s.srModifierRaw,
         srModifierApplied: s.srModifierApplied,
+        // oiVelocityScore zaten oiVelocityScoreOrZero() ile null→0 çökertilmiş
+        // geliyor (signalEngine.ts), yani ikisi bugün aynı değeri taşıyor —
+        // orchestrator.ts'teki oiBonus=input.oiVelocityScore??0 formülüyle
+        // isim/şema paritesi için ayrı tutuluyor. Asıl tanısal alan
+        // oiSnapshotCount: cache çalışıyorsa zamanla 1'in üzerine çıkmalı.
+        oiVelocityScore: s.debugInputs?.oiVelocityScore,
+        oiBonus: s.debugInputs?.oiVelocityScore,
+        oiSnapshotCount: s.oiSnapshotCount,
         blocks: s.blocks ?? [],
         softBlocks: s.softBlocks ?? [],
         sub: s.sub,

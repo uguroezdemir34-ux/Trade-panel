@@ -36,6 +36,13 @@ export interface ScoreHistoryInput {
   srModifierApplied: number | undefined;
   blocks: string[];
   softBlocks: string[];
+  /** Ham OI velocity skoru [-10, +10] — null = hesaplanamadı (yetersiz snapshot). */
+  oiVelocityScore: number | undefined;
+  /** total'e gerçekte eklenen değer (oiVelocityScore ?? 0). */
+  oiBonus: number | undefined;
+  /** Tanısal: hesaplama anında mevcut OI snapshot sayısı — migration 013/014,
+   *  Phase 1.0 OI Runtime Verification. */
+  oiSnapshotCount: number | undefined;
   sub: {
     trend: number;
     adx: number;
@@ -62,6 +69,9 @@ interface ScoreHistoryRow {
   overext_flags: number;
   sr_modifier_raw: number | null;
   sr_modifier_applied: number | null;
+  oi_velocity_score: number | null;
+  oi_bonus: number | null;
+  oi_snapshot_count: number | null;
   blocks: string[];
   soft_blocks: string[];
   price: number;
@@ -93,6 +103,9 @@ function toRow(input: ScoreHistoryInput): ScoreHistoryRow {
     overext_flags: input.overextFlags,
     sr_modifier_raw: input.srModifierRaw ?? null,
     sr_modifier_applied: input.srModifierApplied ?? null,
+    oi_velocity_score: input.oiVelocityScore ?? null,
+    oi_bonus: input.oiBonus ?? null,
+    oi_snapshot_count: input.oiSnapshotCount ?? null,
     blocks: input.blocks,
     soft_blocks: input.softBlocks,
     price: input.price,
