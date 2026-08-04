@@ -464,6 +464,11 @@ export async function runBacktest(
     const priceDelta = (effectiveExitPrice - entryPrice) * (direction === "LONG" ? 1 : -1);
     const rMultiple = sl.stopDistance > 0 ? priceDelta / sl.stopDistance : 0;
     const pnlPct = entryPrice > 0 ? (priceDelta / entryPrice) * 100 : 0;
+    // MFE/MAE, R-multiple cinsinden — exit.mfePrice/maePrice zaten ham fiyat
+    // farkı (exitSimulator.ts), burada sadece sl.stopDistance'a bölünüyor.
+    // rMultiple/exitReason/barsHeld hesabına dokunmuyor, saf paralel gözlem.
+    const mfeR = sl.stopDistance > 0 ? exit.mfePrice / sl.stopDistance : 0;
+    const maeR = sl.stopDistance > 0 ? exit.maePrice / sl.stopDistance : 0;
 
     // Fee model: both entry and exit use taker rate (market orders)
     const takerFee = config.takerFee ?? 0.0005;
@@ -487,6 +492,8 @@ export async function runBacktest(
       stopPrice: sl.stopPrice,
       score: result.score,
       rMultiple,
+      mfeR,
+      maeR,
       pnlPct,
       barsHeld: exit.barsHeld,
       feesPct,

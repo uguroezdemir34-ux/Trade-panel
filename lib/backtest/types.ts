@@ -51,6 +51,10 @@ export interface BacktestTrade {
   score: number;
   /** (exitPrice - entryPrice) / stopDistance × direction */
   rMultiple: number;
+  /** Max favorable excursion, R cinsinden — exit'e kadar (dahil) en iyi an. undefined = MFE/MAE eklenmeden önce cache'lenmiş sonuçlar */
+  mfeR?: number;
+  /** Max adverse excursion, R cinsinden — exit'e kadar (dahil) en kötü an. undefined = MFE/MAE eklenmeden önce cache'lenmiş sonuçlar */
+  maeR?: number;
   /** pnl as % of entry price × direction */
   pnlPct: number;
   barsHeld: number;
