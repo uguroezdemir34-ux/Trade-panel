@@ -122,3 +122,24 @@ export async function dbDelete(table: string, query: string): Promise<void> {
 export function isDbConfigured(): boolean {
   return Boolean(SUPABASE_URL && SUPABASE_SERVICE_KEY);
 }
+
+/**
+ * RPC — call a Postgres function via PostgREST (`/rest/v1/rpc/{fn}`).
+ * Used when multiple writes need to happen atomically (a Postgres function
+ * body is a single transaction) — plain dbSelect/dbUpsert/dbUpdate calls
+ * are separate REST requests, NOT atomic across each other.
+ * @example dbRpc("process_nowpayments_ipn", { p_event_id: "...", ... })
+ */
+export async function dbRpc<T>(fn: string, params: Record<string, unknown>): Promise<T> {
+  assertConfig();
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: baseHeaders(),
+    body: JSON.stringify(params),
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error(`Supabase RPC ${fn} failed (${res.status}): ${err}`);
+  }
+  return res.json() as Promise<T>;
+}

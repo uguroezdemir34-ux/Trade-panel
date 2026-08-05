@@ -19,6 +19,7 @@ import { resolveTelegramConfig } from "@/lib/notify/telegram/config";
 import { sendTelegramMessage } from "@/lib/notify/telegram/client";
 import { escapeMarkdownV2, bold } from "@/lib/notify/telegram/escape";
 import type { ServerSignalResult } from "@/lib/server/signalEngine";
+import { checkExpiredNowPaymentsSubscriptions } from "@/lib/billing/subscriptionCheck";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -141,12 +142,25 @@ export async function GET(req: Request): Promise<NextResponse> {
       `telegram=${telegramResult.ok}, ${Date.now() - startMs}ms`,
   );
 
+  // İZOLE abonelik süresi kontrolü — trading sinyal akışıyla HİÇ ilişkisi
+  // yok, bilerek ayrı bir try/catch'te (bkz. lib/billing/subscriptionCheck.ts
+  // dosya başı açıklaması: biri diğerini asla etkilememeli). Vercel Hobby
+  // 2-cron limiti nedeniyle ayrı bir cron yerine buraya iğnelendi.
+  let subscriptionCheck: { checked: number; downgraded: number; errors: number } | { skipped: string };
+  try {
+    subscriptionCheck = await checkExpiredNowPaymentsSubscriptions();
+  } catch (err) {
+    console.error("[CRON daily-summary] abonelik kontrolü başarısız (izole, günlük özeti etkilemiyor):", err);
+    subscriptionCheck = { skipped: "error" };
+  }
+
   return NextResponse.json({
     ok: true,
     date: now.toISOString(),
     pairs: signals.length,
     goCount: signals.filter((s) => s.verdict === "go").length,
     telegram: telegramResult,
+    subscriptionCheck,
     elapsedMs: Date.now() - startMs,
   });
 }
