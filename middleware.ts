@@ -246,7 +246,17 @@ export default clerkMiddleware(async (auth, req) => {
   // buildCsp()'nin report-to direktifinin çözümlediği endpoint adı —
   // Reporting API (Chrome) bu header olmadan report-to'yu yok sayar.
   response.headers.set("Reporting-Endpoints", 'csp-endpoint="/api/csp-report"');
-  response.headers.set("Content-Security-Policy", buildCsp(nonce));
+  // ACİL GEÇİCİ GERİ ALMA (05 Ağu 2026) — enforce mod, Sentry'de canlı
+  // production'da /grafik'in kendi Next.js chunk'larının (script-src-elem)
+  // VE bir "eval" kullanımının (script-src) gerçekten bloklandığını
+  // gösteren bir issue açtı (disposition:"enforce" — rapor değil, gerçek
+  // blok). 'strict-dynamic' + nonce zincirinin Next'in kod-bölünmüş
+  // chunk yükleyicisiyle tam örtüşmediği ihtimali kök neden adayı — kesin
+  // teşhis ve kalıcı düzeltme ayrı bir turda yapılacak. Bu arada canlı
+  // kırılmayı durdurmak için Report-Only'ye geri dönüldü; ihlaller yine
+  // Sentry'ye düşmeye devam ediyor (report-uri/report-to aynı kalıyor),
+  // sadece tarayıcı artık gerçekten bloklamıyor.
+  response.headers.set("Content-Security-Policy-Report-Only", buildCsp(nonce));
   return response;
 });
 
