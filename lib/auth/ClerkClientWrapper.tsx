@@ -15,7 +15,13 @@ const CLERK_KEY = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
  */
 export const CLERK_CONFIGURED = Boolean(CLERK_KEY);
 
-export function ClerkClientWrapper({ children }: { children: React.ReactNode }) {
+export function ClerkClientWrapper({
+  children,
+  nonce,
+}: {
+  children: React.ReactNode;
+  nonce: string;
+}) {
   if (!CLERK_CONFIGURED) {
     // Sessizce children'ı Provider'sız render etmek, /sign-in gibi Clerk
     // component'ini DOĞRUDAN kullanan sayfalarda hiçbir hata/log bırakmadan
@@ -30,19 +36,18 @@ export function ClerkClientWrapper({ children }: { children: React.ReactNode }) 
     );
     return <>{children}</>;
   }
-  // `dynamic` prop KRİTİK (05 Ağu 2026 — CSP enforce prod kırılması teşhisi):
-  // @clerk/nextjs'in ClerkProvider'ı, script-src header'ımızdaki nonce'u
-  // OTOMATİK olarak kendi Content-Security-Policy response header'ından
-  // ayrıştırıp (getNonceFromCSPHeader, middleware.ts'in buildCsp() ürettiği
-  // AYNI header'ı okuyor) clerk-js script tag'ine geçiren yerleşik bir
-  // mekanizmaya sahip — AMA sadece `dynamic` true iken çalışıyor
-  // (@clerk/nextjs ClerkProvider.js: generateNonce() dynamic yoksa boş
-  // string döner). Bu satır olmadan clerk-js'in kendi script'i 'self'
-  // olmadığı ve nonce'suz olduğu için strict-dynamic zincirine hiç
-  // giremiyordu — DevTools'ta doğrulandı: "Loading the script
-  // native-lynx-21.clerk.accounts.dev/.../clerk-js... violates script-src".
-  // Manuel nonce prop'u geçmeye gerek yok, Clerk kendi header'ımızdan okuyor.
+  // 3. TUR TEŞHİS (05 Ağu 2026 — clerk-js script-src ihlali):
+  // Önceki iki tur (ClerkProvider'a sadece `dynamic` eklemek, sonra CSP'yi
+  // middleware'de request header'ına da yazmak) DevTools'ta TEKRAR DOĞRULANDI
+  // — clerk-js hâlâ aynı şekilde bloklanıyordu. Kök neden: Clerk'in "nonce'u
+  // middleware'den otomatik okur" davranışı SADECE ClerkProvider bir Server
+  // Component bağlamında render edildiğinde geçerli — next/headers'ın
+  // headers()'ı orada çağrılabiliyor. Bu dosya `"use client"` (bir Client
+  // Component), yani Clerk'in kendi otomatik mekanizması burada HİÇ devreye
+  // giremiyor; `dynamic` tek başına yeterli değil. nonce artık üst Server
+  // Component'ten (app/layout.tsx, zaten headers()'tan okuyor) prop olarak
+  // geçiriliyor ve ClerkProvider'a AÇIKÇA veriliyor.
   return (
-    <ClerkProvider dynamic>{children}</ClerkProvider>
+    <ClerkProvider dynamic nonce={nonce}>{children}</ClerkProvider>
   );
 }

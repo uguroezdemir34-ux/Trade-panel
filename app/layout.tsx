@@ -124,7 +124,7 @@ export default async function RootLayout({
         </head>
         <body className={`bg-bg text-text-t1 font-sans antialiased ${fontVariables}`}>
           <SonnerToaster />
-          <ClerkClientWrapper>
+          <ClerkClientWrapper nonce={nonce}>
             <I18nProvider>
               <LocaleHtmlSync />
               <RouteAwareShell>{children}</RouteAwareShell>
