@@ -76,6 +76,34 @@ export default async function RootLayout({
   return (
     <html lang="tr" dir="ltr" suppressHydrationWarning translate="no">
         <head>
+          {/* Webpack CSP nonce köprüsü (05 Ağu 2026 — CSP enforce canlı kırılması
+              teşhisi): middleware.ts'in ürettiği nonce, script-src'de
+              'strict-dynamic' ile birlikte veriliyor — bu, bir betiğin sadece
+              GÜVENİLİR (nonce'lu) bir betik tarafından DOM'a eklenmişse
+              güvenilir sayılmasını sağlıyor. Next/webpack'in next/dynamic()
+              ile sonradan yüklediği kod-bölünmüş chunk'lar (örn. /grafik'in
+              PriceChart'ı) `document.createElement('script')` ile DOM'a
+              ekleniyor — bu enjeksiyonun GÜVENİLİR sayılması için webpack'in
+              kendi runtime'ının nonce'u bilmesi gerekiyor. Next.js SSR'ın
+              KENDİ ürettiği ilk script tag'lerine nonce eklemesi (App
+              Router'ın belgelenmiş davranışı) bunu KAPSAMIYOR — o sadece
+              ilk yükte var olan tag'ler için, webpack'in runtime'ının
+              SONRADAN dinamik olarak enjekte ettiği chunk'lar için ayrıca
+              `__webpack_nonce__` global'i set edilmesi gerekiyor (webpack'in
+              resmi CSP desteği, bkz. webpack docs "content security policy").
+              Bu satır olmadan strict-dynamic zinciri next/dynamic() ile
+              yüklenen HER chunk'ta kopuyor — Sentry'de görülen "/grafik"
+              ihlali bunun kanıtı. Diğer olası kırılan sayfalar (backtest,
+              analiz — next/dynamic kullanan) henüz gözlenmedi ama aynı
+              kök nedene bağlı olabilir; bu tek satır hepsini kapsıyor.
+              Nonce başına tek kullanımlık — reuse riski yok, döngü değeri
+              her istekte middleware'de yeniden üretiliyor. */}
+          <script
+            nonce={nonce}
+            dangerouslySetInnerHTML={{
+              __html: `window.__webpack_nonce__=${JSON.stringify(nonce)};`,
+            }}
+          />
           {/* Prevent theme FOUC — reads localStorage before React hydrates */}
           <script
             nonce={nonce}
