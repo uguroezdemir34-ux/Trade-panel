@@ -209,6 +209,23 @@ export function scoreVwap(
 
 // ───────── G) FUNDING (8 pts, contrarian) ─────────
 
+/**
+ * Ödeyen taraf (crowd ile aynı yönde funding) için 8→5→2 arası DOĞRUSAL geçiş.
+ * 05 Ağu 2026'da basamak fonksiyonundan (sert sıçrama %0.02 ve %0.05'te)
+ * buna çevrildi — 3 sınır noktasındaki (0.02/0.05/0.10) puan AYNI KALDI
+ * (8/5/2), sadece aralar basamak yerine eğim oldu. %0.10 üstü zaten
+ * checkFundingExtreme (blocks.ts) tarafından NO'ya düşürülüyor — o bandın
+ * puanı pratikte hiç GO/WAIT üretmiyor, sabit 2 bırakıldı.
+ * Healthy (≤0.02) ve contrarian (büyüklükten bağımsız sabit 8) tarafına
+ * BİLEREK dokunulmadı — ayrı bir hipotez/veri gerektirir.
+ */
+function payingSideFundingScore(absFr: number): number {
+  if (absFr <= 0.02) return 8;
+  if (absFr <= 0.05) return 8 + (5 - 8) * ((absFr - 0.02) / (0.05 - 0.02));
+  if (absFr <= 0.10) return 5 + (2 - 5) * ((absFr - 0.05) / (0.10 - 0.05));
+  return 2;
+}
+
 export function scoreFunding(
   fundingRate: number | null,
   direction: Direction,
@@ -230,14 +247,14 @@ export function scoreFunding(
   if (isShort && fr > 0.02) {
     return { score: 8, reason: `+${fr.toFixed(3)}% (SHORT contrarian)` };
   }
-  // Crowded extreme: ödeyen taraf, >0.05% (gerçek mania başlangıcı)
-  if (isLong && fr > 0.05) {
-    return { score: 2, reason: `+${fr.toFixed(3)}% (LONG crowded)` };
+  // Ödeyen taraf: doğrusal geçiş (yukarıdaki payingSideFundingScore), etiket
+  // funding büyüklüğünün orijinal bant tanımını yansıtıyor (skor değil)
+  if (isLong || isShort) {
+    const score = payingSideFundingScore(absFr);
+    const label = absFr <= 0.05 ? "elevated" : "crowded";
+    return { score, reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (${label})` };
   }
-  if (isShort && fr < -0.05) {
-    return { score: 2, reason: `${fr.toFixed(3)}% (SHORT crowded)` };
-  }
-  // Elevated: ödeyen taraf, 0.02–0.05% (belirgin premium ama mania değil)
+  // direction NEUTRAL — eski davranışla birebir aynı (elevated sabit 5)
   return { score: 5, reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (elevated)` };
 }
 

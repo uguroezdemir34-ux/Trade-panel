@@ -296,26 +296,51 @@ describe("scoreFunding()", () => {
     expect(scoreFunding(-0.0001, "SHORT").score).toBe(8);
   });
 
-  it("LONG + fr < -0.02% → 8 pts (contrarian opportunity)", () => {
+  it("LONG + fr < -0.02% → 8 pts (contrarian opportunity, büyüklükten bağımsız)", () => {
     expect(scoreFunding(-0.0005, "LONG").score).toBe(8); // -0.05%
+    expect(scoreFunding(-0.002, "LONG").score).toBe(8);  // -0.2%, hâlâ 8 (dokunulmadı)
   });
 
-  it("SHORT + fr > 0.02% → 8 pts (contrarian opportunity)", () => {
+  it("SHORT + fr > 0.02% → 8 pts (contrarian opportunity, büyüklükten bağımsız)", () => {
     expect(scoreFunding(0.0006, "SHORT").score).toBe(8); // +0.06%
   });
 
-  it("LONG + fr > 0.05% → 2 pts (crowded longs)", () => {
-    expect(scoreFunding(0.0006, "LONG").score).toBe(2);  // +0.06%
+  // 05 Ağu 2026: ödeyen taraf artık DOĞRUSAL geçiş (8→5→2), eski basamak
+  // fonksiyonu değil. Üç sınır noktası (0.02/0.05/0.10) eskisiyle BİREBİR
+  // AYNI kalıyor — bunlar toBe ile tam eşitlik test ediyor. Aradaki
+  // noktalar artık kademeli — toBeCloseTo ile kesin ara-değer doğrulanıyor
+  // (kayan nokta hassasiyeti için).
+  it("sınır noktaları (0.02/0.05/0.10) eski basamak değerleriyle birebir aynı", () => {
+    expect(scoreFunding(0.0002, "LONG").score).toBe(8);   // %0.02 tam sınır
+    expect(scoreFunding(0.0005, "LONG").score).toBe(5);   // %0.05 tam sınır
+    expect(scoreFunding(0.0010, "LONG").score).toBe(2);   // %0.10 tam sınır (checkFundingExtreme zaten NO yapar)
   });
 
-  it("SHORT + fr < -0.05% → 2 pts (crowded shorts); -0.04% → 5 pts (elevated)", () => {
-    expect(scoreFunding(-0.0006, "SHORT").score).toBe(2); // -0.06% → crowded
-    expect(scoreFunding(-0.0004, "SHORT").score).toBe(5); // -0.04% < 0.05% threshold → elevated
+  it("%0.10 üstü sabit 2 kalıyor (checkFundingExtreme zaten NO'ya düşürüyor)", () => {
+    expect(scoreFunding(0.0015, "LONG").score).toBe(2);   // %0.15
   });
 
-  it("0.02–0.05% → 5 pts (elevated, paying side)", () => {
-    // fr = 0.03% → absFr=0.03, > 0.02, LONG paying, not contrarian, not > 0.05 → elevated
-    expect(scoreFunding(0.0003, "LONG").score).toBe(5);
+  it("ara noktalar artık DOĞRUSAL interpolasyon — eskiden düz 5/2 idi", () => {
+    // %0.03 (0.02-0.05 bandı içi) — eskiden düz 5, şimdi 7 (8'e daha yakın)
+    expect(scoreFunding(0.0003, "LONG").score).toBeCloseTo(7, 5);
+    // %0.04 (aynı bant, sınıra daha yakın) — eskiden düz 5, şimdi 6
+    expect(scoreFunding(-0.0004, "SHORT").score).toBeCloseTo(6, 5);
+    // %0.06 (0.05-0.10 bandı içi) — eskiden düz 2, şimdi 4.4 (5'e daha yakın)
+    expect(scoreFunding(0.0006, "LONG").score).toBeCloseTo(4.4, 5);
+    expect(scoreFunding(-0.0006, "SHORT").score).toBeCloseTo(4.4, 5);
+  });
+
+  it("doğrusal geçiş monoton azalıyor (büyüklük arttıkça skor hiç artmıyor)", () => {
+    const points = [0.02, 0.03, 0.04, 0.05, 0.06, 0.075, 0.10, 0.12];
+    const scores = points.map((p) => scoreFunding(p / 100, "LONG").score);
+    for (let i = 1; i < scores.length; i++) {
+      expect(scores[i]).toBeLessThanOrEqual(scores[i - 1]);
+    }
+  });
+
+  it("NEUTRAL direction eski davranışla aynı — düz 5 (dokunulmadı)", () => {
+    expect(scoreFunding(0.0003, "NEUTRAL").score).toBe(5);
+    expect(scoreFunding(0.0008, "NEUTRAL").score).toBe(5);
   });
 });
 
