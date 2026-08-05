@@ -37,3 +37,12 @@ jobs:
           name: bundle-analyze-reports
           path: .next/analyze/*.html
           retention-days: 14
+
+      # GEÇİCİ DOĞRULAMA ADIMI — app/not-found.tsx'ten force-dynamic
+      # kaldırıldı (bkz. commit mesajı), bunun normal (ANALYZE olmadan)
+      # `next build`'i bozmadığını CI'da (yerel sandbox'ta node_modules
+      # kurulamıyor) tek seferlik doğrulamak için eklendi. Sonuç netleşince
+      # bu adım ayrı bir commit'le kaldırılacak — kalıcı bir CI adımı
+      # olarak tasarlanmadı.
+      - name: TEMP — verify plain build (no ANALYZE) still passes
+        run: rm -rf .next && npm run build

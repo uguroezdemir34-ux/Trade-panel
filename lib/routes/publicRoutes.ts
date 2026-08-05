@@ -25,3 +25,37 @@ export function isPublicRoute(pathname: string): boolean {
     route === "/" ? pathname === "/" : pathname === route || pathname.startsWith(`${route}/`),
   );
 }
+
+/**
+ * APP ROUTES — AppShell (canlı trading hook'ları: WS bağlantıları, skor
+ * motoru, 20+ poller/alert) gerektiren bilinen sayfa route'ları.
+ *
+ * PUBLIC_ROUTES'tan AYRI bir liste: PUBLIC_ROUTES "AppShell'e hiç gerek
+ * yok" demek, bu liste ise "AppShell'e GERÇEKTEN gerek var" demek. İkisinin
+ * dışında kalan her pathname (ör. yanlış yazılmış bir URL) gerçek bir
+ * 404'tür — RouteAwareShell.tsx bu durumda da AppShell'i mount etmemeli
+ * (bkz. isAppRoute kullanımı orada).
+ *
+ * "/admin" kendisi sayfa değil (alt route'ları var: /admin/waitlist,
+ * /admin/genel-bakis) — prefix eşleşmesiyle zaten kapsanıyor.
+ */
+export const APP_ROUTES = [
+  "/admin",
+  "/analiz",
+  "/ayarlar",
+  "/backtest",
+  "/grafik",
+  "/haberler",
+  "/karar",
+  "/piyasa",
+  "/pnl",
+  "/portfolyo",
+  "/pozisyon",
+  "/risk",
+  "/upgrade",
+] as const;
+
+/** pathname AppShell gerektiren bilinen bir route'un kendisi veya alt-path'i mi? */
+export function isAppRoute(pathname: string): boolean {
+  return APP_ROUTES.some((route) => pathname === route || pathname.startsWith(`${route}/`));
+}
