@@ -14,6 +14,13 @@
  * olduğu için kullanıcı kararıyla burada tutuldu; diğer public route'larda
  * (sign-in/sign-up/privacy/terms/"/"/invite) hiç gösterilmiyor.
  *
+ * Ne PUBLIC_ROUTES ne APP_ROUTES'a denk geliyorsa (gerçek 404, bkz.
+ * lib/routes/publicRoutes.ts'teki isAppRoute): AppShell yine mount
+ * edilmez, çıplak {children} (yani NotFound sayfası) render edilir —
+ * eskiden bu durum "public değil" sayılıp yanlışlıkla tam AppShell'i
+ * mount ediyordu, 404 gibi hafif bir sayfada gereksiz WS/skor motoru
+ * maliyeti.
+ *
  * Bu route'larda AppShell'in DIŞINDA kalanlar (RootLayout'ta, hep
  * mevcut): ClerkProvider, I18nProvider (useT çalışmaya devam eder),
  * SonnerToaster, tema/font CSS class'ları.
@@ -56,7 +63,7 @@
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { DisclaimerModal } from "./DisclaimerModal";
-import { isPublicRoute } from "@/lib/routes/publicRoutes";
+import { isPublicRoute, isAppRoute } from "@/lib/routes/publicRoutes";
 
 const AppShell = dynamic(() => import("./AppShell").then((m) => m.AppShell));
 
@@ -74,6 +81,18 @@ export function RouteAwareShell({
         {children}
       </>
     );
+  }
+
+  // Gerçek 404 — bilinen bir public route DA değil, AppShell gerektiren
+  // bilinen bir app route DA değil (bkz. lib/routes/publicRoutes.ts).
+  // AppShell'i (WS bağlantıları, skor motoru, 20+ poller/alert hook'u)
+  // mount etmeye değmez, tıpkı public route'lar gibi hafif yoldan geçilir.
+  // Bu, app/not-found.tsx'in artık build-time'da statik üretilebilmesinin
+  // (force-dynamic gerekmemesinin) ön koşulu: AppHeader → UserButton
+  // (@clerk/nextjs), yani request-time auth context ihtiyacı, sadece
+  // AppShell mount edildiğinde devreye giriyordu.
+  if (!isAppRoute(pathname)) {
+    return <>{children}</>;
   }
 
   return <AppShell>{children}</AppShell>;
