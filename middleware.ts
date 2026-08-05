@@ -239,8 +239,19 @@ export default clerkMiddleware(async (auth, req) => {
   }
 
   const nonce = generateNonce();
+  const cspHeaderValue = buildCsp(nonce);
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set("x-nonce", nonce);
+  // KRİTİK (05 Ağu 2026 — Clerk script-src ihlali, 2. tur teşhis):
+  // @clerk/nextjs'in ClerkProvider'ı (dynamic prop'uyla) nonce'u next/headers
+  // headers()'tan "Content-Security-Policy" adlı bir REQUEST header'ı
+  // okuyarak çıkarıyor (getNonceFromCSPHeader) — bu, response header'ından
+  // TAMAMEN FARKLI bir şey. Önceki fix (ClerkClientWrapper'a `dynamic` eklemek)
+  // bu yüzden tek başına yetersizdi: CSP sadece response'a yazılıyordu,
+  // request'e hiç konulmamıştı, Clerk'in okuduğu yer boştu. Aynı CSP
+  // string'i şimdi HEM request hem response header'ına yazılıyor — Clerk'in
+  // resmi CSP entegrasyon deseni tam olarak bunu gerektiriyor.
+  requestHeaders.set("Content-Security-Policy", cspHeaderValue);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   // buildCsp()'nin report-to direktifinin çözümlediği endpoint adı —
@@ -260,7 +271,7 @@ export default clerkMiddleware(async (auth, req) => {
   // riski bilerek kabul etmesiyle yapıldı — kanıtlanmış değil. Yeniden
   // kırılırsa: bu satırı "Content-Security-Policy-Report-Only" yap
   // (bkz. git geçmişi, commit 302ab4b — birebir aynı geri alma).
-  response.headers.set("Content-Security-Policy", buildCsp(nonce));
+  response.headers.set("Content-Security-Policy", cspHeaderValue);
   return response;
 });
 
