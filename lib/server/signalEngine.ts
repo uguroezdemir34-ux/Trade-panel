@@ -41,8 +41,17 @@ const CANDLE_MIN_15M = 20;
 // (lib/db/oiSnapshotCache.ts) geliyor; caller (computeAllSignals) cron
 // başında yükleyip sonunda geri yazıyor, appendOiAndGetVelocity() kendisine
 // verilen Map'i günceller.
-const OI_SNAP_MAX_AGE_MS = 2 * 60 * 60_000; // 2 saat
-const OI_SNAP_MAX = 10;
+// Phase 1.0 sonrası düzeltme (05 Ağu 2026 — score_history verisiyle ölçüldü):
+// 2 saatlik pencere + saatlik cron kombinasyonu, snapshot sayısını
+// matematiksel olarak 2-3'te platoluyordu — OI_SNAP_MAX=10'a hiçbir zaman
+// ulaşılamıyordu (yaş filtresi adet sınırından önce devreye giriyor).
+// 6 saate çıkarmak, computeOiVelocityWindow'un istediği windowSize=5'e daha
+// yakın bir veri penceresi sağlıyor. Export edilmiş: hem
+// tests/integration/oi-snapshot-trim.test.ts hem gelecekteki okuma bu
+// sabitleri gerçek kaynaktan alıyor, tekrar sabit-kodlanmış bir kopya
+// sürüklenip yanlış senkron olmasın diye.
+export const OI_SNAP_MAX_AGE_MS = 6 * 60 * 60_000; // 6 saat
+export const OI_SNAP_MAX = 10;
 
 // Son başarılı fetch değerleri — geçici API kesintisinde frozen default'a düşmesin.
 // Cache boşken (ilk soğuk başlangıç) eski davranışa düşülür — kabul edilebilir.
