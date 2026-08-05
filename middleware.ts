@@ -246,17 +246,21 @@ export default clerkMiddleware(async (auth, req) => {
   // buildCsp()'nin report-to direktifinin çözümlediği endpoint adı —
   // Reporting API (Chrome) bu header olmadan report-to'yu yok sayar.
   response.headers.set("Reporting-Endpoints", 'csp-endpoint="/api/csp-report"');
-  // ACİL GEÇİCİ GERİ ALMA (05 Ağu 2026) — enforce mod, Sentry'de canlı
-  // production'da /grafik'in kendi Next.js chunk'larının (script-src-elem)
-  // VE bir "eval" kullanımının (script-src) gerçekten bloklandığını
-  // gösteren bir issue açtı (disposition:"enforce" — rapor değil, gerçek
-  // blok). 'strict-dynamic' + nonce zincirinin Next'in kod-bölünmüş
-  // chunk yükleyicisiyle tam örtüşmediği ihtimali kök neden adayı — kesin
-  // teşhis ve kalıcı düzeltme ayrı bir turda yapılacak. Bu arada canlı
-  // kırılmayı durdurmak için Report-Only'ye geri dönüldü; ihlaller yine
-  // Sentry'ye düşmeye devam ediyor (report-uri/report-to aynı kalıyor),
-  // sadece tarayıcı artık gerçekten bloklamıyor.
-  response.headers.set("Content-Security-Policy-Report-Only", buildCsp(nonce));
+  // ENFORCE'A 2. GEÇİŞ (05 Ağu 2026) — ilk enforce denemesi /grafik'in
+  // webpack chunk'larını ve bir eval kullanımını gerçekten bloklamıştı
+  // (Sentry'de disposition:"enforce"), acilen Report-Only'ye geri
+  // alınmıştı. Kök neden adayı düzeltildi: <head>'e __webpack_nonce__
+  // köprüsü eklendi (bkz. app/layout.tsx) — next/dynamic() chunk'larının
+  // strict-dynamic zincirine katılmasını sağlıyor.
+  //
+  // DOĞRULANMAMIŞ RİSK — açıkça işaretleniyor: eval ihlalinin kaynağı
+  // gerçek tarayıcı DevTools Console'unda TEYİT EDİLMEDİ (Sentry
+  // payload'ı stack trace vermiyor). Bu geçiş, chunk fix'inin eval
+  // sorununu da örtük olarak çözdüğü VARSAYIMIYLA, kullanıcının bu
+  // riski bilerek kabul etmesiyle yapıldı — kanıtlanmış değil. Yeniden
+  // kırılırsa: bu satırı "Content-Security-Policy-Report-Only" yap
+  // (bkz. git geçmişi, commit 302ab4b — birebir aynı geri alma).
+  response.headers.set("Content-Security-Policy", buildCsp(nonce));
   return response;
 });
 
