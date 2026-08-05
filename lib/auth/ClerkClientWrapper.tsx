@@ -30,5 +30,19 @@ export function ClerkClientWrapper({ children }: { children: React.ReactNode }) 
     );
     return <>{children}</>;
   }
-  return <ClerkProvider>{children}</ClerkProvider>;
+  // `dynamic` prop KRİTİK (05 Ağu 2026 — CSP enforce prod kırılması teşhisi):
+  // @clerk/nextjs'in ClerkProvider'ı, script-src header'ımızdaki nonce'u
+  // OTOMATİK olarak kendi Content-Security-Policy response header'ından
+  // ayrıştırıp (getNonceFromCSPHeader, middleware.ts'in buildCsp() ürettiği
+  // AYNI header'ı okuyor) clerk-js script tag'ine geçiren yerleşik bir
+  // mekanizmaya sahip — AMA sadece `dynamic` true iken çalışıyor
+  // (@clerk/nextjs ClerkProvider.js: generateNonce() dynamic yoksa boş
+  // string döner). Bu satır olmadan clerk-js'in kendi script'i 'self'
+  // olmadığı ve nonce'suz olduğu için strict-dynamic zincirine hiç
+  // giremiyordu — DevTools'ta doğrulandı: "Loading the script
+  // native-lynx-21.clerk.accounts.dev/.../clerk-js... violates script-src".
+  // Manuel nonce prop'u geçmeye gerek yok, Clerk kendi header'ımızdan okuyor.
+  return (
+    <ClerkProvider dynamic>{children}</ClerkProvider>
+  );
 }
