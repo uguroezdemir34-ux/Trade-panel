@@ -333,6 +333,14 @@ export interface ScoreResult {
   sweepBonus: number;
   regimeBonus: number;
   regime: Regime;
+  /** Phase 1 — Market Regime Detection (Signal Engine v2). detectRegimeForWeights()'ten,
+   *  baseScore gate'i olmadan her zaman hesaplanan trend ekseni etiketi —
+   *  `regime` alanıyla (scoreRegimeBonus, gated) KARIŞTIRILMASIN. */
+  adaptiveRegime: Regime;
+  /** Ham ATR percentile [0-100] — vol ekseni kategorisi (compression/normal/
+   *  expansion/extreme_expansion) buradan lib/indicators/atr-percentile.ts'in
+   *  kendi bantlarıyla türetilir, burada kategorize edilmiyor (ham veri). */
+  atrPercentile: number | null;
   goThreshold: number;
   bucket: ReturnType<typeof getBucketStats>;
   // Modifiers
@@ -799,6 +807,16 @@ export function computeScore(input: ScoreInput): ScoreResult {
     sweepBonus: sweepRes.bonus,
     regimeBonus: regimeRes.bonus,
     regime: regimeRes.regime,
+    // Phase 1 — Market Regime Detection katmanı (Signal Engine v2, bağlam
+    // katmanı): adaptiveRegime zaten HER hesaplamada (baseScore gate'i
+    // OLMADAN) hesaplanıyor ve gerçekten adaptiveWeights'i yönlendiriyor —
+    // ama daha önce ScoreResult'a hiç dönmüyordu, kullanılıp atılıyordu.
+    // `regime` (yukarıdaki) İLE KARIŞTIRILMASIN — o scoreRegimeBonus'un
+    // baseScore≥75 gate'li versiyonu, çoğu zaman "unknown". adaptiveRegime
+    // her zaman anlamlı bir etiket taşır. atrPercentile de aynı şekilde
+    // zaten hesaplanan ama hiç dönmeyen ham değer — vol ekseni için.
+    adaptiveRegime,
+    atrPercentile,
     goThreshold,
     bucket,
     srModifier,

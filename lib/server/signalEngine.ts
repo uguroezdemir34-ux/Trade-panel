@@ -100,6 +100,8 @@ export interface ServerSignalResult {
   baseScore?: number;
   effectiveThreshold?: number;
   regime?: string;
+  adaptiveRegime?: string;
+  atrPercentile?: number | null;
   sweepBonus?: number;
   regimeBonus?: number;
   overextFlags?: number;
@@ -234,6 +236,10 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
   baseScore: number;
   effectiveThreshold: number;
   regime: string;
+  /** Phase 1 — Market Regime Detection (Signal Engine v2 bağlam katmanı).
+   *  `regime`'in aksine baseScore gate'i yok, her zaman anlamlı. */
+  adaptiveRegime: string;
+  atrPercentile: number | null;
   sweepBonus: number;
   regimeBonus: number;
   overextFlags: number;
@@ -378,6 +384,8 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
     baseScore: result.baseScore,
     effectiveThreshold: result.effectiveThreshold,
     regime: result.regime,
+    adaptiveRegime: result.adaptiveRegime,
+    atrPercentile: result.atrPercentile,
     sweepBonus: result.sweepBonus,
     regimeBonus: result.regimeBonus,
     overextFlags: result.overextFlags,
@@ -478,6 +486,8 @@ export async function computeServerSignal(
       baseScore: current.baseScore,
       effectiveThreshold: current.effectiveThreshold,
       regime: current.regime,
+      adaptiveRegime: current.adaptiveRegime,
+      atrPercentile: current.atrPercentile,
       sweepBonus: current.sweepBonus,
       regimeBonus: current.regimeBonus,
       overextFlags: current.overextFlags,

@@ -43,6 +43,14 @@ export interface ScoreHistoryInput {
   /** Tanısal: hesaplama anında mevcut OI snapshot sayısı — migration 013/014,
    *  Phase 1.0 OI Runtime Verification. */
   oiSnapshotCount: number | undefined;
+  /** Ham funding oranı (ör. 0.0001 = %0.01) — null = veri gelmedi.
+   *  Migration 015, sub_funding'in basamaktan doğrusala geçişini
+   *  doğrulamak için tanısal amaçlı. */
+  fundingRateRaw: number | null | undefined;
+  /** Phase 1 — Market Regime Detection (Signal Engine v2). `regime`
+   *  field'ının aksine gate'siz, her zaman anlamlı — bkz. migration 016. */
+  adaptiveRegime: string | undefined;
+  atrPercentile: number | null | undefined;
   sub: {
     trend: number;
     adx: number;
@@ -72,6 +80,9 @@ interface ScoreHistoryRow {
   oi_velocity_score: number | null;
   oi_bonus: number | null;
   oi_snapshot_count: number | null;
+  funding_rate_raw: number | null;
+  adaptive_regime: string | null;
+  atr_percentile: number | null;
   blocks: string[];
   soft_blocks: string[];
   price: number;
@@ -106,6 +117,9 @@ function toRow(input: ScoreHistoryInput): ScoreHistoryRow {
     oi_velocity_score: input.oiVelocityScore ?? null,
     oi_bonus: input.oiBonus ?? null,
     oi_snapshot_count: input.oiSnapshotCount ?? null,
+    funding_rate_raw: input.fundingRateRaw ?? null,
+    adaptive_regime: input.adaptiveRegime ?? null,
+    atr_percentile: input.atrPercentile ?? null,
     blocks: input.blocks,
     soft_blocks: input.softBlocks,
     price: input.price,
