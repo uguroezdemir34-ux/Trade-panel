@@ -45,6 +45,8 @@ import {
 } from "@/lib/db/goSignals";
 import { insertScoreHistoryBatch, type ScoreHistoryInput } from "@/lib/db/scoreHistory";
 import { directionalMovePct, isAdverseMove } from "@/lib/signals/outcomeTracking";
+import { loadXConfigFromEnv, type XConfig } from "@/lib/notify/x/config";
+import { postTweet } from "@/lib/notify/x/client";
 
 export const runtime = "nodejs";
 export const maxDuration = 10;
@@ -102,6 +104,72 @@ function buildOutcomeMessage(
     `\\#${escapeMarkdownV2(pair)} \\#${escapeMarkdownV2(direction)} \\#SONUÇ`,
   ];
   return lines.join("\n");
+}
+
+// X (Twitter) — Telegram'ın MarkdownV2 escape'ine hiç gerek yok, düz metin.
+// Track record linki her iki mesaj tipinde de sabit — kullanıcıların
+// iddiaları doğrudan doğrulayabileceği herkese açık sayfa.
+const X_TRACK_RECORD_URL = "https://quantixos.com/track-record";
+
+function buildXSignalText(pair: string, direction: string, score: number, price: number): string {
+  const dirEmoji = direction === "LONG" ? "▲" : direction === "SHORT" ? "▼" : "◆";
+  return [
+    "⚡ QUANTIX SIGNAL",
+    `${dirEmoji} ${pair} ${direction} @ ${formatPrice(price)}`,
+    `Score: ${score}/100`,
+    "",
+    X_TRACK_RECORD_URL,
+    `#${pair} #${direction}`,
+  ].join("\n");
+}
+
+function buildXOutcomeText(
+  pair: string,
+  direction: string,
+  field: OutcomeField,
+  triggerPrice: number,
+  currentPrice: number,
+  movePct: number,
+  isAdverse: boolean,
+): string {
+  const resultEmoji = isAdverse ? "❌" : "✅";
+  const windowLabel = field === "15m" ? "15dk" : "1sa";
+  const movePctSign = movePct >= 0 ? "+" : "";
+  return [
+    `${resultEmoji} SONUÇ · ${windowLabel}`,
+    `${pair} ${direction}: ${formatPrice(triggerPrice)} → ${formatPrice(currentPrice)}`,
+    `${movePctSign}${movePct.toFixed(2)}%`,
+    "",
+    X_TRACK_RECORD_URL,
+    `#${pair} #${direction}`,
+  ].join("\n");
+}
+
+interface XPostOutcome {
+  attempted: boolean;
+  ok: boolean;
+  errorMessage?: string;
+}
+
+/**
+ * BEST-EFFORT — hiçbir zaman throw etmez (postTweet zaten kendi içinde
+ * try/catch'li, ama buildOAuth1Header'daki crypto çağrıları teorik olarak
+ * fırlatabilir — ikinci bir savunma katmanı, Telegram/DB akışını asla
+ * etkilememesi gereken bir özellik için). xConfig null ise (env eksik —
+ * bu turun beklenen durumu) hiç denenmez, Sentry'ye HİÇ dokunulmaz.
+ */
+async function postToXBestEffort(xConfig: XConfig | null, text: string): Promise<XPostOutcome> {
+  if (!xConfig) return { attempted: false, ok: false };
+  try {
+    const result = await postTweet(xConfig, text);
+    return { attempted: true, ok: result.ok, errorMessage: result.errorMessage };
+  } catch (err) {
+    return {
+      attempted: true,
+      ok: false,
+      errorMessage: err instanceof Error ? err.message : String(err),
+    };
+  }
 }
 
 /**
@@ -173,6 +241,8 @@ interface OutcomeBatchResult {
   notifyFailed: number;
   notifiedPublic: number;
   notifyFailedPublic: number;
+  xPosted: number;
+  xFailed: number;
 }
 
 /**
@@ -200,12 +270,15 @@ async function processOutcomeBatch(
   nowMs: number,
   telegramConfig: TelegramConfig | null,
   publicChatId: string | null,
+  xConfig: XConfig | null,
 ): Promise<OutcomeBatchResult> {
   let written = 0;
   let notified = 0;
   let notifyFailed = 0;
   let notifiedPublic = 0;
   let notifyFailedPublic = 0;
+  let xPosted = 0;
+  let xFailed = 0;
   for (const sig of pending) {
     // sig.pair DB'den geliyor (string) ama go_signals'a sadece bu sistemin
     // kendisi PAIRS listesinden yazıyor — Pair union'ına daraltmak güvenli.
@@ -265,11 +338,38 @@ async function processOutcomeBatch(
           }
         }
       }
+
+      // X (Twitter) — best-effort, Telegram sonucundan tamamen bağımsız.
+      const xText = buildXOutcomeText(
+        sig.pair,
+        sig.direction,
+        field,
+        sig.triggerPrice,
+        currentPrice,
+        movePct,
+        isAdverse,
+      );
+      const xResult = await postToXBestEffort(xConfig, xText);
+      if (xResult.attempted) {
+        if (xResult.ok) {
+          xPosted++;
+        } else {
+          xFailed++;
+          console.error(
+            `[CRON signal-check] outcome${field} X gönderimi başarısız (${sig.id}):`,
+            xResult.errorMessage,
+          );
+          Sentry.captureMessage("X outcome bildirimi başarısız", {
+            level: "warning",
+            extra: { field, signalId: sig.id, errorMessage: xResult.errorMessage },
+          });
+        }
+      }
     } catch (err) {
       console.error(`[CRON signal-check] outcome${field} write failed for ${sig.id}:`, err);
     }
   }
-  return { written, notified, notifyFailed, notifiedPublic, notifyFailedPublic };
+  return { written, notified, notifyFailed, notifiedPublic, notifyFailedPublic, xPosted, xFailed };
 }
 
 function buildSignalMessage(
@@ -310,40 +410,62 @@ export async function GET(req: Request): Promise<NextResponse> {
   let telegramFailed = 0;
   let telegramPublicSent = 0;
   let telegramPublicFailed = 0;
+  let xPosted = 0;
+  let xFailed = 0;
 
   const telegramConfig = await resolveTelegramConfig();
   const publicChatId = await resolvePublicChatId();
+  const xConfig = loadXConfigFromEnv();
 
+  // NOT: döngü artık telegramConfig yokken de çalışır (eski hali "if
+  // (!telegramConfig) break" ile TÜM döngüyü atlıyordu) — X gönderimi
+  // Telegram'ın yapılandırılmış olmasına bağımlı OLMAMALI (task'ın
+  // "Telegram'ı hiç etkilemesin" gereksinimi iki yönlü: X'in hatası
+  // Telegram'ı etkilemez, Telegram'ın yokluğu da X'i engellemez).
   for (const sig of newSignals) {
-    if (!telegramConfig) break;
+    if (telegramConfig) {
+      const text = buildSignalMessage(sig.pair, sig.direction, sig.score, sig.price);
+      const result = await sendToVipAndPublic(telegramConfig, publicChatId, text);
 
-    const text = buildSignalMessage(sig.pair, sig.direction, sig.score, sig.price);
-    const result = await sendToVipAndPublic(telegramConfig, publicChatId, text);
-
-    if (result.vipOk) {
-      telegramSent++;
-    } else {
-      telegramFailed++;
-      // Bu satıra "if (!telegramConfig) break;" atlanmadan gelindi —
-      // yapılandırma eksikliği değil, her zaman gerçek bir gönderim hatası.
-      console.error(`[CRON signal-check] Telegram failed for ${sig.pair}:`, result.vipErrorMessage);
-      Sentry.captureMessage("Telegram GO sinyali (VIP) gönderimi başarısız", {
-        level: "warning",
-        extra: { pair: sig.pair, errorMessage: result.vipErrorMessage },
-      });
-    }
-    if (result.publicAttempted) {
-      if (result.publicOk) {
-        telegramPublicSent++;
+      if (result.vipOk) {
+        telegramSent++;
       } else {
-        telegramPublicFailed++;
-        console.error(
-          `[CRON signal-check] Public Telegram failed for ${sig.pair}:`,
-          result.publicErrorMessage,
-        );
-        Sentry.captureMessage("Telegram GO sinyali (public) gönderimi başarısız", {
+        telegramFailed++;
+        console.error(`[CRON signal-check] Telegram failed for ${sig.pair}:`, result.vipErrorMessage);
+        Sentry.captureMessage("Telegram GO sinyali (VIP) gönderimi başarısız", {
           level: "warning",
-          extra: { pair: sig.pair, errorMessage: result.publicErrorMessage },
+          extra: { pair: sig.pair, errorMessage: result.vipErrorMessage },
+        });
+      }
+      if (result.publicAttempted) {
+        if (result.publicOk) {
+          telegramPublicSent++;
+        } else {
+          telegramPublicFailed++;
+          console.error(
+            `[CRON signal-check] Public Telegram failed for ${sig.pair}:`,
+            result.publicErrorMessage,
+          );
+          Sentry.captureMessage("Telegram GO sinyali (public) gönderimi başarısız", {
+            level: "warning",
+            extra: { pair: sig.pair, errorMessage: result.publicErrorMessage },
+          });
+        }
+      }
+    }
+
+    // X (Twitter) — best-effort, Telegram sonucundan tamamen bağımsız.
+    const xText = buildXSignalText(sig.pair, sig.direction, sig.score, sig.price);
+    const xResult = await postToXBestEffort(xConfig, xText);
+    if (xResult.attempted) {
+      if (xResult.ok) {
+        xPosted++;
+      } else {
+        xFailed++;
+        console.error(`[CRON signal-check] X post failed for ${sig.pair}:`, xResult.errorMessage);
+        Sentry.captureMessage("X GO sinyali gönderimi başarısız", {
+          level: "warning",
+          extra: { pair: sig.pair, errorMessage: xResult.errorMessage },
         });
       }
     }
@@ -431,6 +553,8 @@ export async function GET(req: Request): Promise<NextResponse> {
   let outcomesNotifyFailed = 0;
   let outcomesNotifiedPublic = 0;
   let outcomesNotifyFailedPublic = 0;
+  let outcomesXPosted = 0;
+  let outcomesXFailed = 0;
   try {
     const [pending15m, pending1h] = await Promise.all([
       getSignalsPendingOutcome("15m", startMs, OUTCOME_15M_MIN_MS, OUTCOME_15M_MAX_MS),
@@ -439,13 +563,15 @@ export async function GET(req: Request): Promise<NextResponse> {
 
     if (pending15m.length > 0 || pending1h.length > 0) {
       const tickers = await fetch24hTickers(PAIRS);
-      const res15m = await processOutcomeBatch(pending15m, "15m", tickers, startMs, telegramConfig, publicChatId);
-      const res1h = await processOutcomeBatch(pending1h, "1h", tickers, startMs, telegramConfig, publicChatId);
+      const res15m = await processOutcomeBatch(pending15m, "15m", tickers, startMs, telegramConfig, publicChatId, xConfig);
+      const res1h = await processOutcomeBatch(pending1h, "1h", tickers, startMs, telegramConfig, publicChatId, xConfig);
       outcomesWritten += res15m.written + res1h.written;
       outcomesNotified += res15m.notified + res1h.notified;
       outcomesNotifyFailed += res15m.notifyFailed + res1h.notifyFailed;
       outcomesNotifiedPublic += res15m.notifiedPublic + res1h.notifiedPublic;
       outcomesNotifyFailedPublic += res15m.notifyFailedPublic + res1h.notifyFailedPublic;
+      outcomesXPosted += res15m.xPosted + res1h.xPosted;
+      outcomesXFailed += res15m.xFailed + res1h.xFailed;
     }
   } catch (err) {
     console.error(`[CRON signal-check] outcome check failed:`, err);
@@ -455,9 +581,9 @@ export async function GET(req: Request): Promise<NextResponse> {
 
   console.log(
     `[CRON signal-check] ${signals.length} pairs checked, ${newSignals.length} new GO signals,` +
-      ` ${telegramSent} VIP sent (${telegramPublicSent} public), ${dbWritten} db written,` +
+      ` ${telegramSent} VIP sent (${telegramPublicSent} public), ${xPosted} X posted, ${dbWritten} db written,` +
       ` ${scoreHistoryWritten} score_history written,` +
-      ` ${outcomesWritten} outcomes written (${outcomesNotified} VIP notified, ${outcomesNotifiedPublic} public notified),` +
+      ` ${outcomesWritten} outcomes written (${outcomesNotified} VIP notified, ${outcomesNotifiedPublic} public notified, ${outcomesXPosted} X posted),` +
       ` ${errors.length} errors, ${elapsedMs}ms`,
   );
 
@@ -470,6 +596,8 @@ export async function GET(req: Request): Promise<NextResponse> {
     telegramFailed,
     telegramPublicSent,
     telegramPublicFailed,
+    xPosted,
+    xFailed,
     dbWritten,
     scoreHistoryWritten,
     outcomesWritten,
@@ -477,6 +605,8 @@ export async function GET(req: Request): Promise<NextResponse> {
     outcomesNotifyFailed,
     outcomesNotifiedPublic,
     outcomesNotifyFailedPublic,
+    outcomesXPosted,
+    outcomesXFailed,
     errors: errors.map((e) => ({ pair: e.pair, error: e.error })),
     elapsedMs,
     ...(verbose && {
