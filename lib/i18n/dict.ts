@@ -99,4 +99,11 @@ export function persistLocale(locale: Locale): void {
   } catch {
     // ignore
   }
+  try {
+    // localStorage sunucudan hiç okunamıyor, cookie okunabiliyor — SSR ilk
+    // render'ının da doğru dilde başlaması için (bkz. app/layout.tsx).
+    document.cookie = `ug52_locale=${locale}; path=/; max-age=31536000; SameSite=Lax`;
+  } catch {
+    // ignore
+  }
 }
