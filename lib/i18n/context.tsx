@@ -35,11 +35,13 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 
 export function I18nProvider({
   children,
+  initialLocale,
 }: {
   children: React.ReactNode;
+  initialLocale?: Locale;
 }): React.ReactElement {
-  // SSR: DEFAULT_LOCALE (en) ile başla, mount sonrası gerçek locale
-  const [locale, setLocaleState] = useState<Locale>(DEFAULT_LOCALE);
+  // SSR: initialLocale (cookie'den) varsa onunla, yoksa DEFAULT_LOCALE (en) ile başla
+  const [locale, setLocaleState] = useState<Locale>(initialLocale ?? DEFAULT_LOCALE);
   const [hydrated, setHydrated] = useState(false);
 
   // Client mount: locale tespit + state güncelle
@@ -47,6 +49,9 @@ export function I18nProvider({
     const detected = detectLocale();
     if (detected !== locale) {
       setLocaleState(detected);
+      // Cookie henüz yoksa (bu fix'ten önceki kullanıcılar) backfill et —
+      // bir sonraki SSR'da da doğru locale ile başlasın.
+      persistLocale(detected);
     }
     setHydrated(true);
     // eslint-disable-next-line react-hooks/exhaustive-deps

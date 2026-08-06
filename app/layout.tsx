@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import "./globals.css";
 // @fontsource/ibm-plex-mono 4 ağırlık import'u BURADAN app/karar/layout.tsx'e
 // taşındı (perf teşhisinde bulundu: paylaşım kartı — ShareButton.tsx →
@@ -10,6 +10,8 @@ import { fontVariables } from "@/lib/fonts";
 import { ClerkClientWrapper } from "@/lib/auth/ClerkClientWrapper";
 import { RouteAwareShell } from "@/components/layout/RouteAwareShell";
 import { I18nProvider } from "@/lib/i18n/context";
+import { SUPPORTED_LOCALES, DEFAULT_LOCALE } from "@/lib/i18n/types";
+import type { Locale } from "@/lib/i18n/types";
 import { LocaleHtmlSync } from "@/components/layout/LocaleHtmlSync";
 import { BRAND_META } from "@/lib/brand";
 import { SonnerToaster } from "@/components/layout/SonnerToaster";
@@ -73,6 +75,16 @@ export default async function RootLayout({
   // middleware.ts'in her istekte ürettiği, CSP script-src'nin izin verdiği
   // tek kullanımlık nonce — aşağıdaki iki inline <script>'e enjekte edilir.
   const nonce = (await headers()).get("x-nonce") ?? "";
+  // Locale FOUC fix (06 Ağu 2026): localStorage sunucudan okunamıyor, bu
+  // yüzden persistLocale() aynı değeri cookie'ye de yazıyor (bkz.
+  // lib/i18n/dict.ts) — burada okunup I18nProvider'a ilk state olarak
+  // veriliyor, böylece SSR'ın ilk render'ı da kullanıcının kayıtlı diliyle
+  // başlıyor (öncesinde her zaman "en" ile başlayıp mount sonrası düzeliyordu).
+  const localeCookie = (await cookies()).get("ug52_locale")?.value;
+  const initialLocale: Locale =
+    localeCookie && SUPPORTED_LOCALES.includes(localeCookie as Locale)
+      ? (localeCookie as Locale)
+      : DEFAULT_LOCALE;
   return (
     <html lang="tr" dir="ltr" suppressHydrationWarning translate="no">
         <head>
@@ -125,7 +137,7 @@ export default async function RootLayout({
         <body className={`bg-bg text-text-t1 font-sans antialiased ${fontVariables}`}>
           <SonnerToaster />
           <ClerkClientWrapper nonce={nonce}>
-            <I18nProvider>
+            <I18nProvider initialLocale={initialLocale}>
               <LocaleHtmlSync />
               <RouteAwareShell>{children}</RouteAwareShell>
             </I18nProvider>
