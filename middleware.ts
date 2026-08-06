@@ -185,6 +185,14 @@ function buildCsp(nonce: string): string {
 }
 
 export default clerkMiddleware(async (auth, req) => {
+  // GEÇİCİ — Sentry edge runtime doğrulama (06 Ağu 2026). Server-side zaten
+  // doğrulandı (commit b36c95a) — bu, sentry.edge.config.ts'in ayrı kod
+  // yolunu doğrulamak için. auth.protect()'ten ÖNCE, giriş şartı olmadan
+  // tetiklensin diye. Doğrulama bitince bu blok silinmeli.
+  if (new URL(req.url).pathname === "/api/debug/sentry-edge-test") {
+    throw new Error("Sentry test error — edge");
+  }
+
   if (!isPublicRoute(req)) {
     await auth.protect();
   }
