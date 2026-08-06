@@ -600,6 +600,15 @@ export const en: Dictionary = {
       successTitle: "Pro Activated!",
       successDesc: "Your account is now on the Pro plan. Reload the app to unlock all features.",
       reload: "RELOAD APP",
+      // NOWPayments akışı (06 Ağu 2026) — blockchain onayı dakikalar sürebilir,
+      // success_url'e yönlendirme ÖDEME OLUŞTURULDU anlamına gelir, ONAYLANDI
+      // değil. successTitle/successDesc (yukarıda) SADECE currentTier==="pro"
+      // olduğunda (webhook zaten işlenmiş) gösteriliyor — bu üçü ise
+      // success=true AMA currentTier henüz "pro" değilken gösteriliyor.
+      pendingTitle: "Payment received — confirming",
+      pendingDesc: "Your payment was submitted and is waiting for blockchain confirmation. This usually takes a few minutes, sometimes longer depending on network load.",
+      pendingNote: "Pro access activates automatically the moment your payment confirms — no action needed.",
+      refreshStatus: "REFRESH STATUS",
       errorTitle: "Payment failed",
       errorDesc: "Something went wrong with checkout. Please try again.",
       retry: "TRY AGAIN",
