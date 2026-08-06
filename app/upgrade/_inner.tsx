@@ -6,7 +6,19 @@ import { useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n/context";
 import { getPlanTier } from "@/lib/auth/subscription";
 
-const PRO_PRICE_ID = process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID ?? "";
+// NOWPayments'a geçildi (06 Ağu 2026) — Türkiye'den Stripe hesabı açma
+// engeli nedeniyle. NEXT_PUBLIC_STRIPE_PRO_PRICE_ID/PRO_PRICE_ID kontrolü
+// kaldırıldı: NOWPayments checkout'u bir Stripe Price ID'sine değil, sabit
+// bir dolar tutarına ihtiyaç duyuyor (lib/i18n/*.ts'teki planProPrice
+// ("$9.99") ile senkron tutulmalı — burada da elle sabit, ikisi ayrı
+// dosyalarda olduğu için değişirse ikisi birden güncellenmeli).
+const PRO_PRICE_USD = 9.99;
+
+/** Blockchain onayı beklenirken kaç kez ve ne sıklıkta otomatik kontrol
+ *  edilecek — 20sn × 30 = 10 dakika. Bu süre dolunca otomatik kontrol
+ *  durur, kullanıcı hâlâ "Durumu Yenile" butonuyla elle deneyebilir. */
+const POLL_INTERVAL_MS = 20_000;
+const POLL_MAX_ATTEMPTS = 30;
 
 type FeatureRow = {
   labelKey: string;
@@ -33,27 +45,49 @@ function UpgradePageInner() {
   const success = params.get("success") === "true";
   const canceled = params.get("canceled") === "true";
   const currentTier = getPlanTier(user);
+  // "success" NOWPayments'ta "ödeme oluşturuldu", "onaylandı" DEMEK DEĞİL —
+  // blockchain onayı dakikalar sürebilir. Webhook `finished` alınca Clerk
+  // publicMetadata.plan'ı günceller, ama bu istemcinin GÖRDÜĞÜ `user`
+  // objesine kendiliğinden yansımaz — Clerk'in kendi user.reload()'ı
+  // (SDK metodu, tam sayfa yenilemesi DEĞİL) çağrılmadan bilgi bayat kalır.
+  const awaitingConfirmation = success && currentTier !== "pro";
 
-  // Reload once after successful payment so Clerk refreshes metadata
-  useEffect(() => {
-    if (success) {
-      const t = setTimeout(() => window.location.reload(), 4000);
-      return () => clearTimeout(t);
+  const [manualRefreshing, setManualRefreshing] = useState(false);
+
+  async function refreshStatus() {
+    setManualRefreshing(true);
+    try {
+      await user?.reload();
+    } finally {
+      setManualRefreshing(false);
     }
-  }, [success]);
+  }
+
+  // Otomatik polling — sadece "ödeme oluşturuldu ama henüz pro değiliz"
+  // durumundayken çalışır, pro olunca (currentTier değişince) effect
+  // yeniden çalışıp interval'i temizler, sonsuza dek dönmez.
+  useEffect(() => {
+    if (!awaitingConfirmation) return;
+    let attempts = 0;
+    const interval = setInterval(() => {
+      attempts++;
+      if (attempts > POLL_MAX_ATTEMPTS) {
+        clearInterval(interval);
+        return;
+      }
+      void user?.reload();
+    }, POLL_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [awaitingConfirmation, user]);
 
   async function handleCheckout() {
-    if (!PRO_PRICE_ID) {
-      setError("Stripe price ID not configured. Set NEXT_PUBLIC_STRIPE_PRO_PRICE_ID.");
-      return;
-    }
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      const res = await fetch("/api/nowpayments/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceId: PRO_PRICE_ID }),
+        body: JSON.stringify({ priceUsd: PRO_PRICE_USD }),
       });
       const data = await res.json() as { url?: string; error?: string };
       if (!res.ok || !data.url) throw new Error(data.error ?? "Checkout failed");
@@ -84,8 +118,8 @@ function UpgradePageInner() {
         </p>
       </div>
 
-      {/* Success banner */}
-      {success && (
+      {/* Success banner — GERÇEKTEN pro (webhook işlenmiş) */}
+      {success && currentTier === "pro" && (
         <div className="rounded-lg border border-green-500/40 bg-green-500/10 px-4 py-3 flex flex-col gap-1">
           <p className="font-mono text-sm font-semibold text-green-400">
             {t("auth.upgrade.successTitle")}
@@ -98,6 +132,28 @@ function UpgradePageInner() {
             className="mt-2 self-start bg-green-500/20 border border-green-500/40 text-green-400 font-mono text-xs px-3 py-1.5 rounded tracking-widest hover:bg-green-500/30 transition-colors"
           >
             {t("auth.upgrade.reload")}
+          </button>
+        </div>
+      )}
+
+      {/* Pending banner — ödeme oluşturuldu, blockchain onayı bekleniyor */}
+      {awaitingConfirmation && (
+        <div className="rounded-lg border border-amber-400/40 bg-amber-400/10 px-4 py-3 flex flex-col gap-1">
+          <p className="font-mono text-sm font-semibold text-amber-400">
+            {t("auth.upgrade.pendingTitle")}
+          </p>
+          <p className="font-mono text-xs text-amber-300/80">
+            {t("auth.upgrade.pendingDesc")}
+          </p>
+          <p className="font-mono text-2xs text-amber-300/60 mt-0.5">
+            {t("auth.upgrade.pendingNote")}
+          </p>
+          <button
+            onClick={refreshStatus}
+            disabled={manualRefreshing}
+            className="mt-2 self-start bg-amber-400/20 border border-amber-400/40 text-amber-400 font-mono text-xs px-3 py-1.5 rounded tracking-widest hover:bg-amber-400/30 transition-colors disabled:opacity-50"
+          >
+            {manualRefreshing ? "..." : t("auth.upgrade.refreshStatus")}
           </button>
         </div>
       )}
