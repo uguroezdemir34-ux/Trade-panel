@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { dbSelect, isDbConfigured } from "@/lib/db/server";
 import { patchClerkPublicMetadata } from "@/lib/clerk/metadata";
 import { isAdminUserId } from "@/lib/auth/admin";
-import * as Sentry from "@sentry/nextjs";
 
 const isPublicRoute = createRouteMatcher([
   "/",
@@ -186,26 +185,6 @@ function buildCsp(nonce: string): string {
 }
 
 export default clerkMiddleware(async (auth, req) => {
-  // GEÇİCİ — Sentry edge runtime doğrulama (06 Ağu 2026), 2. TUR: ilk
-  // tur (sade `throw`) Sentry Feed'de görünmedi. Kök neden KANITLANAMADI —
-  // ya clerkMiddleware() callback'i kendi try/catch'ine sarıyor (kaynak
-  // koduna bu sandbox'ta erişilemedi, GitHub/CDN engelli) ya da Next.js'in
-  // onRequestError → Sentry.captureRequestError zincirinin edge runtime'da
-  // event'i fonksiyon sonlanmadan flush etmesi yetişmiyor (bilinen bir
-  // risk kategorisi — Sentry'nin kendi troubleshooting dokümantasyonunda
-  // "flush()/waitUntil() before the edge function terminates" uyarısı var).
-  // Bu turda implicit zincire güvenmek yerine DOĞRUDAN captureException +
-  // flush çağrılıp, gözle görülür bir 500 response dönülüyor — Clerk'in
-  // veya Next.js'in otomatik zincirinin ne yaptığından bağımsız hale
-  // getiriyor. auth.protect()'ten ÖNCE, giriş şartı olmadan tetiklensin
-  // diye. Doğrulama bitince bu blok silinmeli.
-  if (new URL(req.url).pathname === "/api/debug/sentry-edge-test") {
-    const err = new Error("Sentry test error — edge (2. tur, explicit capture+flush)");
-    Sentry.captureException(err);
-    await Sentry.flush(2000);
-    return NextResponse.json({ error: "Sentry edge test — explicit capture" }, { status: 500 });
-  }
-
   if (!isPublicRoute(req)) {
     await auth.protect();
   }
