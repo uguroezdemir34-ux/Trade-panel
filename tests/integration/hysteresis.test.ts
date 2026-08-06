@@ -247,6 +247,8 @@ function makeStubResult(verdict: "go" | "wait" | "no"): ScoreResult {
     sweepBonus: 0,
     regimeBonus: 0,
     regime: "ranging",
+    adaptiveRegime: "ranging",
+    atrPercentile: null,
     goThreshold: 80,
     bucket: getBucketStats(0, []),
     srModifier: 0,
