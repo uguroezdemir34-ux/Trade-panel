@@ -351,6 +351,47 @@ tamamlanacak:
 - `PAIR_COLORS` (aynı dosya) — bu 6 coin için hex kodları marka kılavuzuyla
   doğrulanmadı, yaklaşık değerler.
 
+**"Kullanılmayan CSS ~108 KiB" — round 2 araştırıldı, düşük riskli bir
+düzeltme bulunamadı (kapatıldı):** Round 1'de küçük bir pay kapatılmıştı,
+kalan ~108 KiB için iki aday değerlendirildi:
+- `experimental.optimizeCss` (Next.js'in `critters` tabanlı critical-CSS
+  extraction'ı) — WebSearch ile doğrulandı: `critters` artık bakımsız
+  (sahipliği "beasties" fork'una devredildi) VE **App Router ile belgelenmiş
+  bir uyumsuzluğu var** ("critters streaming'i desteklemiyor, App Router'ın
+  temel mimarisi streaming'e dayanıyor" — resmi Next.js issue/discussion'ları).
+  QUANTIX OS %100 App Router olduğu için reddedildi — fayda belirsiz, risk
+  (sessiz no-op veya build/gecikme sorunu) gerçek.
+- Tailwind `content` config doğrulaması — `tailwind.config.ts`'teki
+  `app/**/*.{ts,tsx}` + `components/**/*.{ts,tsx}` + `lib/**/*.{ts,tsx}`
+  taraması fiilen kontrol edildi: bu üç dizinde `.ts`/`.tsx` dışında (js/jsx/
+  mdx) hiç dosya yok, `lib/**/*.tsx` sadece 3 dosyaya denk geliyor ve üçü de
+  gerçekten kullanılıyor (ölü/gereksiz class üreten bir dosya bulunamadı).
+  Config zaten doğru — düzeltilecek bir purge hatası yok.
+
+Sonuç: kalan ~108 KiB muhtemelen yapısal — Tailwind tek bir global
+stylesheet (`app/globals.css`) üretiyor, bu da 20+ farklı sayfanın TÜM
+utility class'larını içeriyor; herhangi bir TEK sayfa denetlendiğinde diğer
+sayfalara ait class'lar "kullanılmıyor" görünür. Gerçek çözüm (route bazlı
+CSS bölme/scoping) çok daha büyük bir mimari değişiklik olur, bu round'un
+düşük-risk kapsamının dışında — ayrı, dikkatli bir tur olarak ele alınabilir.
+
+**Sentry replay duplicate chunk — hipotez test edildi, çürütüldü (kapatıldı):**
+Production'da `@sentry/replay` iki ayrı chunk'ta (`5f8dfda4`, `4a7b0c69`,
+her biri 121.2 KiB) tekrarlanıyor. Hipotez: `lib/hooks/useSignalFirehose.ts`
+(AppShell'in `next/dynamic()` ile ayrılmış chunk'ı) `instrumentation-client.ts`
+(root bundle) ile birlikte İKİNCİ, bağımsız bir statik
+`import * as Sentry from "@sentry/nextjs"` yapıyordu — barrel re-export
+zincirinin (nextjs→react→browser→replay) tree-shake edilmemesine aynı
+şekilde katkıda bulunabilirdi. Düzeltme uygulandı (namespace import →
+adlandırılmış `captureMessage` import'u) ve `bundle-analyze.yml` ile
+gerçek before/after ölçüldü: **chunk hash'leri birebir aynı kaldı**
+(`5f8dfda4.9ed8d571a1ca3af8.js`, `4a7b0c69.9847646ad9fe5a15.js`) — hipotez
+çürütüldü, bu import'un duplicate chunk'ta hiç payı yokmuş. Düzeltme
+zararsız (davranış aynı) ama kaldı — kök neden muhtemelen webpack/Next.js'in
+kendi chunk-splitting sezgiselinin doğal bir sonucu, `splitChunks`
+config'ine dokunmadan çözülemez; bu, mevcut düşük-risk kapsamının dışında,
+ayrı bir tur gerektirir.
+
 ---
 
 ## 10. LocalStorage Anahtarları
