@@ -19,7 +19,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import * as Sentry from "@sentry/nextjs";
+import { captureMessage } from "@sentry/nextjs";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
@@ -225,7 +225,7 @@ async function fireSignal(
     // durum (ilk kurulumda normal), Sentry'ye gitmez. Başka her şey
     // (gerçek Telegram API/network hatası) gerçek bir sinyal — captureMessage.
     if (dispatchResult.telegram.errorMessage !== "not_configured") {
-      Sentry.captureMessage("Telegram sinyal gönderimi başarısız", {
+      captureMessage("Telegram sinyal gönderimi başarısız", {
         level: "warning",
         extra: { errorMessage: dispatchResult.telegram.errorMessage },
       });
