@@ -220,11 +220,11 @@ export const zh: Dictionary = {
     regimeVolExpansion: "Expansion",
     regimeVolExtreme: "Extreme",
     // TODO: translate
-    trendStrong: "strong trend",
+    trendStrong: "strong EMA alignment",
     // TODO: translate
-    trendMedium: "medium trend",
+    trendMedium: "medium EMA alignment",
     // TODO: translate
-    trendWeak: "weak trend",
+    trendWeak: "weak EMA alignment",
     // TODO: translate
     volumeSupported: "volume supported",
     // TODO: translate
