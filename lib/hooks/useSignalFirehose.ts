@@ -39,6 +39,8 @@ import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { computeOiDivergence } from "@/lib/market/oi-divergence";
 import { useSignalConfirmStore } from "@/lib/store/signalConfirmStore";
+import { useTradeFeedStore } from "@/lib/store/tradeFeedStore";
+import { computeFlowVerdict } from "@/lib/orderflow/flowVerdict";
 
 const SIGNAL_COOLDOWN_MS = 2 * 60 * 1000;   // 2 dakika
 const CONFIRM_DELAY_MS   = 5 * 60 * 1000;   // 5 dakika — momentary false-positive koruması
@@ -107,6 +109,47 @@ export function useSignalFirehose(): void {
           const livePrice = rawPrice ?? 0;
           const oiResult = useMacroStore.getState().oiVelocity[pair] ?? null;
           const oiDivergence = computeOiDivergence(oiResult, result.direction as "LONG" | "SHORT");
+
+          // GÖLGE MOD — CVD/VPIN gözlemi (skora karışmaz, best-effort).
+          // flowVerdict.cvd.w1m/.w5m/.w15m birer CvdWindow OBJESİ, düz
+          // number değil — DB'ye .cvdUsd alanı yazılıyor. flowVerdict.vpin
+          // de VpinResult objesi (içinde AYNI isimde .vpin sayısal alanı
+          // var) — .ready=false iken (ısınma sürecinde) sayıyı loglamak
+          // yerine null yazılıyor, aksi halde anlamsız bir erken değer
+          // gerçek okumaymış gibi görünürdü.
+          try {
+            const feedState = useTradeFeedStore.getState().feeds[pair];
+            if (feedState) {
+              const flowVerdict = computeFlowVerdict(
+                pair,
+                feedState.buffer.items,
+                result.direction as "LONG" | "SHORT",
+                now,
+                feedState.vpinState,
+                feedState.vpinConfigured,
+              );
+              fetch("/api/log-cvd-vpin", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  pair,
+                  direction: result.direction,
+                  ts: now,
+                  cvd_w1m: flowVerdict.cvd.w1m.cvdUsd,
+                  cvd_w5m: flowVerdict.cvd.w5m.cvdUsd,
+                  cvd_w15m: flowVerdict.cvd.w15m.cvdUsd,
+                  cvd_confluence: flowVerdict.cvd.confluence,
+                  vpin: flowVerdict.vpin && flowVerdict.vpin.ready ? flowVerdict.vpin.vpin : null,
+                  flow_alignment: flowVerdict.alignment,
+                  flow_score_adjustment: flowVerdict.scoreAdjustment,
+                  flow_vetoed: flowVerdict.vetoed,
+                }),
+              }).catch(() => {}); // sessiz best-effort
+            }
+          } catch {
+            // gölge mod — ana akışı etkilemez
+          }
+
           appendGoSignal({
             ts: now,
             pair,

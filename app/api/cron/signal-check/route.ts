@@ -484,6 +484,7 @@ export async function GET(req: Request): Promise<NextResponse> {
         signalTs: sig.signalTs ?? startMs,
         pullbackActive: sig.pullbackActive ?? false,
         regime: sig.regime,
+        oiDivergence: sig.oiDivergence,
         sweepBonus: sig.sweepBonus ?? 0,
         regimeBonus: sig.regimeBonus ?? 0,
         blocks: sig.blocks ?? [],

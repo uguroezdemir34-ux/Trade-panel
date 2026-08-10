@@ -45,6 +45,8 @@ import type {
 const FUNDING_TTL_MS = 5 * 60_000;
 const OI_TTL_MS = 5 * 60_000;
 const MAX_OI_HISTORY = 10;
+/** GÖLGE MOD — lib/score/fundingPercentile.ts'in 72 saatlik penceresiyle aynı. */
+const FUNDING_HISTORY_WINDOW_MS = 72 * 60 * 60_000;
 
 // Bootstrap flag: ilk poll'dan sonra velocity hâlâ boşsa 30s'de tek seferlik
 // TTL bypass fetch yapar. Sadece OI'yi etkiler — funding/F&G/dominance dokunulmaz.
@@ -118,6 +120,17 @@ interface MacroStoreState {
   funding: Partial<Record<Pair, FundingRateResult>>;
   fundingFetchedAt: number;
   fundingLoading: boolean;
+  /**
+   * GÖLGE MOD — lib/score/fundingPercentile.ts (deneysel, henüz canlı skora
+   * bağlı değil) için 72 saatlik geçmiş. Sadece source==="api" (gerçek OKX
+   * yanıtı) örnekler eklenir — fetchFundingRate()'in hata durumunda
+   * sessizce döndürdüğü fundingRate:0 fallback'i BURAYA GİRMEZ, aksi halde
+   * gerçek bir çekim hatası "gerçekten sıfır funding" gibi görünüp
+   * persentil dağılımını kirletirdi (bu oturumda başka bir yerde tam bu
+   * sınıftan bir hata zaten bulunmuştu). 72 saatten eski örnekler her
+   * refreshFunding çağrısında budanır.
+   */
+  fundingHistory: Partial<Record<Pair, { timestamp: number; rate: number }[]>>;
 
   // Open Interest — all pairs
   oi: Partial<Record<Pair, OpenInterestResult>>;
@@ -174,6 +187,7 @@ const initialState = {
   funding: {} as Partial<Record<Pair, FundingRateResult>>,
   fundingFetchedAt: 0,
   fundingLoading: false,
+  fundingHistory: {} as Partial<Record<Pair, { timestamp: number; rate: number }[]>>,
   oi: {} as Partial<Record<Pair, OpenInterestResult>>,
   oiFetchedAt: 0,
   oiLoading: false,
@@ -282,7 +296,22 @@ export const useMacroStore = create<MacroStoreState>((set, get) => {
       for (const [pair, result] of results) {
         funding[pair] = result;
       }
-      set({ funding, fundingFetchedAt: now, fundingLoading: false });
+
+      // GÖLGE MOD — sadece gerçek API yanıtlarını (source==="api") geçmişe
+      // ekle, fallback'i (source==="fallback", fundingRate:0) EKLEME —
+      // yorumdaki gerekçeye bkz. (state alanı tanımının yanında).
+      const prevHistory = get().fundingHistory;
+      const fundingHistory: Partial<Record<Pair, { timestamp: number; rate: number }[]>> = {};
+      for (const [pair, result] of results) {
+        const existing = prevHistory[pair] ?? [];
+        const pruned = existing.filter((s) => now - s.timestamp <= FUNDING_HISTORY_WINDOW_MS);
+        fundingHistory[pair] =
+          result.source === "api"
+            ? [...pruned, { timestamp: now, rate: result.fundingRate }]
+            : pruned;
+      }
+
+      set({ funding, fundingFetchedAt: now, fundingLoading: false, fundingHistory });
     } catch {
       set({ fundingLoading: false });
     }
