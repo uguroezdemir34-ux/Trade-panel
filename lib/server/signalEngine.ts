@@ -28,6 +28,7 @@ import {
 } from "@/lib/market/oi-velocity";
 import { loadOiSnapshotCache, saveOiSnapshotCache } from "@/lib/db/oiSnapshotCache";
 import { getFundingHistory } from "@/lib/db/scoreHistory";
+import { computeOiDivergence, type OiDivergence } from "@/lib/market/oi-divergence";
 // GÖLGE MOD (deneysel, henüz canlı skora bağlı DEĞİL) — bkz. fetchAndScore()
 // içindeki fundingPercentile çağrısı. lib/score/scorers.ts'e dokunulmadı.
 import { scoreFundingPercentile, type FundingSample } from "@/lib/score/fundingPercentile";
@@ -120,6 +121,9 @@ export interface ServerSignalResult {
    *  oi_snapshot_cache kalıcılığının gerçekten çalıştığını doğrulamak için
    *  (bkz. migration 014). */
   oiSnapshotCount?: number;
+  /** Gölge — total skora eklenmez, sadece go_signals.oi_divergence'a
+   *  loglanır. null = hesaplanamadı (oiVelocityResult yok). */
+  oiDivergence?: OiDivergence | null;
 }
 
 /** Fetch OKX public candles — no auth required */
@@ -234,6 +238,7 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
   fundingRate: number | null;
   oiVelocityScore: number;
   oiVelocityResult: OiVelocityResult | null;
+  oiDivergence: OiDivergence | null;
   oiSnapshotCount: number;
   signalTs: number;
   sub: { trend: number; adx: number; rsi: number; vol: number; bb: number; vwap: number; funding: number; macro: number };
@@ -344,6 +349,15 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
     ema50_4h: composed.ema50_4h,
   } as DirectionInput);
 
+  // GÖLGE MOD — total'e eklenmiyor, sadece gözlem için hesaplanıp
+  // döndürülüyor. computeOiDivergence() zaten orchestrator.ts:500'de
+  // (skor içi, shadow gate için) çağrılıyor — burada AYRICA, doğrudan
+  // pure fonksiyon olarak çağrılıyor (app/karar/page.tsx ve
+  // useSignalFirehose.ts'in yaptığı gibi), orchestrator.ts'e dokunmadan.
+  const oiDivergence: OiDivergence | null = oiVelocityResult
+    ? computeOiDivergence(oiVelocityResult, direction)
+    : null;
+
   // GÖLGE MOD — lib/score/fundingPercentile.ts'i mevcut scoreFunding()'in
   // (scorers.ts, orchestrator.ts'in computeScore()'u içinde çağrılıyor)
   // YANINDA, paralel çalıştırır. Sonuç HİÇBİR YERE yazılmıyor/dönülmüyor,
@@ -416,6 +430,7 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
     fundingRate,
     oiVelocityScore,
     oiVelocityResult,
+    oiDivergence,
     oiSnapshotCount,
     // Kapanmış 1H mumun kendi ts'i DEĞİL — cron'un bu pair için veri çekmeye
     // başladığı an (composeScoreInput'a ayrıca geçilen "now: latest.ts" ile
@@ -523,6 +538,7 @@ export async function computeServerSignal(
         oiVelocityScore: current.oiVelocityScore,
       },
       oiSnapshotCount: current.oiSnapshotCount,
+      oiDivergence: current.oiDivergence,
       signalTs: current.signalTs,
       sub: current.sub,
       baseScore: current.baseScore,

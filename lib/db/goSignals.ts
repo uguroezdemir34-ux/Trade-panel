@@ -8,6 +8,7 @@
 
 import { dbSelect, dbUpdate, dbUpsert, isDbConfigured } from "./server";
 import { SCORE_ENGINE_VERSION } from "@/lib/score/version";
+import type { OiDivergence } from "@/lib/market/oi-divergence";
 
 const TABLE = "go_signals";
 
@@ -20,6 +21,8 @@ export interface GoSignalInput {
   signalTs: number;
   pullbackActive: boolean;
   regime: string | undefined;
+  /** null = hesaplanamadı (OI verisi yoktu), undefined = caller hiç göndermedi */
+  oiDivergence: OiDivergence | null | undefined;
   sweepBonus: number;
   regimeBonus: number;
   blocks: string[];
@@ -46,6 +49,7 @@ interface GoSignalRow {
   signal_ts: number;
   pullback_active: boolean;
   regime: string | null;
+  oi_divergence: string | null;
   sweep_bonus: number;
   regime_bonus: number;
   blocks: string[];
@@ -85,6 +89,11 @@ function toRow(input: GoSignalInput): GoSignalRow {
     signal_ts: signalTs,
     pullback_active: input.pullbackActive,
     regime: input.regime ?? null,
+    oi_divergence:
+      input.oiDivergence === "confirm" ? "bullish"
+      : input.oiDivergence === "diverge" ? "bearish"
+      : input.oiDivergence === "neutral" ? "none"
+      : null,
     sweep_bonus: input.sweepBonus,
     regime_bonus: input.regimeBonus,
     blocks: input.blocks,
