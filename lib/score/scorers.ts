@@ -361,10 +361,15 @@ export function scoreRegimeBonus(input: RegimeInput): {
   }
 
   if (adx >= 30 && dirConfidence === 3 && !counterTrend) {
+    // +3 → 0: KALDIRILDI — üçlü pekiştirme simülasyonu (Senaryo C, bkz.
+    // adaptiveWeights.ts'teki REGIME_WEIGHTS.trending_strong yorumu — aynı
+    // gerekçe, aynı simülasyon). regime alanı "trending_strong" olarak
+    // kalıyor (bucket/log/analiz için hâlâ anlamlı), sadece bonus katkısı
+    // sıfırlandı.
     return {
       regime: "trending_strong",
-      bonus: 3,
-      reason: `🔥 Trending strong (ADX ${adx.toFixed(0)}, 3TF aligned) · +3 synergy`,
+      bonus: 0,
+      reason: `🔥 Trending strong (ADX ${adx.toFixed(0)}, 3TF aligned) · synergy bonus devre dışı (Senaryo C)`,
     };
   }
   if (adx >= 20 && adx < 30 && dirConfidence >= 2 && !counterTrend) {
