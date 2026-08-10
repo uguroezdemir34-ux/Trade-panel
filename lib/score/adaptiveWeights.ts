@@ -60,7 +60,17 @@ export function detectRegimeForWeights(
 // (trending boost = ranging penalty and vice versa).
 const REGIME_WEIGHTS: Record<Regime, Weights> = {
   //                        trend  adx   rsi   vol   bb    vwap  fund  macro
-  trending_strong: { trend: 1.4, adx: 1.3, rsi: 1.0, vol: 1.0, bb: 0.7, vwap: 0.7, funding: 1.0, macro: 0.9 },
+  // trend/adx 1.4/1.3 → 1.0/1.0: KALDIRILDI — üçlü pekiştirme simülasyonu
+  // (Senaryo C). 255 trade'lik pooled backtest'te trending_strong içinde
+  // subScores.trend/adx her trade'de birebir sabit (25/15, std=0 —
+  // dirConfidence===3 ve adx≥30 rejim tanımının doğrudan sonucu), yani bu
+  // iki kategoriye ekstra ağırlık vermek hiçbir ayırt edici bilgi
+  // taşımıyor — sadece rsi/vol/bb/vwap'in payda içindeki göreli ağırlığını
+  // küçültüyor. Senaryo C (bu değişiklik + scorers.ts'teki bonus kaldırma)
+  // simülasyonda Profit Factor'ü 0.628→0.704 (%12), AvgR'yi -0.269→-0.205
+  // (%24) iyileştirdi — GO havuzu 225→138 trade'e küçüldü. Hâlâ PF<1 (kâr
+  // pozitife dönmedi) — kök neden ayrı, bu tek başına yeterli değil.
+  trending_strong: { trend: 1.0, adx: 1.0, rsi: 1.0, vol: 1.0, bb: 0.7, vwap: 0.7, funding: 1.0, macro: 0.9 },
   trending_weak:   { trend: 1.2, adx: 1.1, rsi: 1.0, vol: 1.0, bb: 0.8, vwap: 0.8, funding: 1.0, macro: 1.0 },
   ranging_meanrev: { trend: 0.7, adx: 0.8, rsi: 1.1, vol: 0.9, bb: 1.4, vwap: 1.3, funding: 1.0, macro: 1.0 },
   ranging:         { trend: 0.8, adx: 0.9, rsi: 1.0, vol: 0.9, bb: 1.2, vwap: 1.1, funding: 1.0, macro: 1.0 },
