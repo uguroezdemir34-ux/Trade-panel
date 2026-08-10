@@ -245,3 +245,32 @@ export async function getScoreHistoryNear(
     },
   };
 }
+
+/**
+ * GÖLGE MOD — lib/score/fundingPercentile.ts (deneysel, henüz canlı skora
+ * bağlı değil) için son N saatin ham funding oranlarını çeker.
+ *
+ * score_history saatlik cron tarafından HER pariteye HER saat yazılıyor
+ * (GO/WAIT/NO fark etmeksizin) — go_signals'ın aksine sadece GO geçişlerinde
+ * değil, bu yüzden 72 saatlik bir pencere için tercih edilen kaynak. Supabase
+ * yapılandırılmamışsa veya hiç satır yoksa boş dizi döner (fabricate etmez —
+ * getScoreHistoryNear() ile aynı disiplin, caller'ın kendi cold-start
+ * mantığı zaten "yetersiz veri" durumunu ele alıyor).
+ */
+export async function getFundingHistory(
+  pair: string,
+  sinceMs: number,
+): Promise<{ rate: number; timestamp: number }[]> {
+  if (!isDbConfigured()) return [];
+
+  const rows = await dbSelect<{ funding_rate_raw: number | null; signal_ts: number }>(
+    TABLE,
+    `pair=eq.${encodeURIComponent(pair)}` +
+      `&signal_ts=gte.${sinceMs}` +
+      `&funding_rate_raw=not.is.null` +
+      `&select=funding_rate_raw,signal_ts` +
+      `&order=signal_ts.desc`,
+  );
+
+  return rows.map((r) => ({ rate: r.funding_rate_raw as number, timestamp: r.signal_ts }));
+}

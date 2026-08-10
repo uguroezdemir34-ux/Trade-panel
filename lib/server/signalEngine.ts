@@ -27,6 +27,10 @@ import {
   type OiVelocityResult,
 } from "@/lib/market/oi-velocity";
 import { loadOiSnapshotCache, saveOiSnapshotCache } from "@/lib/db/oiSnapshotCache";
+import { getFundingHistory } from "@/lib/db/scoreHistory";
+// GÖLGE MOD (deneysel, henüz canlı skora bağlı DEĞİL) — bkz. fetchAndScore()
+// içindeki fundingPercentile çağrısı. lib/score/scorers.ts'e dokunulmadı.
+import { scoreFundingPercentile, type FundingSample } from "@/lib/score/fundingPercentile";
 
 const OKX_BASE = "https://www.okx.com";
 const CANDLE_MIN_1H = 200;
@@ -339,6 +343,44 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
     ema200_1h: composed.ema200_1h,
     ema50_4h: composed.ema50_4h,
   } as DirectionInput);
+
+  // GÖLGE MOD — lib/score/fundingPercentile.ts'i mevcut scoreFunding()'in
+  // (scorers.ts, orchestrator.ts'in computeScore()'u içinde çağrılıyor)
+  // YANINDA, paralel çalıştırır. Sonuç HİÇBİR YERE yazılmıyor/dönülmüyor,
+  // sadece console.debug ile loglanıyor — result/verdict/skor hiç
+  // etkilenmiyor. scorers.ts/orchestrator.ts/composeScoreInput.ts'e
+  // dokunulmadı. Kaynak: score_history.funding_rate_raw (saatlik cron
+  // her pariteye her saat yazıyor — go_signals'ın aksine sadece GO
+  // geçişlerinde değil, 72 saatlik pencere için daha iyi örneklem).
+  try {
+    const sinceMs = now - 72 * 60 * 60_000;
+    const rawHistory = await getFundingHistory(pair, sinceMs);
+    const fundingSamples: FundingSample[] = rawHistory.map((s) => ({
+      rate: s.rate,
+      ageHours: (now - s.timestamp) / 3_600_000,
+    }));
+    const oldestSampleAgeHours =
+      fundingSamples.length > 0
+        ? Math.max(...fundingSamples.map((s) => s.ageHours))
+        : 0;
+    const shadowResult = scoreFundingPercentile(
+      fundingRate,
+      direction,
+      fundingSamples,
+      oldestSampleAgeHours,
+    );
+    console.debug("[shadow] sub_funding_percentile", {
+      pair,
+      ...shadowResult,
+      sampleCount: fundingSamples.length,
+      oldestSampleAgeHours: +oldestSampleAgeHours.toFixed(1),
+    });
+  } catch (shadowErr) {
+    // Gölge hesaplama asla ana akışı etkilememeli — sessizce yutulmaz,
+    // ama fırlatılmaz da (best-effort, tıpkı postToXBestEffort gibi).
+    console.debug("[shadow] sub_funding_percentile hata:", shadowErr);
+  }
+
   const srResult = detectSRLevels(c4hInd, c1hInd, composed.px, direction, composed.volRatio);
   const srModifier = srResult.modifier * SR_SCALE_FACTOR;
   // checkSrHardBlock (lib/score/blocks.ts) için ham detay — useScoreEngine.ts
