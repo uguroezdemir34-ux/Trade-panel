@@ -56,3 +56,31 @@ export async function findClerkUserIdByEmail(email: string): Promise<string | nu
   const first = users[0] as { id?: string } | undefined;
   return first?.id ?? null;
 }
+
+/**
+ * userId → birincil email adresi. middleware.ts'teki fetchClerkUserInfo
+ * ile aynı `/v1/users/{id}` deseni — burada sadece email lazım (referral
+ * ödül akışında, ödeme webhook'undan gelen userId'nin user_referrals
+ * satırını tembel oluşturabilmek için waitlist eşleşmesi email üzerinden
+ * yapılıyor, bkz. lib/db/userReferrals.ts). CLERK_SECRET_KEY eksikse
+ * veya istek başarısızsa null döner.
+ */
+export async function findClerkUserEmailById(userId: string): Promise<string | null> {
+  const clerkKey = process.env.CLERK_SECRET_KEY;
+  if (!clerkKey) return null;
+
+  try {
+    const res = await fetch(`https://api.clerk.com/v1/users/${userId}`, {
+      headers: { Authorization: `Bearer ${clerkKey}` },
+    });
+    if (!res.ok) return null;
+    const data = (await res.json()) as {
+      email_addresses?: { id: string; email_address: string }[];
+      primary_email_address_id?: string;
+    };
+    const primary = data.email_addresses?.find((e) => e.id === data.primary_email_address_id);
+    return primary?.email_address ?? data.email_addresses?.[0]?.email_address ?? null;
+  } catch {
+    return null;
+  }
+}

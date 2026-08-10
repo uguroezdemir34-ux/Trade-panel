@@ -9,10 +9,51 @@
  * gerekir) değil, Stripe Checkout'un yönlendirme deneyimine en yakın olan bu.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/serverStubs";
+import { getUserReferral } from "@/lib/db/userReferrals";
 
-export async function POST(req: NextRequest) {
+// Tek kaynak — önceden client'ın gönderdiği priceUsd doğrudan
+// güveniliyordu (herhangi biri priceUsd: 0.01 gönderebilirdi, gerçek bir
+// güvenlik açığıydı). Referral indirimi eklenirken bu da düzeltildi:
+// fiyat artık SADECE burada, sunucu tarafında belirleniyor. app/upgrade/
+// _inner.tsx'teki PRO_PRICE_USD (görüntüleme amaçlı) ile elle senkron
+// tutulmalı — aynı dosyanın kendi yorumunda zaten belgelenmiş bir kısıt.
+const PRO_PRICE_USD = 9.99;
+const REFERRAL_DISCOUNT_RATE = 0.2;
+
+/**
+ * İndirim, client'tan gönderilen bir koddan DEĞİL, bu kullanıcının kendi
+ * user_referrals.referred_by alanından (kayıt olurken zaten sabitlenmiş,
+ * bkz. lib/db/userReferrals.ts) belirlenir — aksi halde herkes
+ * başkasının herkese açık kodunu girip indirim alabilirdi, gerçekten o
+ * kişinin davetiyle gelmiş olmasa bile.
+ */
+async function resolvePriceUsd(userId: string): Promise<number> {
+  const referral = await getUserReferral(userId);
+  if (referral?.referred_by) {
+    return Math.round(PRO_PRICE_USD * (1 - REFERRAL_DISCOUNT_RATE) * 100) / 100;
+  }
+  return PRO_PRICE_USD;
+}
+
+/**
+ * GET — /upgrade sayfasının, ödemeyi başlatmadan ÖNCE doğru (indirimli
+ * olabilecek) fiyatı gösterebilmesi için. POST'taki (checkout başlatma)
+ * fiyat mantığıyla aynı fonksiyonu paylaşır — sayfada gösterilen tutar ile
+ * NOWPayments'ın hosted ödeme sayfasında görünen tutar hiç uyuşmazlık
+ * yaşamasın diye.
+ */
+export async function GET(): Promise<NextResponse> {
+  const { userId } = await auth();
+  if (!userId) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  const priceUsd = await resolvePriceUsd(userId);
+  return NextResponse.json({ priceUsd, discounted: priceUsd < PRO_PRICE_USD });
+}
+
+export async function POST() {
   const apiKey = process.env.NOWPAYMENTS_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "NOWPayments not configured" }, { status: 503 });
@@ -23,11 +64,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { priceUsd } = (await req.json()) as { priceUsd: number };
-  if (!priceUsd || typeof priceUsd !== "number" || priceUsd <= 0) {
-    return NextResponse.json({ error: "priceUsd required" }, { status: 400 });
-  }
-
+  const priceUsd = await resolvePriceUsd(userId);
   const origin = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
 
   const npRes = await fetch("https://api.nowpayments.io/v1/invoice", {
