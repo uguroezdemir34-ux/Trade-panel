@@ -30,6 +30,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { google } from "googleapis";
 import { auth } from "@/lib/auth/serverStubs";
 import { patchClerkPublicMetadata } from "@/lib/clerk/metadata";
+import { grantReferralCreditIfEligible } from "@/lib/referral/grantCredit";
 
 const PACKAGE_NAME = "com.quantixos.trading"; // bkz. capacitor.config.ts appId
 
@@ -109,6 +110,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       plan: "pro",
       googlePurchaseToken: purchaseToken,
     });
+
+    // Referral ödülü — idempotency lib/referral/grantCredit.ts'teki
+    // credit_granted flag'inde (bu route her doğrulamada çağrılabilir,
+    // sadece kullanıcının İLK başarılı doğrulamasında kredi verilir).
+    await grantReferralCreditIfEligible(userId);
 
     return NextResponse.json({ verified: true, active: true });
   } catch (err) {

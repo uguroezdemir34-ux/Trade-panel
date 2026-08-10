@@ -32,6 +32,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { processNowPaymentsIpn } from "@/lib/db/nowpayments";
 import { patchClerkPublicMetadata } from "@/lib/clerk/metadata";
+import { grantReferralCreditIfEligible } from "@/lib/referral/grantCredit";
 
 export const runtime = "nodejs";
 
@@ -134,6 +135,16 @@ export async function POST(req: NextRequest) {
     // kaydı için RPC çağrıldı, plan kararı henüz verilmedi.
     if (newPlan !== null && !result.already_processed) {
       await patchClerkPublicMetadata(userId, { plan: newPlan });
+    }
+
+    // Referral ödülü — SADECE gerçek "pro"ya geçiş anında (newPlan==="pro"),
+    // idempotency zaten result.already_processed ile korunuyor ama asıl
+    // tekrar-tetiklenmeme garantisi grantReferralCreditIfEligible'ın kendi
+    // credit_granted flag kontrolünde (bkz. lib/referral/grantCredit.ts) —
+    // her aylık yenileme de "finished" gönderir, ama sadece İLK ödemede
+    // kredi verilir.
+    if (newPlan === "pro" && !result.already_processed) {
+      await grantReferralCreditIfEligible(userId);
     }
   } catch (err) {
     console.error("[nowpayments webhook] işleme hatası:", err);

@@ -7,12 +7,14 @@ import { useT } from "@/lib/i18n/context";
 import { getPlanTier } from "@/lib/auth/subscription";
 
 // NOWPayments'a geçildi (06 Ağu 2026) — Türkiye'den Stripe hesabı açma
-// engeli nedeniyle. NEXT_PUBLIC_STRIPE_PRO_PRICE_ID/PRO_PRICE_ID kontrolü
-// kaldırıldı: NOWPayments checkout'u bir Stripe Price ID'sine değil, sabit
-// bir dolar tutarına ihtiyaç duyuyor (lib/i18n/*.ts'teki planProPrice
-// ("$9.99") ile senkron tutulmalı — burada da elle sabit, ikisi ayrı
-// dosyalarda olduğu için değişirse ikisi birden güncellenmeli).
-const PRO_PRICE_USD = 9.99;
+// engeli nedeniyle. Fiyat artık SADECE app/api/nowpayments/checkout/
+// route.ts'te (PRO_PRICE_USD, sunucu taraflı) belirleniyor — önceden bu
+// dosyada da ayrı bir sabit vardı (client'ın gönderdiği priceUsd
+// güveniliyordu, gerçek bir güvenlik açığıydı), referral indirimi
+// eklenirken kaldırıldı. Görüntülenen fiyat: lib/i18n/*.ts'teki
+// planProPrice ("$9.99", indirimsiz durum için) + referral indirimliyse
+// checkout route'unun GET'inden okunan discountedPrice (bkz. aşağıdaki
+// useEffect).
 
 /** Blockchain onayı beklenirken kaç kez ve ne sıklıkta otomatik kontrol
  *  edilecek — 20sn × 30 = 10 dakika. Bu süre dolunca otomatik kontrol
@@ -54,6 +56,25 @@ function UpgradePageInner() {
 
   const [manualRefreshing, setManualRefreshing] = useState(false);
 
+  // Referral indirimi varsa gerçek (indirimli) fiyatı önceden göster —
+  // aksi halde kullanıcı burada $9.99 görüp NOWPayments'ın hosted ödeme
+  // sayfasında farklı bir tutarla karşılaşırdı. /api/nowpayments/checkout
+  // GET'i, POST'un (ödeme başlatma) kullandığı AYNI sunucu-taraflı fiyat
+  // mantığını paylaşıyor (bkz. o route'taki resolvePriceUsd).
+  const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/nowpayments/checkout")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: { priceUsd?: number; discounted?: boolean } | null) => {
+        if (!cancelled && data?.discounted) setDiscountedPrice(data.priceUsd ?? null);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   async function refreshStatus() {
     setManualRefreshing(true);
     try {
@@ -84,11 +105,7 @@ function UpgradePageInner() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/nowpayments/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ priceUsd: PRO_PRICE_USD }),
-      });
+      const res = await fetch("/api/nowpayments/checkout", { method: "POST" });
       const data = await res.json() as { url?: string; error?: string };
       if (!res.ok || !data.url) throw new Error(data.error ?? "Checkout failed");
       window.location.href = data.url;
@@ -203,8 +220,15 @@ function UpgradePageInner() {
           </span>
           <div>
             <p className="font-mono text-xs text-brand tracking-widest uppercase">{t("auth.plan.pro")}</p>
-            <div className="flex items-baseline gap-1 mt-1">
-              <p className="font-mono text-2xl font-bold text-text-t1">{t("auth.upgrade.planProPrice")}</p>
+            <div className="flex items-baseline gap-1.5 mt-1">
+              {discountedPrice !== null ? (
+                <>
+                  <p className="font-mono text-sm text-text-t4 line-through">{t("auth.upgrade.planProPrice")}</p>
+                  <p className="font-mono text-2xl font-bold text-signal-green">${discountedPrice.toFixed(2)}</p>
+                </>
+              ) : (
+                <p className="font-mono text-2xl font-bold text-text-t1">{t("auth.upgrade.planProPrice")}</p>
+              )}
               <p className="font-mono text-xs text-text-t3">{t("auth.upgrade.monthly")}</p>
             </div>
             <p className="font-mono text-xs text-text-t4 mt-0.5">{t("auth.upgrade.planProDesc")}</p>
