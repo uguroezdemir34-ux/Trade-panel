@@ -105,6 +105,8 @@ export default function PrivacyPage() {
                 <ThirdPartyRow name="Telegram" purpose="Ticari bildirimler" link="https://telegram.org/privacy" />
                 <ThirdPartyRow name="Clerk" purpose="Kimlik doğrulama" link="https://clerk.com/legal/privacy" />
                 <ThirdPartyRow name="Stripe" purpose="Ödeme işlemleri" link="https://stripe.com/privacy" />
+                <ThirdPartyRow name="NOWPayments" purpose="Kripto ödeme işleme" link="https://nowpayments.io/privacy-policy" />
+                <ThirdPartyRow name="Sentry" purpose="Hata/crash izleme" link="https://sentry.io/privacy/" />
                 <ThirdPartyRow name="Vercel" purpose="Barındırma + API proxy" link="https://vercel.com/legal/privacy-policy" />
               </tbody>
             </table>

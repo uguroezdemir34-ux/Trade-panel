@@ -28,7 +28,7 @@ Tüm maddeler **senin** tarafından yapılmalıdır. Kod tarafında hazır olanl
 
 ## 3. Uygulama Kimliği (appId)
 
-Şu an: `com.quantixos.trading.test7` (tanı build)
+Şu an: `com.quantixos.trading` (tamamlandı)
 
 - [ ] Siyah ekran sorunu çözülünce `capacitor.config.ts`'de appId'yi değiştir:
   ```

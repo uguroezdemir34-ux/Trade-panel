@@ -43,8 +43,8 @@ Desteklenen pariteleri: BTC/USDT, ETH/USDT, SOL/USDT, XRP/USDT, BNB/USDT, ADA/US
 
 Geliştirici: Ugur Ozdemir
 İletişim: uguroezdemir34@gmail.com
-Gizlilik: https://quantixos.vercel.app/privacy
-Kullanım Koşulları: https://quantixos.vercel.app/terms
+Gizlilik: https://quantixos.com/privacy
+Kullanım Koşulları: https://quantixos.com/terms
 ```
 
 ### Category
@@ -54,12 +54,12 @@ Finance → Investment
 
 ### Content Rating
 ```
-Everyone (finansal uygulama, kumarhane değil)
+IARC anketi dürüst doldurulacak. Target Audience: 18+
 ```
 
 ### Privacy Policy URL
 ```
-https://quantixos.vercel.app/privacy
+https://quantixos.com/privacy
 ```
 
 ---
@@ -124,12 +124,12 @@ crypto,trading,futures,bitcoin,ethereum,OKX,signals,backtest,CVD,order flow,risk
 
 ### Support URL
 ```
-https://quantixos.vercel.app
+https://quantixos.com
 ```
 
 ### Privacy Policy URL
 ```
-https://quantixos.vercel.app/privacy
+https://quantixos.com/privacy
 ```
 
 ### Category

@@ -1,7 +1,7 @@
 name: Android Release AAB (Play Store)
 
 # ============================================================
-# TASLAK — Henüz aktif değil.
+# Google Play Release AAB Workflow
 # Aktif etmek için:
 #   1. GitHub Secrets'a ekle (bkz. scripts/create-keystore.sh):
 #        ANDROID_KEYSTORE_BASE64
@@ -11,8 +11,7 @@ name: Android Release AAB (Play Store)
 #   2. GitHub Secrets'a ekle (Clerk):
 #        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY  (production key)
 #        CLERK_SECRET_KEY                   (production key)
-#   3. capacitor.config.ts'de appId'yi production'a çevir:
-#        com.quantixos.trading.test7  →  com.quantixos.trading
+#   3. ✅ Tamamlandı: capacitor.config.ts'de appId production'a çevrildi (com.quantixos.trading)
 #   4. Bu workflow'u test et: Actions → "Android Release AAB" → Run workflow
 # ============================================================
 
