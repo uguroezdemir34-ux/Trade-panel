@@ -347,6 +347,13 @@ export const en: Dictionary = {
       label: "Language",
       description: "Interface language preference.",
     },
+    referral: {
+      title: "🔗 Invite a Friend",
+      description: "Share your invite link with friends — invite them to join QUANTIX.",
+      linkLabel: "Your invite link",
+      copyButton: "Copy",
+      copied: "✓ Copied",
+    },
     okx: {
       title: "🔐 OKX API Connection",
       description: "Enter your OKX API credentials below. Keys are encrypted and stored in your browser only.",

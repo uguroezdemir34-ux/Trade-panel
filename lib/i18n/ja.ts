@@ -383,6 +383,13 @@ volumeSection: "VOLUME",
       label: "言語",
       description: "インターフェース言語の設定。",
     },
+    referral: {
+      title: "🔗 Invite a Friend",
+      description: "Share your invite link with friends — invite them to join QUANTIX.",
+      linkLabel: "Your invite link",
+      copyButton: "Copy",
+      copied: "✓ Copied",
+    },
     okx: {
       title: "🔐 OKX API接続",
       description: "OKX APIの認証情報を入力してください。キーは暗号化されてブラウザにのみ保存されます。",

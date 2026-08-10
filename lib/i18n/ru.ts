@@ -347,6 +347,13 @@ volumeSection: "ОБЪЁМ",
       label: "Язык",
       description: "Предпочтение языка интерфейса.",
     },
+    referral: {
+      title: "🔗 Invite a Friend",
+      description: "Share your invite link with friends — invite them to join QUANTIX.",
+      linkLabel: "Your invite link",
+      copyButton: "Copy",
+      copied: "✓ Copied",
+    },
     okx: {
       title: "🔐 Подключение OKX API",
       description: "Введите ваши учётные данные API OKX. Ключи шифруются и хранятся только в вашем браузере.",

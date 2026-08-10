@@ -347,6 +347,13 @@ export const tr: Dictionary = {
       label: "Dil",
       description: "Arayüz dil tercihi.",
     },
+    referral: {
+      title: "🔗 Arkadaşını Davet Et",
+      description: "Kendi davet linkini arkadaşlarınla paylaş — QUANTIX'e katılsınlar.",
+      linkLabel: "Davet linkin",
+      copyButton: "Kopyala",
+      copied: "✓ Kopyalandı",
+    },
     okx: {
       title: "🔐 OKX API Bağlantısı",
       description: "OKX API anahtarlarınızı aşağıya girin. Anahtarlar şifreli olarak yalnızca tarayıcınızda saklanır.",
