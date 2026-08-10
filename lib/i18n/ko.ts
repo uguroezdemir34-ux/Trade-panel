@@ -383,6 +383,13 @@ volumeSection: "VOLUME",
       label: "언어",
       description: "인터페이스 언어 환경설정.",
     },
+    referral: {
+      title: "🔗 Invite a Friend",
+      description: "Share your invite link with friends — invite them to join QUANTIX.",
+      linkLabel: "Your invite link",
+      copyButton: "Copy",
+      copied: "✓ Copied",
+    },
     okx: {
       title: "🔐 OKX API 연결",
       description: "OKX API 자격 증명을 입력하세요. 키는 암호화되어 브라우저에만 저장됩니다.",

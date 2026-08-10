@@ -347,6 +347,13 @@ volumeSection: "VOLUMEN",
       label: "Sprache",
       description: "Präferenz für die Oberflächensprache.",
     },
+    referral: {
+      title: "🔗 Invite a Friend",
+      description: "Share your invite link with friends — invite them to join QUANTIX.",
+      linkLabel: "Your invite link",
+      copyButton: "Copy",
+      copied: "✓ Copied",
+    },
     okx: {
       title: "🔐 OKX API-Verbindung",
       description: "Geben Sie Ihre OKX API-Zugangsdaten ein. Schlüssel werden verschlüsselt nur in Ihrem Browser gespeichert.",

@@ -23,6 +23,7 @@ import { KrakenCredsCard } from "@/components/ayarlar/KrakenCredsCard";
 import { PwaCard } from "@/components/ayarlar/PwaCard";
 import { DiscordWebhookCard } from "@/components/ayarlar/DiscordWebhookCard";
 import { ChannelConnectionCard } from "@/components/ayarlar/ChannelConnectionCard";
+import { ReferralCard } from "@/components/ayarlar/ReferralCard";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import loadDynamic from "next/dynamic";
 const PlanStatusCard = loadDynamic(
@@ -73,6 +74,7 @@ export default function AyarlarPage() {
       {active === "genel" && (
         <div className="flex flex-col gap-3 p-4">
           <PlanStatusCard />
+          <ReferralCard />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <AccountBalanceCard />
             <ModeToggleCard />
