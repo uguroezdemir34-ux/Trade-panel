@@ -97,6 +97,9 @@ function KeySection({
         </div>
       ) : (
         <>
+          <p className="rounded border border-amber-500/30 bg-amber-950/20 px-3 py-2 font-mono text-[11px] leading-relaxed text-amber-400">
+            {t("settings.okx.withdrawalWarning")}
+          </p>
           <input
             type="text"
             placeholder={t("settings.okx.apiKey")}

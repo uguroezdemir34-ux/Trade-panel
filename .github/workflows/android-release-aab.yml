@@ -12,7 +12,11 @@ name: Android Release AAB (Play Store)
 #        NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY  (production key)
 #        CLERK_SECRET_KEY                   (production key)
 #   3. ✅ Tamamlandı: capacitor.config.ts'de appId production'a çevrildi (com.quantixos.trading)
-#   4. Bu workflow'u test et: Actions → "Android Release AAB" → Run workflow
+#   4. GitHub Secrets'a ekle (Firebase push notifications):
+#        GOOGLE_SERVICES_JSON_BASE64 — Firebase Console → Project Settings →
+#        Android app → google-services.json indir, `base64 -w0 google-services.json`
+#        ile encode edip ekle
+#   5. Bu workflow'u test et: Actions → "Android Release AAB" → Run workflow
 # ============================================================
 
 on:
@@ -72,6 +76,17 @@ jobs:
         env:
           CI: "true"
           NODE_ENV: production
+
+      - name: Decode google-services.json from GitHub Secret
+        run: |
+          if [ -z "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" ]; then
+            echo "❌ GOOGLE_SERVICES_JSON_BASE64 secret'ı boş — Firebase push notifications için gerekli."
+            echo "   Firebase Console → Project Settings → Android app → google-services.json indir,"
+            echo "   base64 -w0 google-services.json ile encode edip GitHub Secrets'a ekle."
+            exit 1
+          fi
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > android/app/google-services.json
+          echo "✅ google-services.json decoded"
 
       - name: Patch AndroidManifest — hardwareAccelerated
         run: |

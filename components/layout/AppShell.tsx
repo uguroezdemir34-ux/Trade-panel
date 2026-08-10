@@ -70,6 +70,7 @@ import { migrateStorageForUser } from "@/lib/auth/migrate";
 import { fetchTradesFromServer, bulkSyncTradesToServer } from "@/lib/db/tradeSync";
 import { useMacroStore } from "@/lib/store/macroStore";
 import { useWatchlistStore } from "@/lib/store/watchlistStore";
+import { isNativePlatform } from "@/lib/mobile/platform";
 
 // Calibration helper — only active when ?calib=1 is in the URL
 if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("calib") === "1") {
@@ -92,6 +93,27 @@ function markSplashShown(): void {
   } catch { /* ignore */ }
 }
 
+/**
+ * HESAP/POZİSYON HOOK'LARI — sadece web'de mount edilir.
+ *
+ * Native (Capacitor Android) app'te hiç render edilmez — Google Play
+ * Financial Features kapsamını daraltmak için native app salt sinyal+
+ * backtest aracı olarak sunuluyor, gerçek hesap/pozisyon/P&L verisi
+ * çekilmiyor. Bkz. lib/hooks/useNativeRedirectGuard.ts,
+ * components/mobile/QuickTradeSheet.tsx'teki aynı desenin emir-açma tarafı.
+ */
+function AccountExecutionHooks(): null {
+  usePositionPoller(1_000);
+  useBalancePoller(2_000);
+  useDailyPnlTracker();
+  useWeeklyMonthlyPnlTracker();
+  useEmergencyStopGuard();
+  useSlProximityAlert();
+  useConsecutiveLossAlert();
+  useGoSignalOutcomeTracker();
+  return null;
+}
+
 export function AppShell({
   children,
 }: {
@@ -105,6 +127,7 @@ export function AppShell({
   const loadWatchlist = useWatchlistStore((s) => s.load);
   const loadCredentials = useCredentialStore((s) => s.load);
   const { userId, isLoaded: authLoaded } = useAuthStub();
+  const isNative = isNativePlatform();
 
   // Splash: günde bir kez göster (localStorage tarih kontrolü)
   const [showSplash, setShowSplash] = useState(false);
@@ -122,8 +145,6 @@ export function AppShell({
   useScoreHistory();    // Her hesaplama sonucunu geçmiş store'a kaydet
 
   // Secondary — staggered to avoid startup thundering herd
-  usePositionPoller(1_000); // t+1s
-  useBalancePoller(2_000);  // t+2s
   useMacroPoller(3_000);    // t+3s — en yavaş değişen veri, en son
   useNewsPoller(5_000);      // t+5s — Haber Akışı (RSS+Finnhub haber sentiment), 20dk cadence
   useEquityIndexPoller(6_000); // t+6s — S&P/Nasdaq/DXY proxy (SPY/QQQ/UUP), 5dk cadence, veri katmanı (UI henüz yok)
@@ -135,10 +156,6 @@ export function AppShell({
   // 4-7sn'lik sabit gecikmeyi zombi gibi yeniden tetikliyordu. Artık page.tsx'te
   // gerçek component mount/unmount'a bağlılar, hook içindeki pathname kontrolü de
   // bu yüzden kaldırıldı (gereksizleşti).
-  // Günlük P&L takip → drawdown protokol tier güncelle (güvenlik kritik)
-  useDailyPnlTracker();
-  // Haftalık/aylık kümülatif P&L takip (UTC hafta/ay sınırı) → Portfolyo sayfası kartları
-  useWeeklyMonthlyPnlTracker();
   // Order flow trade feed → tradeFeedStore (CVD/VPIN/SMC için)
   useTradeFeed();
   // Telegram sinyal firehose — verdict go geçişlerini izler
@@ -147,14 +164,8 @@ export function AppShell({
   usePriceAlarms();
   // Skor momentum — GO öncesi hızlı yükselişte pre-alert
   useScoreMomentumAlerts();
-  // Ardışık zarar alarmı — 3+ ardışık zararı Telegram'a bildir
-  useConsecutiveLossAlert();
   // Gerçek OKX liquidation-orders feed — liq haritası için (OHLCV tahmininin yerini alır)
   useLiqFeed();
-  // Acil stop guard — OKX algo emri tetiklenmezse client tarafı SL koruması
-  useEmergencyStopGuard();
-  // SL yaklaştığında Telegram bildirimi — %3 eşiği, 15 dak cooldown
-  useSlProximityAlert();
   // Watchlist pair'leri için öncelikli browser bildirimi (⭐ GO)
   usePriorityAlerts();
   // PWA kurulumu — SW kayıt + install prompt yakalama
@@ -163,8 +174,6 @@ export function AppShell({
   useCapacitorApp();
   // Capacitor native push (FCM) — web'de no-op, bkz. hook doc
   useCapacitorPush();
-  // GO sinyal sonrası 15dk/1sa fiyat hareketi takibi
-  useGoSignalOutcomeTracker();
   // Sentry Session Replay'i geç yükle — /sign-in gibi public route'larda
   // AppShell hiç render edilmediği için bu chunk oralarda hiç indirilmiyor
   useSentryReplay();
@@ -184,14 +193,17 @@ export function AppShell({
     rehydrateRisk();
     rehydrateTrades();
     loadWatchlist();
-    void loadCredentials();
+    // Native app'te OKX/borsa credential'ları hiç yüklenmiyor — hesap/pozisyon
+    // verisi native'de gösterilmiyor (bkz. AccountExecutionHooks yorumu).
+    if (!isNative) void loadCredentials();
 
     if (!splashShownToday()) {
       setShowSplash(true);
     }
 
-    // DB sync — only for logged-in users (guests skip)
-    if (userId) {
+    // DB sync — only for logged-in users (guests skip), native'de hiç yapılmıyor
+    // (native app gerçek trade/P&L verisi işlemiyor, bkz. AccountExecutionHooks)
+    if (userId && !isNative) {
       void (async () => {
         const dbTrades = await fetchTradesFromServer();
         if (dbTrades && dbTrades.length > 0) {
@@ -225,7 +237,8 @@ export function AppShell({
       <DisclaimerModal />
       <MasterPinModal />
       {showSplash && <SplashScreen onDone={handleSplashDone} />}
-      <PositionRiskBanner />
+      {!isNative && <AccountExecutionHooks />}
+      {!isNative && <PositionRiskBanner />}
       <AppHeader />
       <NewsFeedBanner />
       <NewsFeedCTA />

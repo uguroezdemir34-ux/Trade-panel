@@ -393,6 +393,7 @@ volumeSection: "VOLUME",
     okx: {
       title: "🔐 OKX API接続",
       description: "OKX APIの認証情報を入力してください。キーは暗号化されてブラウザにのみ保存されます。",
+      withdrawalWarning: "⚠️ When creating your OKX API key, enable only the \"Trade\" permission — NEVER grant \"Withdraw\" permission. QUANTIX never needs it.",
       prodLabel: "本番",
       demoLabel: "デモ",
       configured: "設定済み",

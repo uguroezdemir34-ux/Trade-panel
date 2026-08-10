@@ -8,6 +8,7 @@ import { TradeTimelineCard } from "@/components/pozisyon/TradeTimelineCard";
 import { PortfolioSummaryBanner } from "@/components/pozisyon/PortfolioSummaryBanner";
 import { AccountSummaryBar } from "@/components/pozisyon/AccountSummaryBar";
 import { useT } from "@/lib/i18n/context";
+import { useNativeRedirectGuard } from "@/lib/hooks/useNativeRedirectGuard";
 
 export default function PozisyonPage() {
   const t = useT();
@@ -16,6 +17,9 @@ export default function PozisyonPage() {
   const trades = useTradesStore((s) => s.trades);
   const updateTradeSlTp = useTradesStore((s) => s.updateTradeSlTp);
   const openTrades = trades.filter((tr) => tr.status === "open");
+  const isNative = useNativeRedirectGuard();
+
+  if (isNative) return null;
 
   return (
     <div className="flex flex-col gap-4">

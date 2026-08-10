@@ -357,6 +357,7 @@ export const en: Dictionary = {
     okx: {
       title: "🔐 OKX API Connection",
       description: "Enter your OKX API credentials below. Keys are encrypted and stored in your browser only.",
+      withdrawalWarning: "⚠️ When creating your OKX API key, enable only the \"Trade\" permission — NEVER grant \"Withdraw\" permission. QUANTIX never needs it.",
       prodLabel: "Production",
       demoLabel: "Demo",
       configured: "Configured",
