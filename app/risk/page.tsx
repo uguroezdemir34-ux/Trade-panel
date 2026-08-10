@@ -11,8 +11,12 @@ import { AdherenceScore } from "@/components/risk/AdherenceScore";
 import { LocksList } from "@/components/risk/LocksList";
 import { DisciplineLogList } from "@/components/risk/DisciplineLogList";
 import { WeeklyPnlBar } from "@/components/risk/WeeklyPnlBar";
+import { useNativeRedirectGuard } from "@/lib/hooks/useNativeRedirectGuard";
 
 export default function RiskPage() {
+  const isNative = useNativeRedirectGuard();
+  if (isNative) return null;
+
   return (
     <div className="flex flex-col gap-4">
       <WeeklyPnlBar />

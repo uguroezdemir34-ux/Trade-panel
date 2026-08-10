@@ -15,12 +15,13 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { TABS } from "@/lib/nav/tabs";
+import { getVisibleTabs } from "@/lib/nav/tabs";
 import { useSettingsStore } from "@/lib/store/settingsStore";
 import { useHydrated } from "@/lib/store/hydration";
 import { useT } from "@/lib/i18n/context";
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { useScoreStore } from "@/lib/store/scoreStore";
+import { isNativePlatform } from "@/lib/mobile/platform";
 
 export function BottomNav(): React.ReactElement {
   const pathname = usePathname();
@@ -34,6 +35,7 @@ export function BottomNav(): React.ReactElement {
   const goCount = useScoreStore(
     (s) => Object.values(s.results).filter((r) => r?.verdict === "go").length,
   );
+  const visibleTabs = getVisibleTabs(isNativePlatform());
 
   return (
     <nav
@@ -43,8 +45,8 @@ export function BottomNav(): React.ReactElement {
       }}
       aria-label={t("nav.ariaLabel")}
     >
-      <ul className="mx-auto grid max-w-2xl grid-cols-5">
-        {TABS.map((tab) => {
+      <ul className={`mx-auto grid max-w-2xl ${visibleTabs.length === 4 ? "grid-cols-4" : "grid-cols-5"}`}>
+        {visibleTabs.map((tab) => {
           const active = pathname === tab.path || pathname.startsWith(tab.path + "/");
           return (
             <li key={tab.id}>

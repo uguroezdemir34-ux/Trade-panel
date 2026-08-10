@@ -76,3 +76,13 @@ export function getTabByPath(path: string): TabConfig | undefined {
 export function getTabById(id: TabId): TabConfig | undefined {
   return TABS.find((t) => t.id === id);
 }
+
+/**
+ * Native (Capacitor Android) app'te hesap/pozisyon/P&L verisi gösteren
+ * "portfolyo" sekmesi gizlenir — native app salt sinyal+backtest aracı.
+ * Bkz. lib/hooks/useNativeRedirectGuard.ts.
+ */
+export function getVisibleTabs(isNative: boolean): readonly TabConfig[] {
+  if (!isNative) return TABS;
+  return TABS.filter((t) => t.id !== "portfolyo");
+}

@@ -31,12 +31,14 @@ const PlanStatusCard = loadDynamic(
   { ssr: false }
 );
 import BacktestPage from "@/app/backtest/page";
+import { isNativePlatform } from "@/lib/mobile/platform";
 
 type SubTab = "genel" | "backtest";
 
 export default function AyarlarPage() {
   const t = useT();
   const [active, setActive] = useState<SubTab>("genel");
+  const isNative = isNativePlatform();
 
   return (
     <div className="flex flex-col">
@@ -75,19 +77,30 @@ export default function AyarlarPage() {
         <div className="flex flex-col gap-3 p-4">
           <PlanStatusCard />
           <ReferralCard />
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <AccountBalanceCard />
-            <ModeToggleCard />
-          </div>
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <OkxCredsCard />
-            <BinanceCredsCard />
-          </div>
-          <BybitCredsCard />
-          <GateioCredsCard />
-          <KucoinCredsCard />
-          <MexcCredsCard />
-          <KrakenCredsCard />
+          {/* Borsa hesap/API key kartları — native app'te hiç gösterilmiyor.
+              Google Play Financial Features kapsamını daraltmak için native
+              app salt sinyal+backtest aracı, gerçek hesap bağlantısı sadece
+              web'de (quantixos.com) sunuluyor. Bkz. AppShell.tsx'teki
+              AccountExecutionHooks yorumu. */}
+          {!isNative && (
+            <>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <AccountBalanceCard />
+                <ModeToggleCard />
+              </div>
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                <OkxCredsCard />
+                <BinanceCredsCard />
+              </div>
+              <BybitCredsCard />
+              <GateioCredsCard />
+              <KucoinCredsCard />
+              <MexcCredsCard />
+              <KrakenCredsCard />
+              <TradingLimitsCard />
+              <DrawdownToggleCard />
+            </>
+          )}
           <ChannelConnectionCard />
           <DiscordWebhookCard />
           <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -96,11 +109,7 @@ export default function AyarlarPage() {
             </SubscriptionGate>
             <PriceAlarmsCard />
           </div>
-          <TradingLimitsCard />
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-            <DrawdownToggleCard />
-            <DangerZoneCard />
-          </div>
+          <DangerZoneCard />
           <SubscriptionGate feature="scorerWeights">
             <ScorerWeightsCard />
           </SubscriptionGate>

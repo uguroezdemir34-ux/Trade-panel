@@ -5,6 +5,7 @@ import { useTradesStore } from "@/lib/store/tradesStore";
 import { useT } from "@/lib/i18n/context";
 import { PAIRS } from "@/lib/constants/pairs";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
+import { useNativeRedirectGuard } from "@/lib/hooks/useNativeRedirectGuard";
 import { PnlStatsCard } from "@/components/pnl/PnlStatsCard";
 import { PnlSummaryRow } from "@/components/pnl/PnlSummaryRow";
 import { PnlCalendar } from "@/components/pnl/PnlCalendar";
@@ -280,6 +281,9 @@ function PnlPageInner() {
 }
 
 export default function PnlPage() {
+  const isNative = useNativeRedirectGuard();
+  if (isNative) return null;
+
   return (
     <SubscriptionGate feature="pnlAnalytics">
       <PnlPageInner />

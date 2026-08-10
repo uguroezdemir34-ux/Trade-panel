@@ -13,7 +13,8 @@ import { UserButtonStub } from "@/lib/auth/UserButtonStub";
 import { BrandHeader } from "@/components/brand/BrandHeader";
 import { LanguageDropdown } from "@/components/ui/LanguageDropdown";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
-import { TABS } from "@/lib/nav/tabs";
+import { getVisibleTabs } from "@/lib/nav/tabs";
+import { isNativePlatform } from "@/lib/mobile/platform";
 
 export function AppHeader(): React.ReactElement | null {
   const hydrated = useHydrated();
@@ -22,6 +23,8 @@ export function AppHeader(): React.ReactElement | null {
   const positions = usePositionStore((s) => s.positions);
   const t = useT();
   const pathname = usePathname();
+  const isNative = isNativePlatform();
+  const visibleTabs = getVisibleTabs(isNative);
 
   // /grafik dikey alan kazanımı — chart sayfasında header tamamen gizlenir.
   // WatchlistPanel'in sticky offset'i buna göre ayrıca sabitlendi (o bileşen
@@ -47,7 +50,7 @@ export function AppHeader(): React.ReactElement | null {
 
         {/* Center: Desktop nav tabs */}
         <nav className="hidden lg:flex items-center gap-1" aria-label="Main navigation">
-          {TABS.map((tab) => {
+          {visibleTabs.map((tab) => {
             const active = pathname === tab.path;
             return (
               <Link
@@ -78,8 +81,8 @@ export function AppHeader(): React.ReactElement | null {
           {hydrated && <UserButtonStub afterSignOutUrl="/" />}
           {hydrated && (
             <>
-              {/* Open positions UPL badge */}
-              {openCount > 0 && (
+              {/* Open positions UPL badge — native app'te hesap/pozisyon verisi gösterilmiyor */}
+              {!isNative && openCount > 0 && (
                 <Link
                   href="/pozisyon"
                   className={`rounded px-2 py-0.5 font-mono text-2xs tabular-nums tracking-wider transition-opacity hover:opacity-80 ${
@@ -92,8 +95,8 @@ export function AppHeader(): React.ReactElement | null {
                   {openCount}P {openUpl >= 0 ? "+" : ""}{openUpl.toFixed(1)}$
                 </Link>
               )}
-              {/* Daily P&L badge — only show when nonzero */}
-              {dailyPnlPct !== 0 && (
+              {/* Daily P&L badge — only show when nonzero, native'de hiç gösterilmiyor */}
+              {!isNative && dailyPnlPct !== 0 && (
                 <span
                   className={`rounded px-2 py-0.5 font-mono text-2xs tabular-nums tracking-wider ${
                     dailyPnlPct > 0

@@ -6,6 +6,7 @@ import RiskPage from "@/app/risk/page";
 import PnlPage from "@/app/pnl/page";
 import { PortfolioOverviewCard } from "@/components/portfolio/PortfolioOverviewCard";
 import { GoSignalLog } from "@/components/karar/GoSignalLog";
+import { useNativeRedirectGuard } from "@/lib/hooks/useNativeRedirectGuard";
 
 type SubTab = "risk" | "pnl" | "sinyaller";
 
@@ -18,6 +19,9 @@ const SUB_TABS: { id: SubTab; labelKey: string }[] = [
 export default function PortfolyoPage() {
   const t = useT();
   const [active, setActive] = useState<SubTab>("risk");
+  const isNative = useNativeRedirectGuard();
+
+  if (isNative) return null;
 
   return (
     <div className="flex flex-col">
