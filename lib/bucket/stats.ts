@@ -24,7 +24,13 @@ export function getBucketStats(score: number, trades: readonly Trade[]): BucketS
   if (n === 0) return { min, max, n, wr: null, isCut: false, isBoost: false, hasData: false };
   const wins = inBucket.filter(t => t.pnlUsd > 0).length;
   const wr = (wins / n) * 100;
-  const isCut = n >= 5 && wr < 40;
+  // Expectancy-tabanlı: bucket'ın ortalama $ P&L'i negatifse cut.
+  // Not: Trade'de R-multiple/risk alanı yok (sadece pnlUsd) — bu yüzden
+  // literal "avgR" değil ham $ expectancy kullanılıyor; farklı pozisyon
+  // büyüklükleri normalize edilmeden karışıyor (bkz. sohbet notu).
+  // Daha sıkı bir tampon isteniyorsa avgPnlUsd < -X (X tartışılabilir).
+  const avgPnlUsd = inBucket.reduce((sum, t) => sum + t.pnlUsd, 0) / n;
+  const isCut = n >= 5 && avgPnlUsd < 0;
   const isBoost = n >= 5 && wr >= 65;
   return { min, max, n, wr, isCut, isBoost, hasData: true };
 }
