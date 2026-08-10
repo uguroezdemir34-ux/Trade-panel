@@ -357,6 +357,7 @@ volumeSection: "ОБЪЁМ",
     okx: {
       title: "🔐 Подключение OKX API",
       description: "Введите ваши учётные данные API OKX. Ключи шифруются и хранятся только в вашем браузере.",
+      withdrawalWarning: "⚠️ When creating your OKX API key, enable only the \"Trade\" permission — NEVER grant \"Withdraw\" permission. QUANTIX never needs it.",
       prodLabel: "Производство",
       demoLabel: "Демо",
       configured: "Настроено",

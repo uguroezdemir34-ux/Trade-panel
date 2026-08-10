@@ -357,6 +357,7 @@ volumeSection: "VOLUMEN",
     okx: {
       title: "🔐 OKX API-Verbindung",
       description: "Geben Sie Ihre OKX API-Zugangsdaten ein. Schlüssel werden verschlüsselt nur in Ihrem Browser gespeichert.",
+      withdrawalWarning: "⚠️ When creating your OKX API key, enable only the \"Trade\" permission — NEVER grant \"Withdraw\" permission. QUANTIX never needs it.",
       prodLabel: "Produktion",
       demoLabel: "Demo",
       configured: "Konfiguriert",

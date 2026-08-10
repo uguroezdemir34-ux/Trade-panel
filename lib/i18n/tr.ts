@@ -357,6 +357,7 @@ export const tr: Dictionary = {
     okx: {
       title: "🔐 OKX API Bağlantısı",
       description: "OKX API anahtarlarınızı aşağıya girin. Anahtarlar şifreli olarak yalnızca tarayıcınızda saklanır.",
+      withdrawalWarning: "⚠️ OKX'te API anahtarı oluştururken yalnızca \"Trade\" iznini açın — \"Withdraw\" (para çekme) iznini ASLA vermeyin. QUANTIX bu izne hiçbir zaman ihtiyaç duymaz.",
       prodLabel: "Üretim",
       demoLabel: "Demo",
       configured: "Yapılandırıldı",

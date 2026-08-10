@@ -393,6 +393,7 @@ volumeSection: "VOLUME",
     okx: {
       title: "🔐 OKX API连接",
       description: "在下方输入您的OKX API凭证。密钥经过加密，仅存储在您的浏览器中。",
+      withdrawalWarning: "⚠️ When creating your OKX API key, enable only the \"Trade\" permission — NEVER grant \"Withdraw\" permission. QUANTIX never needs it.",
       prodLabel: "生产",
       demoLabel: "演示",
       configured: "已配置",
