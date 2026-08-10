@@ -23,6 +23,7 @@ import { getNowPaymentsSubscription } from "@/lib/db/nowpayments";
 import {
   getOrCreateUserReferral,
   getUserReferral,
+  findUserIdByReferralCode,
   markCreditGranted,
   incrementPaidReferralCount,
   type UserReferralRow,
@@ -58,7 +59,6 @@ export async function grantReferralCreditIfEligible(referredUserId: string): Pro
   }
   if (!referredRow || !referredRow.referred_by || referredRow.credit_granted) return;
 
-  const { findUserIdByReferralCode } = await import("@/lib/db/userReferrals");
   const referrerUserId = await findUserIdByReferralCode(referredRow.referred_by);
   if (!referrerUserId) return; // kod artık geçersiz/silinmiş olabilir — sessizce atla
 

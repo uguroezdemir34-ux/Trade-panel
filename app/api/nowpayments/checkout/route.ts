@@ -9,7 +9,7 @@
  * gerekir) değil, Stripe Checkout'un yönlendirme deneyimine en yakın olan bu.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth/serverStubs";
 import { getUserReferral } from "@/lib/db/userReferrals";
 
@@ -53,7 +53,7 @@ export async function GET(): Promise<NextResponse> {
   return NextResponse.json({ priceUsd, discounted: priceUsd < PRO_PRICE_USD });
 }
 
-export async function POST(req: NextRequest) {
+export async function POST() {
   const apiKey = process.env.NOWPAYMENTS_API_KEY;
   if (!apiKey) {
     return NextResponse.json({ error: "NOWPayments not configured" }, { status: 503 });
