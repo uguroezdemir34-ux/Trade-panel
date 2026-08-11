@@ -56,16 +56,15 @@ jobs:
       - name: Install npm dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Build Next.js (static export → out/)
+      - name: Build Next.js (sanity check — Capacitor "remote" mimaride out/ üretilmez)
         run: |
           npm run build
-          if [ ! -f "out/index.html" ]; then
-            echo "❌ next build başarısız — out/index.html yok. CLERK secrets eksik mi?"
+          if [ ! -f ".next/BUILD_ID" ]; then
+            echo "❌ next build başarısız — .next/BUILD_ID yok."
             exit 1
           fi
           echo "✅ next build başarılı"
         env:
-          NEXT_OUTPUT: export
           NODE_ENV: production
           NEXT_PUBLIC_APP_URL: https://quantix-os-new.vercel.app
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
