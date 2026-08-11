@@ -1,8 +1,9 @@
 "use client";
 
 import { SignUp } from "@clerk/nextjs";
-import { clerkDarkAppearance } from "@/lib/auth/clerkAppearance";
+import { getClerkAppearance } from "@/lib/auth/clerkAppearance";
 import { CLERK_CONFIGURED } from "@/lib/auth/ClerkClientWrapper";
+import { isNativePlatform } from "@/lib/mobile/platform";
 
 /**
  * Bkz. app/sign-in/[[...sign-in]]/page.tsx dosya başı yorumu — aynı gerekçe.
@@ -27,7 +28,7 @@ export default function SignUpPage() {
         routing="path"
         path="/sign-up"
         signInUrl="/sign-in"
-        appearance={clerkDarkAppearance}
+        appearance={getClerkAppearance(isNativePlatform())}
       />
     </div>
   );
