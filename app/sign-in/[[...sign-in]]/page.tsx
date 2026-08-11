@@ -1,8 +1,9 @@
 "use client";
 
 import { SignIn } from "@clerk/nextjs";
-import { clerkDarkAppearance } from "@/lib/auth/clerkAppearance";
+import { getClerkAppearance } from "@/lib/auth/clerkAppearance";
 import { CLERK_CONFIGURED } from "@/lib/auth/ClerkClientWrapper";
+import { isNativePlatform } from "@/lib/mobile/platform";
 
 /**
  * Catch-all route ([[...sign-in]]) — Clerk'in çok adımlı akışları (MFA,
@@ -35,7 +36,7 @@ export default function SignInPage() {
         routing="path"
         path="/sign-in"
         signUpUrl="/sign-up"
-        appearance={clerkDarkAppearance}
+        appearance={getClerkAppearance(isNativePlatform())}
       />
     </div>
   );

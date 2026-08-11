@@ -9,6 +9,15 @@
  * hesaplarında kullanıyor).
  * `elements` — asıl kart/buton/input yapısı için Tailwind class'ları
  * (tema değişirse CSS değişkenleri üzerinden otomatik güncellenir).
+ *
+ * Native'de Google gizleme: Google, Clerk Dashboard'da tek social connection
+ * olarak yapılandırılmış (2026-08-11 doğrulandı). Google'ın kendi politikası
+ * gereği OAuth akışı embedded WebView'lerden (Capacitor native shell dahil)
+ * çalışmıyor (disallowed_useragent). Web'de değişiklik yapmadan sadece
+ * native'de "Google ile devam et" butonunu (ve yanındaki "veya" ayracını)
+ * gizlemek için getClerkAppearance(isNative) çağrılır — bkz. app/sign-in ve
+ * app/sign-up. socialButtonsBlockButton/dividerRow Clerk'in standart/
+ * dokümante edilmiş appearance element anahtarları.
  */
 
 const appearanceVariables = {
@@ -46,8 +55,22 @@ const appearanceElements = {
   otpCodeFieldInput: "bg-bg border border-border text-text-t1",
 };
 
-/** `<SignIn appearance={clerkDarkAppearance}/>` / `<SignUp appearance={clerkDarkAppearance}/>` */
-export const clerkDarkAppearance = {
-  variables: appearanceVariables,
-  elements: appearanceElements,
-};
+/**
+ * `<SignIn appearance={getClerkAppearance(isNativePlatform())}/>` /
+ * `<SignUp appearance={getClerkAppearance(isNativePlatform())}/>`
+ *
+ * `isNative=true` → "Google ile devam et" butonu ve "veya" ayracı gizlenir
+ * (yukarıdaki dosya başı yorumuna bakınız), diğer her şey aynı kalır.
+ */
+export function getClerkAppearance(isNative: boolean) {
+  return {
+    variables: appearanceVariables,
+    elements: isNative
+      ? {
+          ...appearanceElements,
+          socialButtonsBlockButton: "hidden",
+          dividerRow: "hidden",
+        }
+      : appearanceElements,
+  };
+}
