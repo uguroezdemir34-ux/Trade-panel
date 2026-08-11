@@ -158,9 +158,12 @@ Secondary: Productivity
 | 7" Tablet | 1080×1920+ | opsiyonel |
 
 ### Önerilen İçerik Sırası
+Native (Android) app sert-kesim sonrası salt sinyal+backtest aracı — Pozisyon/Risk/P&L
+native'de yok (bkz. `lib/hooks/useNativeRedirectGuard.ts`). Ekran görüntüleri native
+kapsamı yansıtmalı:
 1. Karar sayfası — GO sinyali göründüğü an (en etkileyici)
-2. Piyasa tablosu — 15 parite canlı fiyat
-3. Pozisyon + P&L
+2. Grafik sayfası — canlı mum grafiği + EMA
+3. Piyasa tablosu — 15 parite canlı fiyat
 4. Backtest sonuçları
 
 ### Ekran görüntüsü çekme
