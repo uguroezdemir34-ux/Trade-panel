@@ -354,6 +354,15 @@ export const en: Dictionary = {
       copyButton: "Copy",
       copied: "✓ Copied",
     },
+    vipInvite: {
+      title: "💎 VIP Telegram Group",
+      description: "Your one-time invite link to the Pro-only Telegram group.",
+      loading: "Loading…",
+      pending: "Your invite link is being generated — it'll appear here shortly. Contact support if this takes too long.",
+      error: "Couldn't load your invite link — refresh the page.",
+      copyButton: "Copy",
+      copied: "✓ Copied",
+    },
     okx: {
       title: "🔐 OKX API Connection",
       description: "Enter your OKX API credentials below. Keys are encrypted and stored in your browser only.",

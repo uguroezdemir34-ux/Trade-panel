@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
+import * as Sentry from "@sentry/nextjs";
 import { dbSelect, dbUpsert, isDbConfigured } from "@/lib/db/server";
 import { patchClerkPublicMetadata } from "@/lib/clerk/metadata";
+import { getVipInviteLink, saveVipInviteLink } from "@/lib/db/vipInvites";
+import { createVipInviteLink } from "@/lib/notify/telegram/vipInvite";
 
 // Stripe sends raw body — disable Next.js body parsing
 export const runtime = "nodejs";
@@ -49,6 +52,51 @@ function verifyStripeSignature(
 
 async function setClerkPlan(userId: string, plan: "pro" | "free"): Promise<void> {
   await patchClerkPublicMetadata(userId, { plan });
+}
+
+/**
+ * Pro'ya ilk geçişte VIP Telegram grubuna tek kullanımlık davet linki
+ * üretir — bkz. lib/notify/telegram/vipInvite.ts dosya başı yorumu (kapsam,
+ * env var ayrımı, member_limit=1 gerekçesi). Idempotent: link zaten varsa
+ * (aynı kullanıcı için ikinci kez tetiklenen event) yeniden ÜRETİLMEZ.
+ *
+ * BEST-EFFORT — hiçbir hatayı fırlatmaz. TELEGRAM_VIP_COMMUNITY_CHAT_ID
+ * tanımsızsa (henüz kurulmadıysa) sessizce atlanır; bu webhook'un asıl işi
+ * (plan'ı pro'ya çekmek) bu adımdan asla etkilenmemeli — Stripe'a 500
+ * dönüp event'i sonsuza dek retry ettirmenin bedeli, kullanıcının Pro
+ * erişimini kaybetmesinden çok daha ağır.
+ */
+async function ensureVipInviteLink(userId: string): Promise<void> {
+  if (!isDbConfigured()) return;
+  try {
+    const existing = await getVipInviteLink(userId);
+    if (existing) return;
+
+    const botToken = process.env.TELEGRAM_BOT_TOKEN;
+    const chatId = process.env.TELEGRAM_VIP_COMMUNITY_CHAT_ID;
+    if (!botToken || !chatId) {
+      console.warn("[stripe webhook] TELEGRAM_VIP_COMMUNITY_CHAT_ID/TELEGRAM_BOT_TOKEN eksik — VIP davet linki atlandı.");
+      return;
+    }
+
+    const result = await createVipInviteLink({ botToken, chatId });
+    if (!result.ok || !result.inviteLink) {
+      console.warn("[stripe webhook] VIP davet linki üretilemedi:", result.errorMessage);
+      Sentry.captureMessage("VIP Telegram davet linki üretilemedi", {
+        level: "warning",
+        extra: { userId, errorMessage: result.errorMessage },
+      });
+      return;
+    }
+
+    await saveVipInviteLink(userId, result.inviteLink);
+  } catch (err) {
+    console.error("[stripe webhook] ensureVipInviteLink başarısız:", err);
+    Sentry.captureMessage("ensureVipInviteLink hata fırlattı", {
+      level: "warning",
+      extra: { userId, err: err instanceof Error ? err.message : String(err) },
+    });
+  }
 }
 
 /**
@@ -124,6 +172,7 @@ export async function POST(req: NextRequest) {
             plan: "pro",
             ...(customerId ? { stripeCustomerId: customerId } : {}),
           });
+          await ensureVipInviteLink(userId);
         }
         break;
       }
@@ -143,6 +192,7 @@ export async function POST(req: NextRequest) {
         if (userId && status) {
           const plan = ACTIVE_SUBSCRIPTION_STATUSES.has(status) ? "pro" : "free";
           await setClerkPlan(userId, plan);
+          if (plan === "pro") await ensureVipInviteLink(userId);
         }
         break;
       }

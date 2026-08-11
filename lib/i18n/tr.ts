@@ -354,6 +354,15 @@ export const tr: Dictionary = {
       copyButton: "Kopyala",
       copied: "✓ Kopyalandı",
     },
+    vipInvite: {
+      title: "💎 VIP Telegram Grubu",
+      description: "Pro üyelere özel Telegram grubuna tek kullanımlık davet linkin.",
+      loading: "Yükleniyor…",
+      pending: "Davet linki hazırlanıyor — birkaç dakika içinde burada görünecek. Uzun sürerse destek ile iletişime geç.",
+      error: "Davet linki alınamadı — sayfayı yenile.",
+      copyButton: "Kopyala",
+      copied: "✓ Kopyalandı",
+    },
     okx: {
       title: "🔐 OKX API Bağlantısı",
       description: "OKX API anahtarlarınızı aşağıya girin. Anahtarlar şifreli olarak yalnızca tarayıcınızda saklanır.",
