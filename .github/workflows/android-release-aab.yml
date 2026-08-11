@@ -87,6 +87,38 @@ jobs:
           echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 -d > android/app/google-services.json
           echo "✅ google-services.json decoded"
 
+      - name: Patch android/build.gradle — Google Services classpath
+        run: |
+          python3 - << 'PYEOF'
+          import re
+          path = "android/build.gradle"
+          content = open(path).read()
+          if "com.google.gms:google-services" not in content:
+              content = re.sub(
+                  r"(dependencies\s*\{)",
+                  r"\1\n        classpath 'com.google.gms:google-services:4.4.2'",
+                  content,
+                  count=1,
+              )
+              open(path, "w").write(content)
+              print("Patched: google-services classpath added")
+          else:
+              print("Already present")
+          PYEOF
+
+      - name: Patch android/app/build.gradle — apply Google Services plugin
+        run: |
+          python3 - << 'PYEOF'
+          path = "android/app/build.gradle"
+          content = open(path).read()
+          if "com.google.gms.google-services" not in content:
+              content = content.rstrip() + "\napply plugin: 'com.google.gms.google-services'\n"
+              open(path, "w").write(content)
+              print("Patched: google-services plugin applied")
+          else:
+              print("Already present")
+          PYEOF
+
       - name: Patch AndroidManifest — hardwareAccelerated
         run: |
           python3 - << 'PYEOF'
