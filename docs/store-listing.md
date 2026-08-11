@@ -13,33 +13,30 @@ QUANTIX OS - Crypto Futures
 
 ### Short Description (80 karakter max)
 ```
-Kripto vadeli işlem sinyal motoru. OKX entegrasyonu. Gerçek zamanlı analiz.
+Kripto vadeli işlem sinyal motoru. Non-custodial. Gerçek zamanlı analiz.
 ```
 
 ### Full Description (4000 karakter max)
 ```
-QUANTIX OS — Kurumsal Kalitede Kripto Vadeli İşlem Paneli
+QUANTIX OS — Kurumsal Kalitede Kripto Vadeli İşlem Sinyal Motoru
 
 ⚡ QUANTIX OS nedir?
-Kripto para vadeli işlemlerini disiplinli ve algoritmik bir yaklaşımla yönetmek için tasarlanmış kapsamlı bir trading aracıdır. OKX borsasıyla entegre çalışır.
+Kripto para vadeli işlemlerini disiplinli ve algoritmik bir yaklaşımla takip etmek için tasarlanmış bir sinyal ve analiz aracıdır. OKX borsasının herkese açık piyasa verisiyle çalışır.
 
 📊 Özellikler:
 • Algoritmik Sinyal Motoru — 15 kripto parite için GO/WAIT/NO kararı
 • Gerçek Zamanlı Analiz — CVD, VPIN, Smart Money Concepts
-• OKX Entegrasyonu — Canlı fiyat ve pozisyon yönetimi
+• Canlı Piyasa Verisi — OKX'ten gerçek zamanlı fiyat
 • Telegram Bildirimleri — GO sinyali anında telefonunuza gelir
 • Backtest Motoru — Strateji geçmiş performans analizi
-• Risk Protokolü — Drawdown koruması, ardışık zarar kilidi
-• 15 Parite — BTC, ETH, SOL, XRP, BNB ve daha fazlası
 
-🔒 Güvenlik:
-• OKX API anahtarları AES-256-GCM ile şifrelenmiş, cihazdan çıkmaz
-• Verileriniz bulutta saklanmaz (LocalStorage)
+🔒 Non-Custodial:
+QUANTIX hiçbir zaman paranızı veya varlıklarınızı tutmaz, bu uygulama bir borsa hesabı bağlantısı istemez. Bir borsa değildir, bir cüzdan değildir — yalnızca herkese açık piyasa verisiyle çalışan bağımsız bir analiz aracıdır.
 
 ⚠️ Risk Bildirimi:
-Kripto vadeli işlemler yüksek risk içerir. Yatırımınızın tamamını kaybedebilirsiniz. Bu uygulama yatırım tavsiyesi vermez.
+Kripto vadeli işlemler yüksek risk içerir. Yatırımınızın tamamını kaybedebilirsiniz. Bu uygulama yatırım tavsiyesi vermez, lisanslı bir finansal aracı kurum değildir.
 
-Desteklenen pariteleri: BTC/USDT, ETH/USDT, SOL/USDT, XRP/USDT, BNB/USDT, ADA/USDT, AVAX/USDT, DOT/USDT, LINK/USDT, MATIC/USDT, DOGE/USDT, SHIB/USDT, SUI/USDT, NEAR/USDT, FET/USDT
+Desteklenen pariteler: BTC/USDT, ETH/USDT, SOL/USDT, XRP/USDT, BNB/USDT, ADA/USDT, AVAX/USDT, DOT/USDT, LINK/USDT, MATIC/USDT, DOGE/USDT, SHIB/USDT, SUI/USDT, NEAR/USDT, FET/USDT
 
 Geliştirici: Ugur Ozdemir
 İletişim: uguroezdemir34@gmail.com
