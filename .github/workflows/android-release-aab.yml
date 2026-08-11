@@ -220,6 +220,59 @@ jobs:
             -Pandroid.injected.signing.key.alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
             -Pandroid.injected.signing.key.password="${{ secrets.ANDROID_KEY_PASSWORD }}"
 
+      - name: Run Play Store Compliance Diagnostics
+        run: |
+          echo "=================================================="
+          echo "   QUANTIX OS - PLAY STORE DIAGNOSTIC REPORT"
+          echo "=================================================="
+          echo ""
+
+          echo "[1/5] Target SDK & Build Configuration Check..."
+          if [ -f "android/app/build.gradle" ]; then
+              grep -E "targetSdkVersion|compileSdkVersion|versionCode|versionName" android/app/build.gradle
+          fi
+
+          AAB_FILE=$(find android/app/build/outputs/bundle -name "*.aab" 2>/dev/null | head -n 1)
+
+          # AGP'nin intermediate klasör adı sürüme göre değişebilir (merged_manifest /
+          # merged_manifests / packaged_manifests) — path tahmin etmek yerine, zaten
+          # elimizde olan imzalı AAB'nin GERÇEK/nihai manifest'ini Google'ın kendi
+          # aracıyla (bundletool) doğrudan okuyoruz. Bu, AGP sürümünden bağımsız,
+          # Play Store'un bizzat göreceği içeriktir.
+          DUMPED_MANIFEST=""
+          if [ -n "$AAB_FILE" ]; then
+              BUNDLETOOL_URL=$(curl -s https://api.github.com/repos/google/bundletool/releases/latest | grep "browser_download_url.*jar" | cut -d '"' -f 4)
+              curl -sL -o /tmp/bundletool.jar "$BUNDLETOOL_URL"
+              DUMPED_MANIFEST=$(java -jar /tmp/bundletool.jar dump manifest --bundle="$AAB_FILE" 2>/dev/null || true)
+          fi
+
+          echo -e "\n[2/5] Final Manifest (bundletool dump) & İzin Listesi..."
+          if [ -n "$DUMPED_MANIFEST" ]; then
+              echo "$DUMPED_MANIFEST" | grep "uses-permission" || echo "İzin bulunamadı."
+          else
+              echo "Hata: AAB veya bundletool bulunamadı, manifest dump yapılamadı."
+          fi
+
+          echo -e "\n[3/5] Cleartext Traffic (Ağ Güvenliği) Check..."
+          if [ -n "$DUMPED_MANIFEST" ]; then
+              echo "$DUMPED_MANIFEST" | grep -i "usesCleartextTraffic" || echo "Cleartext Traffic ayarı: Varsayılan (Güvenli - HTTP engelli)."
+          fi
+
+          echo -e "\n[4/5] Minify / R8 / Code Shrinking Check..."
+          if [ -f "android/app/build.gradle" ]; then
+              grep -E "minifyEnabled|shrinkResources" android/app/build.gradle
+          fi
+
+          echo -e "\n[5/5] Signed AAB Output Check..."
+          if [ -n "$AAB_FILE" ]; then
+              echo "AAB Oluşturuldu: $AAB_FILE"
+              ls -lh "$AAB_FILE"
+          else
+              echo "Hata: .aab çıktısı üretilemedi!"
+          fi
+
+          echo "=================================================="
+
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
         with:
