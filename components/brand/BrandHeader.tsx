@@ -4,14 +4,16 @@
  * BRAND HEADER — AppHeader içinde marka kimliği bloğu.
  *
  * Yapı (mobile-first, v3):
- *   [logo] QUANTIX OS v3
- *          Flow Intelligence
+ *   QUANTIX OS v3
+ *   Flow Intelligence
  *
- * Logo: SM boyut (20px), inline yanında metin.
+ * Sadece metin — logo görseli buradan kaldırıldı (kullanıcı kararı,
+ * header'da quantix-logo.png ile favicon'un (public/icon.svg) görsel
+ * olarak tutarsız durması). Logo görseli hâlâ splash ekranı, waitlist
+ * sayfası ve share card export'unda (lib/share/*) kullanılıyor.
  * OS etiketi: brand color (turuncu) ile vurgulanır (premium hissi).
  */
 
-import { QuantixLogo } from "./QuantixLogo";
 import { BRAND } from "@/lib/brand";
 
 interface Props {
@@ -22,7 +24,6 @@ interface Props {
 export function BrandHeader({ compact = false }: Props): React.ReactElement {
   return (
     <div className="flex items-center gap-2">
-      <QuantixLogo size="sm" />
       <div className="flex flex-col leading-tight">
         <div className="flex items-baseline gap-1">
           <span className="text-text-t1 font-mono text-sm font-semibold tracking-widest">
