@@ -108,6 +108,7 @@ export default function PrivacyPage() {
                 <ThirdPartyRow name="NOWPayments" purpose="Kripto ödeme işleme" link="https://nowpayments.io/privacy-policy" />
                 <ThirdPartyRow name="Sentry" purpose="Hata/crash izleme" link="https://sentry.io/privacy/" />
                 <ThirdPartyRow name="Vercel" purpose="Barındırma + API proxy" link="https://vercel.com/legal/privacy-policy" />
+                <ThirdPartyRow name="Supabase" purpose="Trade geçmişi, skor geçmişi ve bildirim ayarları veritabanı" link="https://supabase.com/privacy" />
               </tbody>
             </table>
           </Section>

@@ -619,6 +619,7 @@ export const en: Dictionary = {
       refreshStatus: "REFRESH STATUS",
       errorTitle: "Payment failed",
       errorDesc: "Something went wrong with checkout. Please try again.",
+      nativeVerifyPendingDesc: "Your purchase completed on Google Play and is being applied to your account. If it doesn't activate within a few seconds, try 'Refresh Status'.",
       retry: "TRY AGAIN",
       featureScoring: "AI Scoring Engine",
       featureChart: "Live Charts",

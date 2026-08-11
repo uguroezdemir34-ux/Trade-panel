@@ -614,6 +614,7 @@ export const tr: Dictionary = {
       refreshStatus: "DURUMU YENİLE",
       errorTitle: "Ödeme başarısız",
       errorDesc: "Ödeme sırasında bir sorun oluştu. Lütfen tekrar deneyin.",
+      nativeVerifyPendingDesc: "Satın alma Google Play üzerinde tamamlandı, hesabınıza yansıtılıyor. Birkaç saniye içinde otomatik aktifleşmezse 'Durumu Yenile'yi deneyin.",
       retry: "TEKRAR DENE",
       featureScoring: "Yapay Zeka Skor Motoru",
       featureChart: "Canlı Grafik",

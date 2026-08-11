@@ -5,6 +5,14 @@ import { useUserStub } from "@/lib/auth/stubs";
 import { useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n/context";
 import { getPlanTier } from "@/lib/auth/subscription";
+import { isNativePlatform } from "@/lib/mobile/platform";
+import {
+  initializeBilling,
+  buySubscription,
+  getCachedProducts,
+  PRODUCT_IDS,
+  type BillingProduct,
+} from "@/lib/billing/playBilling";
 
 // NOWPayments'a geçildi (06 Ağu 2026) — Türkiye'den Stripe hesabı açma
 // engeli nedeniyle. Fiyat artık SADECE app/api/nowpayments/checkout/
@@ -43,6 +51,8 @@ function UpgradePageInner() {
   const params = useSearchParams();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isNative = isNativePlatform();
+  const [nativeProduct, setNativeProduct] = useState<BillingProduct | null>(null);
 
   const success = params.get("success") === "true";
   const canceled = params.get("canceled") === "true";
@@ -63,6 +73,9 @@ function UpgradePageInner() {
   // mantığını paylaşıyor (bkz. o route'taki resolvePriceUsd).
   const [discountedPrice, setDiscountedPrice] = useState<number | null>(null);
   useEffect(() => {
+    // Referral indirimi NOWPayments'a özel — native'de Play Billing fiyatı
+    // Google tarafından belirleniyor, bu sorgunun native'de hiçbir anlamı yok.
+    if (isNative) return;
     let cancelled = false;
     fetch("/api/nowpayments/checkout")
       .then((res) => (res.ok ? res.json() : null))
@@ -73,6 +86,24 @@ function UpgradePageInner() {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Native (Android): Google Play Billing ürün fiyatını çek — Play Store
+  // politikası gereği native'de uygulama içi Pro satışı NOWPayments değil
+  // Play Billing üzerinden yapılıyor (bkz. lib/billing/playBilling.ts).
+  useEffect(() => {
+    if (!isNative) return;
+    let cancelled = false;
+    void initializeBilling().then(() => {
+      if (cancelled) return;
+      const product = getCachedProducts().find((p) => p.productId === PRODUCT_IDS.monthly);
+      setNativeProduct(product ?? null);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   async function refreshStatus() {
@@ -104,6 +135,31 @@ function UpgradePageInner() {
   async function handleCheckout() {
     setLoading(true);
     setError(null);
+
+    // Native (Android): Google Play Billing politikası gereği uygulama içi
+    // dijital özellik satışı Play Billing üzerinden yapılmalı — NOWPayments
+    // (üçüncü taraf ödeme) native'de asla çağrılmaz.
+    if (isNative) {
+      try {
+        const result = await buySubscription(PRODUCT_IDS.monthly);
+        if (!result) {
+          setError(t("auth.upgrade.errorDesc"));
+          return;
+        }
+        if (result.verified) {
+          await user?.reload();
+        } else {
+          // Google tarafında satın alma tamamlandı ama backend doğrulaması
+          // henüz yansımadı (ağ hatası vb.) — para kaybı yok, kullanıcıyı
+          // "Durumu Yenile" ile tekrar denemeye yönlendir.
+          setError(t("auth.upgrade.nativeVerifyPendingDesc"));
+        }
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     try {
       const res = await fetch("/api/nowpayments/checkout", { method: "POST" });
       const data = await res.json() as { url?: string; error?: string };
@@ -227,7 +283,9 @@ function UpgradePageInner() {
                   <p className="font-mono text-2xl font-bold text-signal-green">${discountedPrice.toFixed(2)}</p>
                 </>
               ) : (
-                <p className="font-mono text-2xl font-bold text-text-t1">{t("auth.upgrade.planProPrice")}</p>
+                <p className="font-mono text-2xl font-bold text-text-t1">
+                  {isNative && nativeProduct ? nativeProduct.price : t("auth.upgrade.planProPrice")}
+                </p>
               )}
               <p className="font-mono text-xs text-text-t3">{t("auth.upgrade.monthly")}</p>
             </div>
