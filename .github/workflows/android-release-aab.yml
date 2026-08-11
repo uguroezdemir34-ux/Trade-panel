@@ -227,7 +227,7 @@ jobs:
           echo "=================================================="
           echo ""
 
-          echo "[1/5] Target SDK & Build Configuration Check..."
+          echo "[1/7] Target SDK & Build Configuration Check..."
           if [ -f "android/app/build.gradle" ]; then
               grep -E "targetSdkVersion|compileSdkVersion|versionCode|versionName" android/app/build.gradle
           fi
@@ -250,29 +250,53 @@ jobs:
               DUMPED_MANIFEST=$(java -jar /tmp/bundletool.jar dump manifest --bundle="$AAB_FILE" 2>/dev/null || true)
           fi
 
-          echo -e "\n[2/5] Final Manifest (bundletool dump) & İzin Listesi..."
+          echo -e "\n[2/7] Final Manifest (bundletool dump) & İzin Listesi..."
           if [ -n "$DUMPED_MANIFEST" ]; then
               echo "$DUMPED_MANIFEST" | grep "uses-permission" || echo "İzin bulunamadı."
           else
               echo "Hata: AAB veya bundletool bulunamadı, manifest dump yapılamadı."
           fi
 
-          echo -e "\n[3/5] Cleartext Traffic (Ağ Güvenliği) Check..."
+          echo -e "\n[3/7] Cleartext Traffic (Ağ Güvenliği) Check..."
           if [ -n "$DUMPED_MANIFEST" ]; then
               echo "$DUMPED_MANIFEST" | grep -i "usesCleartextTraffic" || echo "Cleartext Traffic ayarı: Varsayılan (Güvenli - HTTP engelli)."
           fi
 
-          echo -e "\n[4/5] Minify / R8 / Code Shrinking Check..."
+          echo -e "\n[4/7] Minify / R8 / Code Shrinking Check..."
           if [ -f "android/app/build.gradle" ]; then
               grep -E "minifyEnabled|shrinkResources" android/app/build.gradle
           fi
 
-          echo -e "\n[5/5] Signed AAB Output Check..."
+          echo -e "\n[5/7] Signed AAB Output Check..."
           if [ -n "$AAB_FILE" ]; then
               echo "AAB Oluşturuldu: $AAB_FILE"
               ls -lh "$AAB_FILE"
           else
               echo "Hata: .aab çıktısı üretilemedi!"
+          fi
+
+          echo -e "\n[6/7] Debuggable Flag Check..."
+          if [ -n "$DUMPED_MANIFEST" ]; then
+              if echo "$DUMPED_MANIFEST" | grep -qi 'debuggable="true"'; then
+                  echo "❌ UYARI: debuggable=true! Release build'de olmamalı."
+              else
+                  echo "✅ debuggable=false (güvende)."
+              fi
+          fi
+
+          echo -e "\n[7/7] API Anahtarı / Token Sızıntı Taraması (AAB içeriği)..."
+          if [ -n "$AAB_FILE" ] && command -v strings >/dev/null 2>&1; then
+              # NOT: strings, dex'in ham string pool'unu okur — kaynak koddaki gibi
+              # etrafında tırnak işareti yok, ham değerle eşleşiyor.
+              LEAKS=$(unzip -p "$AAB_FILE" "*.dex" 2>/dev/null | strings | grep -E '^(AIza[0-9A-Za-z_-]{35}|sk-[a-zA-Z0-9]{32,}|[0-9]{6,}:[A-Za-z0-9_-]{30,})$' | head -5 || true)
+              if [ -n "$LEAKS" ]; then
+                  echo "❌ UYARI: Potansiyel sızıntı bulundu (ilk 5):"
+                  echo "$LEAKS"
+              else
+                  echo "✅ Açık API anahtarı/token bulunamadı."
+              fi
+          else
+              echo "     (strings komutu yok veya AAB bulunamadı — atlandı)"
           fi
 
           echo "=================================================="
