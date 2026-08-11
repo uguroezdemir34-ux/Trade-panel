@@ -231,6 +231,10 @@ jobs:
           if [ -f "android/app/build.gradle" ]; then
               grep -E "targetSdkVersion|compileSdkVersion|versionCode|versionName" android/app/build.gradle
           fi
+          # app/build.gradle bu değerleri genelde rootProject.ext.X olarak referans
+          # verir (Capacitor'ın standart şablonu) — gerçek sayılar variables.gradle'da.
+          echo "  -- android/variables.gradle (gerçek sayısal değerler):"
+          find android -name "variables.gradle" -exec grep -H -E "compileSdkVersion|targetSdkVersion|minSdkVersion" {} + || echo "     variables.gradle bulunamadı."
 
           AAB_FILE=$(find android/app/build/outputs/bundle -name "*.aab" 2>/dev/null | head -n 1)
 
