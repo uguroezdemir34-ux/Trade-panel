@@ -24,6 +24,7 @@ import { PwaCard } from "@/components/ayarlar/PwaCard";
 import { DiscordWebhookCard } from "@/components/ayarlar/DiscordWebhookCard";
 import { ChannelConnectionCard } from "@/components/ayarlar/ChannelConnectionCard";
 import { ReferralCard } from "@/components/ayarlar/ReferralCard";
+import { VipInviteCard } from "@/components/ayarlar/VipInviteCard";
 import { SubscriptionGate } from "@/components/auth/SubscriptionGate";
 import loadDynamic from "next/dynamic";
 const PlanStatusCard = loadDynamic(
@@ -108,6 +109,11 @@ export default function AyarlarPage() {
               <GoAlertsCard />
             </SubscriptionGate>
             <PriceAlarmsCard />
+          </div>
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+            <SubscriptionGate feature="telegramSignals" fallback={null}>
+              <VipInviteCard />
+            </SubscriptionGate>
           </div>
           <DangerZoneCard />
           <SubscriptionGate feature="scorerWeights">

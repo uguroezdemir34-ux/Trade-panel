@@ -494,6 +494,19 @@ Kullanıcı aksiyonu bekleyen:
   Eksikse Haber Akışı (`/api/news`) sessizce Finnhub'ı atlar, sadece
   CoinDesk+Cointelegraph RSS ile çalışmaya devam eder — crash yok, sadece
   haber kapsamı daralır.
+- ⏳ VIP Telegram grubu — kullanıcı elle oluşturmadı (2026-08-11 chat'te
+  netleşti). Kod tarafı hazır: Pro abonelik satın alınınca Stripe webhook
+  otomatik tek kullanımlık davet linki üretiyor (`lib/notify/telegram/
+  vipInvite.ts`, `app/api/stripe/webhook/route.ts` → `ensureVipInviteLink`),
+  ayarlar sayfasında `VipInviteCard` bunu gösteriyor. Eksik olan SADECE:
+  (1) gerçek bir Telegram grubu/kanalı elle oluşturulacak, (2) bot o gruba
+  "Invite Users via Link" izniyle yönetici eklenecek, (3) grubun chat ID'si
+  `TELEGRAM_VIP_COMMUNITY_CHAT_ID` olarak Vercel'e girilecek (bkz.
+  `.env.example`). Bu üçü yapılmadan Pro satın alımı yine sorunsuz
+  tamamlanır — sadece davet linki üretilmez, kart "hazırlanıyor" durumunda
+  kalır (sessiz hata yok, görünür bekleme durumu). Abonelik iptalinde
+  kullanıcıyı gruptan çıkarma otomasyonu KAPSAM DIŞI (kullanıcıya soruldu,
+  sadece link üretimi istendi) — ayrı bir görev.
 
 Sonraki geliştirme fırsatları:
 1. **Pozisyon sayfası** — açık pozisyonlar için daha detaylı P&L + TP/SL yönetimi
