@@ -194,7 +194,7 @@ export function WaitlistScreen({ referredBy }: Props): React.ReactElement {
                 performance in our Telegram channel.
               </p>
               <a
-                href="https://t.me/quantixossignals"
+                href="https://t.me/quantixos_signals"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="block w-full rounded-lg bg-[#10B981] px-4 py-3 text-center text-sm font-bold tracking-wide text-[#0D0E12] transition-all hover:brightness-110 active:scale-[0.98]"
