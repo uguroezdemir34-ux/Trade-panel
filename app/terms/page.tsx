@@ -65,6 +65,10 @@ export default function TermsPage() {
               <li>· Algoritmik sinyaller bilgi amaçlıdır, emir garantisi değildir</li>
               <li>· Geçmiş performans gelecekteki sonuçları garanti etmez</li>
             </ul>
+            <p className="mt-3">
+              <strong className="text-white">Non-custodial:</strong> QUANTIX hiçbir zaman
+              paranızı veya varlıklarınızı tutmaz, bir borsa hesabı bağlantısı istemez.
+            </p>
           </Section>
 
           <Section title="3. Kullanıcı Sorumlulukları">
@@ -72,7 +76,7 @@ export default function TermsPage() {
               <li>· OKX API anahtarlarınızı güvende tutmak sizin sorumluluğunuzdadır</li>
               <li>· Açık pozisyonları izlemek kullanıcının sorumluluğundadır</li>
               <li>· OKX platformunun kendi kullanım koşullarına uymak zorunludur</li>
-              <li>· Botun otomatik verdiği emirler dahil tüm işlem kararları size aittir</li>
+              <li>· Uygulamanın ürettiği algoritmik sinyaller dahil tüm işlem kararları size aittir</li>
               <li>· Risk parametrelerini kendi koşullarınıza göre ayarlamak sizin görevinizdir</li>
             </ul>
           </Section>
