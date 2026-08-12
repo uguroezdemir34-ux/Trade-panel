@@ -30,11 +30,11 @@
 import {
   renderShareCard,
   SHARE_CARD_SIZE,
-  CARD_FONT_FAMILY,
   type ShareCardData,
   type ShareCanvasContext,
   type ShareImageSource,
 } from "./renderShareCard";
+import { CARD_FONT_FAMILY } from "./fontConstants";
 
 export class ShareCardExportError extends Error {}
 

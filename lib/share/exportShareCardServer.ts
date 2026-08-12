@@ -55,33 +55,31 @@
  * klasörü Next'in statik CDN sunumu için ayrı işleniyor, serverless
  * fonksiyonun kendi fs'inden otomatik erişilebilir DEĞİL — font dosyalarıyla
  * aynı sınıf sorun, aynı çözüm.
+ *
+ * REFACTOR NOTU: font kayıt mantığının kendisi (FONT_PACKAGE_ROOT,
+ * FONT_RELATIVE_PATHS, fontsRegistered flag, CARD_FONT_FAMILY) artık bu
+ * dosyada değil, lib/share/fonts.ts'te (registerCardFonts()) — hem bu
+ * dosya hem exportScenarioChartServer.ts oradan çağırıyor, aynı süreçte
+ * ikisi de çalışsa bile TEK flag sayesinde font iki kez kaydedilmiyor.
+ * Yukarıdaki dosya yolları/gerekçe yorumları hâlâ geçerli, sadece
+ * uygulaması taşındı.
  */
 
 import path from "node:path";
-import { createCanvas, GlobalFonts, loadImage, type FontKey } from "@napi-rs/canvas";
+import { createCanvas, loadImage } from "@napi-rs/canvas";
 import {
   renderShareCard,
   SHARE_CARD_SIZE,
-  CARD_FONT_FAMILY,
   type ShareCardData,
   type ShareCanvasContext,
   type ShareImageSource,
 } from "./renderShareCard";
+import { registerCardFonts } from "./fonts";
 
 export class ShareCardServerExportError extends Error {}
 
-const FONT_PACKAGE_ROOT = path.join(process.cwd(), "node_modules/@expo-google-fonts/ibm-plex-mono");
-
-const FONT_RELATIVE_PATHS = [
-  "400Regular/IBMPlexMono_400Regular.ttf",
-  "500Medium/IBMPlexMono_500Medium.ttf",
-  "600SemiBold/IBMPlexMono_600SemiBold.ttf",
-  "700Bold/IBMPlexMono_700Bold.ttf",
-] as const;
-
 const LOGO_PATH = path.join(process.cwd(), "public/quantix-logo.png");
 
-let fontsRegistered = false;
 let cachedLogoImage: ShareImageSource | null = null;
 
 /** Süreç ömrü boyunca bir kez yüklenir (fontsRegistered ile aynı gerekçe).
@@ -99,40 +97,8 @@ async function loadLogoImage(): Promise<ShareImageSource> {
   return cachedLogoImage;
 }
 
-/**
- * Her çağrıda yeniden diske bakmamak için process ömrü boyunca bir kez
- * çalışır (Next.js Node runtime'da modül instance'ı süreç boyunca canlı
- * kalır). Dosya eksikse veya kayıt başarısızsa AÇIKÇA fırlatır — sessiz
- * fallback yok (CLAUDE.md §0.1 madde 3).
- */
-function registerFonts(): void {
-  if (fontsRegistered) return;
-  for (const rel of FONT_RELATIVE_PATHS) {
-    const fullPath = path.join(FONT_PACKAGE_ROOT, rel);
-    // @napi-rs/canvas 0.1.100'ün gerçek dönüş tipi boolean değil, FontKey|null
-    // (CI'ın gerçek tsc hatasıyla doğrulandı) — runtime davranışı aynı kalıyor
-    // (!ok hem null hem falsy her durumda hata fırlatıyordu), sadece tip
-    // doğru ifade ediliyor.
-    let ok: FontKey | null;
-    try {
-      ok = GlobalFonts.registerFromPath(fullPath, CARD_FONT_FAMILY);
-    } catch (err) {
-      throw new ShareCardServerExportError(
-        `Font dosyası okunamadı: ${fullPath} — orijinal hata: ` +
-          `${err instanceof Error ? err.message : String(err)}`,
-      );
-    }
-    if (!ok) {
-      throw new ShareCardServerExportError(
-        `GlobalFonts.registerFromPath() ${fullPath} için null döndü — font kaydı başarısız.`,
-      );
-    }
-  }
-  fontsRegistered = true;
-}
-
 export async function exportShareCardPngServer(data: ShareCardData): Promise<Buffer> {
-  registerFonts();
+  registerCardFonts();
   const logoImage = await loadLogoImage();
 
   const canvas = createCanvas(SHARE_CARD_SIZE, SHARE_CARD_SIZE);
