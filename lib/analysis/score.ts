@@ -9,13 +9,15 @@
  * (trendAlignment/rsiPosition/srProximity) tasarımına dahil edilmedi —
  * onaylanan arayüzde bir bbPosition alanı yok.
  *
- * srProximity bant eşikleri (%0.5/%1.5/%2.5), lib/sr/detect.ts'teki
- * calcPenalty() ile AYNI eşikler — ölçek 8/20=0.4x küçültülmüş (srProximity
- * max ±8, calcPenalty max ±20). Bu bir kod bağımlılığı DEĞİL (lib/score/*'a
- * hiçbir import yok, Kural 0 kapsamı dışında kalsın diye) — sadece aynı
- * "ne kadar yakınsa o kadar önemli" mesafe mantığının bilinçli bir
- * kopyası, S/R'de kaçınılan "iki farklı kaynak birbirinden sapar" riskini
- * burada da azaltmak için.
+ * KOPYA — lib/sr/detect.ts calcPenalty() ile senkron tutulmalı: srProximity
+ * bant eşikleri (%0.5/%1.5/%2.5) calcPenalty ile AYNI, ölçek 8/20=0.4x
+ * küçültülmüş (srProximity max ±8, calcPenalty max ±20). BİLEREK EKSİK
+ * bırakılan kısım: calcPenalty'nin strength çarpanı (×0.5/1.0/1.5) burada
+ * YOK, sadece mesafe bandı kopyalandı (basitleştirme önerildi, kullanıcı onayı bekleniyor).
+ * Bu bir kod bağımlılığı DEĞİL (lib/score/*'a hiçbir import yok, Kural 0
+ * kapsamı dışında kalsın diye) — yani lib/sr/detect.ts'teki calcPenalty
+ * ileride değişirse bu kopya OTOMATİK GÜNCELLENMEZ, sessizce bayatlar.
+ * Değiştiren kişi bu dosyayı da elle senkronlamalı.
  */
 
 import type { SrLevels } from "@/lib/sr/detect";
@@ -41,29 +43,48 @@ const TREND_EMA_CROSS_WEIGHT = 10; // ema50 vs ema200 (yapısal trend)
 const TREND_PRICE_VS_EMA50_WEIGHT = 5; // fiyat vs ema50 (kısa vadeli konum)
 // 10 + 5 = 15 → trendAlignment'ın üst sınırıyla eşleşiyor.
 
-/** EMA50 vs EMA200 + fiyat vs EMA50 — ikisi de mevcutsa toplanır, biri eksikse (yetersiz veri) o bileşen 0 katkı yapar. */
-function computeTrendAlignment(closes: readonly number[], currentPrice: number): number {
+/**
+ * EMA50 vs EMA200 + fiyat vs EMA50. İkisinden biri bile yetersiz veriden
+ * null dönerse (ema200 için 200 bar gerekiyor) TÜM sonuç null — kısmi/
+ * eksik bir trend okumasını tam sayıymış gibi göstermemek için (kullanıcı
+ * kararı, 2026-08-12: "yetersiz veri sessizce 0 değil, null dönsün").
+ */
+function computeTrendAlignment(closes: readonly number[], currentPrice: number): number | null {
   const ema50 = ema(closes, { period: 50 });
   const ema200 = ema(closes, { period: 200 });
+  if (ema50 === null || ema200 === null) return null;
 
   let score = 0;
-  if (ema50 !== null && ema200 !== null) {
-    if (ema50 > ema200) score += TREND_EMA_CROSS_WEIGHT;
-    else if (ema50 < ema200) score -= TREND_EMA_CROSS_WEIGHT;
-  }
-  if (ema50 !== null) {
-    if (currentPrice > ema50) score += TREND_PRICE_VS_EMA50_WEIGHT;
-    else if (currentPrice < ema50) score -= TREND_PRICE_VS_EMA50_WEIGHT;
-  }
+  if (ema50 > ema200) score += TREND_EMA_CROSS_WEIGHT;
+  else if (ema50 < ema200) score -= TREND_EMA_CROSS_WEIGHT;
+
+  if (currentPrice > ema50) score += TREND_PRICE_VS_EMA50_WEIGHT;
+  else if (currentPrice < ema50) score -= TREND_PRICE_VS_EMA50_WEIGHT;
+
   return score;
 }
 
-/** RSI 0..100 → -10..+10 doğrusal, 50=nötr merkez. rsi() default period (14) — composeScoreInput.ts'in skor motorunda kullandığı AYNI default. */
-function computeRsiPosition(closes: readonly number[]): number {
+/**
+ * RSI → eşik + sınırlı-doğrusal, MEAN-REVERSION (kullanıcı kararı,
+ * 2026-08-12, orijinal spesifikasyona dönüş): momentum okumasının
+ * (yüksek RSI = boğa) TERSİ — yüksek RSI aşırı alım/reversal riski,
+ * NEGATİF.
+ *   RSI > 70  → sabit -10 (aşırı alım, reversal riski)
+ *   RSI < 30  → sabit +10 (aşırı satım, tepki fırsatı)
+ *   30-70 arası → (rsi-50)/20 * 3 (±3 aralığında yumuşak geçiş)
+ * BİLEREK süreksiz: RSI=69.9→~+3, RSI=70.1→-10 — ara bölgede işaret bile
+ * ters (yumuşak geçiş bölgesi zayıf/gürültülü sinyal, eşik ise net bir
+ * mean-reversion ayrımı temsil ediyor). Bu kullanıcının açık talebi, düz
+ * eğime kasıtlı olarak tercih edilmedi.
+ * rsi() default period (14) — composeScoreInput.ts'in skor motorunda
+ * kullandığı AYNI default.
+ */
+function computeRsiPosition(closes: readonly number[]): number | null {
   const rsiVal = rsi(closes);
-  if (rsiVal === null) return 0; // yetersiz veri → nötr katkı (aşağıdaki not: dönüş tipi non-nullable olduğu için)
-  const raw = (rsiVal - 50) * (10 / 50);
-  return Math.max(-10, Math.min(10, raw));
+  if (rsiVal === null) return null; // yetersiz veri — nötr 0 DEĞİL, çağıran taraf null'ı ele almalı
+  if (rsiVal > 70) return -10;
+  if (rsiVal < 30) return 10;
+  return ((rsiVal - 50) / 20) * 3;
 }
 
 /** calcPenalty (lib/sr/detect.ts) ile aynı mesafe bantları, 0.4x ölçekli — bkz. dosya başı yorumu. */
@@ -85,15 +106,24 @@ function computeSrProximity(srLevels: SrLevels): number {
   return 0; // eşit mesafe (nadir durum)
 }
 
+/**
+ * @returns Yetersiz mum verisi varsa (trendAlignment veya rsiPosition
+ *   hesaplanamadıysa) null — sessizce nötr/varsayılan bir skor DEĞİL.
+ *   srProximity bunun dışında: yakında hiç S/R seviyesi bulunamaması
+ *   ("nearest_resistance"/"nearest_support" ikisi de null) EKSİK VERİ
+ *   değil, GEÇERLİ bir sonuçtur (0 katkı) — null'a düşürmez.
+ */
 export function calculateAIScore(
   k1h: Candle[],
   srLevels: SrLevels,
   currentPrice: number,
-): AIScoreResult {
+): AIScoreResult | null {
   const closes = k1h.map((c) => c.c);
 
   const trendAlignment = computeTrendAlignment(closes, currentPrice);
   const rsiPosition = computeRsiPosition(closes);
+  if (trendAlignment === null || rsiPosition === null) return null;
+
   const srProximity = computeSrProximity(srLevels);
 
   const rawScore = 50 + trendAlignment + rsiPosition + srProximity;
