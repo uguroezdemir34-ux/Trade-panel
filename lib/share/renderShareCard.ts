@@ -113,6 +113,7 @@ export interface ShareCanvasContext {
   measureText(text: string): { width: number };
   beginPath(): void;
   moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
   arcTo(x1: number, y1: number, x2: number, y2: number, r: number): void;
   closePath(): void;
   arc(x: number, y: number, r: number, start: number, end: number): void;
