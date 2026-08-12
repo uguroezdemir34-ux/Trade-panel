@@ -35,6 +35,8 @@ import { formatAIScenarioCaption } from "@/lib/analysis/telegram-format";
 import { exportScenarioChartPngServer } from "@/lib/share/exportScenarioChartServer";
 import { sendTelegramPhoto } from "@/lib/notify/telegram/client";
 import { resolveTelegramConfig, resolvePublicChatId } from "@/lib/notify/telegram/config";
+import { uploadPublicImage } from "@/lib/db/storage";
+import { insertAiScenario } from "@/lib/db/aiScenarios";
 import type { Pair } from "@/lib/constants/pairs";
 
 export const runtime = "nodejs";
@@ -55,6 +57,7 @@ interface ScenarioResult {
   symbol: Pair;
   status: "sent" | "skipped" | "error";
   reason?: string;
+  dbWritten?: boolean;
 }
 
 export async function GET(req: Request): Promise<NextResponse> {
@@ -106,13 +109,35 @@ export async function GET(req: Request): Promise<NextResponse> {
       });
 
       const sendResult = await sendTelegramPhoto(config, { photo: png, caption, markdownV2: true });
+
+      let dbWritten = false;
+      try {
+        const imageUrl = await uploadPublicImage(
+          "ai-scenario-charts",
+          `${symbol}-latest.png`,
+          png,
+          "image/png",
+        );
+        await insertAiScenario({
+          symbol,
+          timeframe: "4h",
+          currentPrice,
+          score: scoreResult,
+          srLevels,
+          chartImageUrl: imageUrl,
+        });
+        dbWritten = true;
+      } catch (err) {
+        console.error(`[ai-scenario] ${symbol} db write failed:`, err);
+      }
+
       if (!sendResult.ok) {
-        results.push({ symbol, status: "error", reason: sendResult.errorKind });
+        results.push({ symbol, status: "error", reason: sendResult.errorKind, dbWritten });
         console.error(`[ai-scenario] ${symbol} send failed:`, sendResult.errorMessage);
         continue;
       }
 
-      results.push({ symbol, status: "sent" });
+      results.push({ symbol, status: "sent", dbWritten });
     } catch (err) {
       results.push({
         symbol,
