@@ -11,6 +11,7 @@ import { useFocusStore } from "@/lib/store/focusStore";
 import { useT } from "@/lib/i18n/context";
 import { ChartControls, type ChartClickMode } from "@/components/grafik/ChartControls";
 import { ChartLegend } from "@/components/grafik/ChartLegend";
+import { AiScenarioTab } from "@/components/grafik/AiScenarioTab";
 import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
 import { AdvancedPositionCard } from "@/components/grafik/AdvancedPositionCard";
 import { GuardianPanel } from "@/components/grafik/GuardianPanel";
@@ -71,6 +72,14 @@ const SEC_TF: Record<Timeframe, Timeframe> = {
 const ON_DEMAND_TF = new Set<Timeframe>(["5m", "1w"]);
 /** 429 (rate limit) için tek seferlik retry gecikmesi — bkz. on-demand fetch useEffect. */
 const ON_DEMAND_RETRY_DELAY_MS = 2_000;
+
+/** chartSection üst sekmesi — "hangi coin" (pair/mobileView) BAĞIMSIZ, üçüncü bir boyut. */
+type ChartSubTab = "chart" | "ai-scenario";
+
+const CHART_SUB_TABS: { id: ChartSubTab; label: string }[] = [
+  { id: "chart", label: "Grafik" },
+  { id: "ai-scenario", label: "AI Senaryo" },
+];
 
 /** Build ChartSeries from a candle array + overlay flags */
 function buildSeries(
@@ -222,6 +231,7 @@ export default function GrafikPage() {
   const [showSr, setShowSr]         = useState(false);
 
   // New tool state (not persisted — session only)
+  const [subTab, setSubTab]             = useState<ChartSubTab>("chart");
   const [showSplit, setShowSplit]       = useState(false);
   const [secPair, setSecPair]           = useState<Pair>("ETH");
   const [showFlow, setShowFlow]         = useState(false);
@@ -474,6 +484,32 @@ export default function GrafikPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const chartSection = useMemo(() => (
     <>
+      {/* AI Senaryo sekmesi — mobileView'dan BAĞIMSIZ, koşulsuz her zaman
+          görünür. subTab==="chart" iken aşağıdaki mevcut 10 madde tek bir
+          fragment içinde koşullu render edilir, hiçbirinin kendi JSX'i
+          değişmedi. */}
+      <div className="flex border-b border-border">
+        {CHART_SUB_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            onClick={() => setSubTab(tab.id)}
+            className={[
+              "shrink-0 px-4 py-2 font-mono text-xs tracking-wider transition-colors",
+              subTab === tab.id
+                ? "text-brand border-b-2 border-brand"
+                : "text-text-t3 hover:text-text-t2",
+            ].join(" ")}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {subTab === "ai-scenario" && <AiScenarioTab pair={pair} />}
+
+      {subTab === "chart" && (
+        <>
       {/* War Room overlay — /karar'dan "→ Chart" ile odaklanıldığında (C + D).
           NOT: MarketRibbon.tsx artık bu sayfada render edilmiyor — dosya
           SİLİNMEDİ (başka bir yerde yeniden kullanılabilir diye durur),
@@ -738,13 +774,15 @@ export default function GrafikPage() {
           ))}
         </div>
       )}
+        </>
+      )}
     </>
   ), [
     timeframe, showEma20, showEma50, showEma200, showTrades, showVolume,
     showRsi, showMacd, showBb, showVwap, showSr, showSplit, showFlow,
     clickMode, drawnLines, capturedPrice, secLoading, secSeries, series,
     pair, secPair, secTf, theme, t, handleSetClickMode, handlePriceClick,
-    isOverlayActive, clearFocus,
+    isOverlayActive, clearFocus, subTab,
   ]);
 
   return (
