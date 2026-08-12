@@ -36,7 +36,15 @@ import { exportScenarioChartPngServer } from "@/lib/share/exportScenarioChartSer
 import { sendTelegramPhoto } from "@/lib/notify/telegram/client";
 import { resolveTelegramConfig, resolvePublicChatId } from "@/lib/notify/telegram/config";
 import { uploadPublicImage } from "@/lib/db/storage";
-import { insertAiScenario } from "@/lib/db/aiScenarios";
+import {
+  insertAiScenario,
+  getScenariosPendingOutcome,
+  writeScenarioOutcome,
+  type ScenarioOutcomeField,
+  type PendingOutcomeScenario,
+} from "@/lib/db/aiScenarios";
+import { fetch24hTickers } from "@/lib/server/signalEngine";
+import { ADVERSE_THRESHOLD_PCT } from "@/lib/signals/outcomeTracking";
 import type { Pair } from "@/lib/constants/pairs";
 
 export const runtime = "nodejs";
@@ -58,6 +66,74 @@ interface ScenarioResult {
   status: "sent" | "skipped" | "error";
   reason?: string;
   dbWritten?: boolean;
+}
+
+// Outcome pencereleri — signal-check/route.ts'teki OUTCOME_15M_*/OUTCOME_1H_*
+// ile AYNI mantık: cron periyoduyla eşleşen tolerans payı. Bu cron 8 saatte
+// bir çalışıyor (vercel.json: "5 5,13,21 * * *") — 4H penceresi 4-12sa
+// (8sa'lık tolerans), 24H penceresi 24-32sa (aynı 8sa'lık tolerans).
+const OUTCOME_4H_MIN_MS = 4 * 60 * 60_000;
+const OUTCOME_4H_MAX_MS = 12 * 60 * 60_000;
+const OUTCOME_24H_MIN_MS = 24 * 60 * 60_000;
+const OUTCOME_24H_MAX_MS = 32 * 60 * 60_000;
+
+type ScoreDirection = "bull" | "bear" | "neutral";
+
+// lib/analysis/telegram-format.ts'teki directionLabel ile AYNI eşik
+// (>=60/<=40) — üçüncü bilinçli kopya (ilki components/grafik/
+// AiScenarioTab.tsx'te). Burada görüntü metni değil, makine-okunur bir
+// yön kategorisi lazım, bu yüzden directionLabel'ın kendisi değil sadece
+// eşiği kopyalandı.
+function scoreDirection(score: number): ScoreDirection {
+  if (score >= 60) return "bull";
+  if (score <= 40) return "bear";
+  return "neutral";
+}
+
+// Kullanıcı tarafından spesifiye edildi ve onaylandı. Migration 025'in
+// yorumundaki tek cümlelik tanımdan ("skorun yönü ile gerçek hareketin
+// ±0.5% eşiğiyle uyuşup uyuşmadığı") türetilen üç kural:
+//   bull    (score>=60):     movePct >= +ADVERSE_THRESHOLD_PCT ise doğru
+//   bear    (score<=40):     movePct <= -ADVERSE_THRESHOLD_PCT ise doğru
+//   neutral (40<score<60):   |movePct| < ADVERSE_THRESHOLD_PCT ise doğru
+//     (fiyat belirgin hareket etmediyse "nötr" tahmini doğrulanmış sayılır)
+function isScenarioOutcomeCorrect(score: number, movePct: number): boolean {
+  const dir = scoreDirection(score);
+  if (dir === "bull") return movePct >= ADVERSE_THRESHOLD_PCT;
+  if (dir === "bear") return movePct <= -ADVERSE_THRESHOLD_PCT;
+  return Math.abs(movePct) < ADVERSE_THRESHOLD_PCT;
+}
+
+/**
+ * signal-check/route.ts'teki processOutcomeBatch ile AYNI iskelet —
+ * BASİTLEŞTİRİLMİŞ: Telegram/X bildirimi YOK (spesifikasyonda istenmedi,
+ * outcome sadece DB'ye yazılıyor). Ticker'da parite yoksa/currentPrice<=0
+ * ise satır SESSİZCE atlanır — bir sonraki cron çalışmasında pencere
+ * içindeyse tekrar denenir (go_signals ile aynı "veri kaybı yok, sadece
+ * gecikme" garantisi).
+ */
+async function processScenarioOutcomeBatch(
+  pending: PendingOutcomeScenario[],
+  field: ScenarioOutcomeField,
+  tickers: Map<Pair, { last: number; chg24hPct: number }>,
+  nowMs: number,
+): Promise<void> {
+  for (const scenario of pending) {
+    const currentPrice = tickers.get(scenario.symbol as Pair)?.last;
+    if (!currentPrice || currentPrice <= 0 || scenario.triggerPrice <= 0) continue;
+    try {
+      const movePct = ((currentPrice - scenario.triggerPrice) / scenario.triggerPrice) * 100;
+      const wasCorrect = isScenarioOutcomeCorrect(scenario.score.score, movePct);
+      await writeScenarioOutcome(scenario.id, field, {
+        movePct,
+        price: currentPrice,
+        wasCorrect,
+        capturedAtMs: nowMs,
+      });
+    } catch (err) {
+      console.error(`[ai-scenario] outcome${field} write failed for ${scenario.id}:`, err);
+    }
+  }
 }
 
 export async function GET(req: Request): Promise<NextResponse> {
@@ -146,6 +222,27 @@ export async function GET(req: Request): Promise<NextResponse> {
       });
       console.error(`[ai-scenario] ${symbol} unexpected error:`, err);
     }
+  }
+
+  // ── Outcome check: fill in outcome_4h/outcome_24h for past scenarios ──
+  // signal-check/route.ts'teki outcome bloğuyla AYNI "non-fatal" izolasyon
+  // — bu blok yukarıdaki sembol döngüsünden BAĞIMSIZ kendi try/catch'i
+  // içinde, bir Supabase/OKX hatası zaten tamamlanmış Telegram gönderimini
+  // asla geçersiz kılmaz.
+  try {
+    const nowMs = Date.now();
+    const [pending4h, pending24h] = await Promise.all([
+      getScenariosPendingOutcome("4h", nowMs, OUTCOME_4H_MIN_MS, OUTCOME_4H_MAX_MS),
+      getScenariosPendingOutcome("24h", nowMs, OUTCOME_24H_MIN_MS, OUTCOME_24H_MAX_MS),
+    ]);
+
+    if (pending4h.length > 0 || pending24h.length > 0) {
+      const tickers = await fetch24hTickers(SCENARIO_SYMBOLS);
+      await processScenarioOutcomeBatch(pending4h, "4h", tickers, nowMs);
+      await processScenarioOutcomeBatch(pending24h, "24h", tickers, nowMs);
+    }
+  } catch (err) {
+    console.error("[ai-scenario] outcome check failed:", err);
   }
 
   return NextResponse.json({ ok: true, results });
