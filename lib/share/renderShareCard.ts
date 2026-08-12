@@ -70,6 +70,7 @@ import type { Direction, ScoreSubScores } from "@/lib/score/orchestrator";
 import type { ConfirmStatus } from "@/lib/store/signalConfirmStore";
 import { CATEGORIES } from "@/lib/score/categories";
 import { BRAND } from "@/lib/brand";
+import { CARD_FONT_FAMILY } from "./fontConstants";
 
 /**
  * renderShareCard()'ın ihtiyaç duyduğu Canvas 2D metodlarının/alanlarının
@@ -155,11 +156,11 @@ export interface ShareCardData {
   };
 }
 
-/** İki tarafta da AYNI kaynaktan (@fontsource/ibm-plex-mono) — bkz. dosya
- *  başı yorumu. Sistem monospace fallback zinciri, kayıtlı font bir sebeple
- *  (henüz yüklenmedi, kayıt başarısız) kullanılamazsa görsel tamamen
- *  bozulmasın diye kalıyor, birincil seçim değil. */
-export const CARD_FONT_FAMILY = "IBM Plex Mono";
+// CARD_FONT_FAMILY artık lib/share/fontConstants.ts'ten import ediliyor (tek
+// kaynak, renderScenarioChart.ts ile paylaşılıyor — kullanıcı kararı,
+// magic-string tekrarı/senkron riskini ortadan kaldırmak için). Sistem monospace fallback
+// zinciri, kayıtlı font bir sebeple (henüz yüklenmedi, kayıt başarısız)
+// kullanılamazsa görsel tamamen bozulmasın diye kalıyor, birincil seçim değil.
 const CARD_FONT = `"${CARD_FONT_FAMILY}", ui-monospace, "SF Mono", "Cascadia Code", "Roboto Mono", Consolas, "Courier New", monospace`;
 
 const VERDICT_COLORS: Record<"go" | "wait" | "no", { bg: string; fg: string }> = {
