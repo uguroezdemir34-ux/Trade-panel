@@ -7,6 +7,10 @@
     {
       "path": "/api/cron/daily-summary",
       "schedule": "0 0 * * *"
+    },
+    {
+      "path": "/api/cron/ai-scenario",
+      "schedule": "5 5,13,21 * * *"
     }
   ]
 }
