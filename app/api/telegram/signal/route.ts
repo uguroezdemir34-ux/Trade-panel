@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
 import { formatNotifyMessage } from "@/lib/notify/telegram/formatter";
-import { sendTelegramPhoto } from "@/lib/notify/telegram/client";
+import { sendTelegramMessage, sendTelegramPhoto } from "@/lib/notify/telegram/client";
 import { resolveTelegramConfig, resolvePublicChatId } from "@/lib/notify/telegram/config";
 import type { NotifyMessage } from "@/lib/notify/types";
 import { exportShareCardPngServer } from "@/lib/share/exportShareCardServer";
@@ -37,6 +37,18 @@ interface SignalBody {
  * Kart BİR KEZ üretilir (exportShareCardPngServer tek çağrı), iki
  * gönderimde de aynı PNG buffer kullanılır. VIP ÖNCE gider; halka açık
  * gönderim best-effort ve bağımsız — VIP'in sonucunu asla etkilemez.
+ *
+ * go_signal (useGoAlerts.ts, GO geçişinde ANINDA — trade_opened'ın 5dk
+ * teyit gecikmesinden ÖNCE gelen, tek kategori-kırılımı/TP/SL İÇERMEYEN
+ * kind) yukarıdaki kart mantığına HİÇ girmez (kind==="trade_opened" şartı
+ * sağlanmaz, buildCardData zaten sub zorunlu tutuyor) — bu yüzden VIP her
+ * zaman metin-only sendMessage'a düşer. Dosya sonundaki ayrı "go_signal"
+ * bloğu AYNI metni (formatGoSignal() çıktısı, zaten sade — skor+yön+fiyat,
+ * detay yok) app/api/cron/signal-check/route.ts'teki sendToVipAndPublic()
+ * ile aynı desende public'e de gönderir — best-effort, VIP sonucunu
+ * etkilemez. Diğer NotifyKind'lar (price_alarm/sl_proximity/
+ * consecutive_loss/position_risk_violation vb., hesap-bazlı/kişisel
+ * uyarılar) kasıtlı olarak public'e hiç gitmiyor — kapsam dışı.
  */
 
 function buildEnglishShareLabels() {
@@ -254,6 +266,30 @@ export async function POST(req: NextRequest) {
   // YOK, tek içeriği kart.
   if (cardPng && cardData) {
     await sendToPublicChannel(cardData, labels, cardPng, token);
+  }
+
+  // Halka açık kanal — go_signal (useGoAlerts.ts, GO geçişinde ANINDA, hiç
+  // kart üretilmeyen tek NotifyKind) için AYNI basit metni gönderir —
+  // app/api/cron/signal-check/route.ts'teki sendToVipAndPublic() ile aynı
+  // desen (aynı metin iki kanala, best-effort, VIP sonucunu etkilemez).
+  // SADECE go_signal — bkz. dosya başı yorumu.
+  if (body.msg.kind === "go_signal") {
+    const publicChatId = await resolvePublicChatId();
+    if (publicChatId) {
+      const publicResult = await sendTelegramMessage(
+        { botToken: token, chatId: publicChatId },
+        { text },
+      );
+      if (!publicResult.ok) {
+        // publicChatId burada zaten mevcuttu — yapılandırma eksikliği
+        // değil, her zaman gerçek bir gönderim hatası.
+        console.warn("[telegram/signal] GO sinyali (public) gönderimi başarısız:", publicResult.errorMessage);
+        Sentry.captureMessage("Telegram GO sinyali (public) gönderimi başarısız", {
+          level: "warning",
+          extra: { errorMessage: publicResult.errorMessage },
+        });
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });
