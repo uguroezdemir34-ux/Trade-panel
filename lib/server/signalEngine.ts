@@ -13,6 +13,7 @@ import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
 import { inferDirection, type DirectionInput } from "@/lib/score/direction";
 import { detectSRLevels } from "@/lib/sr/detect";
+import { checkHumanTraderApproval } from "@/lib/signal/humanTraderCheck";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import { detectLiquiditySweep } from "@/lib/sr/sweep";
@@ -426,12 +427,35 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
     prevVerdict,
   });
 
+  // İNSAN TRADER KONTROLÜ (1. tur — çizim yok, sadece deterministik sayısal
+  // onay) — lib/score/*'a hiç dokunmadan, computeScore()'un ÇIKTISI
+  // post-process ediliyor. useScoreEngine.ts (client) ile BİREBİR aynı
+  // desen — srResult ZATEN yukarıda (satır 404) skor için hesaplanmıştı,
+  // tekrar hesaplanmıyor.
+  let finalVerdict = result.verdict;
+  if (result.verdict === "go" && result.direction !== "NEUTRAL") {
+    const humanCheck = checkHumanTraderApproval({
+      direction: result.direction,
+      currentPrice: composed.px,
+      candles1h,
+      srResult,
+      volRatio: composed.volRatio,
+    });
+    if (!humanCheck.approved) {
+      finalVerdict = "wait";
+      console.log(
+        `[signalEngine] ${pair} human trader check reddetti (GO→WAIT):`,
+        humanCheck.reasons.join(" | "),
+      );
+    }
+  }
+
   return {
     candles1h,
     candles4h,
     candles1d,
     score: result.score,
-    verdict: result.verdict,
+    verdict: finalVerdict,
     direction: result.direction,
     price: latest.close,
     fg,
