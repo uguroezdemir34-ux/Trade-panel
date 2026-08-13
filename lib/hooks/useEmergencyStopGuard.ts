@@ -7,6 +7,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { captureMessage } from "@sentry/nextjs";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { dispatchNotification } from "@/lib/notify/dispatch";
@@ -16,13 +17,33 @@ const CHECK_INTERVAL_MS = 5_000;
 const SL_BREACH_BUFFER = 0.0015;
 const MAX_PRICE_STALE_MS = 15_000;
 const WARN_COOLDOWN_MS = 5 * 60_000;
+// check() setInterval'dan `void check()` ile çağrılıyor — try/catch olmadan
+// gövdedeki senkron bir exception hiçbir yere düşmeden kaybolurdu (bu, son-çare
+// SL ihlali uyarı sistemi olduğu için sessizce durması riskli). Sentry spam'ini
+// önlemek için WARN_COOLDOWN_MS ile aynı pencerede en fazla bir kez loglanır.
+const ERROR_LOG_COOLDOWN_MS = WARN_COOLDOWN_MS;
 
 export function useEmergencyStopGuard(): void {
   const warnedRef = useRef<Map<string, number>>(new Map());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastErrorLoggedRef = useRef(0);
 
   useEffect(() => {
     async function check(): Promise<void> {
+      try {
+        await checkOnce();
+      } catch (err) {
+        const now = Date.now();
+        if (now - lastErrorLoggedRef.current < ERROR_LOG_COOLDOWN_MS) return;
+        lastErrorLoggedRef.current = now;
+        captureMessage("EmergencyStopGuard check() sessizce başarısız oldu", {
+          level: "error",
+          extra: { err: err instanceof Error ? err.message : String(err) },
+        });
+      }
+    }
+
+    async function checkOnce(): Promise<void> {
       const openTrades = useTradesStore.getState().getOpen();
       if (openTrades.length === 0) return;
 
