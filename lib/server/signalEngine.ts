@@ -14,6 +14,7 @@ import { computeScore } from "@/lib/score/orchestrator";
 import { inferDirection, type DirectionInput } from "@/lib/score/direction";
 import { detectSRLevels } from "@/lib/sr/detect";
 import { checkHumanTraderApproval } from "@/lib/signal/humanTraderCheck";
+import { insertHumanCheckObservation } from "@/lib/db/humanCheckObservations";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import { detectLiquiditySweep } from "@/lib/sr/sweep";
@@ -448,6 +449,21 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
         `[signalEngine] ${pair} human trader check reddetti (GO→WAIT):`,
         humanCheck.reasons.join(" | "),
       );
+    }
+
+    // Gözlem — best-effort, KENDİ try/catch'i içinde (insertHumanCheckObservation()
+    // dbUpsert hatasını fırlatır, insertGoSignal() ile AYNI desen — çağıranın
+    // sarmalaması gerekiyor). checkHumanTraderApproval()'ın onay/red
+    // mantığına HİÇ dokunmuyor, finalVerdict ZATEN yukarıda belirlendi.
+    try {
+      await insertHumanCheckObservation({
+        pair,
+        direction: result.direction,
+        source: "server",
+        check: humanCheck,
+      });
+    } catch (err) {
+      console.error(`[signalEngine] ${pair} human check gözlem yazımı başarısız:`, err);
     }
   }
 
