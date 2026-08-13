@@ -12,6 +12,9 @@ import { useT } from "@/lib/i18n/context";
 import { ChartControls, type ChartClickMode } from "@/components/grafik/ChartControls";
 import { ChartLegend } from "@/components/grafik/ChartLegend";
 import { AiScenarioTab } from "@/components/grafik/AiScenarioTab";
+import { AiScenarioMiniCard } from "@/components/grafik/AiScenarioMiniCard";
+import { useAiScenarioFetch } from "@/lib/hooks/useAiScenarioFetch";
+import { getNextScenarioRun } from "@/lib/utils/nextScenarioTime";
 import { OrderFlowPanel } from "@/components/grafik/OrderFlowPanel";
 import { AdvancedPositionCard } from "@/components/grafik/AdvancedPositionCard";
 import { GuardianPanel } from "@/components/grafik/GuardianPanel";
@@ -232,6 +235,16 @@ export default function GrafikPage() {
 
   // New tool state (not persisted — session only)
   const [subTab, setSubTab]             = useState<ChartSubTab>("chart");
+  // AI Senaryo "sessizlik" UI paketi — page seviyesinde TEK bir fetch,
+  // hem sekme çubuğundaki pulse nokta hem AiScenarioMiniCard tarafından
+  // paylaşılıyor (iki ayrı fetch değil). chartSection'ın useMemo'suna
+  // BİLEREK sokulmadı (hook useMemo callback'i içinde çağrılamaz +
+  // dependency array büyümesin talimatı).
+  const latestScenario = useAiScenarioFetch("/api/ai-scenario/latest");
+  const isScenarioFresh =
+    latestScenario.status === "ready" &&
+    Date.now() - new Date(latestScenario.row.created_at).getTime() < 30 * 60_000;
+  const [nextScenarioRun, setNextScenarioRun] = useState(() => getNextScenarioRun(new Date()));
   const [showSplit, setShowSplit]       = useState(false);
   const [secPair, setSecPair]           = useState<Pair>("ETH");
   const [showFlow, setShowFlow]         = useState(false);
@@ -262,6 +275,12 @@ export default function GrafikPage() {
     computeHeight();
     window.addEventListener("resize", computeHeight);
     return () => window.removeEventListener("resize", computeHeight);
+  }, []);
+
+  // AI Senaryo geri sayımı — 60sn'de bir yeniden hesapla.
+  useEffect(() => {
+    const id = setInterval(() => setNextScenarioRun(getNextScenarioRun(new Date())), 60_000);
+    return () => clearInterval(id);
   }, []);
 
   // Load persisted settings on mount
@@ -484,28 +503,15 @@ export default function GrafikPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const chartSection = useMemo(() => (
     <>
-      {/* AI Senaryo sekmesi — mobileView'dan BAĞIMSIZ, koşulsuz her zaman
-          görünür. subTab==="chart" iken aşağıdaki mevcut 10 madde tek bir
-          fragment içinde koşullu render edilir, hiçbirinin kendi JSX'i
-          değişmedi. */}
-      <div className="flex border-b border-border">
-        {CHART_SUB_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setSubTab(tab.id)}
-            className={[
-              "shrink-0 px-4 py-2 font-mono text-xs tracking-wider transition-colors",
-              subTab === tab.id
-                ? "text-brand border-b-2 border-brand"
-                : "text-text-t3 hover:text-text-t2",
-            ].join(" ")}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
+      {/* Sekme çubuğu buradan app/grafik/page.tsx'in return'ünün en başına
+          taşındı (AI Senaryo "sessizlik" UI paketi) — nedeni: sekme
+          çubuğundaki pulse noktası page-seviyesi useAiScenarioFetch()'e
+          bağlı, hook'lar useMemo callback'i İÇİNDE ÇAĞRILAMAZ (React
+          hooks kuralı) ve bu state'in chartSection'ın dependency array'ine
+          eklenmemesi ayrıca istendi. subTab==="chart" iken aşağıdaki
+          mevcut 10 madde hâlâ tek bir fragment içinde koşullu render
+          edilir, hiçbirinin kendi JSX'i değişmedi — sadece o içeriği
+          SEÇEN buton çubuğu artık burada değil. */}
       {subTab === "ai-scenario" && <AiScenarioTab pair={pair} />}
 
       {subTab === "chart" && (
@@ -787,6 +793,47 @@ export default function GrafikPage() {
 
   return (
     <>
+      {/* AI Senaryo sekmesi + rozet + geri sayım — mobil/masaüstü İKİSİNİN
+          de üstünde, TEK ortak nokta (chartSection'ın DIŞINDA, mevcut
+          29-dependency'lik useMemo'ya hiç girmiyor). */}
+      <div className="flex items-center justify-between border-b border-border px-3 md:px-0">
+        <div className="flex">
+          {CHART_SUB_TABS.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              onClick={() => setSubTab(tab.id)}
+              className={[
+                "shrink-0 px-4 py-2 font-mono text-xs tracking-wider transition-colors",
+                subTab === tab.id
+                  ? "text-brand border-b-2 border-brand"
+                  : "text-text-t3 hover:text-text-t2",
+              ].join(" ")}
+            >
+              {tab.label}
+              {tab.id === "ai-scenario" && isScenarioFresh && (
+                <span className="ml-1.5 inline-block h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse align-middle" />
+              )}
+            </button>
+          ))}
+        </div>
+        <span className="shrink-0 pr-1 font-mono text-2xs text-text-t4">
+          Sıradaki analiz: {nextScenarioRun.hours}sa {nextScenarioRun.minutes}dk
+        </span>
+      </div>
+
+      {latestScenario.status === "ready" && (
+        <div className="px-3 md:px-0 pt-2">
+          <AiScenarioMiniCard
+            row={latestScenario.row}
+            onClick={() => {
+              setPair(latestScenario.row.symbol as Pair);
+              setSubTab("ai-scenario");
+            }}
+          />
+        </div>
+      )}
+
       {/* ── Mobil: iki durumlu navigasyon ── */}
       <div className="md:hidden flex flex-col">
         {mobileView === "list" ? (

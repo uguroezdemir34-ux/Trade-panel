@@ -21,7 +21,7 @@ import { dbSelect, isDbConfigured } from "@/lib/db/server";
 import type { AIScoreResult } from "@/lib/analysis/score";
 import type { SrLevels } from "@/lib/sr/detect";
 
-interface AiScenarioRow {
+export interface AiScenarioRow {
   id: string;
   symbol: string;
   timeframe: string;
