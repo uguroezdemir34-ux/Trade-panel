@@ -43,6 +43,7 @@ import { computeScore } from "@/lib/score/orchestrator";
 import { scoreFundingPercentile, type FundingSample } from "@/lib/score/fundingPercentile";
 import { inferDirection, type DirectionInput } from "@/lib/score/direction";
 import { detectSRLevels } from "@/lib/sr/detect";
+import { checkHumanTraderApproval } from "@/lib/signal/humanTraderCheck";
 import { toIndicatorCandle } from "@/lib/okx/candles";
 import { oiVelocityScoreOrZero } from "@/lib/market/oi-velocity";
 import { computeMtfTrend } from "@/lib/market/mtfTrend";
@@ -434,7 +435,30 @@ export function useScoreEngine(): void {
             prevVerdict,
           });
           perfLog({ type: "score_compute", pair, durationMs: +((performance.now() - scoreT0).toFixed(2)) });
-          setResult(pair as Pair, result, now);
+
+          // İNSAN TRADER KONTROLÜ (1. tur — çizim yok, sadece deterministik
+          // sayısal onay) — lib/score/*'a hiç dokunmadan, computeScore()'un
+          // ÇIKTISI post-process ediliyor. Sadece verdict "go" + yön belliyse
+          // çalışır (NEUTRAL/wait/no için gereksiz). srResult ZATEN yukarıda
+          // (satır 414) skor için hesaplanmıştı — tekrar hesaplanmıyor.
+          let finalResult = result;
+          if (result.verdict === "go" && result.direction !== "NEUTRAL") {
+            const humanCheck = checkHumanTraderApproval({
+              direction: result.direction,
+              currentPrice: input.px,
+              candles1h,
+              srResult,
+              volRatio: input.volRatio,
+            });
+            if (!humanCheck.approved) {
+              finalResult = { ...result, verdict: "wait" };
+              console.debug(
+                `[humanTraderCheck] ${pair} GO→WAIT (reddedildi):`,
+                humanCheck.reasons.join(" | "),
+              );
+            }
+          }
+          setResult(pair as Pair, finalResult, now);
         } catch {
           // Ignore scoring errors — stale result remains until next candle update
         }
