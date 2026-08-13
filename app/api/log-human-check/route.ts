@@ -43,10 +43,27 @@ function getClientIp(req: Request): string {
 
 const pivotPointSchema = z.object({ price: z.number(), idx: z.number() });
 
+// lib/sr/detect.ts'in SrLevelType union'ıyla BİREBİR AYNI (kopyalandı,
+// import edilmedi — zod bir TS tipini değil, gerçek literal değerleri
+// istiyor). detect.ts'e yeni bir seviye tipi eklenirse burası da
+// güncellenmeli — CI'ın kendisi (TS2322) bu senkronizasyonun bozulduğunu
+// zaten yakalar (bu turda tam olarak bunun eksik olması build'i kırdı).
+const srLevelTypeSchema = z.enum([
+  "pivot_4h_high",
+  "pivot_4h_low",
+  "pivot_1h_high",
+  "pivot_1h_low",
+  "PDH",
+  "PDL",
+  "PWH",
+  "PWL",
+  "ROUND",
+]);
+
 const srLevelEntrySchema = z
   .object({
     price: z.number(),
-    type: z.string(),
+    type: srLevelTypeSchema,
     strength: z.number(),
     distance_pct: z.number(),
   })
