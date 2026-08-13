@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import * as Sentry from "@sentry/nextjs";
-import { formatNotifyMessage } from "@/lib/notify/telegram/formatter";
+import { formatNotifyMessage, formatGoSignalPublic, formatHumanCheckNumbers } from "@/lib/notify/telegram/formatter";
 import { sendTelegramMessage, sendTelegramPhoto } from "@/lib/notify/telegram/client";
 import { resolveTelegramConfig, resolvePublicChatId } from "@/lib/notify/telegram/config";
+import { escapeMarkdownV2 } from "@/lib/notify/telegram/escape";
+import { narrateHumanTraderCheck } from "@/lib/ai/narrateHumanTraderCheck";
+import type { HumanTraderCheckResult } from "@/lib/signal/humanTraderCheck";
 import type { NotifyMessage } from "@/lib/notify/types";
 import { exportShareCardPngServer } from "@/lib/share/exportShareCardServer";
 import type { ShareCardData } from "@/lib/share/renderShareCard";
@@ -43,12 +46,26 @@ interface SignalBody {
  * kind) yukarıdaki kart mantığına HİÇ girmez (kind==="trade_opened" şartı
  * sağlanmaz, buildCardData zaten sub zorunlu tutuyor) — bu yüzden VIP her
  * zaman metin-only sendMessage'a düşer. Dosya sonundaki ayrı "go_signal"
- * bloğu AYNI metni (formatGoSignal() çıktısı, zaten sade — skor+yön+fiyat,
- * detay yok) app/api/cron/signal-check/route.ts'teki sendToVipAndPublic()
- * ile aynı desende public'e de gönderir — best-effort, VIP sonucunu
- * etkilemez. Diğer NotifyKind'lar (price_alarm/sl_proximity/
- * consecutive_loss/position_risk_violation vb., hesap-bazlı/kişisel
- * uyarılar) kasıtlı olarak public'e hiç gitmiyor — kapsam dışı.
+ * bloğu public'e de gönderir — best-effort, VIP sonucunu etkilemez. Diğer
+ * NotifyKind'lar (price_alarm/sl_proximity/consecutive_loss/
+ * position_risk_violation vb., hesap-bazlı/kişisel uyarılar) kasıtlı
+ * olarak public'e hiç gitmiyor — kapsam dışı.
+ *
+ * İNSAN TRADER KONTROLÜ + ANLATIM (takip turu, 1. turdaki
+ * lib/signal/humanTraderCheck.ts'in devamı) — body.msg.humanCheck varsa
+ * (trade_opened/go_signal, ikisi de bu noktaya SADECE onaylanmış "go"
+ * sinyaller için ulaşır) narrateHumanTraderCheck() TEK SEFERDE çağrılır,
+ * hem VIP hem public'e (escape farkıyla) eklenir. Anlatım prompt'u
+ * BİLEREK Stop/TP FİYAT DEĞERİ görmüyor (narrateHumanTraderCheck.ts dosya
+ * başı yorumu) — tek çağrı iki kanala da güvenle gidebiliyor. Stop/TP
+ * fiyat DEĞERLERİ (deterministik, AI'sız) SADECE VIP metnine
+ * formatHumanCheckNumbers(check, true) ile ekleniyor; public her zaman
+ * includeTradeLevels=false alıyor (S/R + hacim + R:R ORANI, fiyat yok) —
+ * "TP/SL/giriş/R:R = İŞLEM TALİMATI, public'e hiç gitmez" kuralı korunuyor.
+ * narrateHumanTraderCheck() null dönerse (best-effort başarısız/
+ * yapılandırılmamış) mesaj hiçbir zaman boş/eksik gitmez — text zaten
+ * formatNotifyMessage()'ın ürettiği tam (artık sayısal detaylı) metin,
+ * narration sadece bir ÖN EK.
  */
 
 function buildEnglishShareLabels() {
@@ -121,6 +138,8 @@ async function sendToPublicChannel(
   labels: ReturnType<typeof buildEnglishShareLabels>,
   png: Buffer,
   botToken: string,
+  humanCheck: HumanTraderCheckResult | undefined,
+  narrative: string | null,
 ): Promise<void> {
   const publicChatId = await resolvePublicChatId();
   if (!publicChatId) return;
@@ -129,7 +148,7 @@ async function sendToPublicChannel(
   // bunu kullanıyor), format iki yerde ayrı ayrı yazılıp zamanla
   // ayrışmasın diye. TP/SL/giriş/R:R burada YOK — buildShareText'in
   // ürettiği alanlar sadece parite/verdict/skor/yön eğilimi/fiyat/ibare/site.
-  const caption = buildShareText({
+  let caption = buildShareText({
     pair: cardData.pair,
     direction: cardData.direction,
     verdict: cardData.verdict,
@@ -139,6 +158,18 @@ async function sendToPublicChannel(
     labels,
     siteUrl: PUBLIC_SITE_URL,
   });
+
+  // İnsan trader kontrolü — narration + S/R/hacim/R:R ORANI. Stop/TP1/TP2
+  // fiyat DEĞERİ YOK (includeTradeLevels=false — bkz. dosya başı yorumu).
+  // caption PLAIN metin (aşağıdaki sendTelegramPhoto markdownV2 GEÇMİYOR,
+  // varsayılan false) — narration/sayılar da düz metin, escape YOK.
+  if (humanCheck) {
+    const checkLines = formatHumanCheckNumbers(humanCheck, false);
+    const extra = [...(narrative ? [narrative, ""] : []), ...checkLines];
+    if (extra.length > 0) {
+      caption = `${caption}\n\n${extra.join("\n")}`;
+    }
+  }
 
   const photoRes = await sendTelegramPhoto(
     { botToken, chatId: publicChatId },
@@ -190,6 +221,29 @@ export async function POST(req: NextRequest) {
       { ok: false, error: `format_error: ${e instanceof Error ? e.message : "unknown"}` },
       { status: 400 },
     );
+  }
+
+  // Anlatım — humanCheck varsa TEK SEFERDE üretilir (bkz. dosya başı
+  // yorumu), hem VIP hem public'e aynı narration eklenir. Best-effort:
+  // null dönerse (yapılandırılmamış/başarısız) text yukarıda ZATEN
+  // tam/sayısal — hiçbir zaman boş/eksik mesaj gitmez.
+  let narrative: string | null = null;
+  if (body.msg.humanCheck) {
+    narrative = await narrateHumanTraderCheck(
+      {
+        pair: body.msg.pair ?? "—",
+        direction: body.msg.direction === "SHORT" ? "SHORT" : "LONG",
+        score: body.msg.score ?? 0,
+        price: body.msg.entry ?? 0,
+      },
+      body.msg.humanCheck,
+    );
+  }
+  if (narrative) {
+    // VIP metni MarkdownV2 (formatNotifyMessage çıktısı) — narration ham
+    // AI metni, escape edilmeden eklenirse Telegram 400 döner (bkz.
+    // escape.ts'in 18 özel karakteri, narration'da neredeyse kesin "." içerir).
+    text = `${escapeMarkdownV2(narrative)}\n\n${text}`;
   }
 
   // Kart — BİR KEZ üretilir, VIP + halka açık ikisinde de aynı PNG
@@ -265,20 +319,26 @@ export async function POST(req: NextRequest) {
   // (üretim başarısız oldu) bu kanal tamamen atlanır — metin-only yedeği
   // YOK, tek içeriği kart.
   if (cardPng && cardData) {
-    await sendToPublicChannel(cardData, labels, cardPng, token);
+    await sendToPublicChannel(cardData, labels, cardPng, token, body.msg.humanCheck, narrative);
   }
 
   // Halka açık kanal — go_signal (useGoAlerts.ts, GO geçişinde ANINDA, hiç
-  // kart üretilmeyen tek NotifyKind) için AYNI basit metni gönderir —
-  // app/api/cron/signal-check/route.ts'teki sendToVipAndPublic() ile aynı
-  // desen (aynı metin iki kanala, best-effort, VIP sonucunu etkilemez).
-  // SADECE go_signal — bkz. dosya başı yorumu.
+  // kart üretilmeyen tek NotifyKind) için gönderir — app/api/cron/signal-check/route.ts'teki
+  // sendToVipAndPublic() ile AYNI genel desen (best-effort, VIP sonucunu
+  // etkilemez), ama ARTIK VIP'in `text`'ini PAYLAŞMIYOR: formatGoSignalPublic()
+  // Stop/TP1/TP2 fiyat DEĞERİ içermeyen AYRI bir metin üretiyor (humanCheck
+  // eklendikten sonra VIP'in text'i işlem talimatı taşıyabiliyor — bkz.
+  // formatGoSignalPublic() ve dosya başı yorumu). SADECE go_signal.
   if (body.msg.kind === "go_signal") {
     const publicChatId = await resolvePublicChatId();
     if (publicChatId) {
+      let publicText = formatGoSignalPublic(body.msg);
+      if (narrative) {
+        publicText = `${escapeMarkdownV2(narrative)}\n\n${publicText}`;
+      }
       const publicResult = await sendTelegramMessage(
         { botToken: token, chatId: publicChatId },
-        { text },
+        { text: publicText },
       );
       if (!publicResult.ok) {
         // publicChatId burada zaten mevcuttu — yapılandırma eksikliği

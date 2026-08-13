@@ -28,10 +28,11 @@
  */
 
 import type { Direction } from "@/lib/score/orchestrator";
-import type { SrResult, SrLevelEntry } from "@/lib/sr/detect";
+import { detectSRLevels, type SrResult, type SrLevelEntry } from "@/lib/sr/detect";
 import { toIndicatorCandle, type Candle } from "@/lib/okx/candles";
 import { atr } from "@/lib/indicators/atr";
 import { adx } from "@/lib/indicators/adx";
+import { volumeRatio } from "@/lib/indicators/volume-ratio";
 import { findSwingLevels } from "@/lib/sr/swing";
 import { computeStructuralStop } from "@/lib/sizer/stop";
 import { computeAdaptiveTPs } from "@/lib/sizer/take-profit";
@@ -208,4 +209,31 @@ export function checkHumanTraderApproval(
     rrCheck: { stopPrice, tp1Price, tp2Price, rr1, acceptable: rrAcceptable },
     reasons,
   };
+}
+
+/**
+ * ATEŞLENME-ANI SARMALAYICISI — useSignalFirehose.ts / useGoAlerts.ts için.
+ *
+ * checkHumanTraderApproval()'ın aksine srResult/volRatio'yu ÖNCEDEN
+ * hesaplanmış istemiyor, KENDİSİ hesaplıyor — çünkü sinyal ateşlenme anı
+ * (özellikle useSignalFirehose.ts'in 5dk teyit gecikmesi) skor cycle'ından
+ * saniyeler/dakikalar sonra olabilir; useSignalFirehose.ts'in stop/TP hesabı
+ * için ZATEN aynı candles1h'den taze ATR/swing türettiği desenle birebir
+ * tutarlı (bkz. fireSignal() içindeki atr()/findSwingLevels() çağrıları) —
+ * skor cycle'ındaki eski bir snapshot'ı değil, gönderim anındaki güncel
+ * durumu anlatır. Bu fonksiyon ONAY/RED KARARI VERMEK için DEĞİL (o karar
+ * zaten useScoreEngine.ts/signalEngine.ts'te verildi, verdict "go" ise
+ * geçmiştir) — sadece Telegram mesajına eklenecek TAZE bir gözlem üretir.
+ */
+export function checkHumanTraderApprovalAtFireTime(
+  direction: "LONG" | "SHORT",
+  currentPrice: number,
+  candles1h: readonly Candle[],
+  candles4h: readonly Candle[],
+): HumanTraderCheckResult {
+  const c1hInd = candles1h.map(toIndicatorCandle);
+  const c4hInd = candles4h.map(toIndicatorCandle);
+  const volRatio = volumeRatio(c1hInd);
+  const srResult = detectSRLevels(c4hInd, c1hInd, currentPrice, direction, volRatio);
+  return checkHumanTraderApproval({ direction, currentPrice, candles1h, srResult, volRatio });
 }

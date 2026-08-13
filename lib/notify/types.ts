@@ -9,6 +9,7 @@
 
 import type { Pair } from "@/lib/constants/pairs";
 import type { ScoreSubScores } from "@/lib/score/orchestrator";
+import type { HumanTraderCheckResult } from "@/lib/signal/humanTraderCheck";
 import type { TelegramConfig } from "./telegram/config";
 
 // ═══════════════ CHANNEL NAME ═══════════════
@@ -71,6 +72,17 @@ export interface NotifyMessage {
    *  exportShareCardPngServer) için, diğer channel'lar (Discord/Webhook)
    *  yoksayar. trade_opened dışında hiçbir kind bunu doldurmuyor. */
   sub?: ScoreSubScores;
+  /** checkHumanTraderApprovalAtFireTime()'ın (lib/signal/humanTraderCheck.ts)
+   *  sinyal ateşlenme anındaki TAZE sonucu — sadece Telegram route'unun
+   *  (app/api/telegram/signal/route.ts) anlatım metni üretmesi + S/R/hacim/
+   *  R:R sayısal detaylarını mesaja eklemesi için. trade_opened (useSignalFirehose.ts)
+   *  ve go_signal (useGoAlerts.ts) dışında hiçbir kind bunu doldurmuyor —
+   *  ikisi de bu noktaya SADECE onaylanmış (verdict zaten "go") sinyaller
+   *  için ulaşıyor (bkz. useScoreEngine.ts/signalEngine.ts entegrasyonu),
+   *  yani bu alan hiçbir zaman "reddedilmiş bir sinyalin detayı" taşımaz —
+   *  fire-time'da TAZE hesaplanan bir gözlem, verdict'i tekrar etkilemiyor.
+   *  Diğer channel'lar (Discord/Webhook) yoksayar. */
+  humanCheck?: HumanTraderCheckResult;
 }
 
 // ═══════════════ RESULT ═══════════════
