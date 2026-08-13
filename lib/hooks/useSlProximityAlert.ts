@@ -11,6 +11,7 @@
  */
 
 import { useEffect, useRef } from "react";
+import { captureMessage } from "@sentry/nextjs";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { useMarketStore } from "@/lib/store/marketStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
@@ -20,13 +21,33 @@ const CHECK_INTERVAL_MS = 30_000; // 30 saniye
 const COOLDOWN_MS = 15 * 60_000; // aynı trade için 15 dak
 const SL_WARN_PCT = 0.03;         // SL'e %3 yaklaştığında tetikle
 const MAX_PRICE_STALE_MS = 15_000;
+// check() setInterval'dan `void check()` ile çağrılıyor — try/catch olmadan
+// gövdedeki senkron bir exception hiçbir yere düşmeden kaybolurdu (bkz.
+// useEmergencyStopGuard.ts'teki aynı desen). Sentry spam'ini önlemek için
+// COOLDOWN_MS ile aynı pencerede en fazla bir kez loglanır.
+const ERROR_LOG_COOLDOWN_MS = COOLDOWN_MS;
 
 export function useSlProximityAlert(): void {
   const alertedRef = useRef<Map<string, number>>(new Map());
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastErrorLoggedRef = useRef(0);
 
   useEffect(() => {
     async function check(): Promise<void> {
+      try {
+        await checkOnce();
+      } catch (err) {
+        const now = Date.now();
+        if (now - lastErrorLoggedRef.current < ERROR_LOG_COOLDOWN_MS) return;
+        lastErrorLoggedRef.current = now;
+        captureMessage("SlProximityAlert check() sessizce başarısız oldu", {
+          level: "error",
+          extra: { err: err instanceof Error ? err.message : String(err) },
+        });
+      }
+    }
+
+    async function checkOnce(): Promise<void> {
       if (!useSettingsStore.getState().goAlertsEnabled) return;
 
       const openTrades = useTradesStore.getState().getOpen();
