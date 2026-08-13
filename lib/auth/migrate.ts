@@ -1,14 +1,29 @@
 /**
  * STORAGE MIGRATION — ug52_guest_* → ug52_{userId}_*
  *
- * Runs once per user on first login.
+ * Runs on every login (AppShell effect, whenever userId is truthy).
  * Copies guest-scoped keys to user-scoped keys, stripping the "guest_" prefix.
- * Marks completion with a sentinel key to prevent re-running.
+ * Idempotent by construction (bkz. Adım 1'deki "sadece dst boşsa kopyala"
+ * kontrolü) — sentinel artık bir "bir kez çalıştı, bir daha asla çalışma"
+ * kapısı DEĞİL, sadece bilgi amaçlı bir iz (bkz. aşağıdaki v3 notu).
  *
  * v2: fixes a bug in v1 where "guest_" was not stripped from the suffix,
  * causing copies to land at ug52_{userId}_guest_KEYNAME instead of
  * ug52_{userId}_KEYNAME. v2 corrects the destination and removes those
  * misplaced v1 artifacts.
+ *
+ * v3 (kalıcı-boş-Portföy teşhisi): v2'nin sentinel'i "bir kez çalıştıysa
+ * bir daha hiç bakma" şeklinde ERKEN KİLİTLENİYORDU — bir kullanıcı için
+ * migration ilk kez (henüz hiç guest verisi yokken, ör. ilk girişte)
+ * çalışıp `copied === 0` dönse bile sentinel yazılıyor, ve SONRASINDA
+ * (ör. client-side Clerk'in geçici olarak bozulduğu bir pencerede) guest
+ * scope'a yazılan HERHANGİ bir veri bir daha asla kullanıcı scope'una
+ * taşınamıyordu — migration fonksiyonu her çağrıldığında sentinel'i görüp
+ * anında `return 0` ile çıkıyordu. v3 bu kapıyı kaldırdı: fonksiyon artık
+ * HER çağrıldığında gerçekten "taşınmamış guest key var mı" diye bakıyor,
+ * varsa kopyalıyor, yoksa (Adım 1'in kendi "dst zaten doluysa atla"
+ * kontrolü sayesinde) doğal olarak no-op oluyor. Kaynak (`ug52_guest_*`)
+ * hâlâ ASLA silinmiyor — v2'deki davranış aynen korundu.
  */
 
 import { STORAGE_PREFIX } from "@/lib/store/persist";
@@ -29,17 +44,15 @@ function sentinelKey(userId: string): string {
 
 /**
  * Migrates guest-scoped ug52_guest_* keys to user-scoped ug52_{userId}_* keys.
- * Safe to call multiple times — sentinel prevents double-migration.
+ * Safe (ve gerekli) to call on every login — her çağrıda hâlâ taşınmamış
+ * guest key olup olmadığına bakar, sadece varsa kopyalar.
  *
- * @returns number of keys copied (0 if already done or nothing to migrate)
+ * @returns number of keys copied this call (0 if nothing outstanding)
  */
 export function migrateStorageForUser(userId: string): number {
   if (typeof window === "undefined") return 0;
 
   const sentinel = sentinelKey(userId);
-
-  // Already migrated for this user (v2)
-  if (window.localStorage.getItem(sentinel) === "1") return 0;
 
   // --- Step 1: Copy guest-scoped keys to correct user-scoped keys ---
   //
@@ -100,7 +113,8 @@ export function migrateStorageForUser(userId: string): number {
     window.localStorage.removeItem(k); // ug52_{userId}_guest_KEYNAME — v1 artifact only
   }
 
-  // Mark v2 migration complete for this user
+  // Bilgi amaçlı iz — artık hiçbir kontrolü GATE'lemiyor (v3), sadece
+  // "bu kullanıcı için migration en az bir kez çalıştı" diye kalıyor.
   window.localStorage.setItem(sentinel, "1");
   return copied;
 }

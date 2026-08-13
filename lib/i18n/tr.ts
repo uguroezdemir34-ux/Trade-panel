@@ -671,6 +671,7 @@ export const tr: Dictionary = {
       closedTrades: "Kapalı İşlem",
       riskMult: "Risk Çarpanı",
       tradesCount: "{w}/{t} işlem",
+      positionFetchError: "Pozisyon verisi alınamadı — API kimlik bilgilerini kontrol edin",
     },
     var: {
       title: "Portföy VaR",

@@ -17,6 +17,7 @@
  */
 
 import { useEffect } from "react";
+import { captureMessage } from "@sentry/nextjs";
 import { useStaggeredPoller } from "@/lib/hooks/useStaggeredPoller";
 import { fetchPositions } from "@/lib/okx/positions";
 import { fetchBinancePositions } from "@/lib/binance/positions";
@@ -45,6 +46,7 @@ const MIN_OPEN_AGE_MS = 30_000;
 
 export function usePositionPoller(delayMs = 0): void {
   const setPositions = usePositionStore((s) => s.setPositions);
+  const setPositionFetchError = usePositionStore((s) => s.setPositionFetchError);
   const credsLoaded = useCredentialStore((s) => s._loaded);
 
   // warnedKeys'i localStorage'dan bir kez yükle — ilk fetchAll() (delayMs
@@ -80,7 +82,30 @@ export function usePositionPoller(delayMs = 0): void {
       positions = await fetchPositions(demoMode, clientCreds);
     }
 
-    if (positions === null) return;
+    if (positions === null) {
+      // fetchPositions() (lib/okx/positions.ts) şu an her başarısızlıkta
+      // sadece null dönüyor — ayrıntılı bir hata mesajı taşımıyor (bu
+      // dosya + positionStore.ts dışında bir değişiklik gerektirirdi,
+      // bu turun kapsamı dışında tutuldu). Bu yüzden sabit bir teknik
+      // işaretçi ("fetch_failed") kullanılıyor — accountStore'daki
+      // "HTTP_401"/"PROXY_ERROR" gibi ayrıntılı kodların aksine.
+      //
+      // Sentry'ye SADECE durum ok/idle'dan error'a GEÇERKEN bir kez
+      // gönderiliyor (bu yüzden setPositionFetchError'DAN ÖNCE, ESKİ
+      // durum okunuyor) — 10sn'lik poller her başarısız denemede tekrar
+      // çağırsaydı (örn. yanlış API key kalıcı olarak takılıysa) Sentry'yi
+      // spam'lerdi. Bir sonraki başarılı fetch (setPositions → status:"ok")
+      // bu durumu sıfırlar, tekrar başarısız olursa yeniden bir kez loglanır.
+      const wasAlreadyError = usePositionStore.getState().positionFetchStatus === "error";
+      setPositionFetchError("fetch_failed");
+      if (!wasAlreadyError) {
+        captureMessage("Pozisyon verisi alınamadı", {
+          level: "warning",
+          extra: { exchange, demoMode },
+        });
+      }
+      return;
+    }
 
     setPositions(positions);
     reconcileOpenTrades(positions);
