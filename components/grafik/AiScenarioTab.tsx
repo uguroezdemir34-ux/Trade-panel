@@ -1,9 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import type { Pair } from "@/lib/constants/pairs";
-import type { AIScoreResult } from "@/lib/analysis/score";
-import type { SrLevels } from "@/lib/sr/detect";
+import { useAiScenarioFetch } from "@/lib/hooks/useAiScenarioFetch";
 
 interface Props {
   pair: Pair;
@@ -28,61 +26,13 @@ function isSupported(pair: Pair): pair is SupportedSymbol {
   return (SUPPORTED_SYMBOLS as readonly string[]).includes(pair);
 }
 
-// app/api/ai-scenario/route.ts'teki AiScenarioRow ile AYNI şekil (snake_case
-// JSONB kolonları dahil) — API'nin döndürdüğü JSON'u birebir yansıtıyor.
-interface AiScenarioRow {
-  id: string;
-  symbol: string;
-  timeframe: string;
-  current_price: number;
-  score: AIScoreResult;
-  sr_levels: SrLevels;
-  chart_image_url: string | null;
-  created_at: string;
-}
-
-// Yükleniyor / hata / veri-yok / hazır — dördü de AYRI durumlar, aynı "boş"
-// mesajıyla karıştırılmıyor (CLAUDE.md §0.1 madde 3).
-type FetchState =
-  | { status: "loading" }
-  | { status: "error" }
-  | { status: "empty" }
-  | { status: "ready"; row: AiScenarioRow };
-
 export function AiScenarioTab({ pair }: Props) {
-  const [state, setState] = useState<FetchState>({ status: "loading" });
-
-  useEffect(() => {
-    if (!isSupported(pair)) return;
-    let cancelled = false;
-    setState({ status: "loading" });
-
-    async function run(): Promise<void> {
-      try {
-        const res = await fetch(
-          `/api/ai-scenario?symbol=${encodeURIComponent(pair)}`,
-          { signal: AbortSignal.timeout(8_000) },
-        );
-        if (cancelled) return;
-        if (!res.ok) {
-          setState({ status: "error" });
-          return;
-        }
-        const json = (await res.json()) as { ok: boolean; data: AiScenarioRow | null };
-        if (cancelled) return;
-        if (!json.ok || !json.data) {
-          setState({ status: "empty" });
-          return;
-        }
-        setState({ status: "ready", row: json.data });
-      } catch {
-        if (!cancelled) setState({ status: "error" });
-      }
-    }
-
-    void run();
-    return () => { cancelled = true; };
-  }, [pair]);
+  // pair desteklenmiyorsa hook'a url=null geçiyoruz — hook hiç fetch
+  // etmiyor, "desteklenmiyor" JSX dalı zaten state'e hiç bakmadan aşağıda
+  // ayrıca ele alınıyor (useAiScenarioFetch.ts dosya başı yorumuna bkz.).
+  const state = useAiScenarioFetch(
+    isSupported(pair) ? `/api/ai-scenario?symbol=${encodeURIComponent(pair)}` : null,
+  );
 
   if (!isSupported(pair)) {
     return (
