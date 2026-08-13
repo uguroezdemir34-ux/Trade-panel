@@ -22,6 +22,15 @@ export function PortfolioOverviewCard(): React.ReactElement {
   const weeklyPnlPct = useAccountStore((s) => s.weeklyPnlPct);
   const drawdownProtocol = useAccountStore((s) => s.drawdownProtocol);
   const lastDailyResetAt = useAccountStore((s) => s.lastDailyResetAt);
+  // Portföy Hata Görünürlüğü düzeltmesi — bu iki alan daha önce hiç
+  // okunmuyordu, "hiç API key yok" ile "key var ama fetch başarısız"
+  // Portföy'de birebir aynı ($0/—) görünüyordu. components/ayarlar/
+  // AccountBalanceCard.tsx'teki AYNI banner deseni burada tekrar
+  // kullanılıyor (aynı i18n key: settings.balance.fetchError).
+  const balanceFetchStatus = useAccountStore((s) => s.balanceFetchStatus);
+  const balanceFetchErrMsg = useAccountStore((s) => s.balanceFetchErrMsg);
+  const positionFetchStatus = usePositionStore((s) => s.positionFetchStatus);
+  const positionFetchErrMsg = usePositionStore((s) => s.positionFetchErrMsg);
 
   const trades = useTradesStore((s) => s.trades);
   const closedTrades = useMemo(() => trades.filter((tr) => tr.status === "closed"), [trades]);
@@ -80,6 +89,26 @@ export function PortfolioOverviewCard(): React.ReactElement {
 
   return (
     <div className="border-b border-border bg-bg-card px-4 pt-3 pb-3">
+      {/* OKX fetch hata banner'ları — AccountBalanceCard.tsx'teki AYNI
+          desen/stil. Var olan başarı davranışı (hata yokken) hiç
+          değişmedi — bu bloklar sadece status==="error" iken görünür. */}
+      {balanceFetchStatus === "error" && (
+        <div className="mb-3 rounded bg-soft-amber px-3 py-1.5 font-mono text-xs text-signal-amber">
+          ⚠ {t("settings.balance.fetchError")}
+          {balanceFetchErrMsg && (
+            <span className="ml-1 opacity-70">[{balanceFetchErrMsg}]</span>
+          )}
+        </div>
+      )}
+      {positionFetchStatus === "error" && (
+        <div className="mb-3 rounded bg-soft-amber px-3 py-1.5 font-mono text-xs text-signal-amber">
+          ⚠ {t("portfolio.overview.positionFetchError")}
+          {positionFetchErrMsg && (
+            <span className="ml-1 opacity-70">[{positionFetchErrMsg}]</span>
+          )}
+        </div>
+      )}
+
       {/* Top row: equity + tier */}
       <div className="flex items-start justify-between mb-3">
         <div>

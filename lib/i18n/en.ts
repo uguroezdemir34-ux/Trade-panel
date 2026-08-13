@@ -675,6 +675,7 @@ export const en: Dictionary = {
       openPos: "Open Pos.",
       closedTrades: "Closed",
       riskMult: "Risk Mult.",
+      positionFetchError: "Position data unavailable — check API credentials",
       tradesCount: "{w}/{t} trades",
     },
     var: {

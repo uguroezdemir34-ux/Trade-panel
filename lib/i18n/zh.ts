@@ -692,7 +692,7 @@ volumeSection: "VOLUME",
     analyticsTab: "Analytics",
     signalsTab: "Signals",
     overview: { totalEquity: "Total Equity", free: "Free", dailyPnl: "Daily P&L", weekly: "Weekly", realizedPnl: "Today P&L",
-      allTime: "All-time", unrealized: "Unrealized P&L", winRate: "Win Rate", openPos: "Open Pos.", closedTrades: "Closed", riskMult: "Risk Mult.", tradesCount: "{w}/{t} trades", },
+      allTime: "All-time", unrealized: "Unrealized P&L", winRate: "Win Rate", openPos: "Open Pos.", closedTrades: "Closed", riskMult: "Risk Mult.", positionFetchError: "Position data unavailable — check API credentials", tradesCount: "{w}/{t} trades", },
     var: {
       title: "Portfolio VaR",
       var95: "1-Day VaR (95%)",
