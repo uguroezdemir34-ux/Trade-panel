@@ -8,6 +8,7 @@
  * Used by: /api/cron/signal-check, /api/cron/daily-summary
  */
 
+import { captureMessage } from "@sentry/nextjs";
 import { composeScoreInput } from "@/lib/score/composeScoreInput";
 import { computeScore } from "@/lib/score/orchestrator";
 import { inferDirection, type DirectionInput } from "@/lib/score/direction";
@@ -89,6 +90,10 @@ export interface ServerSignalResult {
   direction: "LONG" | "SHORT" | "NEUTRAL";
   score: number;
   prevVerdict: "go" | "wait" | "no" | null;
+  /** true → prevVerdict null'ı gerçek "yetersiz veri" değil, scorePrevBar()
+   *  içinde yakalanan bir exception yüzünden — computeServerSignal()
+   *  isNewSignal'ı bu durumda bilerek bastırır (bkz. o fonksiyonun yorumu). */
+  prevVerdictErrored: boolean;
   isNewSignal: boolean;
   price: number;
   error?: string;
@@ -258,6 +263,7 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
   softBlocks: string[];
   pullbackActive: boolean;
   prevVerdict: "go" | "wait" | "no" | null;
+  prevVerdictErrored: boolean;
 } | null> {
   const instId = `${pair}-USDT-SWAP`;
   const now = Date.now();
@@ -406,7 +412,9 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
   // AYRICA ikinci kez çağırmasına gerek yok, tek hesap burada yapılıp döndürülüyor
   // (verimlilik yan etkisi: composeScoreInput+computeScore'un ikinci kez
   // tekrarlanması önleniyor).
-  const prevVerdict = scorePrevBar(candles1h, candles4h, candles1d, candles15m, pair, fg, fundingRate);
+  const { verdict: prevVerdict, errored: prevVerdictErrored } = scorePrevBar(
+    candles1h, candles4h, candles1d, candles15m, pair, fg, fundingRate,
+  );
   const result = computeScore({
     ...composed,
     srModifier,
@@ -452,10 +460,22 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
     softBlocks: result.softBlocks,
     pullbackActive: result.pullbackActive,
     prevVerdict,
+    prevVerdictErrored,
   };
 }
 
-/** Score using the second-to-last bar (for deduplication comparison) */
+/**
+ * Score using the second-to-last bar (for deduplication comparison).
+ *
+ * `errored: true` bir GERÇEK hesaplama hatasını (exception), `errored: false`
+ * ile `verdict: null` ise sıradan "yetersiz veri" durumunu (henüz yeterli
+ * mum yok, dizinin başı vb.) ifade eder — bu iki durum önceden aynı `null`
+ * dönüşe indirgeniyordu, çağıran taraf (computeServerSignal) bunları ayırt
+ * edemiyordu (bkz. genel bug taraması bulgusu). `errored: true` durumunda
+ * computeServerSignal isNewSignal'ı bilerek bastırır — aksi halde bir
+ * exception, zaten GO olan bir bar'ı "yeni sinyal" gibi işaretleyip VIP
+ * Telegram kanalına yanlış/tekrarlı bir GO uyarısı gönderebilirdi.
+ */
 function scorePrevBar(
   candles1h: Candle[],
   candles4h: Candle[],
@@ -464,18 +484,20 @@ function scorePrevBar(
   pair: Pair,
   fg: number,
   fundingRate: number | null,
-): "go" | "wait" | "no" | null {
+): { verdict: "go" | "wait" | "no" | null; errored: boolean } {
   const prev1h = candles1h.slice(0, -1);
   const prevLatest = prev1h[prev1h.length - 1];
-  if (!prevLatest) return null;
+  if (!prevLatest) return { verdict: null, errored: false };
 
   // 15m: re-align to previous bar's timestamp — candles1d ile AYNI desen (bkz. aşağıdaki prev1d)
   const prev15m = candles15m.filter((c) => c.ts <= prevLatest.ts);
-  if (prev1h.length < CANDLE_MIN_1H || prev15m.length < CANDLE_MIN_15M) return null;
+  if (prev1h.length < CANDLE_MIN_1H || prev15m.length < CANDLE_MIN_15M) {
+    return { verdict: null, errored: false };
+  }
 
   // 4h: re-align to previous bar's timestamp
   const prev4h = candles4h.filter((c) => c.ts <= prevLatest.ts);
-  if (prev4h.length < CANDLE_MIN_4H) return null;
+  if (prev4h.length < CANDLE_MIN_4H) return { verdict: null, errored: false };
 
   // 1d: re-align to previous bar's timestamp (daily bars mostly unchanged)
   const prev1d = candles1d.filter((c) => c.ts <= prevLatest.ts);
@@ -498,10 +520,15 @@ function scorePrevBar(
       ...FROZEN_STATE,
       timeQuality: computeTimeQuality(prevLatest.ts),
     });
-    if (!composed) return null;
-    return computeScore({ ...composed, scorerWeights: null }).verdict;
-  } catch {
-    return null;
+    if (!composed) return { verdict: null, errored: false };
+    const verdict = computeScore({ ...composed, scorerWeights: null }).verdict;
+    return { verdict, errored: false };
+  } catch (err) {
+    captureMessage("scorePrevBar() hesaplama hatası — dedup/isNewSignal bilerek bastırıldı", {
+      level: "error",
+      extra: { pair, err: err instanceof Error ? err.message : String(err) },
+    });
+    return { verdict: null, errored: true };
   }
 }
 
@@ -522,7 +549,11 @@ export async function computeServerSignal(
     // AYRICA scorePrevBar() çağrılmıyor, composeScoreInput+computeScore'un
     // ikinci kez tekrarlanmasını önlüyor.
     const prevVerdict = current.prevVerdict;
-    const isNewSignal = current.verdict === "go" && prevVerdict !== "go";
+    // prevVerdictErrored true ise prevVerdict null'ının nedeni bir exception —
+    // "önceki bar GO değildi" diye YORUMLANMAZ, isNewSignal bilerek bastırılır
+    // (bkz. scorePrevBar() üstündeki yorum).
+    const isNewSignal =
+      current.verdict === "go" && prevVerdict !== "go" && !current.prevVerdictErrored;
 
     return {
       pair,
@@ -530,6 +561,7 @@ export async function computeServerSignal(
       direction: current.direction,
       score: current.score,
       prevVerdict,
+      prevVerdictErrored: current.prevVerdictErrored,
       isNewSignal,
       price: current.price,
       debugInputs: {
@@ -562,6 +594,7 @@ export async function computeServerSignal(
       direction: "NEUTRAL",
       score: 0,
       prevVerdict: null,
+      prevVerdictErrored: true,
       isNewSignal: false,
       price: 0,
       error: err instanceof Error ? err.message : "Unknown error",
