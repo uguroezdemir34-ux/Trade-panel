@@ -20,9 +20,12 @@
 import { useEffect, useRef } from "react";
 import { useScoreStore } from "@/lib/store/scoreStore";
 import { useSettingsStore } from "@/lib/store/settingsStore";
+import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
+import { useMarketStore } from "@/lib/store/marketStore";
 import { dispatchNotification } from "@/lib/notify/dispatch";
 import { browserNotify } from "@/lib/notify/browser";
 import { playGoAlert } from "@/lib/notify/audio";
+import { checkHumanTraderApprovalAtFireTime } from "@/lib/signal/humanTraderCheck";
 import type { Pair } from "@/lib/constants/pairs";
 import type { Verdict, ScoreResult } from "@/lib/score/orchestrator";
 import type { NotifyMessage } from "@/lib/notify/types";
@@ -79,6 +82,22 @@ async function sendGoAlert(
   score: ScoreResult["score"],
   direction: "LONG" | "SHORT" | undefined,
 ): Promise<void> {
+  // İnsan trader kontrolü — ATEŞLENME ANINDA taze hesaplanır (bkz.
+  // useSignalFirehose.ts'in AYNI çağrısı, birebir gerekçe). direction
+  // undefined ise (NEUTRAL) hiç denenmez — anlamlı bir S/R yönü yok.
+  const candleState = useCandleStore.getState();
+  const marketState = useMarketStore.getState();
+  const currentPrice = marketState.prices[pair]?.last ?? null;
+  const humanCheck =
+    direction && currentPrice
+      ? checkHumanTraderApprovalAtFireTime(
+          direction,
+          currentPrice,
+          candleState.candles[`${pair}_1h`] ?? EMPTY_CANDLES,
+          candleState.candles[`${pair}_4h`] ?? EMPTY_CANDLES,
+        )
+      : undefined;
+
   const msg: NotifyMessage = {
     kind: "go_signal",
     pair,
@@ -86,6 +105,7 @@ async function sendGoAlert(
     score,
     reasonText: `Score ${score} — GO threshold crossed`,
     timestamp: Date.now(),
+    humanCheck,
   };
 
   // Telegram (Layer 1/2) + Discord + genel Webhook — tek merkezi orkestratör.

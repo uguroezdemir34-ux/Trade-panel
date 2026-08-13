@@ -8,6 +8,7 @@
  */
 
 import type { NotifyMessage } from "@/lib/notify/types";
+import type { HumanTraderCheckResult } from "@/lib/signal/humanTraderCheck";
 import {
   escapeMarkdownV2,
   formatUsdMd2,
@@ -113,6 +114,19 @@ function formatTradeOpened(msg: NotifyMessage): string {
     lines.push(`⏰ ${escapeMarkdownV2(timeStr)}`);
   }
 
+  // İnsan trader kontrolü — sadece VIP (bu fonksiyonun tek çağıranı
+  // app/api/telegram/signal/route.ts'in VIP yolu), Stop/TP1/TP2 dahil.
+  // formatHumanCheckNumbers() DÜZ metin döner (public trade_opened
+  // caption'ı MarkdownV2 DEĞİL — bkz. o fonksiyonun dosya-başı yorumu),
+  // burada MarkdownV2 bağlamı olduğu için satır satır escape ediliyor.
+  if (msg.humanCheck) {
+    const checkLines = formatHumanCheckNumbers(msg.humanCheck, true).map(escapeMarkdownV2);
+    if (checkLines.length > 0) {
+      lines.push("");
+      lines.push(...checkLines);
+    }
+  }
+
   // Hashtag
   lines.push("");
   lines.push(`\\#${escapeMarkdownV2(msg.pair ?? '—')} \\#${escapeMarkdownV2(dirText)}`);
@@ -184,7 +198,10 @@ function formatLockTriggered(msg: NotifyMessage): string {
 
 // ═══════════════ GO SIGNAL ═══════════════
 
-function formatGoSignal(msg: NotifyMessage): string {
+/** Ortak gövde — VIP (Stop/TP1/TP2 dahil) ve public (dahil değil) ikisi de
+ *  aynı başlık/pair/skor/gerekçe satırlarını paylaşıyor, sadece
+ *  formatHumanCheckNumbers()'a geçilen includeTradeLevels farklı. */
+function formatGoSignalBody(msg: NotifyMessage, includeTradeLevels: boolean): string {
   const lines: string[] = [];
   lines.push("⚡ " + bold("QUANTIX GO SIGNAL"));
   lines.push("");
@@ -197,7 +214,39 @@ function formatGoSignal(msg: NotifyMessage): string {
     lines.push("");
     lines.push(escapeMarkdownV2(msg.reasonText));
   }
+  if (msg.humanCheck) {
+    // formatGoSignal (VIP) VE formatGoSignalPublic ikisi de sendMessage
+    // (parse_mode: MarkdownV2, sabit — lib/notify/telegram/client.ts)
+    // üzerinden gidiyor, bu yüzden ikisi de escape edilmiş satır istiyor
+    // (formatTradeOpened'in aksine, o VIP'te sendPhoto+markdownV2:true,
+    // ama public'te buildShareText+düz metin — orada escape YOK).
+    const checkLines = formatHumanCheckNumbers(msg.humanCheck, includeTradeLevels).map(escapeMarkdownV2);
+    if (checkLines.length > 0) {
+      lines.push("");
+      lines.push(...checkLines);
+    }
+  }
   return lines.join("\n");
+}
+
+function formatGoSignal(msg: NotifyMessage): string {
+  return formatGoSignalBody(msg, true);
+}
+
+/**
+ * PUBLIC KANAL — Stop/TP1/TP2 fiyat değerleri HİÇ YOK (bkz.
+ * app/api/telegram/signal/route.ts dosya başı yorumu: "TP/SL/giriş/R:R
+ * (fiyat değeri) = İŞLEM TALİMATI, halka açık kanala hiç gitmez"). S/R
+ * seviyeleri/hacim/R:R ORANI (fiyat değil, sadece oran) analiz çıktısı
+ * sayıldığı için dahil. app/api/cron/signal-check/route.ts'in
+ * sendToVipAndPublic()'i (AYNI metin iki kanala) BİLEREK burada
+ * kullanılmıyor — o route'un mesajları zaten hiç TP/SL içermiyordu, bu
+ * route'unki (useGoAlerts.ts'in go_signal'ı, humanCheck eklendikten sonra)
+ * artık Stop/TP taşıyabiliyor, o yüzden ayrı bir "public-safe" varyant
+ * gerekti.
+ */
+export function formatGoSignalPublic(msg: NotifyMessage): string {
+  return formatGoSignalBody(msg, false);
 }
 
 // ═══════════════ PRICE ALARM ═══════════════
@@ -304,6 +353,61 @@ function formatTest(_msg: NotifyMessage): string {
     "\n\n" +
     escapeMarkdownV2("Bot connection working ✓")
   );
+}
+
+// ═══════════════ HUMAN TRADER CHECK — SAYISAL DETAY SATIRLARI ═══════════════
+
+/**
+ * checkHumanTraderApprovalAtFireTime()'ın (lib/signal/humanTraderCheck.ts)
+ * sonucunu DÜZ, ESCAPE EDİLMEMİŞ metin satırlarına çevirir.
+ *
+ * BİLEREK escape edilmiş DÖNMÜYOR — iki farklı gönderim bağlamında
+ * kullanılıyor: MarkdownV2 (formatTradeOpened/formatGoSignalBody — satır
+ * satır escapeMarkdownV2() ile sarıyorlar) VE düz metin (public trade_opened
+ * caption'ı, buildShareText çıktısı gibi hiç escape edilmemiş —
+ * app/api/telegram/signal/route.ts'in sendToPublicChannel()'ı). Escape
+ * kararı ÇAĞIRANA bırakıldı, burada tek bir doğru cevap yok.
+ *
+ * includeTradeLevels=false iken Stop/TP1/TP2 FİYAT DEĞERLERİ hiç
+ * üretilmez — halka açık kanala "işlem talimatı" sızmaması için (bkz.
+ * formatGoSignalPublic() ve route.ts'in sendToPublicChannel() çağrı
+ * yorumları).
+ */
+export function formatHumanCheckNumbers(
+  check: HumanTraderCheckResult,
+  includeTradeLevels: boolean,
+): string[] {
+  const lines: string[] = [];
+  const { srCheck, volumeCheck, rrCheck } = check;
+
+  if (srCheck.nearestResistance) {
+    lines.push(
+      `🔺 Direnç: $${srCheck.nearestResistance.price.toLocaleString("en-US", { maximumFractionDigits: 2 })} (${srCheck.nearestResistance.distance_pct.toFixed(2)}% uzakta)`,
+    );
+  }
+  if (srCheck.nearestSupport) {
+    lines.push(
+      `🔻 Destek: $${srCheck.nearestSupport.price.toLocaleString("en-US", { maximumFractionDigits: 2 })} (${srCheck.nearestSupport.distance_pct.toFixed(2)}% uzakta)`,
+    );
+  }
+  if (volumeCheck.volRatio !== null) {
+    lines.push(`📶 Hacim: ${volumeCheck.volRatio.toFixed(2)}x`);
+  }
+  if (rrCheck.rr1 !== null) {
+    lines.push(`⚖️ R:R: ${rrCheck.rr1.toFixed(2)}`);
+  }
+  if (includeTradeLevels) {
+    if (rrCheck.stopPrice !== null) {
+      lines.push(`🛑 Stop: $${rrCheck.stopPrice.toLocaleString("en-US", { maximumFractionDigits: 2 })}`);
+    }
+    if (rrCheck.tp1Price !== null) {
+      lines.push(`🎯 TP1: $${rrCheck.tp1Price.toLocaleString("en-US", { maximumFractionDigits: 2 })}`);
+    }
+    if (rrCheck.tp2Price !== null) {
+      lines.push(`🎯 TP2: $${rrCheck.tp2Price.toLocaleString("en-US", { maximumFractionDigits: 2 })}`);
+    }
+  }
+  return lines;
 }
 
 // ═══════════════ HELPERS ═══════════════

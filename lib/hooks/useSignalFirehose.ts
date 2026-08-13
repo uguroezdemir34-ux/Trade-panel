@@ -32,6 +32,7 @@ import { toIndicatorCandle } from "@/lib/okx/candles";
 import { findSwingLevels } from "@/lib/sr/swing";
 import { computeStructuralStop } from "@/lib/sizer/stop";
 import { computeAdaptiveTPs } from "@/lib/sizer/take-profit";
+import { checkHumanTraderApprovalAtFireTime } from "@/lib/signal/humanTraderCheck";
 import type { NotifyMessage } from "@/lib/notify/types";
 import { dispatchNotification } from "@/lib/notify/dispatch";
 import { useGoSignalLogStore } from "@/lib/store/goSignalLogStore";
@@ -193,6 +194,7 @@ async function fireSignal(
   const marketState = useMarketStore.getState();
 
   const candles1h = candleState.candles[`${pair}_1h`] ?? EMPTY_CANDLES;
+  const candles4h = candleState.candles[`${pair}_4h`] ?? EMPTY_CANDLES;
   const livePrice = marketState.prices[pair]?.last ?? null;
   if (!livePrice) return;
 
@@ -242,6 +244,18 @@ async function fireSignal(
   if (r.sweep) parts.push(r.sweep);
   const reasonText = parts.slice(0, 2).join(" · ");
 
+  // İnsan trader kontrolü — ATEŞLENME ANINDA taze hesaplanır (skor
+  // cycle'ındaki eski snapshot değil, bkz. checkHumanTraderApprovalAtFireTime()
+  // dosya-başı yorumu). ONAY/RED kararı vermek için DEĞİL — o karar zaten
+  // useScoreEngine.ts'te verildi (result buraya "go" olarak geldiyse
+  // geçmiştir); sadece Telegram mesajına eklenecek S/R/hacim/R:R gözlemi.
+  const humanCheck = checkHumanTraderApprovalAtFireTime(
+    result.direction as "LONG" | "SHORT",
+    livePrice,
+    candles1h,
+    candles4h,
+  );
+
   const msg: NotifyMessage = {
     kind: "trade_opened",
     pair,
@@ -258,6 +272,7 @@ async function fireSignal(
     // yorumu), yani route bunu her zaman "confirmed" bir sinyal olarak
     // işleyebilir.
     sub: result.sub,
+    humanCheck,
   };
 
   // Telegram (Layer 1/2) + Discord + genel Webhook — tek merkezi orkestratör.
