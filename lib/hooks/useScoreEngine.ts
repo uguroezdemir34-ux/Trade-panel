@@ -458,6 +458,19 @@ export function useScoreEngine(): void {
                 humanCheck.reasons.join(" | "),
               );
             }
+
+            // Gözlem — best-effort, fire-and-forget (useSignalFirehose.ts'in
+            // /api/log-cvd-vpin çağrısıyla AYNI desen). checkHumanTraderApproval()'ın
+            // onay/red mantığına HİÇ dokunmuyor, sadece SONUCU kalıcılaştırıyor.
+            void fetch("/api/log-human-check", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                pair,
+                direction: result.direction,
+                check: humanCheck,
+              }),
+            }).catch(() => {});
           }
           setResult(pair as Pair, finalResult, now);
         } catch {
