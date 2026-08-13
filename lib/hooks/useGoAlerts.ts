@@ -6,6 +6,15 @@
  *
  * Cooldown: a pair won't re-alert within COOLDOWN_MS (30 min) to
  * prevent spam when scores fluctuate around the GO threshold.
+ *
+ * dispatchNotification() → POST /api/telegram/signal reaches BOTH
+ * Telegram channels: VIP always, and (best-effort, only if
+ * TELEGRAM_PUBLIC_CHAT_ID is configured) the public channel with the
+ * same plain go_signal text — see the "go_signal" branch at the end of
+ * that route. Previously this hook's alerts never reached the public
+ * channel (fixed) — resolvePublicChatId() is DB/decrypt-backed and can
+ * only run server-side, so the actual public send lives in the route,
+ * not here.
  */
 
 import { useEffect, useRef } from "react";
