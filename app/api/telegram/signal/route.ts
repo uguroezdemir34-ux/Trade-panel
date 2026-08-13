@@ -11,6 +11,8 @@ import { exportShareCardPngServer } from "@/lib/share/exportShareCardServer";
 import type { ShareCardData } from "@/lib/share/renderShareCard";
 import { buildShareText } from "@/lib/share/shareCardText";
 import { formatTickPrice } from "@/lib/i18n/format";
+import { exportSignalChartPngServer } from "@/lib/share/exportSignalChartServer";
+import { fetchSignalChartData } from "@/lib/share/signalChartData";
 
 // @napi-rs/canvas native binary — Edge runtime'da çalışmaz (bkz.
 // lib/share/exportShareCardServer.ts).
@@ -66,6 +68,19 @@ interface SignalBody {
  * yapılandırılmamış) mesaj hiçbir zaman boş/eksik gitmez — text zaten
  * formatNotifyMessage()'ın ürettiği tam (artık sayısal detaylı) metin,
  * narration sadece bir ÖN EK.
+ *
+ * GÖRSEL — SİNYAL GRAFİĞİ (3. tur, lib/share/renderSignalChart.ts — YENİ,
+ * renderShareCard.ts'in İSTATİSTİK kartından TAMAMEN AYRI, o dosyaya HİÇ
+ * dokunulmadı). humanCheck varsa fetchSignalChartData() ile TAZE 4H mum +
+ * S/R + trend çizgisi çekilir (lib/analysis/ai-scenario.ts'teki
+ * fetchScenarioData()'nın DOĞRUDAN tekrar kullanımı — üçüncü bir OKX-fetch
+ * kopyası yazılmadı), iki AYRI PNG render edilir: VIP (Entry/Stop/TP1/TP2
+ * dahil) + public (dahil değil — aynı includeTradeLevels kuralı görsele de
+ * uygulandı). Bu yeni grafik VIP'te cardPng'e (eski istatistik kartı),
+ * public'te de aynı şekilde eski kart PNG'sine TERCİH EDİLİR
+ * (`signalChartPng ?? cardPng`) — render/fetch başarısız olursa (best-effort,
+ * try/catch içinde) null kalır, mevcut akışlar (eski kart → metin-only)
+ * HİÇ DEĞİŞMEDEN, aynen önceki turdaki gibi çalışmaya devam eder.
  */
 
 function buildEnglishShareLabels() {
@@ -136,11 +151,19 @@ const PUBLIC_SITE_URL = "quantixos.com";
 async function sendToPublicChannel(
   cardData: ShareCardData,
   labels: ReturnType<typeof buildEnglishShareLabels>,
-  png: Buffer,
+  cardPng: Buffer | null,
   botToken: string,
   humanCheck: HumanTraderCheckResult | undefined,
   narrative: string | null,
+  signalChartPng: Buffer | null,
 ): Promise<void> {
+  // Yeni sinyal grafiği (varsa) eski istatistik kartına TERCİH EDİLİR —
+  // bkz. dosya başı yorumu (VIP'teki AYNI `signalChartPng ?? cardPng`
+  // deseni). İkisi de yoksa (ikisi de başarısız/üretilemedi) gönderilecek
+  // görsel yok, bu kanal atlanır.
+  const photoToSend = signalChartPng ?? cardPng;
+  if (!photoToSend) return;
+
   const publicChatId = await resolvePublicChatId();
   if (!publicChatId) return;
 
@@ -173,7 +196,7 @@ async function sendToPublicChannel(
 
   const photoRes = await sendTelegramPhoto(
     { botToken, chatId: publicChatId },
-    { photo: png, caption },
+    { photo: photoToSend, caption },
   );
   if (!photoRes.ok) {
     // Bu satıra gelindiğinde publicChatId zaten mevcuttu (yukarıdaki
@@ -246,6 +269,45 @@ export async function POST(req: NextRequest) {
     text = `${escapeMarkdownV2(narrative)}\n\n${text}`;
   }
 
+  // Sinyal grafiği — humanCheck varsa (onaylanan GO sinyali) TAZE veriyle
+  // İKİ AYRI PNG render edilir (VIP: trade seviyeli, public: değil — bkz.
+  // dosya başı yorumu). Tamamen best-effort: try/catch içinde, herhangi
+  // bir adım (fetch/render) başarısız olursa ikisi de null kalır — aşağıdaki
+  // kart/metin akışları hiç etkilenmez.
+  let signalChartPng: Buffer | null = null;
+  let signalChartPublicPng: Buffer | null = null;
+  if (body.msg.humanCheck && body.msg.pair && body.msg.direction) {
+    try {
+      const chartData = await fetchSignalChartData(body.msg.pair, body.msg.direction);
+      if (chartData) {
+        const tradeLevels = {
+          entry: body.msg.entry ?? chartData.currentPrice,
+          stopPrice: body.msg.humanCheck.rrCheck.stopPrice,
+          tp1Price: body.msg.humanCheck.rrCheck.tp1Price,
+          tp2Price: body.msg.humanCheck.rrCheck.tp2Price,
+        };
+        const baseChartData = {
+          pair: body.msg.pair,
+          direction: body.msg.direction,
+          candles: chartData.candles,
+          currentPrice: chartData.currentPrice,
+          srLevels: chartData.srLevels,
+          trendLine: chartData.trendLine,
+          score: body.msg.score ?? 0,
+        };
+        signalChartPng = await exportSignalChartPngServer({ ...baseChartData, tradeLevels });
+        // Public — tradeLevels YOK (undefined), formatHumanCheckNumbers()'ın
+        // includeTradeLevels=false'uyla AYNI kural görsele de uygulanıyor.
+        signalChartPublicPng = await exportSignalChartPngServer(baseChartData);
+      }
+    } catch (err) {
+      console.warn(
+        "[telegram/signal] Sinyal grafiği üretimi başarısız, mevcut kart/metin akışına düşülüyor:",
+        err instanceof Error ? err.message : String(err),
+      );
+    }
+  }
+
   // Kart — BİR KEZ üretilir, VIP + halka açık ikisinde de aynı PNG
   // kullanılır (bkz. dosya başı yorumu). Üretim başarısız olursa VIP
   // metin-only'ye düşer, halka açık kanal tamamen atlanır.
@@ -266,16 +328,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // VIP — kart varsa foto+tam metin caption dener (MarkdownV2, text zaten
-  // escape edilmiş — formatNotifyMessage çıktısı). Caption 1024'ü aşarsa
-  // Telegram 400 döner, photoRes.ok=false olur, aşağıdaki metin-only yola
-  // düşülür — ayrı bir karakter sayma mantığı YOK, hata yanıtı zaten bunu
-  // yakalıyor.
+  // VIP — foto+tam metin caption dener (MarkdownV2, text zaten escape
+  // edilmiş — formatNotifyMessage çıktısı). Yeni sinyal grafiği (varsa)
+  // eski istatistik kartına TERCİH EDİLİR — bkz. dosya başı yorumu. Caption
+  // 1024'ü aşarsa Telegram 400 döner, photoRes.ok=false olur, aşağıdaki
+  // metin-only yola düşülür — ayrı bir karakter sayma mantığı YOK, hata
+  // yanıtı zaten bunu yakalıyor.
+  const vipPhoto = signalChartPng ?? cardPng;
   let vipOk = false;
-  if (cardPng) {
+  if (vipPhoto) {
     const photoRes = await sendTelegramPhoto(
       { botToken: token, chatId },
-      { photo: cardPng, caption: text, markdownV2: true },
+      { photo: vipPhoto, caption: text, markdownV2: true },
     );
     if (photoRes.ok) {
       vipOk = true;
@@ -315,11 +379,11 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Halka açık kanal — VIP'ten SONRA, bağımsız, best-effort. Kart yoksa
-  // (üretim başarısız oldu) bu kanal tamamen atlanır — metin-only yedeği
-  // YOK, tek içeriği kart.
-  if (cardPng && cardData) {
-    await sendToPublicChannel(cardData, labels, cardPng, token, body.msg.humanCheck, narrative);
+  // Halka açık kanal — VIP'ten SONRA, bağımsız, best-effort. sendToPublicChannel()
+  // kendi içinde ne eski kart ne yeni sinyal grafiği üretilebildiyse
+  // (ikisi de null) atlıyor — metin-only yedeği YOK, tek içeriği görsel.
+  if (cardData) {
+    await sendToPublicChannel(cardData, labels, cardPng, token, body.msg.humanCheck, narrative, signalChartPublicPng);
   }
 
   // Halka açık kanal — go_signal (useGoAlerts.ts, GO geçişinde ANINDA, hiç
@@ -336,18 +400,42 @@ export async function POST(req: NextRequest) {
       if (narrative) {
         publicText = `${escapeMarkdownV2(narrative)}\n\n${publicText}`;
       }
-      const publicResult = await sendTelegramMessage(
-        { botToken: token, chatId: publicChatId },
-        { text: publicText },
-      );
-      if (!publicResult.ok) {
-        // publicChatId burada zaten mevcuttu — yapılandırma eksikliği
-        // değil, her zaman gerçek bir gönderim hatası.
-        console.warn("[telegram/signal] GO sinyali (public) gönderimi başarısız:", publicResult.errorMessage);
-        Sentry.captureMessage("Telegram GO sinyali (public) gönderimi başarısız", {
-          level: "warning",
-          extra: { errorMessage: publicResult.errorMessage },
-        });
+
+      // Yeni sinyal grafiği varsa foto+caption dener (aynı MarkdownV2 metin,
+      // caption'da) — go_signal'ın önceden hiç görseli yoktu (bkz. dosya
+      // başı yorumu). Caption 1024'ü aşarsa (VIP'teki AYNI overflow
+      // deseni) sendTelegramPhoto 400 döner, aşağıdaki sendTelegramMessage
+      // yedeğine düşülür — text'in kendisi (4096 limit) HİÇ değişmiyor.
+      let publicSent = false;
+      if (signalChartPublicPng) {
+        const photoRes = await sendTelegramPhoto(
+          { botToken: token, chatId: publicChatId },
+          { photo: signalChartPublicPng, caption: publicText, markdownV2: true },
+        );
+        if (photoRes.ok) {
+          publicSent = true;
+        } else {
+          console.warn(
+            "[telegram/signal] GO sinyali (public) grafik gönderimi başarısız, metne düşülüyor:",
+            photoRes.errorMessage,
+          );
+        }
+      }
+
+      if (!publicSent) {
+        const publicResult = await sendTelegramMessage(
+          { botToken: token, chatId: publicChatId },
+          { text: publicText },
+        );
+        if (!publicResult.ok) {
+          // publicChatId burada zaten mevcuttu — yapılandırma eksikliği
+          // değil, her zaman gerçek bir gönderim hatası.
+          console.warn("[telegram/signal] GO sinyali (public) gönderimi başarısız:", publicResult.errorMessage);
+          Sentry.captureMessage("Telegram GO sinyali (public) gönderimi başarısız", {
+            level: "warning",
+            extra: { errorMessage: publicResult.errorMessage },
+          });
+        }
       }
     }
   }

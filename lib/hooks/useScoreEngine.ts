@@ -447,6 +447,7 @@ export function useScoreEngine(): void {
               direction: result.direction,
               currentPrice: input.px,
               candles1h,
+              candles4h,
               srResult,
               volRatio: input.volRatio,
             });

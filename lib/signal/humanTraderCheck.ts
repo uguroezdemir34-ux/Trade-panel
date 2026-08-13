@@ -1,7 +1,7 @@
 /**
  * HUMAN TRADER CHECK — GO verdict'i Telegram'a/karar sayfasına yansımadan
  * önceki son, deterministik onay katmanı (kullanıcı kararı — 1. tur, çizim
- * YOK, sadece sayısal kontrol).
+ * YOK, sadece sayısal kontrol; 3. tur trend çizgisi gözlemini ekledi).
  *
  * lib/score/*'a HİÇ dokunmuyor — sadece ScoreResult'ın ÇIKTISINI (zaten
  * hesaplanmış verdict/direction) ve çağıranın (useScoreEngine.ts client,
@@ -9,7 +9,7 @@
  * girdi olarak alıyor. computeScore()/orchestrator.ts/blocks.ts/composeScoreInput.ts
  * bu dosyadan hiç import edilmiyor, hiç çağrılmıyor.
  *
- * Üç bağımsız kontrol, ÜÇÜ DE geçmeli (AND):
+ * Üç bağımsız kontrol, ÜÇÜ DE geçmeli (AND — onay/red kararı BUNLARA bağlı):
  *   1. S/R  — engelleyici seviye çok yakın VE güçlüyse (calcPenalty'nin
  *      kendi max-ceza eşiği: ≤%0.5 mesafe + ≥2 dokunuş), hacim-teyitli
  *      kırılım (breakoutOverride) yoksa reddet. lib/sr/detect.ts'in ZATEN
@@ -23,12 +23,16 @@
  *      hesaplanamadı) reddet — CLAUDE.md §0.1 madde 3 gereği "emin değilse
  *      sessizce geçme", `dataInsufficient` alanı bunu görünür kılıyor.
  *
- * Trend çizgisi (diyagonal) bu turda YOK — mevcut altyapıda hiç yok, ayrı
- * bir tur (kullanıcı kararı).
+ * DÖRDÜNCÜ — TREND ÇİZGİSİ (lib/sr/trendLines.ts, YENİ) — BİLEREK onay/red
+ * mantığına dahil DEĞİL (kullanıcı kararı, bu tur): sadece `trendLine`
+ * alanına gözlem olarak taşınıyor. Yoksa (< 2 swing noktası) null — approved
+ * hesabını hiç etkilemez. Veri kalitesi bu turda gözlemlenip, sıkı
+ * zorunluluk (trend çizgisi yoksa reddet) AYRI bir gelecek karar.
  */
 
 import type { Direction } from "@/lib/score/orchestrator";
 import { detectSRLevels, type SrResult, type SrLevelEntry } from "@/lib/sr/detect";
+import { detectTrendLine, type TrendLineResult } from "@/lib/sr/trendLines";
 import { toIndicatorCandle, type Candle } from "@/lib/okx/candles";
 import { atr } from "@/lib/indicators/atr";
 import { adx } from "@/lib/indicators/adx";
@@ -61,6 +65,11 @@ export interface HumanTraderCheckInput {
    *  elinde tuttuğu — bu dosya kendi içinde toIndicatorCandle() ile çevirir,
    *  çağırandan indikatör-şekilli mum İSTEMİYOR). */
   candles1h: readonly Candle[];
+  /** Kapanmış 4H mumlar (OKX-şekilli) — SADECE trend çizgisi tespiti için
+   *  (lib/sr/trendLines.ts, 4H "primer, daha güvenilir" pivot kaynağı,
+   *  detect.ts'in kendi tercihiyle tutarlı). S/R/hacim/R:R hesaplarına
+   *  girmiyor, onlar zaten 1H + çağıranın hesapladığı srResult üzerinden. */
+  candles4h: readonly Candle[];
   /** Çağıranın skor için ZATEN hesapladığı detectSRLevels() sonucu —
    *  burada TEKRAR hesaplanmıyor (verimlilik + skorla aynı S/R verisi
    *  garantisi). */
@@ -96,6 +105,9 @@ export interface HumanTraderCheckResult {
     rr1: number | null;
     acceptable: boolean;
   };
+  /** lib/sr/trendLines.ts'in ham sonucu — SADECE GÖZLEM, approved hesabını
+   *  ETKİLEMİYOR (bkz. dosya başı yorumu). < 2 swing noktası varsa null. */
+  trendLine: TrendLineResult | null;
   /** İnsan-okunur gerekçe satırları — narrateHumanTraderCheck()'in girdisi,
    *  debug/log için de kullanılabilir. */
   reasons: string[];
@@ -104,7 +116,7 @@ export interface HumanTraderCheckResult {
 export function checkHumanTraderApproval(
   input: HumanTraderCheckInput,
 ): HumanTraderCheckResult {
-  const { direction, currentPrice, candles1h, srResult, volRatio } = input;
+  const { direction, currentPrice, candles1h, candles4h, srResult, volRatio } = input;
   const reasons: string[] = [];
 
   if (direction === "NEUTRAL") {
@@ -119,6 +131,7 @@ export function checkHumanTraderApproval(
       },
       volumeCheck: { volRatio, confirmed: false },
       rrCheck: { stopPrice: null, tp1Price: null, tp2Price: null, rr1: null, acceptable: false },
+      trendLine: null,
       reasons: ["NEUTRAL yönde onay yapılmaz"],
     };
   }
@@ -194,6 +207,21 @@ export function checkHumanTraderApproval(
     reasons.push("⚠️ R:R: yetersiz veri (ATR/ADX hesaplanamadı) — onay reddedildi");
   }
 
+  // ── 4. Trend çizgisi (lib/sr/trendLines.ts) — SADECE GÖZLEM, approved
+  // hesabına GİRMİYOR (bkz. dosya başı yorumu). 4H mumlar kullanılır
+  // (detect.ts'in "primer" tercihiyle tutarlı, S/R/hacim/R:R'dan bağımsız). ──
+  const c4hInd = candles4h.map(toIndicatorCandle);
+  const trendLine = detectTrendLine(c4hInd, direction);
+  if (trendLine) {
+    reasons.push(
+      trendLine.confirmed
+        ? `✅ Trend çizgisi: teyitli (3. temas noktası tolerans içinde)`
+        : `ℹ️ Trend çizgisi: 2 nokta, henüz teyitsiz`,
+    );
+  } else {
+    reasons.push("ℹ️ Trend çizgisi: yetersiz swing noktası (< 2)");
+  }
+
   const approved = !srBlocked && !volumeDead && rrAcceptable && !dataInsufficient;
 
   return {
@@ -207,6 +235,7 @@ export function checkHumanTraderApproval(
     },
     volumeCheck: { volRatio, confirmed: !volumeDead },
     rrCheck: { stopPrice, tp1Price, tp2Price, rr1, acceptable: rrAcceptable },
+    trendLine,
     reasons,
   };
 }
@@ -235,5 +264,5 @@ export function checkHumanTraderApprovalAtFireTime(
   const c4hInd = candles4h.map(toIndicatorCandle);
   const volRatio = volumeRatio(c1hInd);
   const srResult = detectSRLevels(c4hInd, c1hInd, currentPrice, direction, volRatio);
-  return checkHumanTraderApproval({ direction, currentPrice, candles1h, srResult, volRatio });
+  return checkHumanTraderApproval({ direction, currentPrice, candles1h, candles4h, srResult, volRatio });
 }

@@ -438,6 +438,7 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
       direction: result.direction,
       currentPrice: composed.px,
       candles1h,
+      candles4h,
       srResult,
       volRatio: composed.volRatio,
     });
