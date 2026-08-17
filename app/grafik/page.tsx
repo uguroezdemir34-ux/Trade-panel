@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import dynamic from "next/dynamic";
 import { useCandleStore, EMPTY_CANDLES } from "@/lib/store/candleStore";
+import { useScoreStore } from "@/lib/store/scoreStore";
 import { useTradesStore } from "@/lib/store/tradesStore";
 import { usePositionStore } from "@/lib/store/positionStore";
 import { useMarketStore } from "@/lib/store/marketStore";
@@ -33,6 +34,7 @@ import type { ChartSeries, LinePoint, VolumePoint, ChartMarker, MacdPoint, Alarm
 import { usePriceAlarmStore } from "@/lib/store/priceAlarmStore";
 import { WatchlistPanel, MobileWatchlistView } from "@/components/grafik/WatchlistPanel";
 import { PairDropdownMini } from "@/components/grafik/PairDropdownMini";
+import { AiAnalizButton } from "@/components/karar/AiAnalizButton";
 import { useOkxCandleStream } from "@/lib/ws/useOkxCandleStream";
 import { usePriorityFetch } from "@/lib/hooks/usePriorityFetch";
 
@@ -218,6 +220,11 @@ export default function GrafikPage() {
   const [pair, setPair]           = useState<Pair>(() => useFocusStore.getState().activeFocusPair ?? "BTC");
   const focusActiveAtMountRef      = useRef(useFocusStore.getState().isOverlayActive);
   usePriorityFetch(pair);
+  // chartSection'ın 29-dependency'lik useMemo'suna BİLEREK sokulmadı (aynı
+  // desen: AI Senaryo sekme çubuğu da o memo'nun DIŞINDAKİ başlık satırında
+  // render ediliyor, bkz. chartSection'ın kendi içindeki yorum) — bu
+  // yüzden AI Analiz butonu ayrıca burada, page-seviyesinde okunuyor.
+  const scoreResult = useScoreStore((s) => s.results[pair]);
   const [timeframe, setTimeframe] = useState<Timeframe>("1h");
   const [mobileView, setMobileView] = useState<"list" | "chart">(() =>
     useFocusStore.getState().isOverlayActive ? "chart" : "list",
@@ -821,6 +828,12 @@ export default function GrafikPage() {
           Sıradaki analiz: {nextScenarioRun.hours}sa {nextScenarioRun.minutes}dk
         </span>
       </div>
+
+      {scoreResult && (
+        <div className="flex items-center justify-end px-3 md:px-0 pt-2">
+          <AiAnalizButton pair={pair} direction={scoreResult.direction} score={scoreResult.score} />
+        </div>
+      )}
 
       {latestScenario.status === "ready" && (
         <div className="px-3 md:px-0 pt-2">

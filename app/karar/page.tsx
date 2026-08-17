@@ -63,6 +63,7 @@ const VOL_REGIME_LABEL_KEY: Record<AtrRegime, string> = {
 };
 import { VerdictBadge } from "@/components/karar/VerdictBadge";
 import { ShareButton } from "@/components/karar/ShareButton";
+import { AiAnalizButton } from "@/components/karar/AiAnalizButton";
 import { ActiveBlockBadge } from "@/components/karar/ActiveBlockBadge";
 import { ScoreGauge } from "@/components/karar/ScoreGauge";
 import { getScoreColor } from "@/lib/ui/scoreColor";
@@ -746,7 +747,8 @@ export default function KararPage() {
                       confidence={result.dirConfidence}
                     />
                     <RegimeBadge pair={activePair} baseThreshold={result.effectiveThreshold} />
-                    <div className="ml-auto">
+                    <div className="ml-auto flex items-center gap-1.5">
+                      <AiAnalizButton pair={activePair} direction={result.direction} score={result.score} />
                       <ShareButton pair={activePair} result={result} price={livePrice} />
                     </div>
                   </div>
