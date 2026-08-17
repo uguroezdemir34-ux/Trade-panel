@@ -1,108 +1,154 @@
-import {
-  IBM_Plex_Mono,
-  IBM_Plex_Sans,
-  JetBrains_Mono,
-  Noto_Sans_SC,
-  Noto_Sans_JP,
-  Noto_Sans_KR,
-  Noto_Sans_Arabic,
-  Noto_Sans_Devanagari,
-} from "next/font/google";
+import localFont from "next/font/local";
 
-// KİRİL DOĞRULANDI (2026-07-29, kullanıcı tarafından canlıda, tarayıcıda
-// gözle kontrol edildi — tahmin değil): aşağıdaki üç ailenin (ibmPlexMono/
-// ibmPlexSans/jetBrainsMono) hiçbiri "cyrillic" subset'i istemiyor, sadece
-// "latin" — teorik bir RU-locale riskiydi. 11 farklı ekranda (Piyasa,
-// Karar, Portföy, Ayarlar/API, Telegram, Pozisyon Hesaplayıcı) hem kısa
-// etiketler hem uzun cümleler kutu/□ karakteri OLMADAN doğru render oldu.
-// Kesin kök neden doğrulanmadı ama en olası açıklama: globals.css'teki
-// cyber-terminal font-family zinciri, Kiril glyph'leri için cyrillic
-// subset'i OLAN Noto Sans ailelerine (notoSansSC/JP/KR) fallback yapıyor.
-export const ibmPlexMono = IBM_Plex_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+// SELF-HOSTED — next/font/google KALDIRILDI (tekrar eden build hatası:
+// next/font/google build sırasında Google Fonts'tan CSS+dosya çekiyor,
+// bu fetch ara sıra başarısız oluyordu — "Failed to compile. lib/fonts.ts
+// An error occurred in 'next/font'. TypeError: Cannot read properties of
+// null" — Vercel'in gerçek production build log'unda görüldü, bkz. proje
+// geçmişi). Artık build SIFIR internet erişimiyle tamamlanıyor: dosyalar
+// npm paketleri olarak (@fontsource/*) çekiliyor — npm install ZATEN her
+// build'in önkoşulu (Google Fonts'a ayrıca bir bağımlılık değil), sonra
+// next/font/local o paketlerin İÇİNDEKİ .woff2 dosyalarını DOĞRUDAN
+// node_modules'tan okuyor, hiçbir ağ isteği YAPMIYOR.
+//
+// DESEN — lib/share/fonts.ts'teki registerCardFonts()'un
+// @expo-google-fonts/ibm-plex-mono'yu node_modules'tan path.join() ile
+// okuma deseniyle BİREBİR TUTARLI (o dosya @napi-rs/canvas için sunucu
+// tarafı font kaydı yapıyor, bu dosya next/font/local için tarayıcı
+// tarafı — ikisi de AYNI fikri kullanıyor: "font dosyası zaten
+// node_modules'ta bir npm paketinin içinde, ekstra bir fetch/indirme
+// gerekmiyor").
+//
+// PATH'LER NEDEN TAM LİTERAL STRING (değişken/template-literal/spread
+// YOK): next/font'un derleyici eklentisi (next/font/google İÇİN eskiden
+// bu dosyada gerçek bir build hatasıyla doğrulanmış olan — bkz. git
+// geçmişi, eski "DÜZELTME 2" notu — "Unexpected spread" hatası) src/path
+// argümanlarını ÇALIŞTIRMADAN, AST üzerinden statik analiz ediyor; bu
+// kısıt next/font/local için de GEÇERLİ SAYILIYOR (next/font ailesinin
+// ikisi de aynı derleyici eklentisini paylaşıyor) — bu yüzden burada
+// hiçbir ortak "dizin" sabiti/template-literal'ı KULLANILMADI, her yol
+// AYRI AYRI tam literal string olarak yazıldı. Tekrar var ama bilinçli
+// (aynı dosyanın önceki turdaki dersiyle tutarlı).
+//
+// DEĞİŞMEYEN: export edilen değişken isimleri (ibmPlexMono, ibmPlexSans,
+// jetBrainsMono, notoSansSC/JP/KR/Arabic/Devanagari), .variable CSS
+// değişken adları (--font-ibm-plex-mono vb.) ve fontVariables çıktısı
+// HİÇ değişmedi — bu dosyayı import eden app/layout.tsx'e (fontVariables)
+// dokunulmadı.
+//
+// AĞIRLIKLAR aynı kaldı: ibmPlexMono/ibmPlexSans/jetBrainsMono → 400/500/
+// 600/700 (latin); Noto Sans 5'lisi → 400/500/700 — önceki next/font/google
+// config'inin ağırlık listesiyle birebir.
+//
+// SUBSET KAPSAMI — BİLİNÇLİ DARALTMA (önceki next/font/google config'inden
+// TEK fark): ibmPlexMono/ibmPlexSans/jetBrainsMono zaten SADECE "latin"
+// kullanıyordu (KİRİL DOĞRULANDI notu — cyrillic hiç istenmiyordu, bu
+// üçü DEĞİŞMEDİ). Noto Sans SC/JP/KR/Arabic/Devanagari'nin önceki
+// next/font/google config'i, her ailenin KENDİ zorunlu script subset'ine
+// (chinese-simplified/japanese/korean/arabic/devanagari — next/font/google
+// bunları `subsets` listesine YAZDIRMIYORDU ama HER ZAMAN dahil ediyordu,
+// bkz. eski DÜZELTME 1 notu) EK olarak cyrillic/latin/latin-ext/vietnamese
+// gibi TAMAMLAYICI subset'ler de istiyordu (RU locale için savunmacı bir
+// önlem, "Kesin kök neden doğrulanmadı" notuyla BİLEREK işaretlenmişti).
+//
+// next/font/local'ın src dizisi next/font/google'ın aksine unicode-range
+// bazlı çoklu-subset birleştirmeyi DESTEKLEMİYOR (sadece weight/style
+// eksenini ayırt ediyor) — aynı weight+style için birden fazla dosya
+// vermek, hangi dosyanın "kazanacağı" belirsiz/dokümante edilmemiş bir
+// davranış, YANLIŞ yapılırsa o ailenin ANA amacı olan script glyph'lerini
+// (örn. Çince karakterlerin kendisi) SESSİZCE kırma riski taşır — bu
+// yüzden burada SADECE her ailenin ZORUNLU/birincil script subset'i
+// kullanıldı, tamamlayıcı cyrillic/latin/latin-ext/vietnamese/latin
+// dosyaları BİLİNÇLİ OLARAK bırakıldı. Etkisi: RU locale'de Kiril metin
+// artık bu Noto Sans ailelerinden DEĞİL, tarayıcının CSS font-family
+// zincirinin sonundaki sistem fontundan render olacak (globals.css'teki
+// zincir generic bir fallback'le bitiyorsa — genel App açısından tipik —
+// bu KOZMETİK bir fark, tofu/□ DEĞİL) — ama bu HENÜZ CANLIDA GÖRSEL
+// OLARAK DOĞRULANMADI, önceki "HENÜZ DOĞRULANMADI" notuyla AYNI risk
+// kategorisinde kalıyor. Bozulursa düzeltme: ya PRIMARY fontlara
+// (ibmPlexMono/Sans/jetBrainsMono) cyrillic subset eklemek ya da burada
+// birleşik/geniş bir tek dosya bulmak gerekir — bu diff'in kapsamı DEĞİL.
+
+export const ibmPlexMono = localFont({
+  src: [
+    { path: "../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "../node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-ibm-plex-mono",
   display: "swap",
 });
 
-export const ibmPlexSans = IBM_Plex_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+export const ibmPlexSans = localFont({
+  src: [
+    { path: "../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "../node_modules/@fontsource/ibm-plex-sans/files/ibm-plex-sans-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-ibm-plex-sans",
   display: "swap",
 });
 
-export const jetBrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
+export const jetBrainsMono = localFont({
+  src: [
+    { path: "../node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "../node_modules/@fontsource/jetbrains-mono/files/jetbrains-mono-latin-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-jetbrains-mono",
   display: "swap",
 });
 
-// DÜZELTME 1 (gerçek üretim build hatasıyla doğrulandı, tahmin değil):
-// "chinese-simplified"/"japanese"/"korean"/"arabic"/"devanagari" bu next/font
-// paketleri için GEÇERSİZ subset adları — Vercel build log'u 5 fontun 5'inde
-// de aynı hatayı verdi ("Unknown subset '...' — Available subsets: cyrillic,
-// latin, latin-ext, vietnamese"). Script glyph'lerinin kendisi (Han/Hangul/
-// Arapça/Devanagari) subset seçimine bağlı DEĞİL — bu aileler zaten script'e
-// özel (adları bunu söylüyor), "subset" burada sadece EK Latin/Kiril
-// kapsamını kontrol ediyor. cyrillic BİLEREK dahil edildi — RU, CLAUDE.md'nin
-// 7 desteklenen dilinden biri ve cyrillic gerçek hata mesajında geçerli
-// seçenek olarak listelendi, çıkarmak için sebep yok.
-//
-// DÜZELTME 2 (yine gerçek build hatasıyla doğrulandı): ortak bir NOTO_SUBSETS
-// sabiti tanımlayıp her çağrıda [...NOTO_SUBSETS] ile spread etmek "Unexpected
-// spread" hatası verdi — next/font/google çağrılarını build-time'da statik
-// olarak (AST üzerinden, çalıştırmadan) analiz eden bir derleyici eklentisiyle
-// çalışıyor, argüman literal bir obje/dizi olmak ZORUNDA, değişken/spread/
-// hesaplanmış değer kullanılamıyor (next/font'un belgelenmiş, projeye özgü
-// olmayan bir kısıtı). Bu yüzden aynı dört değer beş çağrının her birine
-// AYRI AYRI literal olarak yazıldı — tekrar var ama kaçınılmaz.
-//
-// HENÜZ DOĞRULANMADI: build başarılı olsa bile gerçek CJK/Arapça/Devanagari
-// metnin görsel olarak doğru render olduğu (tofu/□ değil) canlıda kontrol
-// edilmeli.
-
-export const notoSansSC = Noto_Sans_SC({
-  subsets: ["cyrillic", "latin", "latin-ext", "vietnamese"],
-  weight: ["400", "500", "700"],
+// Zorunlu/birincil script subset'i — bkz. dosya başı "SUBSET KAPSAMI" notu.
+export const notoSansSC = localFont({
+  src: [
+    { path: "../node_modules/@fontsource/noto-sans-sc/files/noto-sans-sc-chinese-simplified-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../node_modules/@fontsource/noto-sans-sc/files/noto-sans-sc-chinese-simplified-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../node_modules/@fontsource/noto-sans-sc/files/noto-sans-sc-chinese-simplified-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-noto-sans-sc",
   display: "swap",
 });
 
-export const notoSansJP = Noto_Sans_JP({
-  subsets: ["cyrillic", "latin", "latin-ext", "vietnamese"],
-  weight: ["400", "500", "700"],
+export const notoSansJP = localFont({
+  src: [
+    { path: "../node_modules/@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../node_modules/@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../node_modules/@fontsource/noto-sans-jp/files/noto-sans-jp-japanese-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-noto-sans-jp",
   display: "swap",
 });
 
-export const notoSansKR = Noto_Sans_KR({
-  subsets: ["cyrillic", "latin", "latin-ext", "vietnamese"],
-  weight: ["400", "500", "700"],
+export const notoSansKR = localFont({
+  src: [
+    { path: "../node_modules/@fontsource/noto-sans-kr/files/noto-sans-kr-korean-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../node_modules/@fontsource/noto-sans-kr/files/noto-sans-kr-korean-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../node_modules/@fontsource/noto-sans-kr/files/noto-sans-kr-korean-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-noto-sans-kr",
   display: "swap",
 });
 
-// DÜZELTME 3 (gerçek build hatasıyla doğrulandı — bir önceki turun hatası:
-// SC/JP/KR'nin subset listesini beş fontun tamamına genellemek yanlıştı).
-// Her Noto Sans varyantının KENDİ ayrı "Available subsets" listesi var,
-// ortak tek bir set yok:
-//   Noto Sans Arabic     → arabic, latin, latin-ext, math, symbols
-//   Noto Sans Devanagari → devanagari, latin, latin-ext (sadece 3)
-// cyrillic İKİSİNDE DE geçersiz (SC/JP/KR'den farklı). math/symbols
-// bilinçli olarak dışarıda bırakıldı — script kapsamı zaten "arabic" ile
-// geliyor, ek ağırlık eklemenin bir gerekçesi yok.
-export const notoSansArabic = Noto_Sans_Arabic({
-  subsets: ["arabic", "latin", "latin-ext"],
-  weight: ["400", "500", "700"],
+export const notoSansArabic = localFont({
+  src: [
+    { path: "../node_modules/@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabic-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../node_modules/@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabic-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../node_modules/@fontsource/noto-sans-arabic/files/noto-sans-arabic-arabic-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-noto-sans-arabic",
   display: "swap",
 });
 
-export const notoSansDevanagari = Noto_Sans_Devanagari({
-  subsets: ["devanagari", "latin", "latin-ext"],
-  weight: ["400", "500", "700"],
+export const notoSansDevanagari = localFont({
+  src: [
+    { path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "../node_modules/@fontsource/noto-sans-devanagari/files/noto-sans-devanagari-devanagari-700-normal.woff2", weight: "700", style: "normal" },
+  ],
   variable: "--font-noto-sans-devanagari",
   display: "swap",
 });
