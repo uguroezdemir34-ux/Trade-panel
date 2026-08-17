@@ -21,6 +21,15 @@
  * `data.tradeLevels` sağlanmışsa (VIP) Entry/Stop/TP1/TP2 yatay çizgileri
  * çizilir; sağlanmamışsa (public, undefined) hiç çizilmez — "TP/SL/giriş
  * = İŞLEM TALİMATI, public'e hiç gitmez" kuralı görselde de korunuyor.
+ *
+ * SKOR + ONAY KUTUSU (manuel "AI Analiz" — app/api/signal/analyze/route.ts,
+ * kullanıcı mockup'ı referans alındı): `data.approved` sağlanmışsa sağ üst
+ * köşede skor motorunun GERÇEK `data.score`'u (lib/ui/scoreColor.ts renk
+ * bandıyla) + humanTraderCheck.approved durumu çizilir. Bu OPSİYONEL alan —
+ * app/api/telegram/signal/route.ts'teki mevcut GO-sinyali çağrısı hiç
+ * geçmiyor, o akışın görseli DEĞİŞMEDİ. Kutu hiçbir zaman "Opportunity
+ * Score"/"BUY tavsiyesi" gibi uydurulmuş bir ikinci puanlama GÖSTERMEZ —
+ * sadece zaten hesaplanmış iki gerçek değeri (score, approved) yansıtır.
  */
 
 import type { Candle } from "@/types/candle";
@@ -28,6 +37,7 @@ import type { SrLevels } from "@/lib/sr/detect";
 import type { TrendLineResult } from "@/lib/sr/trendLines";
 import type { ShareCanvasContext } from "./renderShareCard";
 import { CARD_FONT_FAMILY } from "./fontConstants";
+import { getScoreColor } from "@/lib/ui/scoreColor";
 
 export const SIGNAL_CHART_WIDTH = 1080;
 export const SIGNAL_CHART_HEIGHT = 1350; // renderScenarioChart.ts ile AYNI oran — görsel tutarlılık
@@ -58,6 +68,15 @@ export interface SignalChartData {
   /** VIP → sağlanır (Entry/Stop/TP1/TP2 çizilir). Public → undefined
    *  (hiç çizilmez) — bkz. dosya başı yorumu. */
   tradeLevels?: SignalChartTradeLevels;
+  /** humanTraderCheck.approved — SAĞLANMIŞSA (undefined DEĞİLSE) sağ üstte
+   *  skor+onay kutusu çizilir (bkz. dosya başı yorumu). BİLEREK OPSİYONEL:
+   *  app/api/telegram/signal/route.ts'teki mevcut GO-sinyali çağrısı bu
+   *  alanı HİÇ geçmiyor (dokunulmadı) — o akışın görseli bu değişiklikten
+   *  ETKİLENMEZ, kutu SADECE app/api/signal/analyze/route.ts'in (manuel "AI
+   *  Analiz" butonu) geçtiği yerde görünür. Kutunun içeriği DAİMA gerçek
+   *  skor motoru + humanTraderCheck sonucudur — "Opportunity Score"/"BUY
+   *  tavsiyesi" gibi UYDURULMUŞ ikinci bir puanlama/tavsiye asla ÇİZİLMEZ. */
+  approved?: boolean;
 }
 
 // renderShareCard.ts / renderScenarioChart.ts'ten AYNEN kopyalanan
@@ -257,6 +276,48 @@ export function renderSignalChart(ctx: ShareCanvasContext, data: SignalChartData
       drawTradeLevel(tradeLevels.stopPrice, "Stop", STOP_COLOR);
       drawTradeLevel(tradeLevels.tp1Price, "TP1", TP_COLOR);
       drawTradeLevel(tradeLevels.tp2Price, "TP2", TP_COLOR);
+    }
+
+    // ── Skor + onay kutusu — SADECE data.approved sağlanmışsa (bkz.
+    // SignalChartData.approved dosya başı yorumu). Gösterilen SAYI
+    // (data.score) skor motorunun ZATEN hesapladığı gerçek sayı, "onay"
+    // durumu humanTraderCheck.approved'ın kendisi — burada YENİDEN
+    // hesaplanmaz/uydurulmaz, ikinci bir "Opportunity Score" YOK. ──
+    if (data.approved !== undefined) {
+      const boxW = 260;
+      const boxH = 108;
+      const boxX = chartRight - boxW;
+      const boxY = chartTop + 12;
+      const radius = 10;
+
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(boxX + radius, boxY);
+      ctx.arcTo(boxX + boxW, boxY, boxX + boxW, boxY + boxH, radius);
+      ctx.arcTo(boxX + boxW, boxY + boxH, boxX, boxY + boxH, radius);
+      ctx.arcTo(boxX, boxY + boxH, boxX, boxY, radius);
+      ctx.arcTo(boxX, boxY, boxX + boxW, boxY, radius);
+      ctx.closePath();
+      ctx.fillStyle = "rgba(10,12,20,0.85)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(255,255,255,0.14)";
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.textAlign = "left";
+      ctx.font = font(14, 600);
+      ctx.fillStyle = "#8890a4";
+      ctx.fillText("SKOR", boxX + 18, boxY + 28);
+
+      const scoreColor = getScoreColor(data.score).color;
+      ctx.font = font(34, 800);
+      ctx.fillStyle = scoreColor;
+      ctx.fillText(`${Math.round(data.score)}/100`, boxX + 18, boxY + 64);
+
+      ctx.font = font(15, 700);
+      ctx.fillStyle = data.approved ? BULL_COLOR : BEAR_COLOR;
+      ctx.fillText(data.approved ? "✅ Onaylandı" : "❌ Reddedildi", boxX + 18, boxY + 90);
     }
   }
 
