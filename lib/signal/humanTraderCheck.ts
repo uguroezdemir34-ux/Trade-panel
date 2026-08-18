@@ -2,8 +2,11 @@
  * HUMAN TRADER CHECK — GO verdict'i Telegram'a/karar sayfasına yansımadan
  * önceki son, deterministik onay katmanı (kullanıcı kararı — 1. tur, çizim
  * YOK, sadece sayısal kontrol; 3. tur trend çizgisini GÖZLEM olarak ekledi;
- * 4. tur — kullanıcı kararı — trend çizgisini AND koşuluna yükseltti,
- * artık zorunlu).
+ * 4. tur — kullanıcı kararı — trend çizgisini AND koşuluna yükseltti, zorunlu
+ * yaptı; 5. tur — kullanıcı kararı, GERİ ALINDI — bkz. approved satırının
+ * kendi yorumu: backtest verisi trend-çizgisi-zorunluluğunun örneklemi
+ * güvenilmez küçülttüğünü VE sonucu iyileştirmediğini gösterdi, trend
+ * çizgisi tekrar SADECE gözlem alanı, approved kararını etkilemiyor).
  *
  * lib/score/*'a HİÇ dokunmuyor — sadece ScoreResult'ın ÇIKTISINI (zaten
  * hesaplanmış verdict/direction) ve çağıranın (useScoreEngine.ts client,
@@ -11,7 +14,7 @@
  * girdi olarak alıyor. computeScore()/orchestrator.ts/blocks.ts/composeScoreInput.ts
  * bu dosyadan hiç import edilmiyor, hiç çağrılmıyor.
  *
- * Dört bağımsız kontrol, DÖRDÜ DE geçmeli (AND — onay/red kararı BUNLARA bağlı):
+ * Üç bağımsız kontrol, ÜÇÜ DE geçmeli (AND — onay/red kararı BUNLARA bağlı):
  *   1. S/R  — engelleyici seviye çok yakın VE güçlüyse (calcPenalty'nin
  *      kendi max-ceza eşiği: ≤%0.5 mesafe + ≥2 dokunuş), hacim-teyitli
  *      kırılım (breakoutOverride) yoksa reddet. lib/sr/detect.ts'in ZATEN
@@ -24,10 +27,10 @@
  *      rr1 formülüyle birebir. <1.0 veya veri yetersizse (ATR/ADX
  *      hesaplanamadı) reddet — CLAUDE.md §0.1 madde 3 gereği "emin değilse
  *      sessizce geçme", `dataInsufficient` alanı bunu görünür kılıyor.
- *   4. Trend çizgisi (lib/sr/trendLines.ts) — hem VAR (trendLine !== null,
- *      ≥2 swing noktası) hem TEYİTLİ (confirmed === true, 3. temas noktası
- *      %1.0 tolerans içinde) olmalı, yoksa reddet. Önceki turda (3. tur)
- *      sadece gözlemdi, bu turda (kullanıcı kararı) zorunlu hale getirildi.
+ *
+ * Trend çizgisi (lib/sr/trendLines.ts) — ARTIK approved kararının bir
+ * PARÇASI DEĞİL, sadece GÖZLEM (3. turdaki orijinal haline dönüş). Sonuç
+ * hâlâ `trendLine` alanında ve `reasons[]`'da bilgi amaçlı taşınıyor.
  */
 
 import type { Direction } from "@/lib/score/orchestrator";
@@ -105,9 +108,9 @@ export interface HumanTraderCheckResult {
     rr1: number | null;
     acceptable: boolean;
   };
-  /** lib/sr/trendLines.ts'in ham sonucu — 4. tur itibarıyla approved
-   *  hesabının BİR PARÇASI (bkz. dosya başı yorumu): null veya confirmed
-   *  false ise approved=false. < 2 swing noktası varsa null. */
+  /** lib/sr/trendLines.ts'in ham sonucu — SADECE GÖZLEM (5. tur itibarıyla,
+   *  bkz. dosya başı yorumu), approved kararını ARTIK ETKİLEMİYOR. < 2 swing
+   *  noktası varsa null. */
   trendLine: TrendLineResult | null;
   /** İnsan-okunur gerekçe satırları — narrateHumanTraderCheck()'in girdisi,
    *  debug/log için de kullanılabilir. */
@@ -208,22 +211,29 @@ export function checkHumanTraderApproval(
     reasons.push("⚠️ R:R: yetersiz veri (ATR/ADX hesaplanamadı) — onay reddedildi");
   }
 
-  // ── 4. Trend çizgisi (lib/sr/trendLines.ts) — hem VAR (trendLine !== null)
-  // hem TEYİTLİ (confirmed === true) olmalı, yoksa reddet. 4H mumlar
-  // kullanılır (detect.ts'in "primer" tercihiyle tutarlı, S/R/hacim/R:R'dan
-  // bağımsız). ──
+  // ── 4. Trend çizgisi (lib/sr/trendLines.ts) — SADECE GÖZLEM, approved
+  // kararını ETKİLEMİYOR (5. tur — kullanıcı kararı, geri alındı). 4H
+  // mumlar kullanılır (detect.ts'in "primer" tercihiyle tutarlı, S/R/hacim/
+  // R:R'dan bağımsız).
+  //
+  // GERİ ALMA GEREKÇESİ (backtest verisiyle doğrulandı, 65 işlemlik veri
+  // setinde): trend-çizgisi-zorunlu onaylanan alt küme N=9'a düşüp
+  // %0 WR / PF 0 verdi; AYNI veri setinde trend çizgisi çıkarılıp sadece
+  // S/R+hacim+R:R uygulanan alt küme N=35'te %14.3 WR / PF 0.24 çıktı —
+  // trend çizgisi zorunluluğu örneklemi güvenilmez küçültüyor ve sonucu
+  // İYİLEŞTİRMİYOR. ──
   const c4hInd = candles4h.map(toIndicatorCandle);
   const trendLine = detectTrendLine(c4hInd, direction);
   const trendLineOk = trendLine !== null && trendLine.confirmed;
   if (trendLineOk) {
-    reasons.push(`✅ Trend çizgisi: teyitli (3. temas noktası tolerans içinde)`);
+    reasons.push(`ℹ️ Trend çizgisi: teyitli (3. temas noktası tolerans içinde) — gözlem, onayı etkilemiyor`);
   } else if (trendLine) {
-    reasons.push("❌ Trend çizgisi eksik/teyitsiz — onay reddedildi (2 nokta, henüz teyitsiz)");
+    reasons.push("ℹ️ Trend çizgisi eksik/teyitsiz (2 nokta, henüz teyitsiz) — gözlem, onayı etkilemiyor");
   } else {
-    reasons.push("❌ Trend çizgisi eksik/teyitsiz — onay reddedildi (yetersiz swing noktası, < 2)");
+    reasons.push("ℹ️ Trend çizgisi eksik/teyitsiz (yetersiz swing noktası, < 2) — gözlem, onayı etkilemiyor");
   }
 
-  const approved = !srBlocked && !volumeDead && rrAcceptable && !dataInsufficient && trendLineOk;
+  const approved = !srBlocked && !volumeDead && rrAcceptable && !dataInsufficient;
 
   return {
     approved,
