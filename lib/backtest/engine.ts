@@ -31,6 +31,12 @@ import { toIndicatorCandle } from "@/lib/okx/candles";
 import { atrPercentile } from "@/lib/indicators/atr-percentile";
 import { detectSRLevels } from "@/lib/sr/detect";
 import { detectLiquiditySweep } from "@/lib/sr/sweep";
+// lib/score/*'a HİÇ dokunmuyor, humanTraderCheck.ts'in KENDİSİNE de
+// dokunulmadı — sadece çağrılıyor (bkz. checkHumanTraderApproval çağrı
+// noktası yorumu, aşağıda). GEÇMİŞE dönük ETİKETLEME amaçlı: bu katmanın
+// GO sinyallerinin ne kadarını onayladığı/reddettiği sonradan ölçülebilsin
+// diye, backtest'in kendi filtreleme/verdict mantığına HİÇ karışmıyor.
+import { checkHumanTraderApproval } from "@/lib/signal/humanTraderCheck";
 import { inferDirection } from "@/lib/score/direction";
 import { SR_SCALE_FACTOR } from "@/lib/score/version";
 import { simulateExit, simpleAtr } from "./exitSimulator";
@@ -429,6 +435,32 @@ export async function runBacktest(
     if (result.direction !== "LONG" && result.direction !== "SHORT") continue;
     const direction = result.direction;
 
+    // checkHumanTraderApproval() — GEÇMİŞE dönük ETİKETLEME (kullanıcı
+    // talimatı): bu katmanın gerçek GO sinyallerini ne kadar
+    // onayladığını/reddettiğini ölçmek için, backtest'in KENDİ verdict/
+    // filtreleme mantığına HİÇ karışmıyor — trade her zaman üretilir,
+    // aşağıya sadece humanCheckApproved/humanCheckReasons olarak eklenir.
+    // Girdiler TAMAMEN mevcut, zaten hesaplanmış değerlerden: c1h/c4h
+    // (satır ~292/299, OKX-şekilli, look-ahead'siz sliced pencere —
+    // checkHumanTraderApproval'ın candles1h/candles4h'i AYNEN bu şekli
+    // istiyor, ek bir dönüşüm gerekmiyor), composed.px (skorun kullandığı
+    // AYNI fiyat — checkHumanTraderApproval'ın currentPrice alanı için
+    // "input.px/composed.px" diye belgelenmiş, entryPrice DEĞİL — o bir
+    // sonraki bar'ın open'ı + slippage, sinyal anının fiyatı değil),
+    // srResult (satır ~392'de ZATEN hesaplandı, preDirection ile —
+    // preDirection her zaman result.direction'la eşleştiği için (bkz. o
+    // satırın kendi yorumu) burada TEKRAR hesaplamaya gerek yok), ve
+    // composed.volRatio (composeScoreInput.ts'te ZATEN hesaplandı, aynı
+    // yerde S/R için de kullanılıyor).
+    const humanCheck = checkHumanTraderApproval({
+      direction,
+      currentPrice: composed.px,
+      candles1h: c1h,
+      candles4h: c4h,
+      srResult,
+      volRatio: composed.volRatio,
+    });
+
     // Entry: next bar's open price + entry slippage (market order fills worse)
     const nextBar = candles1h[i + 1];
     if (!nextBar) continue;
@@ -513,6 +545,11 @@ export async function runBacktest(
       atrRatio: atrPctRes?.atrRatio ?? null,
       trailingReturn30d,
       volRatio: composed.volRatio, // composeScoreInput.ts:169'da zaten hesaplanıyor, S/R için de kullanılıyor (satır 386) — sadece export ediliyor
+      // checkHumanTraderApproval()'ın sonucu — yukarıdaki çağrı noktası
+      // yorumuna bkz. SAF ETİKETLEME, bu trade zaten üretildi/kaydediliyor,
+      // filtreleme yapılmıyor.
+      humanCheckApproved: humanCheck.approved,
+      humanCheckReasons: humanCheck.reasons,
     });
   }
 
