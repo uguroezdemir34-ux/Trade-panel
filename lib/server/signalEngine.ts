@@ -32,14 +32,17 @@ import {
 import { loadOiSnapshotCache, saveOiSnapshotCache } from "@/lib/db/oiSnapshotCache";
 import { getFundingHistory } from "@/lib/db/scoreHistory";
 import { computeOiDivergence, type OiDivergence } from "@/lib/market/oi-divergence";
-// GÖLGE MOD (deneysel, henüz canlı skora bağlı DEĞİL) — bkz. fetchAndScore()
-// içindeki fundingPercentile çağrısı. lib/score/scorers.ts'e dokunulmadı.
-import { scoreFundingPercentile, type FundingSample } from "@/lib/score/fundingPercentile";
 
 const OKX_BASE = "https://www.okx.com";
 const CANDLE_MIN_1H = 200;
 const CANDLE_MIN_4H = 200;
 const CANDLE_MIN_15M = 20;
+
+// scoreFunding()'in persentil sınırları için — bkz. lib/score/scorers.ts'in
+// kendi yorumu (kullanıcı kararı: 14 gün lookback, <7 gün kapsamda sabit
+// eşiklere fallback, cold-start'ta sentetik/sıfır değer ÜRETİLMEZ).
+const FUNDING_HISTORY_LOOKBACK_MS = 14 * 24 * 60 * 60_000;
+const FUNDING_HISTORY_MIN_COVERAGE_MS = 7 * 24 * 60 * 60_000;
 
 // OI snapshot cache — ARTIK modül-seviyesinde in-memory DEĞİL (bkz. Phase 1.0,
 // OI Runtime Verification): saatlik cron'un neredeyse her çalışması yeni bir
@@ -313,6 +316,36 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
     return _lastFundingRate.get(instId) ?? null;
   })();
 
+  // scoreFunding()'in persentil sınırları için pair'in KENDİ 14 günlük
+  // |funding| geçmişi — kullanıcı kararı, bkz. lib/score/scorers.ts'in
+  // kendi yorumu. SELF-INCLUSION/LOOK-AHEAD YOK: bu döngünün kendi satırı
+  // score_history'ye BATCH INSERT ile döngü SONUNDA yazılıyor (bkz.
+  // lib/db/scoreHistory.ts'teki insertScoreHistoryBatch() çağrı noktası),
+  // yani bu sorgu çalıştığında bu döngünün satırı DB'de henüz YOK — ek bir
+  // filtre gerekmiyor, sıralama zaten garanti ediyor.
+  //
+  // Cold-start: en eski örnek 7 günden daha yeniyse (kapsam yetersiz)
+  // fundingHistory null kalır — scoreFunding() bunu ÖNCEKİ sabit eşiklere
+  // (persentil geçişinden önceki davranış) düşer olarak yorumluyor,
+  // sentetik/sıfır bir değer ÜRETİLMİYOR.
+  let fundingHistory: readonly number[] | null = null;
+  try {
+    const sinceMs = latest.ts - FUNDING_HISTORY_LOOKBACK_MS;
+    const rawFundingHistory = await getFundingHistory(pair, sinceMs);
+    const oldestTs = rawFundingHistory.length > 0
+      ? Math.min(...rawFundingHistory.map((s) => s.timestamp))
+      : null;
+    const hasEnoughCoverage =
+      oldestTs !== null && latest.ts - oldestTs >= FUNDING_HISTORY_MIN_COVERAGE_MS;
+    if (hasEnoughCoverage) {
+      fundingHistory = rawFundingHistory.map((s) => Math.abs(s.rate * 100));
+    }
+  } catch (err) {
+    // Best-effort — bir DB hatası fundingHistory'yi null bırakır (=
+    // cold-start davranışı), ana skor akışını ASLA etkilemez/fırlatmaz.
+    console.error(`[signalEngine] ${pair} funding history fetch failed:`, err);
+  }
+
   // Pre-compute indicator candles (reused for sweep detection + S/R)
   const c4hInd = candles4h.map(toIndicatorCandle);
   const c1hInd = candles1h.map(toIndicatorCandle);
@@ -335,6 +368,7 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
     candles1d,
     fg,
     fundingRate,
+    fundingHistory,
     oiVelocityScore,
     oiVelocityResult,
     now: latest.ts,
@@ -366,43 +400,6 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
     ? computeOiDivergence(oiVelocityResult, direction)
     : null;
 
-  // GÖLGE MOD — lib/score/fundingPercentile.ts'i mevcut scoreFunding()'in
-  // (scorers.ts, orchestrator.ts'in computeScore()'u içinde çağrılıyor)
-  // YANINDA, paralel çalıştırır. Sonuç HİÇBİR YERE yazılmıyor/dönülmüyor,
-  // sadece console.debug ile loglanıyor — result/verdict/skor hiç
-  // etkilenmiyor. scorers.ts/orchestrator.ts/composeScoreInput.ts'e
-  // dokunulmadı. Kaynak: score_history.funding_rate_raw (saatlik cron
-  // her pariteye her saat yazıyor — go_signals'ın aksine sadece GO
-  // geçişlerinde değil, 72 saatlik pencere için daha iyi örneklem).
-  try {
-    const sinceMs = now - 72 * 60 * 60_000;
-    const rawHistory = await getFundingHistory(pair, sinceMs);
-    const fundingSamples: FundingSample[] = rawHistory.map((s) => ({
-      rate: s.rate,
-      ageHours: (now - s.timestamp) / 3_600_000,
-    }));
-    const oldestSampleAgeHours =
-      fundingSamples.length > 0
-        ? Math.max(...fundingSamples.map((s) => s.ageHours))
-        : 0;
-    const shadowResult = scoreFundingPercentile(
-      fundingRate,
-      direction,
-      fundingSamples,
-      oldestSampleAgeHours,
-    );
-    console.debug("[shadow] sub_funding_percentile", {
-      pair,
-      ...shadowResult,
-      sampleCount: fundingSamples.length,
-      oldestSampleAgeHours: +oldestSampleAgeHours.toFixed(1),
-    });
-  } catch (shadowErr) {
-    // Gölge hesaplama asla ana akışı etkilememeli — sessizce yutulmaz,
-    // ama fırlatılmaz da (best-effort, tıpkı postToXBestEffort gibi).
-    console.debug("[shadow] sub_funding_percentile hata:", shadowErr);
-  }
-
   const srResult = detectSRLevels(c4hInd, c1hInd, composed.px, direction, composed.volRatio);
   const srModifier = srResult.modifier * SR_SCALE_FACTOR;
   // checkSrHardBlock (lib/score/blocks.ts) için ham detay — useScoreEngine.ts
@@ -415,7 +412,7 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
   // (verimlilik yan etkisi: composeScoreInput+computeScore'un ikinci kez
   // tekrarlanması önleniyor).
   const { verdict: prevVerdict, errored: prevVerdictErrored } = scorePrevBar(
-    candles1h, candles4h, candles1d, candles15m, pair, fg, fundingRate,
+    candles1h, candles4h, candles1d, candles15m, pair, fg, fundingRate, fundingHistory,
   );
   const result = computeScore({
     ...composed,
@@ -516,6 +513,12 @@ async function fetchAndScore(pair: Pair, oiCache: Map<string, OiSnapshot[]>): Pr
  * computeServerSignal isNewSignal'ı bilerek bastırır — aksi halde bir
  * exception, zaten GO olan bir bar'ı "yeni sinyal" gibi işaretleyip VIP
  * Telegram kanalına yanlış/tekrarlı bir GO uyarısı gönderebilirdi.
+ *
+ * fundingHistory: fetchAndScore()'un TEK SEFERDE çektiği aynı diziyi alır
+ * (dedup approximation deseniyle AYNI gerekçe — aşağıdaki srModifier:0
+ * yorumuna bkz.) — ikinci bir DB sorgusu YOK, ve iki bitişik bar AYNI
+ * persentil sınırlarıyla skorlanır (tutarlılık, sahte hysteresis flip
+ * riskini azaltır).
  */
 function scorePrevBar(
   candles1h: Candle[],
@@ -525,6 +528,7 @@ function scorePrevBar(
   pair: Pair,
   fg: number,
   fundingRate: number | null,
+  fundingHistory: readonly number[] | null,
 ): { verdict: "go" | "wait" | "no" | null; errored: boolean } {
   const prev1h = candles1h.slice(0, -1);
   const prevLatest = prev1h[prev1h.length - 1];
@@ -553,6 +557,7 @@ function scorePrevBar(
       candles1d: prev1d,
       fg,
       fundingRate,
+      fundingHistory,
       oiVelocityScore: null, // prev-bar OI velocity mevcut değil
       oiVelocityResult: null,
       now: prevLatest.ts,
