@@ -20,6 +20,7 @@ function makeScoreInput(overrides?: Partial<ScoreInput>): ScoreInput {
     bbPct: 0.5,
     volRatio: 1.2,
     fundingRate: 0.0001,
+    fundingHistory: null,
     atrPercentile: 50,
     adx4h: 28,
     fg: 50,

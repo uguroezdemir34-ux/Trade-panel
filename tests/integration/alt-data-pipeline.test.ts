@@ -64,6 +64,7 @@ function makeMinimalScoreInput(overrides: Partial<ScoreInput> = {}): ScoreInput 
     vwap: { vwap: 49000, stddev: 500 },
     volRatio: 1.2,
     fundingRate: 0.0001,
+    fundingHistory: null,
     atrPercentile: 50,
     adx4h: 28,
     ema21_1h: 49500,
