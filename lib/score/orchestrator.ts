@@ -100,6 +100,15 @@ export interface ScoreInput {
   vwap: VwapInput | null;
   volRatio: number | null;
   fundingRate: number | null;
+  /** Pair'in son 14 günlük |funding oranı| (%) geçmişi, self-inclusion'sız
+   *  — scoreFunding()'in persentil sınırları için (bkz. scorers.ts'in kendi
+   *  yorumu). null = cold-start/yetersiz geçmiş, sabit eşiklere düşer.
+   *  Şu an sadece lib/server/signalEngine.ts dolduruyor — client
+   *  (useScoreEngine.ts) bilerek dışarıda bırakıldı (kullanıcı kararı, ayrı
+   *  bir tur); composeScoreInput.ts'teki input alanı OPSİYONEL (fundingRate
+   *  ile aynı desen), verilmezse burada null'a düşer, useScoreEngine.ts hiç
+   *  dokunulmadığı için değişmeden çalışmaya devam eder. */
+  fundingHistory: readonly number[] | null;
   atrPercentile: number | null;
 
   // Pullback engine için ek veri (paket #5e)
@@ -406,6 +415,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
     vwap,
     volRatio,
     fundingRate,
+    fundingHistory,
     atrPercentile,
     adx4h,
     ema21_1h,
@@ -447,7 +457,7 @@ export function computeScore(input: ScoreInput): ScoreResult {
   const volResult = scoreVolume(volRatio);
   const bbResult = scoreBb(bbPct, direction);
   const vwapResult = scoreVwap(vwap, px, direction);
-  const fundingResult = scoreFunding(fundingRate, direction);
+  const fundingResult = scoreFunding(fundingRate, direction, fundingHistory);
   const macroResult = scoreMacro(fg, direction);
 
   const sub: ScoreSubScores = {

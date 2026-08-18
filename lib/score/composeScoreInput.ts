@@ -64,6 +64,13 @@ export interface ComposeInput {
   now: number;
   /** Funding rate (macroStore'dan, opsiyonel) */
   fundingRate?: number | null;
+  /** Pair'in son 14 günlük |funding oranı| (%) geçmişi — scoreFunding()'in
+   *  persentil sınırları için, bkz. lib/score/scorers.ts'in kendi yorumu.
+   *  Opsiyonel: şu an SADECE lib/server/signalEngine.ts dolduruyor, diğer
+   *  tüm çağıranlar (useScoreEngine.ts, backtest/engine.ts) hiç dokunulmadı
+   *  — verilmezse null'a düşer (cold-start davranışıyla AYNI: sabit
+   *  eşiklere geri döner). */
+  fundingHistory?: readonly number[] | null;
   /**
    * OI velocity skoru [-10, +10] — oi-velocity.ts'ten hesaplanmış.
    * undefined/null → computeScore'da 0 olarak işlenir.
@@ -206,6 +213,7 @@ export function composeScoreInput(input: ComposeInput): ScoreInput | null {
     vwap: vwapVal ?? null,
     volRatio,
     fundingRate: input.fundingRate ?? null,
+    fundingHistory: input.fundingHistory ?? null,
     atrPercentile: atrPctRes?.percentile ?? null,
     atrRatio: atrPctRes?.atrRatio ?? null,
     adx4h: adx4h?.adx ?? null,

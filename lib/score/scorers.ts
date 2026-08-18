@@ -19,6 +19,14 @@
  * Her scorer saf fonksiyon. Reason string ayrı döner — UI/Telegram'da kullanılır.
  *
  * KRİTİK: Her eşik DEĞİŞTİRİLMEMELİ. Bunlar panelin uzun süre kalibrasyonu.
+ *
+ * TEK BİLİNÇLİ İSTİSNA — scoreFunding()'in healthy/elevated/crowded SINIR
+ * NOKTALARI (kullanıcı kararı, backtest verisiyle doğrulandı): pair'in son
+ * 14 günlük gerçek funding dağılımı yeterince zenginse (bkz. scoreFunding()'in
+ * kendi yorumu) artık SABİT %0.02/%0.05/%0.10 DEĞİL, o dağılımın P10/P50/P90'ı.
+ * 8/5/2 ÇIKTI DEĞERLERİ değişmedi — sadece hangi funding oranının hangi banda
+ * girdiğini belirleyen sınırlar. Yetersiz geçmişte (cold-start) ÖNCEKİ sabit
+ * sınırlara aynen düşer.
  */
 
 import type { Direction } from "./direction";
@@ -212,23 +220,90 @@ export function scoreVwap(
 /**
  * Ödeyen taraf (crowd ile aynı yönde funding) için 8→5→2 arası DOĞRUSAL geçiş.
  * 05 Ağu 2026'da basamak fonksiyonundan (sert sıçrama %0.02 ve %0.05'te)
- * buna çevrildi — 3 sınır noktasındaki (0.02/0.05/0.10) puan AYNI KALDI
- * (8/5/2), sadece aralar basamak yerine eğim oldu. %0.10 üstü zaten
- * checkFundingExtreme (blocks.ts) tarafından NO'ya düşürülüyor — o bandın
- * puanı pratikte hiç GO/WAIT üretmiyor, sabit 2 bırakıldı.
- * Healthy (≤0.02) ve contrarian (büyüklükten bağımsız sabit 8) tarafına
- * BİLEREK dokunulmadı — ayrı bir hipotez/veri gerektirir.
+ * buna çevrildi — 3 sınır noktasındaki puan AYNI KALDI (8/5/2), sadece
+ * aralar basamak yerine eğim oldu. %0.10 üstü zaten checkFundingExtreme
+ * (blocks.ts) tarafından NO'ya düşürülüyor — o bandın puanı pratikte hiç
+ * GO/WAIT üretmiyor, sabit 2 bırakıldı.
+ * Healthy ve contrarian (büyüklükten bağımsız sabit 8) tarafına BİLEREK
+ * dokunulmadı — ayrı bir hipotez/veri gerektirir.
+ *
+ * PERSENTİL GEÇİŞİ (kullanıcı kararı): sınır noktaları artık SABİT
+ * %0.02/%0.05/%0.10 değil, çağıranın hesapladığı healthyBound/elevatedBound/
+ * crowdedBound parametreleri — bkz. scoreFunding()'in kendi yorumu. Bu
+ * fonksiyonun kendisi hâlâ SAF: hangi üç sayının kullanılacağına karar
+ * vermiyor, sadece verilenler arasında AYNI 8→5→2 doğrusal geçişi uyguluyor.
  */
-function payingSideFundingScore(absFr: number): number {
-  if (absFr <= 0.02) return 8;
-  if (absFr <= 0.05) return 8 + (5 - 8) * ((absFr - 0.02) / (0.05 - 0.02));
-  if (absFr <= 0.10) return 5 + (2 - 5) * ((absFr - 0.05) / (0.10 - 0.05));
+function payingSideFundingScore(
+  absFr: number,
+  healthyBound: number,
+  elevatedBound: number,
+  crowdedBound: number,
+): number {
+  if (absFr <= healthyBound) return 8;
+  if (absFr <= elevatedBound) {
+    return 8 + (5 - 8) * ((absFr - healthyBound) / (elevatedBound - healthyBound));
+  }
+  if (absFr <= crowdedBound) {
+    return 5 + (2 - 5) * ((absFr - elevatedBound) / (crowdedBound - elevatedBound));
+  }
   return 2;
+}
+
+// Fallback (cold-start VEYA yetersiz geçmiş) sınır noktaları — PERSENTİL
+// GEÇİŞİ ÖNCESİ davranışla BİREBİR AYNI (%0.02/%0.05/%0.10). Bu üç sayı
+// scoreFunding()'in "hiçbir zaman gerçek dağılımı bilmiyorsak ne yaparız"
+// varsayılanı — CLAUDE.md §0.1 madde 3 gereği, mevcut davranışın SESSİZ bir
+// tekrarı, yeni bir varsayım DEĞİL.
+const FUNDING_FALLBACK_HEALTHY_PCT = 0.02;
+const FUNDING_FALLBACK_ELEVATED_PCT = 0.05;
+const FUNDING_FALLBACK_CROWDED_PCT = 0.10;
+
+// scoreFunding()'in çağıranı (lib/server/signalEngine.ts) zaten 7 günlük
+// KAPSAM (yaş) kontrolünü yapıp yetersizse null geçiyor — bu sabit, İKİNCİ
+// bir bağımsız güvenlik ağı: null OLMASA BİLE çok az örnekle "persentil"
+// hesaplamak istatistiksel olarak anlamsız/yanıltıcı olurdu (ör. 3 örnekle
+// P10/P90 hesaplamak neredeyse rastgele iki uç değer seçmek demektir).
+const MIN_FUNDING_HISTORY_SAMPLES = 24;
+
+/** Doğrusal interpolasyonlu persentil (en-yakın-derece DEĞİL) — sort
+ *  edilmemiş bir dizi kabul eder, kendi içinde (kopyalayarak) sıralar,
+ *  girdi değişmez. p ∈ [0,100]. */
+function percentile(values: readonly number[], p: number): number {
+  const sorted = [...values].sort((a, b) => a - b);
+  const idx = (p / 100) * (sorted.length - 1);
+  const lo = Math.floor(idx);
+  const hi = Math.ceil(idx);
+  if (lo === hi) return sorted[lo];
+  return sorted[lo] + (sorted[hi] - sorted[lo]) * (idx - lo);
 }
 
 export function scoreFunding(
   fundingRate: number | null,
   direction: Direction,
+  /**
+   * Pair'in kendi son 14 günlük (~336 saatlik) |funding oranı| (%) geçmişi
+   * — HER ÖRNEK ZATEN Math.abs(rate*100) formatında, işaretsiz. Kaynak:
+   * score_history.funding_rate_raw (lib/db/scoreHistory.ts'teki
+   * getFundingHistory()), çağıran (lib/server/signalEngine.ts) tarafından
+   * sağlanır.
+   *
+   * SELF-INCLUSION/LOOK-AHEAD YOK: bu dizi, bu döngünün KENDİ fundingRate
+   * değerini asla içermemeli — çağıran, DB'ye bu döngünün satırı henüz
+   * YAZILMADAN (batch insert döngü sonunda) sorguyu çalıştırdığı için bu
+   * doğal olarak garanti, ek bir filtre gerekmiyor (bkz. signalEngine.ts'teki
+   * çağrı noktası yorumu).
+   *
+   * null = cold-start (çağıran 7 günden az kapsam tespit etti) — bu durumda
+   * FUNDING_FALLBACK_* sabitleri (persentil geçişinden ÖNCEKİ davranışla
+   * birebir aynı) kullanılır. Sentetik/sıfır bir persentil ÜRETİLMEZ.
+   *
+   * Varsayılan null (opsiyonel parametre): tests/integration/score-scorers.test.ts'teki
+   * mevcut 2-argümanlı çağrılar (fixed-threshold davranışını doğrulayan
+   * testler) DEĞİŞTİRİLMEDEN geçmeye devam eder — o testler zaten
+   * FUNDING_FALLBACK_* sabitlerinin AYNI değerlerini (%0.02/%0.05/%0.10)
+   * doğruluyor, bu yüzden hiç bozulmuyorlar.
+   */
+  fundingHistory: readonly number[] | null = null,
 ): ScoreReason {
   if (fundingRate === null) return { score: 0, reason: "N/A" };
   const fr = fundingRate * 100; // percent
@@ -236,22 +311,27 @@ export function scoreFunding(
   const isLong = direction === "LONG";
   const isShort = direction === "SHORT";
 
+  const [healthyBound, elevatedBound, crowdedBound] =
+    fundingHistory && fundingHistory.length >= MIN_FUNDING_HISTORY_SAMPLES
+      ? [percentile(fundingHistory, 10), percentile(fundingHistory, 50), percentile(fundingHistory, 90)]
+      : [FUNDING_FALLBACK_HEALTHY_PCT, FUNDING_FALLBACK_ELEVATED_PCT, FUNDING_FALLBACK_CROWDED_PCT];
+
   // Healthy: OKX baseline faiz dahil küçük premium — yön bağımsız
-  if (absFr <= 0.02) {
+  if (absFr <= healthyBound) {
     return { score: 8, reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (healthy)` };
   }
   // Contrarian: alan taraf, cezalandırılmaz
-  if (isLong && fr < -0.02) {
+  if (isLong && fr < -healthyBound) {
     return { score: 8, reason: `${fr.toFixed(3)}% (LONG contrarian)` };
   }
-  if (isShort && fr > 0.02) {
+  if (isShort && fr > healthyBound) {
     return { score: 8, reason: `+${fr.toFixed(3)}% (SHORT contrarian)` };
   }
   // Ödeyen taraf: doğrusal geçiş (yukarıdaki payingSideFundingScore), etiket
   // funding büyüklüğünün orijinal bant tanımını yansıtıyor (skor değil)
   if (isLong || isShort) {
-    const score = payingSideFundingScore(absFr);
-    const label = absFr <= 0.05 ? "elevated" : "crowded";
+    const score = payingSideFundingScore(absFr, healthyBound, elevatedBound, crowdedBound);
+    const label = absFr <= elevatedBound ? "elevated" : "crowded";
     return { score, reason: `${fr >= 0 ? "+" : ""}${fr.toFixed(3)}% (${label})` };
   }
   // direction NEUTRAL — eski davranışla birebir aynı (elevated sabit 5)
