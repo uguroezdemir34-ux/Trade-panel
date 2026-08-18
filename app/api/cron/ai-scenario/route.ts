@@ -29,6 +29,16 @@
  */
 
 import { NextResponse } from "next/server";
+// app/api/cron/signal-check/route.ts, app/api/telegram/signal/route.ts,
+// app/api/csp-report/route.ts ve app/api/stripe/webhook/route.ts'in HEPSİ
+// bu namespace import'u kullanıyor (4/4 karşılaştırılabilir route.ts
+// dosyası) — lib/hooks/*'teki NAMED `captureMessage` import'u (bkz.
+// useSignalFirehose.ts) İSTEMCİ TARAFI bundle boyutu içindi, bu dosya
+// sunucu-only bir route (asla tarayıcı bundle'ına girmiyor), o tree-shake
+// endişesi burada hiç geçerli değil — bu yüzden bu dosyanın KENDİ
+// kategorisindeki (route.ts) yerleşik desen izlendi, client-hook deseni
+// değil.
+import * as Sentry from "@sentry/nextjs";
 import { fetchScenarioData } from "@/lib/analysis/ai-scenario";
 import { calculateAIScore } from "@/lib/analysis/score";
 import { formatAIScenarioCaption } from "@/lib/analysis/telegram-format";
@@ -161,6 +171,13 @@ export async function GET(req: Request): Promise<NextResponse> {
   const config = { botToken: vipConfig.botToken, chatId: publicChatId };
 
   for (const symbol of SCENARIO_SYMBOLS) {
+    // Sentry.captureException'ın extra bağlamı için — hangi adımda
+    // patladığını görünür kılıyor (fetch/score/caption/render/send),
+    // mevcut davranışı (akış/continue mantığı) HİÇ değiştirmiyor, sadece
+    // izleniyor. "insert" adımı buraya girmiyor — DB yazımı kendi ayrı
+    // try/catch'inde izole (satır ~206), oraya düşen bir hata zaten bu
+    // dış catch'e hiç ulaşmıyor.
+    let step: "fetch" | "score" | "caption" | "render" | "send" = "fetch";
     try {
       const marketData = await fetchScenarioData(symbol);
       if (!marketData) {
@@ -169,13 +186,17 @@ export async function GET(req: Request): Promise<NextResponse> {
       }
       const { srLevels, k1h, currentPrice } = marketData;
 
+      step = "score";
       const scoreResult = calculateAIScore(k1h, srLevels, currentPrice);
       if (!scoreResult) {
         results.push({ symbol, status: "skipped", reason: "score_insufficient_data" });
         continue;
       }
 
+      step = "caption";
       const caption = formatAIScenarioCaption(symbol, currentPrice, scoreResult, srLevels);
+
+      step = "render";
       const png = await exportScenarioChartPngServer({
         symbol,
         candles: k1h,
@@ -184,6 +205,7 @@ export async function GET(req: Request): Promise<NextResponse> {
         score: scoreResult,
       });
 
+      step = "send";
       const sendResult = await sendTelegramPhoto(config, { photo: png, caption, markdownV2: true });
 
       let dbWritten = false;
@@ -221,6 +243,10 @@ export async function GET(req: Request): Promise<NextResponse> {
         reason: err instanceof Error ? err.message : String(err),
       });
       console.error(`[ai-scenario] ${symbol} unexpected error:`, err);
+      // Mevcut davranış (console.error, non-fatal — döngü diğer sembollere
+      // devam eder) DEĞİŞMEDİ, sadece Sentry'ye de düşüyor (symbol/step
+      // extra'sıyla filtrelenebilir).
+      Sentry.captureException(err, { extra: { symbol, step } });
     }
   }
 
