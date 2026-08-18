@@ -85,6 +85,15 @@ export interface BacktestTrade {
   trailingReturn30d?: number | null;
   /** Ham hacim oranı (composeScoreInput.ts'teki volumeRatio çıktısı) — subScores.vol'un kategorik olmayan sürekli hali */
   volRatio?: number | null;
+  /** lib/signal/humanTraderCheck.ts'in checkHumanTraderApproval() sonucu (S/R+hacim+
+   *  R:R+trend çizgisi deterministik onay katmanı) — GEÇMİŞE dönük ETİKETLEME, backtest
+   *  bu alana göre FİLTRELEME yapmıyor, trade her zaman üretilir/kaydedilir (bkz.
+   *  lib/backtest/engine.ts'teki çağrı noktası yorumu). undefined = bu alan eklenmeden
+   *  önce cache'lenmiş sonuçlar. */
+  humanCheckApproved?: boolean;
+  /** checkHumanTraderApproval()'ın insan-okunur gerekçe satırları — humanCheckApproved
+   *  ile AYNI kaynak, aynı undefined-eski-cache kuralı. */
+  humanCheckReasons?: string[];
 }
 
 export interface ScoreBucket {
